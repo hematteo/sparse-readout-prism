@@ -1,0 +1,57 @@
+\section{Extended Related Work}
+\label{app:extended-related-work}
+
+This appendix gives broader related-work context that is useful for
+positioning but not needed in the main argument. Several lens variants extend
+the basic hidden-state-to-vocabulary inspection idea. Future Lens asks whether a
+single hidden state can predict tokens beyond the next position
+\citep{pal2023future}, and LogitLens4LLMs updates logit-lens tooling for modern
+Hugging Face model families \citep{wang2025logitlens4llms}. Other variants
+emphasize settings where single-token vocabulary projection is limited:
+ContextualLens and LatentLens use richer contextual representations for
+vision-language analysis \citep{phukan2025contextuallens,krojer2026latentlens},
+while Indic-TunedLens adapts tuned-lens-style decoding to Indian languages
+\citep{panchal2026indictunedlens}. These methods remain closest to Sparse
+Readout Prism as lens-style tools, but they primarily change what is decoded
+from a hidden state. Sparse Readout Prism instead asks which sparse
+unembedding-row features contribute to a fixed selected vocabulary logit or
+logit difference.
+
+\paragraph{Output embeddings.}
+Sparse Readout Prism also treats the output embedding as an object of study.
+Output embeddings have long been recognized as meaningful learned
+representations, including in work on weight tying
+\citep{press2017outputembedding,inan2017tying} and the softmax bottleneck
+\citep{yang2018softmaxbottleneck}. SRP uses that perspective for
+interpretability: instead of viewing $\WU$ only as the last classifier matrix,
+we factorize its rows and use the resulting sparse basis to analyze selected
+vocabulary logits, pairwise logit differences, and group contrasts.
+
+\paragraph{Logit attribution and prisms.}
+Sparse Readout Prism is adjacent to additive attribution methods for logits.
+Transformer-circuits work emphasizes that linear readout directions can be
+projected onto residual-stream components \citep{elhage2021framework}, and
+direct logit attribution has been used to study natural language circuits such
+as indirect object identification \citep{wang2022ioi}. Logit Prisms decompose
+final logits into contributions from embeddings, attention, and MLP components
+\citep{nguyen2024logitprisms}. These component-level methods ask where a
+logit-relevant direction is written in the network. Sparse Readout Prism asks
+which reusable unembedding features make that direction large or small once the
+hidden state reaches the readout interface. When combined with component
+attribution, this gives a DLA by SAE feature additive account over a
+realized forward pass, provided both the DLA additivity error and the readout SAE
+reconstruction error are reported.
+
+\paragraph{Sparse feature dictionaries and circuit tracing.}
+Superposition motivates feature-based accounts of neural representations
+\citep{elhage2022superposition}. Prior work uses sparse autoencoders to recover
+interpretable directions from language-model activations
+\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, and
+recent benchmark and release efforts provide evaluation frameworks and open
+model-family dictionaries
+\citep{karvonen2025saebench,lieberum2024gemmascope,deng2026qwenscope}. Sparse
+Readout Prism addresses a complementary object: it provides a sparse basis for
+the readout rows against which hidden states are already scored, while
+transcoders, automated circuit-discovery methods, and circuit-tracing systems
+focus on internal computation
+\citep{conmy2023acdc,dunefsky2024transcoders,ameisen2025circuittracing}.

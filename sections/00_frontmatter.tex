@@ -1,0 +1,19 @@
+\begin{abstract}
+Lens-style methods reveal which tokens a language-model hidden state favors, but
+treat each score as a single readout dot product. Sparse Readout Prism
+(SRP) adds a calibrated accounting layer beneath such scores: it turns a
+selected readout target into signed sparse-feature terms, together with explicit
+reconstruction error. SRP factorizes the final unembedding into shared sparse
+directions and token-row coefficients, separating the target-independent
+readout-feature profile of a hidden state from the scalar target being explained,
+such as a token logit, contrast, or margin. Across model families, replacement
+fidelity, target reconstruction error, and sign agreement identify regimes where
+these decompositions are faithful to the selected score. On held-out base-model
+token-pair logit differences, SRP preserves signs in 91.4 to 95.8\% of cases,
+with the strongest operating points below 0.10 median relative reconstruction
+error; null and reference baselines show that learned token-to-feature support
+matters. Under these diagnostics, qualitative, attribution, and constrained
+readout-edit analyses show that target choice changes signed support, context
+reweights profiles, selected terms can be decomposed over residual-stream
+components, and selected SRP directions move held-out lexical readout scores.
+\end{abstract}

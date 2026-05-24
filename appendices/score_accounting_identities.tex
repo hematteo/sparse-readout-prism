@@ -1,0 +1,128 @@
+% Additive accounting identities for Sparse Readout Prism.
+
+\section{SRP Score Accounting Identities}
+\label{app:score-accounting}
+\label{app:interpreting-sparse-readout-prism-figures}
+\label{app:additional-diagnostics}
+
+This appendix states the accounting identities used by the figures and control
+tables and fixes the bookkeeping conventions used when a trained readout SAE is
+displayed in figures. The identities are the same local score account introduced in
+\Cref{sec:method-srp}. All reported scores are evaluated in the
+model's raw readout space. If training used centering or row normalization, the
+SAE coefficients, reconstructed rows, and residual terms are first mapped back
+to that space.
+
+\subsection{Raw-Space Row Accounting}
+\label{app:score-accounting-row-factorization}
+
+Let \(w_t\in\R^d\) be the unembedding row for token \(t\). Under the row
+preprocessing convention used by the reported analyses,
+\[
+    \begin{aligned}
+    x_t&=\frac{w_t-\mu}{a_t}, \qquad a_t>0,\\
+    x_t&=\sum_i \widetilde z_{t,i}\widetilde d_i+\widetilde r_t,
+    \end{aligned}
+\]
+with \(a_t=1\) for unnormalized rows. The raw-space accounting then uses
+\[
+    z_{t,i}=a_t\widetilde z_{t,i},
+    \qquad
+    d_i=\widetilde d_i,
+    \qquad
+    r_t=a_t\widetilde r_t,
+\]
+so that
+\[
+    w_t=\mu+\sum_i z_{t,i}d_i+r_t .
+\]
+The displayed local score account contains only this shared offset, SAE feature
+terms, and the explicit residual term; no hidden dense base term is added.
+
+\subsection{Scalar Target Identity}
+\label{app:score-accounting-linear-query}
+
+A scalar readout target is a linear function of vocabulary rows,
+\[
+    q_\alpha = \sum_{t\in\mathcal{V}} \alpha_t w_t,
+    \qquad
+    s_\alpha(h)=h^\top q_\alpha .
+\]
+Define the target coefficient and SAE feature contribution as
+\[
+    \beta_i(\alpha)=\sum_t \alpha_t z_{t,i},
+    \qquad
+    c_i(h,\alpha)=\beta_i(\alpha)\,h^\top d_i .
+\]
+Substituting the raw-space row accounting gives the exact grouped identity
+\[
+\begin{aligned}
+    s_\alpha(h)
+    &=
+    s_{\mu}(h,\alpha)
+    +s_{\mathrm{feat}}(h,\alpha)\\
+    &\quad
+    +s_{\mathrm{resid}}(h,\alpha),\\
+    s_{\mu}(h,\alpha)
+    &=
+    \left(\sum_t \alpha_t\right)h^\top\mu,\\
+    s_{\mathrm{feat}}(h,\alpha)
+    &=
+    \sum_i c_i(h,\alpha),\\
+    s_{\mathrm{resid}}(h,\alpha)
+    &=
+    h^\top\sum_t \alpha_t r_t .
+\end{aligned}
+\]
+For zero-sum contrasts, including pairwise logit differences, group contrasts,
+reference contrasts, and top-competitor margins, the offset term
+cancels.
+
+\subsection{Error, Sign, and Display Rules}
+\label{app:score-accounting-fidelity}
+\label{app:display-taxonomy}
+\label{app:display-residual-accounting}
+
+For a scalar readout target \(q_\alpha\), the exact and reconstructed scores are
+\[
+\begin{aligned}
+    s_{\mathrm{exact}}
+    &=
+    h^\top q_\alpha,\\
+    s_{\mathrm{recon}}
+    &=
+    s_{\mu}(h,\alpha)
+    +
+    s_{\mathrm{feat}}(h,\alpha).
+\end{aligned}
+\]
+The residual score is the reconstruction error,
+\[
+    \epsilon(h,\alpha)
+    =
+    s_{\mathrm{exact}}-s_{\mathrm{recon}}
+    =
+    s_{\mathrm{resid}}(h,\alpha),
+\]
+and aggregate summaries use
+\[
+    \rho(h,\alpha)
+    =
+    \frac{|\epsilon(h,\alpha)|}{|s_{\mathrm{exact}}|+\delta},
+\]
+with \(\delta=0.5\) logit. The floor prevents arbitrarily small margins from
+dominating median error summaries; near the decision boundary, sign agreement and
+margin-binned flip rates remain the primary reliability checks. For signed
+contrasts, side-specific feature support is evidence-bearing when
+\[
+    \operatorname{sign}(s_{\mathrm{exact}})
+    =
+    \operatorname{sign}(s_{\mathrm{recon}}).
+\]
+Each interpreted figure therefore states the selected target, exact score,
+reconstructed score, reconstruction error, relative reconstruction error, and
+sign status for contrasts. If a plot displays only the largest bars, the
+reported feature sum and residual are still computed from the full active
+feature sum. Token-level figures also report tokenization or row-level audit
+information where it affects interpretation; brittle single-token contrasts are
+handled as explicit group contrasts when needed.

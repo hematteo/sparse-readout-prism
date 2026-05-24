@@ -1,0 +1,116 @@
+\section{Discussion and Future Work}
+\label{app:extended-discussion-limitations}
+
+This appendix expands the discussion summarized in the main paper.
+Sparse Readout Prism separates a profile from a local score account. The
+readout SAE lets us estimate how a hidden
+state aligns with each learned decoder direction before resolving a next token.
+Once a selected vocabulary logit, logit difference, or group contrast is chosen,
+the method identifies which SAE features contribute signed support to that
+scalar and reports the reconstruction error alongside the account.
+
+\subsection{What Sparse Readout Prism Explains}
+\label{app:extended-discussion-query-scope}
+
+\paragraph{Readout target.}
+Each local score account targets one scalar
+\(s_q(h)=h^\top q\). This may be a selected vocabulary logit, a specified
+pairwise logit difference, a group contrast, a reference contrast, or a
+top-competitor margin. The hidden state's projection profile
+\(\{h^\top d_i\}_i\) is available before selecting such a target; support for a
+particular token or contrast becomes defined once the profile is combined with
+the target coefficients \(\beta_i(\alpha)\). Distribution-wide explanations
+therefore require measuring reconstruction over the relevant vocabulary
+slice or target group. This distinction matters because a token can be supported
+above a reference while still losing to a named alternative or a group
+contrast, and a top-1 token can have only a small margin over top-ranked
+competitors. Reference contrasts, pairwise logit differences, group contrasts,
+and top-competitor margins therefore answer distinct readout questions.
+
+\paragraph{Local score account.}
+The default claim is local and additive. For the chosen target, the displayed
+terms express the exact readout score as SAE feature terms plus preprocessing
+and reconstruction error terms under the conventions in
+Appendix~\ref{app:score-accounting}. Contribution terms are reported with those
+error terms, so the local score account and its reconstruction quality are read
+together.
+
+\subsection{Relation to Activation SAEs}
+\label{app:extended-discussion-activation-sae}
+
+\paragraph{Fitted object.}
+Sparse Readout Prism uses sparse autoencoder machinery, but the fitted object is
+different from activation-SAE work. Activation SAEs learn sparse codes for a
+distribution of hidden states. Sparse Readout Prism learns sparse codes for rows
+of the unembedding matrix \(\WU\). The learned dictionary features are therefore
+readout directions used by token rows, not hidden-state features discovered from
+model activations.
+
+\paragraph{Context dependence.}
+The hidden state enters only after the readout SAE has been learned. A feature
+contributes to a target when two quantities align: the target uses that SAE
+feature through its sparse row coefficients, and the current hidden state has a
+large dot product with the corresponding decoder direction. This is
+why the same token row can have different dominant feature contributions in
+different contexts: the row coefficients are fixed, while the projection terms
+\(h^\top d_i\) change with the hidden state.
+
+\paragraph{Label status.}
+SAE feature labels summarize tokens whose unembedding rows use a dictionary
+feature strongly. They are row-level descriptors for the local score account;
+feature ids, signed contributions, and reconstruction errors remain the measured
+objects of analysis.
+
+\subsection{Model-Family Results}
+\label{app:extended-discussion-cross-family}
+
+\paragraph{Qwen evidence.}
+Across Qwen sizes, the selected dictionary settings preserve held-out signed
+readout targets and readout behavior on hidden states with reconstruction errors
+small enough to support the reported local score accounts. These rows
+provide most of the qualitative displays as the strongest target-fidelity
+operating points in the evaluated suite.
+
+\paragraph{Additional families.}
+The additional model-family rows report the same metric suite under
+different tokenizer, readout, and post-training conditions. They separate row
+reconstruction, LM-head replacement, and target-level score fidelity, which is
+why the paper reports all three before interpreting feature contributions.
+
+\subsection{DLA by SAE Feature}
+\label{app:extended-discussion-prism-dla}
+
+\paragraph{Readout versus components.}
+Sparse Readout Prism is an unembedding-side local score account. It asks which
+SAE features make a selected vocabulary logit or contrast large or small once a hidden state is
+being scored against the unembedding. Component-level attribution asks a
+different question: which residual-stream components supplied projection onto the
+chosen score's readout direction in the realized forward pass.
+
+\paragraph{Residual terms.}
+Combining these views gives additive component-by-feature terms. The analysis
+reports both the DLA additivity error for the linear readout target and
+the readout SAE reconstruction error left outside the displayed feature terms;
+causal circuit claims can then be pursued with interventions when needed.
+
+\subsection{Future Work}
+\label{app:extended-discussion-future-work}
+
+\paragraph{Extensions.}
+Natural extensions include controlled interventions on SAE decoder directions,
+cross-model feature-alignment analyses, distributional accounts of local
+top-\(k\) frontiers, and broader model-family sweeps. These build on the central
+claim: for selected readout targets with
+small reported reconstruction error, a readout SAE turns an atomic token-row dot
+product into auditable SAE feature terms plus an explicit reconstruction error
+term.
+
+\paragraph{Residual-stream census.}
+SRP can also measure what is readout-readable before a hidden state is reduced to
+one score. The profile \(p_i=h^\top d_i\) can be broad, while a chosen score
+\(q\) selects the terms \(\beta_i(q)p_i\). Future work could quantify profile
+mass used by the selected target, assigned to competitors, or active but unused
+by that target. This unused category is target-local; it may support alternative tokens,
+later positions, or other computations. Comparing this split across layers,
+ambiguous prompts, and incorrect generations could test whether models carry
+broad task state beyond the immediate readout decision.

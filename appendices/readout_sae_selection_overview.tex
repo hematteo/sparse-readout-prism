@@ -1,0 +1,185 @@
+% Readout SAE selection overview appendix.
+
+\providecommand{\ReadoutSAEFigurePath}{figures/appendix_k}
+\newcommand{\ReadoutSAEGraphic}[2][]{%
+  \AppendixCompactGraphic[#1]{\ReadoutSAEFigurePath/#2}%
+}
+\makeatletter
+\@ifundefined{FloatBarrier}
+  {
+    \def\ReadoutSAE@fb@botlist{\@botlist}
+    \def\ReadoutSAE@fb@topbarrier{\suppressfloats[t]}
+    \newcommand{\ReadoutSAEFloatBarrier}{%
+      \par\begingroup\let\@elt\relax
+      \edef\@tempa{\ReadoutSAE@fb@botlist\@deferlist\@dbldeferlist}%
+      \ifx\@tempa\@empty
+      \else
+        \ifx\@fltovf\relax
+          \if@firstcolumn
+            \clearpage
+          \else
+            \null\newpage\ReadoutSAEFloatBarrier
+          \fi
+        \else
+          \newpage\let\@fltovf\relax\ReadoutSAEFloatBarrier
+        \fi
+      \fi
+      \endgroup
+      \ReadoutSAE@fb@topbarrier
+    }
+  }
+  {\newcommand{\ReadoutSAEFloatBarrier}{\FloatBarrier}}
+\makeatother
+\setcounter{topnumber}{5}
+\setcounter{bottomnumber}{3}
+\setcounter{totalnumber}{8}
+\renewcommand{\topfraction}{0.97}
+\renewcommand{\bottomfraction}{0.90}
+\renewcommand{\textfraction}{0.03}
+\renewcommand{\floatpagefraction}{0.80}
+
+\section{How Were the Readout SAEs Selected?}
+\label{app:readout-factorizer-sweeps}
+
+This appendix documents how the readout SAEs used in the main text were chosen. The
+selection criterion combines row reconstruction with
+readout behavior after substituting $\widehat{\WU}$ for $\WU$: rowEV,
+top-1 agreement, KL in bits, selected logit reconstruction errors when available, and
+dead/rare feature usage. A feature is counted as rare when its evaluation
+firing rate is below $10^{-3}$. All trained runs use seed $0$ unless stated
+otherwise; the Qwen3.5-0.8B 32$\times$, $k=256$ dictionary setting has the
+three-seed stability window reported below.
+
+\paragraph{Metric glossary.}
+rowEV is row-centered explained variance for reconstructed normalized $\WU$
+rows. top1 is agreement between the original and reconstructed vocabulary argmaxes
+over held-out hidden states. top5 is mean top-five set overlap,
+$|\mathrm{top5}(\WU h)\cap\mathrm{top5}(\widehat{\WU}h)|/5$; as a set-overlap
+metric, it can be lower or higher than top1. KL is
+$D_{\mathrm{KL}}(p_{\WU}(\cdot\mid h)\|p_{\widehat{\WU}}(\cdot\mid h))$ in
+bits. Selected logit reconstruction errors measure the absolute fractional error on the
+original top logit.
+
+\paragraph{Qwen3.5-9B unembedding object.}
+The Qwen3.5-9B experiments factorize the final unembedding matrix
+$\WU\in\R^{248320\times4096}$. Hidden states used for prism loss and
+evaluation are the final RMSNorm outputs immediately before the language-model
+head. This was confirmed by an \texttt{lm\_head} pre-hook: the captured input
+reproduces the model readout with no additional post-readout transform. The
+remaining reconstruction-vs-readout discrepancy is consistent with the model's
+bf16 LM-head precision floor as the relevant limit.
+
+\paragraph{Selection rule.}
+The active budget $k$ is part of the trained SAE. We therefore report
+native $k=128$ strict-budget rows and native $k=256$ high-fidelity rows as
+separate operating regimes; truncated $k=256$ dictionaries are over-budget
+comparisons.
+Within each regime, rowEV is paired with top1, KL, reconstruction error, achieved eval-$L_0$
+where applicable, and usage statistics. Orthogonal matching pursuit (OMP) rows
+are sparse-inference comparisons over fixed dictionaries; deployed metrics use
+the learned TopK encoders.
+
+\paragraph{Per-model settings.}
+The sweep ultimately supports two operating regimes. The strict-budget rows
+preserve a native $k=128$ interpretability budget, while the
+high-fidelity rows use native $k=256$ encoders when readout fidelity is
+the primary constraint. Table~\ref{tab:app-k-model-finalists} summarizes these
+settings; the model-by-model comparisons supporting them appear in
+Appendix~\ref{app:readout-factorizer-small-model-transfer}.
+
+\begin{table*}[!tbp]
+\caption{Representative dictionary settings from the Qwen/Gemma sweep. Native
+$k=128$ rows support the strict-budget regime; native $k=256$ rows support the
+high-fidelity regime. Gemma top1/KL are softcap-correct.}
+\label{tab:app-k-model-finalists}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{0.14\textwidth}p{0.13\textwidth}rrrrY@{}}
+\toprule
+Model & Setting & rowEV & top1 & KL & rare & Role \\
+\midrule
+\multicolumn{7}{@{}l}{\emph{Strict-budget regime: native $k=128$}} \\
+\addlinespace[1pt]
+Qwen3.5-0.8B & 16$\times$, $k=128$ & $0.760$ & $0.844$ & $0.277$ & $0.001$ & strict-budget result \\
+Qwen3.5-2B   & 16$\times$, $k=128$ & $0.712$ & $0.858$ & $0.261$ & $0.004$ & strict-budget runner-up \\
+Gemma-4-E2B  & 16$\times$, $k=128$ & $0.714$ & $0.623$ & $1.94$ & $0.031$ & strict-budget; softcap-correct \\
+Gemma-4-E4B  & 16$\times$, $k=128$ & $0.693$ & $0.669$ & $1.82$ & $0.040$ & strict-budget; softcap-correct \\
+\addlinespace[3pt]
+\midrule
+\multicolumn{7}{@{}l}{\emph{High-fidelity regime: native $k=256$}} \\
+\addlinespace[1pt]
+Qwen3.5-0.8B & 32$\times$, $k=256$ & $0.877$ & $0.891$ & $0.135$ & $0.001$ & high-fidelity result \\
+Qwen3.5-2B   & 32$\times$, $k=256$ & $0.847$ & $0.887$ & $0.136$ & $0.010$ & high-fidelity runner-up \\
+Qwen3.5-9B   & 16$\times$, $k=256$ & $0.761$ & $0.874$ & $0.167$ & $0.061$ & compact 9B fidelity comparison \\
+Qwen3.5-9B   & 32$\times$, $k=256$ & $0.857$ & $0.900$ & $0.105$ & $0.292$ & strongest 9B fidelity point \\
+Gemma-4-E2B  & 32$\times$, $k=256$ & $0.834$ & $0.333$ & $6.37$ & $0.038$ & fidelity row; softcap-correct \\
+Gemma-4-E4B  & 32$\times$, $k=256$ & $0.827$ & $0.736$ & $1.22$ & $0.078$ & fidelity row; softcap-correct \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\subsection{Sweep Coverage and Evidence Map}
+\label{app:readout-factorizer-selected-points}
+
+The selection evidence has three distinct roles: choosing a Qwen3.5-9B recipe,
+testing how that recipe scales with capacity, and evaluating whether the same
+recipe transfers to smaller Qwen and Gemma models. These roles are separated
+because the runs differ in model scale, active sparsity, convergence stage, and
+evaluation design. Table~\ref{tab:app-k-sweep-coverage-ledger} maps each
+family to the decision it supports.
+
+\begin{table*}[!tbp]
+\caption{Sweep coverage for Appendix~\ref{app:readout-factorizer-sweeps}. The
+table records run families and the decision each one supports without printing
+every cell.}
+\label{tab:app-k-sweep-coverage-ledger}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{0.18\textwidth}Yp{0.17\textwidth}Y@{}}
+\toprule
+Sweep family & Coverage & Axes varied & Selection use \\
+\midrule
+Original Qwen3.5-9B baseline
+& unembedding measurements; short-run comparisons; 50k run
+& matryoshka width, $k$, $\lambda$
+& anchors the old 50k baseline: rowEV $0.511$, top1 $0.807$ \\
+\addlinespace
+Qwen fixed-$k=128$ recipe search
+& unembedding measurements, short-run recipe comparison, and 20k run
+& init, width, sampling, TopK/matryoshka objective, delayed ramp
+& selects the \texttt{topk} 8$\times$, $k=128$ recipe \\
+\addlinespace
+Qwen BatchTopK control \citep{bussmann2024batchtopk}
+& target-$L_0$ measurements and evaluation-$L_0$ controls
+& eval-$L_0$ targeting, random vs row-seeded init
+& rejects BatchTopK for this setting \\
+\addlinespace
+Qwen capacity sweep
+& higher-$k$ screening runs, 16$\times$ and 32$\times$ 20k runs, OMP comparison
+& width and active budget $k$
+& $D=131072$, $k=256$ is the best-fidelity capacity point; $D=65536$, $k=256$
+is the compact comparison \\
+\addlinespace
+Qwen JumpReLU control
+& four JumpReLU cells and matched TopK controls
+& LR, prism ramp, controller target-$L_0$
+& rejects JumpReLU as a reported readout SAE \\
+\addlinespace
+Small-model transfer
+& complete four-model width/$k$ screening grid plus 20k runs
+& model family, width, $k$
+& Qwen3.5-0.8B 16$\times$, $k=128$ gives the strongest strict-budget rowEV;
+Qwen3.5-0.8B 32$\times$, $k=256$ gives the strongest high-fidelity rowEV \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+The following readout-SAE appendices follow this evidence map: first the
+Qwen3.5-9B recipe, then the capacity and operating-point comparisons, then
+smaller-model transfer and additional metric analyses.
+
+\ReadoutSAEFloatBarrier

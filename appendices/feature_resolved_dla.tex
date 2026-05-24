@@ -1,0 +1,77 @@
+\section{DLA by SAE Feature}
+\label{app:feature-resolved-dla}
+
+\Cref{sec:feature-resolved-component-decomposition} uses Sparse Readout Prism
+terms inside ordinary direct-logit-attribution accounting as an additive
+accounting identity. This appendix states the identity. For a scalar readout target
+\(q=\sum_t \alpha_t w_t\), Sparse Readout Prism gives
+\[
+    q = \sum_i \beta_i(q)d_i + r_q ,
+\]
+where \(d_i\) is an SAE decoder direction and \(r_q\) is the unembedding
+reconstruction error for the selected target. At a hidden state \(h\),
+\[
+    h^\top q = \sum_i \beta_i(q)h^\top d_i + h^\top r_q .
+\]
+Under the fixed final-normalization convention used for DLA, decompose
+\(h\approx\sum_c h_c\). The DLA term for component \(c\) and SAE feature \(i\)
+is
+\[
+    M_{c,i}(q)=\beta_i(q)\,h_c^\top d_i,
+\]
+with component reconstruction error term \(R_c(q)=h_c^\top r_q\). We therefore
+report two separate gaps: the DLA additivity error between \(h^\top q\) and
+\(\sum_c h_c^\top q\), and the readout SAE reconstruction gap between
+\(h^\top q\) and \(\sum_{c,i}M_{c,i}(q)\).
+
+The main display uses the pairwise logit difference
+\(q=w_{\mathrm{verify}}-w_{\mathrm{assume}}\), for which
+\(\beta_i(q)=z_{\mathrm{verify},i}-z_{\mathrm{assume},i}\). The same identity
+also covers a row-centered token readout \(q=w_{\mathrm{verify}}-\bar{w}\), which
+asks how residual-stream components account for one resolved token's readout
+above the vocabulary-mean row. The component view is additive accounting over a
+realized forward pass and can be paired with separate interventions for circuit
+analysis \citep{geiger2023causalabstraction}.
+
+\Cref{fig:qwen-prism-dla-verify-token-app} shows the row-centered token-readout
+version. This is the same source-verification prompt, but the target is
+\(h^\top(w_{\mathrm{verify}}-\bar{w})\); the main figure uses the token-token
+logit difference.
+
+\begin{figure*}[!tbp]
+    \centering
+    \AppendixWideGraphic[height=0.34\textheight]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_token/qwen2b_32x_prism_dla_verify_token_layer_readout.pdf}
+    \caption{\textbf{Row-centered token-readout component attribution.}
+    The plot decomposes the row-centered \texttt{verify} readout
+    \(h^\top(w_{\mathrm{verify}}-\bar{w})\) for the source-verification prompt by
+    residual-stream component. Each row stacks readout terms grouped into
+    verification/checking features, remaining sparse features, and the
+    unembedding reconstruction error term; black points mark ordinary direct logit
+    attribution for that residual-stream component. The row-centered readout is
+    \(+17.34\), the component DLA sum is \(+17.34\), and the sparse
+    SAE feature sum is \(+17.43\), with relative reconstruction error \(0.005\).}
+    \label{fig:qwen-prism-dla-verify-token-app}
+\end{figure*}
+
+\Cref{fig:qwen-prism-dla-verify-assume-app} is the pairwise companion to the
+row-centered view above. It adds the \texttt{assume} side of the contrast, so
+verification/checking and assumption-family terms can be read on the same
+component axis.
+
+\begin{figure*}[!tbp]
+    \centering
+    \AppendixWideGraphic[height=0.34\textheight]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_layer_semantics.pdf}
+    \caption{\textbf{Pairwise logit-difference DLA by SAE feature.}
+    The plot decomposes the \texttt{verify}-minus-\texttt{assume} logit difference for
+    the source-verification prompt by residual-stream component. Each row stacks sparse
+    readout terms grouped into verification/checking features, assumption
+    features, remaining sparse features, and the unembedding reconstruction error term;
+    black points mark ordinary direct logit attribution for that residual-stream
+    component. Positive terms support \texttt{verify} over \texttt{assume};
+    negative terms support \texttt{assume}. The exact logit difference is \(+4.31\), the
+    component DLA sum is \(+4.36\), and the sparse SAE feature sum is
+    \(+4.28\), with relative reconstruction error \(0.009\).}
+    \label{fig:qwen-prism-dla-verify-assume-app}
+\end{figure*}
+
+\FloatBarrier

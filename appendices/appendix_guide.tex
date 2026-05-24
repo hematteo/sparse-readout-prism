@@ -1,0 +1,60 @@
+\section*{Appendix Roadmap}
+\addcontentsline{toc}{section}{Appendix Roadmap}
+
+\begingroup
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.12}
+\newcommand{\AppRoadmapEntry}[4]{%
+  \textbf{#1} &
+  \hyperref[#2]{#3} \textnormal{(p.~\pageref{#2}).}
+  \newline\textit{#4} \\
+}
+\noindent\begin{tabularx}{\linewidth}{@{}p{1.2em}Y@{}}
+\toprule
+ & \textbf{Contents} \\
+\midrule
+\AppRoadmapEntry{A}{app:glossary}
+  {Glossary}
+  {Paper-specific terms, notation, standard readout targets, SAE reconstruction measures, and DLA terminology.}
+\AppRoadmapEntry{B}{app:score-accounting}
+  {SRP Score Accounting Identities}
+  {Readout SAE reconstruction identities, scalar targets, reconstruction error, sign agreement, and reading rules.}
+\AppRoadmapEntry{C}{app:model-suite-selection}
+  {Which Models Were Evaluated?}
+  {Model-suite rationale, evaluated model families, targeted comparison rows, model roles, and interpretation details.}
+\AppRoadmapEntry{D}{app:readout-factorizer-sweeps}
+  {How Were the Readout SAEs Selected?}
+  {Selection criteria, metric glossary, operating regimes, final dictionary settings, and sweep evidence map.}
+\AppRoadmapEntry{E}{app:readout-factorizer-qwen-sweeps}
+  {Qwen Readout SAE Recipe and Capacity Sweeps}
+  {Qwen3.5-9B recipe selection, capacity sweeps, and native operating-point claims.}
+\AppRoadmapEntry{F}{app:readout-factorizer-transfer-comparisons}
+  {Readout SAE Transfer and Model-Family Comparisons}
+  {Smaller Qwen/Gemma transfer, cross-family rows, R1-distilled comparisons, and row-norm tail analysis.}
+\AppRoadmapEntry{G}{app:readout-factorizer-diagnostics-reproducibility}
+  {Readout SAE Diagnostics and Reproducibility}
+  {Support-selection diagnostics, rejected alternatives, denominator controls, and training/evaluation recipe details.}
+\AppRoadmapEntry{H}{app:robustness-controls}
+  {Robustness and Fidelity Controls}
+  {Fidelity results, C4 replacement, baselines, token-level audits, and operating regimes.}
+\AppRoadmapEntry{I}{app:additional-qwen-display-examples}
+  {Additional Qwen Displays and Feature Audits}
+  {Margin examples, readout-target examples, fixed-token contexts, profiles, lens/prism comparisons, and token-row audits.}
+\AppRoadmapEntry{J}{app:feature-resolved-dla}
+  {DLA by SAE Feature}
+  {Connection to direct logit attribution, DLA terms split by SAE feature, and additivity error.}
+\AppRoadmapEntry{K}{app:lexical-control-stress-test}
+  {Readout SAE Feature Steering Test}
+  {Constrained steering result for SAE decoder directions selected from discovery tokens, with held-out terms and cross-model repeats.}
+\AppRoadmapEntry{L}{app:extended-discussion-limitations}
+  {Discussion and Future Work}
+  {Interpretation details, model-family results, DLA by SAE feature terms, and extensions.}
+\AppRoadmapEntry{M}{app:extended-related-work}
+  {Extended Related Work}
+  {Additional lens-method context and output-embedding related work.}
+\bottomrule
+\end{tabularx}
+\endgroup
+
+\FloatBarrier

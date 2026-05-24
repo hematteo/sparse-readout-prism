@@ -1,0 +1,43 @@
+\section{Related Work}
+
+\paragraph{Lens-style readouts.}
+Lens-style methods expose hidden states through vocabulary distributions,
+future-token predictions, continuations, or descriptions
+\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
+They are closest to SRP in interface: a hidden state is inspected by asking what
+the model can read out from it. The difference is the explanatory object.
+Lens variants usually change the inspection map or the representation being
+decoded; SRP fixes a selected LM-head score from the model's own readout and
+decomposes the sparse unembedding-row directions that support or oppose that
+score. A lens can therefore say that a hidden state favors one token over
+another, while SRP asks which reusable output-row features make that scalar
+large, small, or poorly reconstructed.
+
+\paragraph{Logit attribution and circuits.}
+Component attribution and logit-prism methods ask where logit evidence is
+written in the residual stream
+\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. Automated circuit
+discovery, causal abstraction, transcoders, and circuit-tracing systems pursue
+internal mechanisms and intervention-tested structure
+\citep{conmy2023acdc,geiger2023causalabstraction,dunefsky2024transcoders,ameisen2025circuittracing}.
+SRP addresses a complementary axis: it factorizes the rows against which the
+final hidden state is scored. The two views compose in DLA by SAE feature,
+because a readout feature term can be split across residual-stream components in
+a realized forward pass. This yields an additive attribution account;
+intervention studies can then test component or feature necessity.
+
+\paragraph{Sparse dictionaries and output geometry.}
+Activation-SAE work learns dictionaries over hidden-state distributions and has
+developed evaluation practice for sparse features
+\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,karvonen2025saebench,makelov2024principled}.
+SRP uses the same sparse-dictionary machinery but changes the fitted object:
+the examples are unembedding rows rather than activation vectors. Its features
+are therefore readout directions used by token rows, not latent activation
+features by themselves. This connects SRP to work on output embeddings, weight
+tying, the softmax bottleneck, and tokenizer geometry
+\citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
+Those lines of work show that the final classifier matrix and vocabulary
+segmentation shape logits; SRP makes that geometry part of the measured account
+by reporting target reconstruction, sign agreement, and controls alongside
+feature labels. Broader positioning appears in
+Appendix~\ref{app:extended-related-work}.

@@ -1,0 +1,191 @@
+\section{Readout SAE Feature Steering Test}
+\label{app:lexical-control-stress-test}
+
+This appendix reports a constrained readout-edit test for readout SAE features.
+The test asks whether SAE features associated with a fixed profanity-related
+candidate lexicon can move specified logit differences when edited at the
+readout, and how that effect behaves under held-out terms, dose sweeps,
+cross-model repeats, and off-target probes.
+
+\begin{table*}[!tbp]
+\caption{\textbf{Readout SAE feature steering summary.}
+The steering test supports a readout-level intervention result: editing
+SAE decoder directions selected from discovery tokens can move constrained lexical logit
+differences. The table records the evidence used to pair intended margin shifts
+with off-target lexical probes and open-generation probes.}
+\label{tab:lexical-control-stress-test}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{0.18\textwidth}Y Y@{}}
+\toprule
+Measurement & What it measures & Setting \\
+\midrule
+Lexical specificity &
+Degree to which the selected features and token summaries are associated with
+the profanity-related lexical family instead of generic high-activation rows. &
+Supports feature selection for this steering test; feature ids remain the
+stable objects and labels remain token summary aids. \\
+\addlinespace
+Causal effect &
+Whether steering along the selected SAE decoder directions changes the
+specified profanity-vs-reference logit differences in the intended direction. &
+Identifies a causal effect at the edited readout score; circuit tracing can
+localize upstream sources. \\
+\addlinespace
+Held-out templates &
+Whether the same intervention transfers to held-out lexical prompts and prompt
+templates after feature selection. &
+Measures template-level generalization after feature selection. \\
+\addlinespace
+Dose response &
+Whether larger intervention strengths produce ordered margin shifts before
+quality or off-target behavior dominates. &
+Measures dose ordering and separates threshold artifacts from graded response. \\
+\addlinespace
+Cross-model replication &
+Whether the same intervention pattern appears in more than one
+evaluated model. &
+Replication is evidence for a recurring readout-level pattern, while each model
+is reported alongside its own readout fidelity metrics. \\
+\addlinespace
+Off-target lexical probes &
+Whether the intervention leaves unrelated lexical contrasts and neutral
+prompts stable. &
+These probes measure obvious off-target regressions alongside the intended
+margin movement. \\
+\addlinespace
+Open-generation probes &
+How the readout-level edit propagates when the model is allowed to generate
+freely. &
+Complements the candidate-constrained lexical-score measurements. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\paragraph{Setup.}
+The primary run uses Qwen3.5-2B with the 32$\times$, $k=256$ readout SAE
+reported in Appendix~\ref{app:readout-factorizer-sweeps}. The evaluation vocabulary
+contains 22 non-hateful profanity terms and 20 affect/control terms; all
+single-token claims are filtered through the model tokenizer. Features are
+selected from five discovery terms, \{\texttt{fuck}, \texttt{shit},
+\texttt{hell}, \texttt{sucks}, \texttt{bastard}\}, and then evaluated on held-out
+terms \{\texttt{fucking}, \texttt{fucked}, \texttt{bullshit}, \texttt{shitty},
+\texttt{damned}, \texttt{asshole}, \texttt{bitch}, \texttt{crap},
+\texttt{piss}, \texttt{pissed}\}. The intervention is a one-step logit edit:
+for selected decoder directions \(d_f\), we add
+\(v\WU^\top\) to the logits with
+\(v=-\alpha\sum_{f\in F} d_f/\|d_f\|_2\). The reported intervention scale is
+\(\alpha=16\). The primary candidate-constrained grid has 16 prompts, 9
+profane-to-reference candidate pairs, 10 intervention scales, and 5 methods
+(none, SAE feature edit, discovery token bias, oracle token bias, and
+norm-matched random feature edit), giving 7200 evaluated rows.
+
+\paragraph{Feature specificity.}
+The selected directions are lexically specific. In the
+Qwen3.5-2B run, 12 of the top 13 profanity-associated SAE features have
+specificity \(1.0\) against the 20 control terms, and the remaining feature has
+specificity \(0.988\). The token summaries partition recognizable lexical
+families, including f-word, sh-word, hell/damn, and insult-related directions.
+Feature ids remain the stable objects of analysis; token summary labels provide
+the row-level description used for this steering test.
+
+\begin{table*}[!tbp]
+\caption{\textbf{Primary Qwen3.5-2B steering comparison.}
+All methods use intervention scale 16. Discovery token bias penalizes only the
+five discovery token ids; oracle token bias penalizes the full evaluation lexicon.
+Random features are norm-matched to the selected SAE feature edit.}
+\label{tab:lexical-control-primary-methods}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{0.96\textwidth}{@{}lrrrrY@{}}
+\toprule
+Method & \makecell{Discovery\\flip} & \makecell{Held-out\\flip} &
+\makecell{Held-out\\\(\Delta p_{\mathrm{bad}}\)} &
+\makecell{Median\\KL} & Interpretation \\
+\midrule
+SAE features (10) & $0.450$ & $0.359$ & $0.398$ & $0.679$ &
+Transfers from discovery terms to held-out variants. \\
+\addlinespace
+Discovery token bias & $0.450$ & $0.000$ & $0.000$ & $0.001$ &
+Token-id edit restricted to discovery terms; held-out ids receive no direct bias. \\
+\addlinespace
+Oracle token bias & $0.450$ & $0.359$ & $0.404$ & $0.004$ &
+Upper-bound token edit with full lexicon knowledge. \\
+\addlinespace
+Random features & $0.013$ & $0.156$ & $0.078$ & $1.363$ &
+Norm-matched control with a different effect/cost profile. \\
+\addlinespace
+No intervention & $0.000$ & $0.000$ & $0.000$ & $0.000$ &
+Reference condition. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+Table~\ref{tab:lexical-control-primary-methods} gives the key intervention
+comparison: the SAE feature edit matches the oracle token bias held-out flip rate
+while using only directions selected from discovery tokens, whereas the equally
+informed discovery token bias has zero held-out effect. The KL column records
+the distributional cost of each edit. Across the dose-response sweep, the
+discovery flip rate under the
+SAE feature edit increases monotonically from \(0.038\) to
+\(0.450\), and for scales at least 4 the held-out flip rate stays within about
+\(0.04\) of the discovery flip rate.
+The result establishes a constrained logit-difference intervention pattern;
+open-generation probes then assess how this readout effect propagates beyond
+candidate scoring.
+
+\begin{table*}[!tbp]
+\caption{\textbf{Cross-model SAE feature steering measurements.}
+All rows use ten SAE features selected from discovery tokens at intervention scale 16.
+Discovery features are selected from five profanity tokens; held-out terms are
+withheld from both the feature selector and the discovery-only token bias
+baseline. The Ministral tokenizer leaves the held-out split below the
+single-token threshold, so that row reports the discovery-side comparison.}
+\label{tab:lexical-control-cross-model-results}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{0.18\textwidth}p{0.19\textwidth}rrrrY@{}}
+\toprule
+Model & SAE used & \makecell{Feature\\discovery flip} &
+\makecell{Feature\\held-out flip} & \makecell{Discovery-token\\bias held-out} &
+\makecell{Off-target top1\\regression} & Setting \\
+\midrule
+Qwen3.5-2B &
+32$\times$, $k=256$ &
+$0.450$ & $0.359$ & $0.000$ & $0.444$ &
+Primary steering run. \\
+\addlinespace
+\shortstack[l]{R1-Distill\\Qwen-7B} &
+32$\times$, $k=256$ &
+$0.388$ & $0.469$ & $0.000$ & $0.222$ &
+Same tokenizer family; reasoning-distilled checkpoint. \\
+\addlinespace
+\shortstack[l]{Ministral\\3-8B-Base} &
+16$\times$, $k=128$ &
+$0.562$ & -- & -- & $0.278$ &
+Tokenizer-filtered held-out split; evaluated with an earlier strict SAE
+checkpoint and reported as a discovery-side comparison. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+Table~\ref{tab:lexical-control-cross-model-results} records the quantitative
+steering outcome. The Qwen3.5-2B and R1-Distill-Qwen-7B rows show the
+intended generalization pattern: the SAE feature edit transfers to held-out
+lexical variants, while the discovery-only token bias baseline has zero
+held-out effect because those token ids were not in its bias set. The Ministral
+row provides a discovery-side cross-family comparison because its tokenizer leaves
+too few held-out single-token terms for the held-out split.
+
+The takeaway is focused and positive. SAE decoder directions can move
+constrained lexical logit differences when edited at the readout: the intended
+scores move under intervention, held-out templates and dose-response measurements
+provide supporting evidence, and cross-model repeats indicate that the effect is
+consistent across runs. Off-target lexical probes and open-generation runs map
+how the readout-level shift behaves beyond the intended candidate scores.

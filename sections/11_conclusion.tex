@@ -1,0 +1,25 @@
+\section{Conclusion}
+
+Sparse Readout Prism factorizes the final readout into a shared sparse basis,
+while scalar targets specify the score being explained. This separates a
+hidden state's target-independent readout profile from support for a particular
+token, reference contrast, group contrast, or local margin. The resulting local
+account is explicit: each displayed feature term is the product of a target
+coefficient fixed by unembedding-row geometry and a context-dependent projection
+of the current hidden state, with offset and reconstruction error reported
+alongside the feature sum.
+
+Across the model suite, replacement fidelity, target reconstruction, and sign
+agreement identify faithful regimes. Within those regimes, SRP shows that
+readout explanations are query-local: changing the target changes which active
+features count as support, and changing the prompt reweights the same token row
+through the hidden-state profile. The case studies expose feature competition in
+polysemous token preferences, benchmark-format contrasts, and feature-resolved
+DLA, while the readout-edit experiment tests whether selected directions move
+held-out lexical scores.
+
+SRP therefore provides a calibrated accounting layer for the final readout. In
+faithful regimes, an atomic logit or margin decomposes into sparse output-row
+feature support plus measured residual error. These readout-level accounts
+connect lens-style summaries to intervention-based mechanistic analysis, while
+the reported diagnostics mark where the sparse account is reliable.

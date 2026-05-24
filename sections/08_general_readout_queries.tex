@@ -1,0 +1,22 @@
+\subsection{Target Choice Changes Feature Support}
+
+We next vary the target itself. This isolates the paper's central distinction:
+the profile says which readout directions are active, while the target says
+which active directions count as support or opposition.
+
+\paragraph{Target choice matters.}
+A hidden state has a target-independent readout-feature profile; the scalar
+target determines which active directions count as support or opposition. The
+same profile can be queried by a row score, row-versus-reference contrast, or
+pair/group contrast, so a large \(h^\top d_i\) projection gains meaning only
+through the readout row or contrast being scored.
+
+Aggregate metrics match this interpretation. In the five-model Qwen/Gemma suite,
+reference contrasts are easiest: 301 top-token-versus-vocabulary-mean cases
+give 1,505 model--case rows with median \(\rho=0.021\) and perfect sign
+agreement. Pairwise and group contrasts are harder: top-1 versus top-5 margins
+have median \(\rho=0.253\), while top-1 versus top-2 margins fall to \(0.824\)
+sign agreement. Accordingly, each account is interpreted at its chosen score,
+with local sign and reconstruction error reported; full counts and examples are
+in \Cref{tab:app-general-readout-query-families} and
+Appendix~\ref{app:query-family-display-example}.

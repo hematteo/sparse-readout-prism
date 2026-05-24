@@ -1,0 +1,81 @@
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{stfloats}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{ragged2e}
+\usepackage{siunitx}
+\usepackage{tabularx}
+\usepackage[capitalize,nameinlink]{cleveref}
+\usepackage{placeins}
+\usepackage{url}
+
+\graphicspath{{figures/}}
+
+% Avoid stretching inter-paragraph and display glue to force equal column bottoms.
+\raggedbottom
+\setlength{\parskip}{0pt}
+\setlist[itemize]{leftmargin=*,nosep}
+\setlist[enumerate]{leftmargin=*,nosep}
+\setlist[description]{nosep}
+\captionsetup{skip=3pt}
+\captionsetup[table]{belowskip=2pt}
+\sisetup{
+  detect-weight=true,
+  table-number-alignment=center
+}
+
+\setlength{\emergencystretch}{2em}
+\setlength{\textfloatsep}{0.58\baselineskip plus 1pt minus 2pt}
+\setlength{\dbltextfloatsep}{0.62\baselineskip plus 1pt minus 2pt}
+\setlength{\floatsep}{0.48\baselineskip plus 1pt minus 2pt}
+\setlength{\intextsep}{0.48\baselineskip plus 1pt minus 2pt}
+\setlength{\abovedisplayskip}{5pt plus 1pt minus 3pt}
+\setlength{\belowdisplayskip}{5pt plus 1pt minus 3pt}
+\setlength{\abovedisplayshortskip}{0pt plus 1pt}
+\setlength{\belowdisplayshortskip}{3pt plus 1pt minus 2pt}
+\setcounter{topnumber}{4}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{6}
+\setcounter{dbltopnumber}{2}
+\setcounter{dblbotnumber}{2}
+\renewcommand{\topfraction}{0.94}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\dbltopfraction}{0.94}
+\renewcommand{\textfraction}{0.06}
+\renewcommand{\floatpagefraction}{0.82}
+\renewcommand{\dblfloatpagefraction}{0.82}
+
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{Z}{>{\Centering\arraybackslash}X}
+
+\newcommand{\AppendixFloatSetup}{%
+  \setlength{\textfloatsep}{0.52\baselineskip plus 2pt minus 2pt}%
+  \setlength{\dbltextfloatsep}{0.58\baselineskip plus 2pt minus 2pt}%
+  \setlength{\floatsep}{0.45\baselineskip plus 2pt minus 2pt}%
+  \setlength{\intextsep}{0.50\baselineskip plus 2pt minus 2pt}%
+  \setlength{\abovecaptionskip}{0.35\baselineskip plus 1pt minus 1pt}%
+  \setlength{\belowcaptionskip}{0.08\baselineskip plus 1pt minus 1pt}%
+  \setcounter{topnumber}{5}%
+  \setcounter{bottomnumber}{3}%
+  \setcounter{totalnumber}{8}%
+  \setcounter{dbltopnumber}{3}%
+  \setcounter{dblbotnumber}{2}%
+  \renewcommand{\topfraction}{0.97}%
+  \renewcommand{\bottomfraction}{0.90}%
+  \renewcommand{\dbltopfraction}{0.97}%
+  \renewcommand{\textfraction}{0.03}%
+  \renewcommand{\floatpagefraction}{0.80}%
+  \renewcommand{\dblfloatpagefraction}{0.80}%
+}
+
+\newcommand{\AppendixCompactGraphic}[2][]{%
+  \includegraphics[width=\linewidth,height=0.32\textheight,keepaspectratio,#1]{#2}%
+}
+
+\newcommand{\AppendixWideGraphic}[2][]{%
+  \includegraphics[width=\textwidth,height=0.44\textheight,keepaspectratio,#1]{#2}%
+}

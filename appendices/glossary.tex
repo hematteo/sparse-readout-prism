@@ -1,0 +1,212 @@
+\section{Glossary}
+\label{app:glossary}
+
+This glossary keeps the manuscript-specific vocabulary small. Standard
+mechanistic-interpretability terms are used in their usual sense; we define them
+only where SRP uses a specialized readout version.
+
+\subsection{Core Objects}
+
+\begin{description}[leftmargin=0.28\linewidth,style=nextline]
+    \item[Readout]
+    The model's final unembedding or LM-head map from hidden states to vocabulary
+    logits. In this paper, readout refers to this final interface, not to the
+    whole model.
+
+    \item[Unembedding matrix, \(\WU\)]
+    The matrix \(\WU\in\R^{|\mathcal{V}|\times d}\) whose rows map a hidden
+    state to token logits. Row \(t\) is \(w_t^\top\), so token \(t\)'s logit is
+    \(h^\top w_t\).
+
+    \item[Scalar readout target]
+    A scalar linear function of the readout rows,
+    \(q_\alpha=\sum_t\alpha_t w_t\), scored as
+    \(s_\alpha(h)=h^\top q_\alpha\).
+\end{description}
+
+\subsection{Common Readout Targets}
+
+\begin{description}[leftmargin=0.28\linewidth,style=nextline]
+    \item[Token logit]
+    The special case \(q=w_A\), asking how high token \(A\)'s vocabulary logit is
+    at hidden state \(h\).
+
+    \item[Centered logit]
+    A token logit after subtracting a shared reference row, such as
+    \(h^\top(w_A-\bar{w}_{\mathcal{V}})\) or \(h^\top(w_A-\mu)\).
+
+    \item[Pairwise logit difference]
+    The contrast \(h^\top(w_A-w_B)\). Positive values favor \(A\); negative
+    values favor \(B\). This is the main signed readout target in our
+    experiments.
+
+    \item[Reference contrast]
+    A contrast against a reference row, typically
+    \(w_A-\bar{w}_{\mathcal{V}}\), where
+    \(\bar{w}_{\mathcal{V}}=|\mathcal{V}|^{-1}\sum_t w_t\).
+
+    \item[Group contrast]
+    A contrast between average rows for two token groups, such as an answer
+    group versus an abstention group. This reduces dependence on one tokenizer
+    row.
+
+    \item[Top-competitor margin]
+    A contrast between the current top token and one or more nearby competitors,
+    \(w_u-\sum_{r\in\mathcal{R}}\pi_r w_r\).
+\end{description}
+
+\subsection{Sparse Readout Prism}
+
+\begin{description}[leftmargin=0.28\linewidth,style=nextline]
+    \item[Sparse Readout Prism]
+    The reusable readout factorization introduced here: train an SAE on
+    unembedding rows to obtain reusable readout features, sparse row
+    coefficients, a sparse LM-head replacement, and profiles. When combined
+    with a scalar readout target, the same readout basis gives a local score
+    account.
+
+    \item[Readout SAE]
+    The sparse autoencoder trained on unembedding rows. It reconstructs a row as
+    \(\widehat{w}_t=\mu+\sum_i z_{t,i}d_i\).
+
+    \item[SAE feature / decoder direction, \(d_i\)]
+    A reusable direction learned by the readout SAE. Its projection at hidden
+    state \(h\) is \(h^\top d_i\).
+
+    \item[Sparse coefficient, \(z_{t,i}\)]
+    The coefficient with which token row \(t\) uses SAE feature \(i\).
+
+    \item[Shared offset, \(\mu\)]
+    The common readout-space offset used by the SAE. For zero-sum targets such
+    as logit differences and group contrasts, its contribution cancels.
+
+    \item[Native \(k\)]
+    The active-feature budget of the trained TopK SAE. Display cutoffs may hide
+    small bars, but they do not change this reconstruction budget.
+
+    \item[Profile]
+    A score-independent hidden-state profile: the ranking of readout SAE
+    directions by their projection \(h^\top d_i\) before choosing a scalar
+    target.
+\end{description}
+
+\subsection{Decomposition and Measures}
+
+\begin{description}[leftmargin=0.28\linewidth,style=nextline]
+    \item[Target coefficient, \(\beta_i(\alpha)\)]
+    The amount the chosen readout target uses SAE feature \(i\):
+    \(\beta_i(\alpha)=\sum_t\alpha_t z_{t,i}\).
+
+    \item[SAE feature contribution, \(c_i(h,\alpha)\)]
+    The signed term \(c_i(h,\alpha)=\beta_i(\alpha)h^\top d_i\). Positive terms
+    raise the chosen scalar; negative terms lower it.
+
+    \item[Local score account]
+    The account obtained by combining a scalar readout target with the SRP
+    readout basis. It reports signed SAE feature contributions plus reconstruction
+    error for that chosen target.
+
+    \item[Feature sum, \(s_{\mathrm{feat}}\)]
+    The sum of all SAE feature contributions, \(\sum_i c_i(h,\alpha)\), before
+    adding offset or reconstruction error terms.
+
+    \item[Reconstruction error, \(\epsilon\)]
+    The difference between the exact target score and the reconstructed score:
+    \(s_{\mathrm{exact}}-s_{\mathrm{recon}}\).
+
+    \item[Relative reconstruction error, \(\rho\)]
+    The normalized error
+    \(|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+\delta)\).
+    Aggregate summaries use \(\delta=0.5\) logit.
+
+    \item[Sign agreement / sign flip]
+    Whether a reconstructed signed target has the same sign as the exact target.
+    Sign flips are reported separately because they reverse which side of a
+    contrast the sparse reconstruction supports.
+
+    \item[Feature label]
+    A short label derived from vocabulary rows most associated with an SAE
+    feature. The feature id remains the stable object of analysis; the label is
+    a readability aid.
+\end{description}
+
+\subsection{Evaluation Terms}
+
+\begin{description}[leftmargin=0.28\linewidth,style=nextline]
+    \item[Target set]
+    A fixed evaluation input: prompts, target tokens or token groups, linear
+    coefficients, and tokenization filters fixed before model evaluation. The
+    readout SAE is not trained on these prompts.
+
+    \item[Evaluation item]
+    One evaluated readout target after tokenization filters. Prompt variants and
+    target variants can share a base case, so evaluation items are tracked
+    separately from prompts.
+
+    \item[Base case]
+    A cluster of variants derived from the same prompt/target template. Base
+    cases are the bootstrap units for confidence intervals.
+
+    \item[rowEV]
+    Row-centered explained variance for reconstructed held-out unembedding
+    rows. It is a capacity metric paired with replacement and target fidelity
+    metrics for model decision evidence.
+
+    \item[Top-1 agreement / top-5 overlap]
+    Agreement between original and reconstructed LM-head rankings on held-out
+    hidden states. Top-1 compares the argmax token; top-5 overlap is the average
+    overlap between the two top-five sets and is not top-five accuracy.
+
+    \item[C4 replacement]
+    The measurement that substitutes \(\widehat{\WU}\) for \(\WU\) on C4 hidden
+    states and compares the resulting readout distribution with the original
+    one using top-1 agreement, KL, and ordering agreement.
+
+    \item[Softcap-correct]
+    A Gemma evaluation that applies the model's monotone final-logit softcap
+    before computing top-1 agreement or KL, matching the model's actual output
+    path.
+
+    \item[Strict-budget / high-fidelity settings]
+    Two native-\(k\) operating regimes for readout SAEs. The strict-budget
+    setting uses native \(k=128\) for fixed-budget comparability; the
+    high-fidelity setting uses native \(k=256\) when readout fidelity is the
+    primary constraint.
+
+    \item[Sparse code usage]
+    Statistics describing how often learned SAE features are active in
+    evaluation. A rare feature rate is a usage statistic, not a readout fidelity
+    metric.
+
+    \item[Dead / rare feature]
+    A usage statistic for learned SAE features. Dead features do not activate
+    in evaluation; rare features activate below the reporting threshold used in
+    Appendix~\ref{app:readout-factorizer-sweeps}.
+\end{description}
+
+\subsection{Attribution and Controls}
+
+\begin{description}[leftmargin=0.28\linewidth,style=nextline]
+    \item[Direct logit attribution, DLA]
+    A component-level account that projects residual-stream components
+    onto the readout direction for a selected target. We use DLA as
+    additive attribution unless paired with interventions.
+
+    \item[DLA by SAE feature]
+    The combined view that splits DLA-style component contributions across the
+    readout features for a realized forward pass.
+
+    \item[Additivity error]
+    The gap between the exact target score and the sum of component-attribution
+    terms. It is reported separately from the readout SAE reconstruction error.
+
+    \item[Token-level audit item]
+    A tokenizer or row-level factor, such as token length, frequency, row norm,
+    capitalization, whitespace, punctuation, special-token status, or
+    tokenization collision.
+
+    \item[Tokenization collision]
+    A case where tokenization makes the intended lexical contrast brittle or
+    ambiguous. Such cases are handled through token-level audits or converted
+    to explicit group contrasts.
+\end{description}

@@ -1,0 +1,111 @@
+\section{Which Models Were Evaluated?}
+\label{app:model-suite-selection}
+\label{sec:app-model-suite-selection}
+
+This appendix explains the model suite used to evaluate Sparse Readout Prism:
+the Qwen model suite \citep{qwen3technical,qwen35collection}, the Gemma model
+suite \citep{gemma4official,gemma4collection}, Ministral
+\citep{liu2026ministral3}, and targeted DeepSeek-R1 distilled comparison rows
+\citep{deepseekai2025deepseekr1}.
+Appendices~\ref{app:readout-factorizer-sweeps}--%
+\ref{app:readout-factorizer-diagnostics-reproducibility} give the metric
+summary: they report the trained widths, native $k$ settings, rowEV, top1, KL,
+and usage statistics for each readout SAE setting. Here we motivate the model
+choices.
+
+Sparse Readout Prism factorizes the matrix used to score output tokens, so the
+model suite is organized around readout fidelity, scale, and portability. The
+chosen suite lets us compare model size and readout geometry while preserving
+enough budget for tokenizer, row-norm, special-token, and matched-control
+analyses.
+
+\subsection{Selection Rationale}
+\label{sec:app-model-suite-criteria}
+
+The Qwen3.5 rows provide the main low-error qualitative suite. Qwen3.5-9B is the
+capacity anchor: it is large enough to be a meaningful readout target while
+still supporting recipe and width sweeps. Qwen3.5-0.8B and Qwen3.5-2B test the
+same recipe at smaller unembedding dimensions and cheaper rerun settings.
+
+The Gemma rows provide a second tied-readout family with a different tokenizer
+and final-logit softcap. They show the readout SAE recipe under
+a distinct readout geometry; the softcap-correct readout evaluation is reported
+in Appendix~\ref{app:readout-factorizer-transfer-comparisons}.
+
+Additional targeted rows broaden the readout-geometry coverage.
+Ministral-3-8B-Base tests transfer to an untied, softcap-free 8B-scale readout
+outside Qwen. R1-Distill-Qwen-7B and R1-Distill-Llama-8B evaluate the same
+recipe-selection measurements after reasoning distillation, making row reconstruction and
+LM-head replacement fidelity visible as separate result axes.
+
+\subsection{Final Suite}
+\label{sec:app-model-suite-chosen}
+
+\begin{table*}[!tbp]
+\caption{
+Evaluated model suite and role. Appendices~\ref{app:readout-factorizer-sweeps}--%
+\ref{app:readout-factorizer-diagnostics-reproducibility} report the exact
+dictionary settings and metrics.
+}
+\label{tab:app-model-suite-current}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{0.94\textwidth}{@{}p{0.20\textwidth}Yp{0.22\textwidth}@{}}
+\toprule
+Model(s) & Why included & Role in study \\
+\midrule
+\shortstack[l]{\texttt{Qwen3.5-0.8B}\\\texttt{Qwen3.5-2B}} &
+Small-model transfer and lower-cost replication under the native $k=128$ and
+$k=256$ regimes. &
+Qwen transfer evidence. \\
+\addlinespace
+\texttt{Qwen3.5-9B} &
+Main scale anchor for recipe selection, capacity sweeps, and high-fidelity
+readout replacement. &
+Primary Qwen fidelity evidence. \\
+\addlinespace
+\shortstack[l]{\texttt{Gemma-4-E2B}\\\texttt{Gemma-4-E4B}} &
+Cross-family evidence for whether the readout SAE recipe transfers beyond
+Qwen. &
+Cross-family transfer evidence. \\
+\addlinespace
+\shortstack[l]{\texttt{R1-Distill-}\\\texttt{Qwen-7B}} &
+Qwen-derived post-training comparison with an untied, softcap-free readout. &
+rowEV vs.\ fidelity separation evidence. \\
+\addlinespace
+\shortstack[l]{\texttt{R1-Distill-}\\\texttt{Llama-8B}} &
+Reasoning-distilled comparison from a non-Qwen base family (both dictionary
+settings) for cross-architecture confirmation of the rowEV / fidelity gap. &
+Cross-architecture post-training evidence. \\
+\addlinespace
+\shortstack[l]{\texttt{Ministral-3-}\\\texttt{8B-Base}} &
+Cross-family 8B-scale comparison with an untied, softcap-free readout
+(adds an 8B-scale non-Qwen readout geometry). &
+Cross-family fidelity comparison. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+The qualitative feature analyses therefore use the Qwen suite, where the
+selected settings have the strongest target-level fidelity in the main figures.
+This is an evidence-driven display choice: the additional rows show how the same
+metrics behave under different readout geometries and post-training regimes.
+
+\subsection{Interpretation Details}
+\label{sec:app-model-suite-boundaries}
+
+The suite is an evidence-driven design for readout-factorization evaluation.
+We report token frequency, token length, special-token behavior, row norm, tied
+embedding status, softcap handling, and matched-target identity bias so
+single-token logit explanations can be compared on the same footing.
+
+The evaluation makes three commitments. First, model-specific readout layers
+are handled before reporting decision fidelity. Second, the SAE architecture,
+training recipe, seed convention, dictionary settings, and evaluation settings
+are reported with the sweep records in
+Appendices~\ref{app:readout-factorizer-sweeps}--%
+\ref{app:readout-factorizer-diagnostics-reproducibility}.
+Third, primary reported claims are stated at the scalar-readout-target level,
+especially token logits and contrastive logit differences.

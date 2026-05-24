@@ -1,0 +1,39 @@
+\section*{Limitations}
+
+\paragraph{Readout scope.}
+SRP targets final-unembedding alignment: it identifies which sparse readout
+directions support or oppose a chosen scalar once the hidden state reaches the
+LM head. The feature-resolved DLA analysis composes SRP with additive
+residual-stream attribution, providing candidates for intervention studies that
+test component or feature necessity.
+
+\paragraph{Dictionary non-uniqueness.}
+The sparse basis is not unique: dictionary features can split, merge, rotate, or
+depend on recipe choices. We therefore treat reconstruction error, sign
+agreement, replacement fidelity, and stability checks as part of the result
+rather than as auxiliary diagnostics. Feature names are row-level summaries from
+high-activating unembedding rows; the measured objects are feature ids, signed
+terms, and residual errors.
+
+\paragraph{Target and model coverage.}
+SRP currently handles linear scalar targets at the final readout. Distributional
+claims, multi-token answer quality, and sequence-level behavior require chosen
+linear proxies or additional evaluation. The strongest qualitative evidence in
+the paper comes from Qwen settings with good target fidelity; other families and
+diffuse targets can preserve signs while having larger errors. Small exact
+margins are especially fragile, so displayed accounts should be read together
+with their local reconstruction error.
+
+\paragraph{Tokenizer and benchmark effects.}
+Because SRP factorizes vocabulary rows, labels and feature groupings can reflect
+tokenizer geometry, token frequency, row norms, special tokens, and surface-form
+artifacts. Contrasts and group targets reduce dependence on any one row but do
+not remove it. Benchmark-format rows measure whether task-shaped readout targets
+are reconstructed, not whether the model solved the underlying task.
+
+\paragraph{Readout edits.}
+The readout-edit experiment tests constrained movement of specified lexical
+scores. It should not be interpreted as broad behavioral control, safety editing,
+or evidence that the same directions have the same causal role throughout the
+network. Larger behavioral effects require intervention studies that track
+distribution shift, downstream generations, and off-target changes.

@@ -1,0 +1,151 @@
+% Readout SAE diagnostics and reproducibility appendix.
+
+\section{Readout SAE Diagnostics and Reproducibility}
+\label{app:readout-factorizer-diagnostics-reproducibility}
+
+This appendix collects secondary diagnostics, alternative-recipe comparisons,
+denominator controls, and reproducibility details for the selected readout SAEs.
+
+\subsection{Additional Metric Analyses}
+\label{app:readout-factorizer-diagnostics}
+
+These analyses ask whether the remaining error comes from coefficient fitting,
+support selection, low-rank structure, or reconstruction-vs-readout metric
+mismatch.
+
+\paragraph{Support selection.}
+On the Qwen3.5-9B $D=32768$, $k=128$ recipe, the trained encoder reaches rowEV
+$0.621$. Nonnegative least-squares on the encoder's own support reaches
+$0.625$, nonnegative OMP reaches $0.647$, and signed-OMP reaches $0.655$. The
+coefficient gap is therefore small (about $0.004$), while
+same-coefficient-class support-selection headroom is about $0.026$. Dense
+rank-128 reconstruction is $0.101$, far below the sparse dictionary, showing
+that the result goes beyond low-rank PCA structure.
+Figure~\ref{fig:app-k-omp-diagnostic} shows both the strict-budget recipe and
+the high-fidelity 32$\times$, $k=256$ run. The right-hand table labels the
+latter OMP numbers as sparse-reconstruction ceilings; deployed-encoder metrics
+are the trained-encoder rows.
+
+\begin{figure*}[!tbp]
+    \centering
+    \begin{minipage}[t]{0.60\textwidth}
+        \vspace{0pt}
+        \centering
+        \ReadoutSAEGraphic[width=\linewidth,height=0.27\textheight]{appendix_k_omp_diagnostic.pdf}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.35\textwidth}
+        \vspace{0pt}
+        \centering
+        \scriptsize
+        \setlength{\tabcolsep}{4pt}
+        \renewcommand{\arraystretch}{1.08}
+        \textbf{32$\times$, $k=256$ ceiling comparison}\par\vspace{2pt}
+        \begin{tabular}{@{}lcc@{}}
+        \toprule
+        Quantity & rowEV & 95\% CI \\
+        \midrule
+        Trained encoder & $0.858$ & $[0.856, 0.859]$ \\
+        Signed LS support & $0.864$ & $[0.863, 0.866]$ \\
+        Signed-OMP proxy & $0.902$ & $[0.900, 0.903]$ \\
+        \bottomrule
+        \end{tabular}
+    \end{minipage}
+    \caption{
+        \textbf{Support-selection analyses for the Qwen3.5-9B readout SAE.}
+        Left: the strict-budget $k=128$ recipe and the high-fidelity
+        32$\times$, $k=256$ capacity run. Right: 32$\times$, $k=256$ EV-ceiling
+        numbers with 95\% bootstrap CIs. OMP (orthogonal matching pursuit) is
+        reported as an achieved sparse-reconstruction comparison.
+    }
+    \label{fig:app-k-omp-diagnostic}
+\end{figure*}
+
+For the 32$\times$, $k=256$ capacity run, coefficient refitting contributes
+$+0.006$ rowEV, while support selection contributes $+0.038$. The encoder
+reaches $95.1\%$ of the signed-OMP proxy, similar to the $D=32768$, $k=128$
+ratio. Dense rank-256 reconstruction is $0.155$, so the $k=256$ sparse code is
+about $5.9\times$ more EV-efficient than the same-rank dense reference.
+
+\paragraph{Small-model support-selection analysis.}
+The same analysis was run on the 16$\times$, $k=128$ small-model transfer 5k
+checkpoints to isolate where the remaining reconstruction gap lies when the
+learned dictionary is held fixed; the converged transfer metrics are reported in
+Appendix~\ref{app:readout-factorizer-small-model-transfer}. Across all four models, refitting
+coefficients on the encoder's own support gives a much smaller gain than
+changing the support, indicating that support selection is the dominant
+remaining recipe-side bottleneck. The signed-OMP gaps are $+0.158$ for
+Qwen3.5-0.8B, $+0.099$ for Qwen3.5-2B, $+0.182$ for Gemma-4-E2B, and
+$+0.125$ for Gemma-4-E4B.
+
+\ReadoutSAEFloatBarrier
+
+\paragraph{Metric mismatch.}
+The capacity sweep motivates selecting readout SAEs with both row-level and
+readout-level metrics. The $D=65536$, $k=256$ model truncated to $k=128$ has
+higher rowEV than the fixed-$k=128$ recipe ($0.695>0.621$), while top1/KL favor
+the fixed-$k=128$ recipe ($0.721/0.469$ vs $0.846/0.296$). The $D=131072$
+truncation shows the same metric separation: rowEV/top1/KL are
+$0.816/0.738/0.425$. These truncated comparisons motivate the selection rule:
+use rowEV, top1, KL, reconstruction error metrics, and usage statistics jointly.
+
+\ReadoutSAEFloatBarrier
+\subsection{Alternatives and Negative Controls}
+\label{app:readout-factorizer-controls}
+
+\paragraph{Alternative recipes and denominator controls.}
+The non-selected recipes are ruled out by concrete matched-comparison reasons.
+At $D=32768$/5k, plain TopK exceeded the matryoshka variants in rowEV
+($0.567$ vs.\ $0.559/0.554$) at lower cost, and the $D=16384$ fixed-$k=128$
+cell trailed $D=32768$ by about $0.06$ rowEV. Calibrated BatchTopK
+\citep{bussmann2024batchtopk} reached rowEV $0.531$ on the matched frontier
+cell. Qwen JumpReLU missed the intended target $L_0=256$ (achieved about
+$38$--$68$), and step- or sparsity-matched TopK controls had higher rowEV
+($0.42$--$0.44$ vs.\ $0.26$--$0.31$), with mixed logit metrics. Finally,
+tokenizer/non-token-row audits support the denominator choice: structural
+non-token rows were $5.4\%$ of rows, and excluding non-token readout rows changed
+rowEV by $+0.0016$.
+
+\subsection{Reproducibility and Selection Details}
+\label{app:readout-factorizer-limitations}
+
+The Qwen/Gemma readout SAEs were selected on row reconstruction, logit metrics,
+and sparse code usage statistics, leaving the logit-difference target set for
+the later fidelity checks. Most reported dictionary settings use seed
+\(0\), with the Qwen3.5-0.8B 32$\times$, $k=256$ three-seed window providing the
+seed-variation snapshot above.
+For Qwen3.5-9B, tokenizer-aligned text-token-only EV and frequency-stratified
+fidelity are replaced by tokenizer-free denominator controls: the tokenizer row
+count did not cleanly align with the $\WU$ rows, and no vocab-aligned unigram
+table was available. The tokenizer-free non-token-row audit therefore serves as
+the denominator-control result. Gemma rowEV is measured on the linear pre-softcap
+unembedding rows and is cap-independent; Gemma top1/KL are now evaluated under
+the model's $30\tanh(\cdot/30)$ \texttt{final\_logit\_softcapping}. Since the
+cap is strictly monotone (hence argmax-invariant), top1 is cap-independent and
+the cap affects only KL.
+The selected operating points and reported claims come from the Qwen/Gemma
+sweeps and the targeted Ministral/R1 comparison rows above; earlier Pythia-160M
+architecture and continuity sweeps \citep{biderman2023pythia} are
+design-history records.
+
+\paragraph{Training and evaluation recipe.}
+\begingroup
+\footnotesize
+\sloppy
+All reported readout SAEs are TopK sparse autoencoders trained on the
+model's final readout rows. The reported Qwen/Gemma recipe uses
+row-seeded initialization, \texttt{hybrid\_50freq\_50uniform} row sampling, a
+warmup-cosine learning-rate schedule from \(10^{-3}\) to \(10^{-4}\), and seed
+\(0\) unless stated otherwise. The Qwen3.5-9B recipe-selection run uses
+\(D=32768\), native \(k=128\), a delayed prism-loss ramp to \(10^{-3}\) after
+\(70\%\) of training, and 20k optimization steps; the capacity and transfer
+runs keep the same recipe family while varying \(D\) and native \(k\) as
+reported in Tables~\ref{tab:app-k-model-finalists},
+\ref{tab:app-k-qwen-capacity}, and
+\ref{tab:app-k-small-model-converged-ledger}. Hidden-state evaluation uses the
+final readout after the relevant final normalization and, for Gemma, the
+model's monotone final-logit softcap for top1/KL evaluation. The reported
+metrics are rowEV, top-1 agreement, KL in bits, sparse code usage, and the
+readout target reconstruction error and sign agreement defined above.
+\endgroup
+
+\ReadoutSAEFloatBarrier

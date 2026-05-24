@@ -1,0 +1,196 @@
+\subsection{Sparse Readout Prism}
+\label{sec:method-srp}
+
+SRP factorizes the final readout into sparse token-row coefficients and decoder
+directions. This basis supports LM-head replacement, target-independent profiles
+\(h^\top d_i\), and, after a scalar target is chosen, local accounts with signed
+feature terms and reconstruction error.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/schematic_tikz/readout_query_one_column.pdf}
+    \vspace{-0.8\baselineskip}
+    \caption{\textbf{Local score account schematic.}
+    A centered or contrast readout target is expressed in SAE features learned
+    from unembedding rows. At hidden state \(h\), each signed term is the
+    target coefficient times \(h\)'s feature projection; the hatched bar is
+    reconstruction error. Raw token-logit targets additionally include the
+    shared offset term.}
+    \label{fig:readout-query-schematic}
+\end{figure}
+
+\subsubsection{SAE Over Unembedding Rows}
+
+For token row \(t\), the readout SAE fits
+\[
+    \widehat{w}_t = \mu + \sum_{i=1}^{D} z_{t,i} d_i,
+    \qquad
+    r_t = w_t-\widehat{w}_t,
+\]
+where \(\mu\) is a shared offset, \(d_i\in\R^d\) a decoder direction,
+\(z_{t,i}\) token row \(t\)'s sparse coefficient, and \(r_t\) the residual. We
+map fitted quantities back to raw readout coordinates before decomposing logits
+or contrasts, so \(w_t=\mu+\sum_i z_{t,i}d_i+r_t\). Stacking
+\(\widehat{w}_t^\top\) gives \(\widehat{\WU}\); Appendix~\ref{app:score-accounting}
+gives centering and row-normalization details.
+
+Reported TopK models center and optionally row-normalize rows,
+\(x_t=(w_t-\mu)/a_t\), with \(a_t=1\) when rows are not normalized. An encoder
+produces a \(D\)-dimensional pre-code, keeps the \(k\) largest entries, and
+decodes with directions \(\widetilde d_i\):
+\[
+    \widetilde z_t
+    =
+    \operatorname{TopK}_k(f_\theta(x_t)),
+    \qquad
+    \widehat{x}_t
+    =
+    \sum_{i=1}^{D}\widetilde z_{t,i}\widetilde d_i .
+\]
+The objective is row reconstruction,
+\[
+    \min_{\theta,\{\widetilde d_i\}}
+    \frac{1}{|\mathcal{V}|}
+    \sum_{t\in\mathcal{V}}
+    \left\|x_t-\widehat{x}_t\right\|_2^2
+\].
+After fitting, we return all quantities to raw readout space:
+\(z_{t,i}=a_t\widetilde z_{t,i}\), \(d_i=\widetilde d_i\), and
+\(r_t=a_t(x_t-\widehat{x}_t)\). Thus later equations decompose the model's
+original logits or contrasts as \(w_t=\mu+\sum_i z_{t,i}d_i+r_t\), without an
+added dense correction term. The width \(D\) and native sparsity \(k\) are
+selected by held-out reconstruction and readout-replacement fidelity.
+Appendices~\ref{app:readout-factorizer-sweeps}--%
+\ref{app:readout-factorizer-diagnostics-reproducibility} give the selection
+overview, recipe sweeps, transfer rows, diagnostics, and reproducibility terms.
+
+\subsubsection{Full Readout Replacement and Profiles}
+
+The same factorization can be applied to the whole readout map. Let \(Z\in
+\R^{|\mathcal{V}|\times D}\) collect the sparse row codes and let
+\(D_{\mathrm{feat}}\in\R^{D\times d}\) have rows \(d_i^\top\). Then
+\[
+    \begin{aligned}
+    \widehat{\WU}
+    &=
+    \mathbf{1}\mu^\top
+    +
+    ZD_{\mathrm{feat}},\\
+    \widehat{\ell}(h)
+    &=
+    \widehat{\WU}h\\
+    &=
+    \mathbf{1}(\mu^\top h)
+    +
+    Z(D_{\mathrm{feat}}h).
+    \end{aligned}
+\]
+The vector \(D_{\mathrm{feat}}h\) is the target-independent \emph{profile}. Its
+entries become support or opposition only after multiplication by a row code or
+target coefficient. We use full readout replacement to measure reconstructed
+LM-head behavior, and the local contributions below after target selection.
+
+We use TopK readout SAEs \citep{makhzani2013ksparse,gao2024scaling}; all
+quantitative reconstructions use the full feature sum, while visualizations may
+truncate small bars for readability.
+
+\subsubsection{Local Score Decomposition}
+
+For any scalar readout target
+\(q_\alpha=\sum_{t\in\mathcal{V}}\alpha_t w_t\), substituting the SAE
+reconstruction gives
+\[
+\begin{aligned}
+    s_\alpha(h)
+    &= h^\top q_\alpha \\
+    &=
+    \left(\sum_{t\in\mathcal{V}} \alpha_t\right) h^\top\mu \\
+    &\quad + \sum_{i=1}^{D}
+        \left(\sum_{t\in\mathcal{V}} \alpha_t z_{t,i}\right) h^\top d_i \\
+    &\quad + h^\top \sum_{t\in\mathcal{V}} \alpha_t r_t .
+\end{aligned}
+\]
+For SAE feature \(i\), define its coefficient for the chosen target and its
+Sparse Readout Prism contribution as
+\[
+    \beta_i(\alpha)=\sum_{t\in\mathcal{V}} \alpha_t z_{t,i},
+    \qquad
+    c_i(h,\alpha)=\beta_i(\alpha)\,h^\top d_i.
+\]
+The coefficient \(\beta_i(\alpha)\) is fixed by the target and readout SAE, while
+\(h^\top d_i\) changes with context. When \(q=q_\alpha\) is clear, we write
+\(\beta_i(q)\). This product form is the central separation: \(\beta_i(q)\)
+states how feature \(i\) enters the selected target, while \(h^\top d_i\) states
+how strongly the current hidden state activates that readout direction. A
+feature matters locally when both factors are large. Positive terms raise the
+chosen scalar; negative terms lower it. The projection alone belongs to the
+profile (Appendix~\ref{app:global-readout-feature-activations}); target
+coefficients turn profile activations into token- or contrast-specific evidence.
+
+Let \(s_\mu=(\sum_t\alpha_t)h^\top\mu\),
+\(s_{\mathrm{feat}}=\sum_i c_i(h,\alpha)\), and
+\(s_{\mathrm{recon}}=s_\mu+s_{\mathrm{feat}}\). The reconstruction error is
+\[
+    \epsilon
+    =
+    s_{\mathrm{exact}}-s_{\mathrm{recon}}
+    =
+    h^\top\sum_{t\in\mathcal{V}}\alpha_t r_t .
+\]
+Figures report the original target score, feature sum, offset when present, and
+reconstruction error alongside contribution bars. For signed contrasts,
+sign-preserved reconstructions give directly readable support and opposition.
+Appendix~\ref{app:score-accounting} states the full identities.
+
+\subsubsection{Common Target Coefficients}
+
+The same identity covers the target families from \Cref{sec:problem-setup}.
+\Cref{tab:method-special-cases} lists \(\beta_i(\alpha)\) for the result targets.
+For compactness, write
+\(\bar{z}_{\mathcal{A},i}=|\mathcal{A}|^{-1}\sum_{a\in\mathcal{A}}z_{a,i}\)
+for the uniform average of feature \(i\)'s sparse coefficient over token group
+\(\mathcal{A}\). For top-competitor margins, write
+\(\bar{w}_{\pi,\mathcal{R}}=\sum_{r\in\mathcal{R}}\pi_r w_r\) and
+\(\bar{z}_{\pi,\mathcal{R},i}=\sum_{r\in\mathcal{R}}\pi_r z_{r,i}\).
+
+\begin{table}[tbp]
+\caption{\textbf{Scalar readout target coefficients.}
+Rows list the target vector and SAE feature coefficient. Bars mark token-set or
+competitor averages.}
+\label{tab:method-special-cases}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.14}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{0.34\linewidth}Z Z@{}}
+\toprule
+Target & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
+\midrule
+\textbf{Token score} & \(w_A\) & \(z_{A,i}\) \\
+\addlinespace[1pt]
+\textbf{Reference contrast} & \(w_A-\bar{w}_{\mathcal{V}}\) &
+\(z_{A,i}-\bar{z}_{\mathcal{V},i}\) \\
+\addlinespace[1pt]
+\textbf{Logit difference} & \(w_A-w_B\) & \(z_{A,i}-z_{B,i}\) \\
+\addlinespace[1pt]
+\textbf{Group contrast} &
+\(\bar{w}_{\mathcal{A}}-\bar{w}_{\mathcal{B}}\) &
+\(\bar{z}_{\mathcal{A},i}-\bar{z}_{\mathcal{B},i}\) \\
+\addlinespace[1pt]
+\textbf{Local competitor} &
+\(w_u-\bar{w}_{\pi,\mathcal{R}}\) &
+\(z_{u,i}-\bar{z}_{\pi,\mathcal{R},i}\) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+For reference contrasts, pairwise differences, group contrasts, and competitor
+margins, target coefficients sum to zero and the shared offset cancels. Positive
+values support the first side; negative values support the comparison side.
+Other reference targets use the same formula with their reference coefficients.
+
+Contribution-plot labels summarize the vocabulary rows most associated with a
+feature; the measured quantities are the feature id and signed contribution.
+Following sparse-feature evaluation practice
+\citep{karvonen2025saebench,makelov2024principled}, appendix controls report
+tokenization, row-norm, frequency, special-token, and feature-labeling metadata.

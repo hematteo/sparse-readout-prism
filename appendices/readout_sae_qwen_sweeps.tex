@@ -1,0 +1,233 @@
+% Qwen readout SAE recipe and capacity appendix.
+
+\section{Qwen Readout SAE Recipe and Capacity Sweeps}
+\label{app:readout-factorizer-qwen-sweeps}
+
+This appendix gives the Qwen3.5-9B recipe-selection and capacity evidence
+summarized in Appendix~\ref{app:readout-factorizer-sweeps}.
+
+\subsection{Qwen3.5-9B Fixed-\texorpdfstring{$k=128$}{k=128} Recipe Selection}
+\label{app:readout-factorizer-qwen-recipe}
+
+The first Qwen3.5-9B sweep fixed the interpretability budget at $k=128$ and
+selected a no-PCA recipe. A 5k screening sweep identified the recipe family, a
+20k continuation evaluated convergence of the selected recipe, and the older 50k
+matryoshka run anchored the comparison against the previous long-trained
+baseline. The selected TopK recipe's own convergence ladder provides the
+step-count evidence, while the previous recipe serves as an architectural
+reference point.
+
+\begin{table*}[!tbp]
+\caption{Evidence map for the Qwen3.5-9B fixed-$k=128$ recipe-selection
+experiment. Per-run metrics for the 5k screening sweep are provided with
+Figure~\ref{fig:app-k-qwen-recipe-selection-frontier}.}
+\label{tab:app-k-qwen-recipe-ledger}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{@{}p{0.20\linewidth}p{0.35\linewidth}p{0.35\linewidth}@{}}
+\toprule
+Evidence role & Run or run family & What it establishes \\
+\midrule
+Previous baseline
+& Matryoshka TopK, $D=16384$, $k=128$, 50k steps
+& Long-trained previous recipe used as an architectural reference: rowEV
+$0.511$, top1 $0.807$, KL $0.416$, dead $0.119$, rare $0.236$. \\
+\addlinespace
+5k selected recipe
+& TopK, $D=32768$, $k=128$, row-seeded, hybrid row sampling, delayed prism ramp
+& Best recipe-region representative in the screening sweep: rowEV $0.567$,
+top1 $0.775$, KL $0.572$, reconstruction error $0.038$, rare $0.060$. \\
+\addlinespace
+5k screening sweep
+& 18 recipe variants varying initialization, architecture, row sampling, prism
+schedule, and width
+& Supports the selected recipe by matched comparisons: row-seeded
+initialization, TopK, delayed ramp, and $D=32768$ are each selected from the
+screening grid. \\
+\addlinespace
+20k selected recipe
+& TopK, $D=32768$, $k=128$, row-seeded, hybrid row sampling, delayed prism ramp
+& Final reported Qwen3.5-9B fixed-$k=128$ recipe: rowEV $0.621$, top1 $0.846$,
+KL $0.296$, reconstruction error $0.027$, dead $0.000$, rare $0.021$. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table}[!tbp]
+\caption{Main effects in the fixed-$k=128$ Qwen3.5-9B recipe sweep.}
+\label{tab:app-k-qwen-recipe-effects}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{0.23\linewidth}Y>{\RaggedRight\arraybackslash}p{0.28\linewidth}@{}}
+\toprule
+Factor & Evidence & Consequence \\
+\midrule
+Initialization
+& \texttt{row\_seeded} was $2.0\times$ \texttt{random} at 5k
+(rowEV $0.563$ vs $0.278$ at $D=32768$).
+& Use row-seeded initialization. \\
+\addlinespace
+Prism-loss schedule
+& Delayed ramp kept rowEV unchanged at $0.567$ while reducing selected logit
+reconstruction error from $0.064$ to $0.038$ in the matched TopK hybrid cell.
+& Ramp $\lambda_{\mathrm{prism}}$ to $10^{-3}$ after $70\%$ of training. \\
+\addlinespace
+Architecture
+& At $D=32768$/5k, plain TopK exceeded matryoshka variants in rowEV
+($0.567$ vs $0.559/0.554$) at about $3.6\times$ lower cost.
+& Use plain TopK for Qwen/Gemma. \\
+\addlinespace
+Width
+& $D=16384$ trailed $D=32768$ by about $0.06$ rowEV in the fixed-$k=128$
+recipe sweep.
+& Use $D=32768$ for the 9B $k=128$ recipe. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[!tbp]
+    \centering
+    \ReadoutSAEGraphic[height=0.30\textheight]{appendix_k_qwen_recipe_selection_frontier.pdf}
+    \caption{
+        Qwen3.5-9B fixed-$k=128$ recipe-selection frontier. Points are the 5k
+        recipe variants; the black curve marks the 5k non-dominated frontier.
+        The final 20k TopK recipe improves both reconstruction and KL at the
+        fixed interpretability budget.
+    }
+    \label{fig:app-k-qwen-recipe-selection-frontier}
+\end{figure}
+
+\ReadoutSAEFloatBarrier
+
+The resulting 9B fixed-$k=128$ recipe was \texttt{topk},
+\(D=32768\) (8$\times$), $k=128$, row-seeded
+initialization, \texttt{hybrid\_50freq\_50uniform} row sampling, warmup-cosine
+learning rate $10^{-3}\rightarrow 10^{-4}$, delayed prism ramp to $10^{-3}$,
+20k steps. It reached rowEV $0.6206$, top1 $0.8457$, KL $0.2955$,
+selected logit reconstruction error $0.027$, dead $0.000$, rare $0.021$, and Gini
+$0.256$. The 15k$\rightarrow$20k rowEV gain was $+0.0025$, consistent with the
+stop rule.
+
+\begin{figure}[!tbp]
+    \centering
+    \ReadoutSAEGraphic[height=0.28\textheight]{appendix_k_qwen_convergence_ladder.pdf}
+    \caption{
+        Convergence ladder for the selected Qwen3.5-9B fixed-$k=128$ recipe.
+        The final 15k$\rightarrow$20k rowEV gain is small while
+        decision-fidelity and usage metrics remain stable, supporting the 20k
+        stop rule.
+    }
+    \label{fig:app-k-qwen-convergence-ladder}
+\end{figure}
+
+\paragraph{Recipe-selection conclusion.}
+The selected no-PCA TopK recipe improves over the previous long-trained
+matryoshka baseline on reconstruction, top-1 agreement, KL, and feature
+usage, and its 5k--20k ladder supports the 20k stop rule. The main drivers are
+row-seeded initialization, delayed prism ramping, plain TopK, and the
+$D=32768$ width choice.
+
+\ReadoutSAEFloatBarrier
+\subsection{Qwen3.5-9B Capacity Sweep}
+\label{app:readout-factorizer-qwen-capacity}
+
+After recipe selection, capacity was varied along dictionary width and active
+sparsity budget. This targeted sweep separates two questions that rowEV alone
+can blur: which native $k=128$ readout SAE should be used for fixed-budget
+comparisons, and which native $k=256$ readout SAE gives the strongest readout
+fidelity. Short screening runs selected the larger-budget cells that received
+20k training.
+
+A 5k screen selected which larger-capacity cells received 20k training. At
+16$\times$, the $k=256$ cell had better rowEV and rare feature
+rate than $k=192$ ($0.695/0.100$ vs.\ $0.675/0.164$), despite lower 5k top1,
+so it was continued. The 32$\times$, $k=256$ cell had enough rowEV headroom
+($0.799$) to justify a width continuation. The native 20k rows below are the
+evidence used for the operating-point claims.
+
+\begin{table*}[!tbp]
+\caption{Converged 20k native Qwen3.5-9B capacity rows under the selected
+recipe family. Native $k=128$ and native $k=256$ rows are separate operating
+regimes.}
+\label{tab:app-k-qwen-capacity}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{0.20\textwidth}ccrrrrY@{}}
+\toprule
+Run & Width & Eval $k$ & rowEV & top1 & KL & rare & Interpretation \\
+\midrule
+$D=32768$, train $k=128$
+& 8$\times$ & 128 & $0.621$ & $0.846$ & $0.296$ & $0.021$
+& strict-budget recipe \\
+\addlinespace
+$D=65536$, train $k=256$
+& 16$\times$ & 256 & $0.761$ & $0.874$ & $0.167$ & $0.061$
+& compact $k=256$ comparison \\
+\addlinespace
+$D=131072$, train $k=256$
+& 32$\times$ & 256 & $0.857$ & $0.900$ & $0.105$ & $0.292$
+& strongest rowEV/top1/KL; high rare feature rate \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\begin{figure}[!tbp]
+    \centering
+\ReadoutSAEGraphic[height=0.28\textheight]{appendix_k_qwen_capacity_usage.pdf}
+    \caption{
+        Qwen3.5-9B capacity sweep. Increasing width and active sparsity improves
+        rowEV and top-1 agreement; rare feature usage is reported as an
+        additional usage statistic.
+    }
+    \label{fig:app-k-qwen-capacity-usage}
+\end{figure}
+
+\ReadoutSAEFloatBarrier
+
+Table~\ref{tab:app-k-qwen-capacity} and
+Fig.~\ref{fig:app-k-qwen-capacity-usage} show the resulting tradeoff. The
+$D=131072$, $k=256$ run is the best trained Qwen3.5-9B readout SAE by rowEV,
+top1, and KL. Its rare feature ladder
+$0.300\rightarrow 0.294\rightarrow 0.292$ shows a persistent rare-feature tail,
+which is reported as a usage property alongside fidelity metrics.
+
+The 16$\times$, $k=256$ comparison provides the compact high-fidelity point. It
+also improves during convergence: from 5k to 20k steps, its rowEV ladder was
+$0.719\rightarrow0.749\rightarrow0.758\rightarrow0.761$, while its
+rare feature rate improved from $0.100$ to $0.061$.
+
+\ReadoutSAEFloatBarrier
+\subsection{Operating-Point Claims}
+\label{app:readout-factorizer-operating-point-claims}
+
+The final presentation therefore uses two native operating regimes. The
+strict-budget readout uses native $k=128$ readout SAEs for fixed-budget
+comparability; after recipe transfer, the selected strict-budget reconstruction
+point is Qwen3.5-0.8B 16$\times$
+(Appendix~\ref{app:readout-factorizer-small-model-transfer}). The
+high-fidelity readout uses native $k=256$ readout SAEs when readout
+accuracy is the limiting concern. On Qwen3.5-9B, the 16$\times$, $k=256$ run is
+a compact fidelity comparison point with rowEV
+$0.761$, top1 $0.874$, KL $0.167$, and rare $0.061$; the 32$\times$, $k=256$
+run is the strongest Qwen3.5-9B fidelity point with rowEV $0.857$, top1
+$0.900$, KL $0.105$, and rare $0.292$.
+
+\begin{figure}[!tbp]
+    \centering
+    \ReadoutSAEGraphic[width=0.88\linewidth,height=0.26\textheight]{appendix_k_truncation_inversion.pdf}
+    \caption{
+        Truncating dictionaries trained at $k=256$ back to $k=128$ can increase
+        rowEV relative to the native $k=128$ recipe while sharply reducing
+        top-1 agreement. This rowEV vs.\ fidelity inversion motivates treating
+        the fixed interpretability budget as part of the trained object.
+    }
+    \label{fig:app-k-truncation-inversion}
+\end{figure}
+
+\ReadoutSAEFloatBarrier

@@ -1,0 +1,34 @@
+\section{Experimental Setup}
+\label{sec:experimental-setup}
+
+\paragraph{Experimental design.}
+We evaluate the readout SAE as both a final-LM-head factorization and a basis
+for local score accounts. On held-out C4 hidden states
+\citep{raffel2020exploring,dodge2021documenting}, we measure row reconstruction
+and replacement fidelity before testing whether sparse feature sums recover
+chosen scalar targets. Baselines compare learned token-to-feature support with
+row capacity alone.
+
+\paragraph{Setup, selection, and units.}
+The suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
+\citep{gemma4official,gemma4collection}, Ministral \citep{liu2026ministral3},
+and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1}.
+Qualitative displays use the selected Qwen3.5-2B \(32\times\), \(k=256\)
+setting, meaning dictionary width \(D=32d_{\mathrm{model}}\) and TopK budget
+256. This is a low-error operating point in our sweeps. Model identifiers and
+evaluation details are in Appendix~\ref{app:model-suite-selection}. We score
+final LM-head inputs and select readout SAEs by held-out row reconstruction,
+replacement fidelity, and sparse code usage; held-out logit-difference targets
+are reserved for downstream fidelity evaluation. Prompt/target sets,
+coefficients, and tokenization filters are fixed before evaluation.
+
+\paragraph{Evaluation sequence.}
+We report replacement/target fidelity, baselines, target and context variation,
+feature-resolved DLA, and a constrained readout-edit stress test in that order.
+
+\paragraph{Reading local score accounts.}
+Qualitative accounts report the original score, sparse feature sum,
+reconstruction error, and sign status. Score-independent appendix figures rank
+decoder directions by \(h^\top d_i\) before target selection.
+Appendix~\ref{app:robustness-controls} summarizes controls and token-level
+audits.

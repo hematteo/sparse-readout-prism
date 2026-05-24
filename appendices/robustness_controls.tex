@@ -1,0 +1,178 @@
+\section{Robustness and Fidelity Controls}
+\label{app:robustness-controls}
+
+This appendix summarizes the reconstruction error and control evidence behind
+Sparse Readout Prism interpretations. The core local score account is
+target-specific: for the selected readout target, the sparse reconstruction has
+an exact score, a reconstructed score, an explicit reconstruction error, and, for signed
+contrasts, a sign comparison. The appendix reports the information needed to
+interpret and reproduce these measurements: tokenization and filtering rules, row-norm
+and frequency controls, split construction, dictionary settings, and aggregate
+metrics.
+
+\subsection{Controls}
+\label{app:robustness-summary}
+
+Table~\ref{tab:app-robustness-control-ledger} groups the measurements used to
+read a local score account. The table summarizes the controls; the
+quantitative summaries below report their aggregate outcomes.
+
+\begin{table*}[!tbp]
+\caption{\textbf{Controls supporting local score accounts.}
+The controls verify that a displayed local score account tracks the intended
+readout target and account for prompt, tokenization, and SAE artifacts. The
+evaluation setup specifies the token choices, target coefficients, split
+assignment, and tokenization rules used for the aggregate metrics.}
+\label{tab:app-robustness-control-ledger}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{0.22\textwidth}Y Y@{}}
+\toprule
+Control & What it tests & How it is specified \\
+\midrule
+Reconstruction error and sign agreement &
+Feature bars are reported with relative reconstruction error and, for contrasts, the
+signs of both the exact and reconstructed scores. &
+Reported local score accounts include exact score, reconstructed score,
+reconstruction error, and \(\rho\). \\
+\addlinespace
+Swapped and matched contrasts &
+A/B swaps flip signs consistently, and matched negative-control contrasts
+underperform the intended contrast. &
+Target sets specify paired A/B contrasts and matched negative controls before
+aggregate evaluation. \\
+\addlinespace
+Template and context variants &
+Prompt rewordings and context variants are clustered before aggregation, so
+correlated variants contribute through their base case. &
+Rows are clustered by target or base-case id before aggregate evaluation. \\
+\addlinespace
+Token-level audits &
+Single-token claims can be brittle under token length, frequency, whitespace,
+capitalization, row norm, special-token status, or tokenization collisions. &
+Tokenization filters and row-norm/frequency controls are applied before
+aggregate evaluation; ambiguous cases are handled through feature-audit flags or
+explicit group contrasts. \\
+\addlinespace
+Null and reference baselines &
+Learned token-to-feature support is compared against shuffled support, random
+support, dense PCA, and lexical nearest-row references. &
+Baselines use the same target set and the same reconstruction error and sign
+metrics. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\subsection{Key Quantitative Results}
+\label{app:robustness-key-quantitative}
+
+The key quantitative result is that the readout SAE evaluation separates broad
+readout replacement from target-level fidelity. On the all-row target set,
+aggregating both held-out halves, the Qwen3.5-0.8B/2B/9B settings give sign
+agreement \(0.940\)--\(0.951\), median \(\rho=0.091\)--\(0.107\), and
+\(\rho<0.5\) fractions \(0.790\)--\(0.818\). The main-text fidelity table
+reports the prespecified high-fidelity subset of this evaluation, which is why
+its Qwen sign and reconstruction error ranges are slightly tighter; it also
+reports Gemma target-fidelity rows and Ministral/R1 replacement rows under the
+same metric conventions. The baseline/null table fixes Qwen3.5-2B and evaluates
+every method on its 1,348-row full logit-difference set. The C4 replacement
+evaluation is harder because many positions are local near-ties, but Qwen still
+gives \(0.822\)--\(0.838\) top-1 agreement and \(0.634\)--\(0.667\)
+preservation of the top-1--top-2 ordering at relative error \(0.5\) on 10,000
+neutral C4 continuations per model
+\citep{raffel2020exploring,dodge2021documenting}. For confident Qwen margins,
+\(|m_{\mathrm{exact}}|\ge2\), C4 top-1 agreement rises to \(0.97\)--\(1.00\)
+and top-1--top-2 ordering preservation to \(0.84\)--\(0.96\). Additional
+model-family rows use the same metric suite and separate row reconstruction,
+replacement fidelity, and target-level reconstruction. Null and reference
+baseline comparisons preserve the same ordering: shuffled and random support
+approach chance sign agreement, and dense PCA underperforms Sparse Readout Prism
+at comparable compactness. The baseline panel in
+Figure~\ref{fig:app-robustness-baseline-comparisons} reports the same target set
+and metrics as the Sparse Readout Prism row. Across the target-group and
+baseline comparisons, tokenization filters, row-norm controls, frequency
+controls, KL, sign agreement, and relative reconstruction error are evaluated
+with the same definitions.
+
+\begin{table*}[!tbp]
+\caption{\textbf{Target groups at the main \(k=256\) setting.}
+Rows group targets by the question they ask at the \(k=256\) fidelity
+setting. Row counts aggregate evaluated model--case cells across the
+same five-model Qwen/Gemma suite as Table~\ref{tab:readout-query-fidelity-summary},
+after tokenization filters.}
+\label{tab:app-general-readout-query-families}
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{0.96\textwidth}{@{}p{0.20\textwidth}Yrrrr@{}}
+\toprule
+Group & Target & cases & rows & sign agreement & median \(\rho\) \\
+\midrule
+Reference contrast & top1 vs vocab mean & 301 & 1505 & 1.000 & 0.021 \\
+Reference contrast & top1 vs row-norm distractor & 301 & 1505 & 1.000 & 0.049 \\
+\addlinespace
+Logit difference & source vs prior & 82 & 392 & 0.964 & 0.181 \\
+Logit difference & action/tool alternatives & 96 & 480 & 0.906 & 0.355 \\
+Group contrast & abstention family & 84 & 420 & 0.888 & 0.241 \\
+Logit difference & current vs stale & 92 & 460 & 0.861 & 0.525 \\
+\addlinespace
+Top competitor & top1 vs sampled competitor & 301 & 1505 & 0.993 & 0.120 \\
+Top competitor & top1 vs top5 competitor & 301 & 1505 & 0.940 & 0.253 \\
+Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\begin{figure}[!tbp]
+    \centering
+    \AppendixCompactGraphic[height=0.27\textheight]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_five_model_margin_reconstruction.pdf}
+    \caption{\textbf{Exact versus reconstructed logit differences.}
+    Binned exact margins are plotted against binned reconstructed margins for
+    the five-model held-out target set; the dashed line is perfect
+    reconstruction. This global calibration plot supports the main-text
+    reconstruction error and decision-flip summaries, but is separated from the main figure
+    because the decision boundary is better captured by the margin-binned
+    summaries.}
+    \label{fig:app-readout-query-margin-reconstruction}
+\end{figure}
+
+\begin{figure}[!tbp]
+    \centering
+    \AppendixCompactGraphic[height=0.28\textheight]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_reliability_figure.pdf}
+    \caption{\textbf{Margin size controls the reliability of signed readout target
+    interpretation.}
+    The held-out target set shows tight aggregate reconstruction error behavior;
+    sign agreement is lowest near zero exact margins. Raising the minimum
+    \(|m_{\mathrm{exact}}|\) increases sign agreement while reducing retained
+    coverage. Feature displays therefore report explicit reconstruction error and
+    sign agreement in addition to row reconstruction.}
+    \label{fig:app-robustness-margin-reliability}
+\end{figure}
+
+\begin{figure*}[!tbp]
+    \centering
+    \AppendixWideGraphic[width=0.74\textwidth,height=0.30\textheight]{figures/proto_token_lens/readout_baseline_comparisons/readout_baseline_comparisons.pdf}
+    \caption{\textbf{Baseline and reference comparisons for Qwen3.5-2B.}
+    Sparse Readout Prism is compared with nearest-row ridge, dense PCA
+    references, shuffled sparse codes, and random support under the same
+    reconstruction error and sign summaries. The readout SAE
+    preserves sign and keeps a larger low-error tail than the null support
+    controls, while PCA references lose that low-error tail as the
+    compactness constraint tightens.}
+    \label{fig:app-robustness-baseline-comparisons}
+\end{figure*}
+
+\subsection{Operating-Regime Cases}
+\label{app:robustness-operating-regime}
+
+Operating-regime cases define when a compact local score account is
+evidence-bearing. Qualitative interpretation uses cases where the target score is
+larger than the reconstruction error, the reconstructed contrast preserves sign,
+the exact model readout supports the intended target, contribution mass is
+compact enough to summarize, and token-boundary, special-token, row-norm,
+frequency, or tokenization-collision effects do not dominate the contrast. The
+remaining cases are retained as quantitative records under the same reporting
+rule.
