@@ -139,8 +139,8 @@ $D=32768$ width choice.
 After recipe selection, capacity was varied along dictionary width and active
 sparsity budget. This targeted sweep separates two questions that rowEV alone
 can blur: which native $k=128$ readout SAE should be used for fixed-budget
-comparisons, and which native $k=256$ readout SAE gives the strongest readout
-fidelity. Short screening runs selected the larger-budget cells that received
+comparisons, and which native $k=256$ readout SAE should serve as the
+high-fidelity operating point. Short screening runs selected the larger-budget cells that received
 20k training.
 
 A 5k screen selected which larger-capacity cells received 20k training. At
@@ -173,7 +173,7 @@ $D=65536$, train $k=256$
 \addlinespace
 $D=131072$, train $k=256$
 & 32$\times$ & 256 & $0.857$ & $0.900$ & $0.105$ & $0.292$
-& strongest rowEV/top1/KL; high rare feature rate \\
+& high rowEV/top1/KL; high rare feature rate \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -193,8 +193,8 @@ $D=131072$, train $k=256$
 
 Table~\ref{tab:app-k-qwen-capacity} and
 Fig.~\ref{fig:app-k-qwen-capacity-usage} show the resulting tradeoff. The
-$D=131072$, $k=256$ run is the best trained Qwen3.5-9B readout SAE by rowEV,
-top1, and KL. Its rare feature ladder
+$D=131072$, $k=256$ run has the highest rowEV, top1, and KL metrics in this
+Qwen3.5-9B capacity sweep. Its rare feature ladder
 $0.300\rightarrow 0.294\rightarrow 0.292$ shows a persistent rare-feature tail,
 which is reported as a usage property alongside fidelity metrics.
 
@@ -216,7 +216,7 @@ high-fidelity readout uses native $k=256$ readout SAEs when readout
 accuracy is the limiting concern. On Qwen3.5-9B, the 16$\times$, $k=256$ run is
 a compact fidelity comparison point with rowEV
 $0.761$, top1 $0.874$, KL $0.167$, and rare $0.061$; the 32$\times$, $k=256$
-run is the strongest Qwen3.5-9B fidelity point with rowEV $0.857$, top1
+run is the high-capacity Qwen3.5-9B fidelity point with rowEV $0.857$, top1
 $0.900$, KL $0.105$, and rare $0.292$.
 
 \begin{figure}[!tbp]

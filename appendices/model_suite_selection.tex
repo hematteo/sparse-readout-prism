@@ -22,10 +22,11 @@ analyses.
 \subsection{Selection Rationale}
 \label{sec:app-model-suite-criteria}
 
-The Qwen3.5 rows provide the main low-error qualitative suite. Qwen3.5-9B is the
-capacity anchor: it is large enough to be a meaningful readout target while
-still supporting recipe and width sweeps. Qwen3.5-0.8B and Qwen3.5-2B test the
-same recipe at smaller unembedding dimensions and cheaper rerun settings.
+The Qwen3.5 rows provide a fixed qualitative display setting and Qwen-family
+companion analyses. Qwen3.5-9B is the capacity anchor: it is large enough to be a
+meaningful readout target while still supporting recipe and width sweeps.
+Qwen3.5-0.8B and Qwen3.5-2B test the same recipe at smaller unembedding
+dimensions and cheaper rerun settings.
 
 The Gemma rows provide a second tied-readout family with a different tokenizer
 and final-logit softcap. They show the readout SAE recipe under
@@ -35,8 +36,8 @@ in Appendix~\ref{app:readout-factorizer-transfer-comparisons}.
 Additional targeted rows broaden the readout-geometry coverage.
 Ministral-3-8B-Base tests transfer to an untied, softcap-free 8B-scale readout
 outside Qwen. R1-Distill-Qwen-7B and R1-Distill-Llama-8B evaluate the same
-recipe-selection measurements after reasoning distillation, making row reconstruction and
-LM-head replacement fidelity visible as separate result axes.
+recipe-selection measurements on reasoning-distilled comparison rows, making row
+reconstruction and LM-head replacement fidelity visible as separate result axes.
 
 \subsection{Final Suite}
 \label{sec:app-model-suite-chosen}
@@ -57,14 +58,14 @@ dictionary settings and metrics.
 Model(s) & Why included & Role in study \\
 \midrule
 \shortstack[l]{\texttt{Qwen3.5-0.8B}\\\texttt{Qwen3.5-2B}} &
-Small-model transfer and lower-cost replication under the native $k=128$ and
+Small-model transfer and lower-cost repeats under the native $k=128$ and
 $k=256$ regimes. &
 Qwen transfer evidence. \\
 \addlinespace
 \texttt{Qwen3.5-9B} &
-Main scale anchor for recipe selection, capacity sweeps, and high-fidelity
+Scale anchor for recipe selection, capacity sweeps, and high-fidelity
 readout replacement. &
-Primary Qwen fidelity evidence. \\
+Qwen fidelity evidence. \\
 \addlinespace
 \shortstack[l]{\texttt{Gemma-4-E2B}\\\texttt{Gemma-4-E4B}} &
 Cross-family evidence for whether the readout SAE recipe transfers beyond
@@ -88,10 +89,10 @@ Cross-family fidelity comparison. \\
 \end{tabularx}
 \end{table*}
 
-The qualitative feature analyses therefore use the Qwen suite, where the
-selected settings have the strongest target-level fidelity in the main figures.
-This is an evidence-driven display choice: the additional rows show how the same
-metrics behave under different readout geometries and post-training regimes.
+The qualitative feature analyses use one fixed low-error display setting so that
+examples share the same readout SAE and reporting convention. This is an
+evidence-driven display choice: the additional rows show how the same metrics
+behave under different readout geometries and post-training regimes.
 
 \subsection{Interpretation Details}
 \label{sec:app-model-suite-boundaries}
@@ -99,7 +100,7 @@ metrics behave under different readout geometries and post-training regimes.
 The suite is an evidence-driven design for readout-factorization evaluation.
 We report token frequency, token length, special-token behavior, row norm, tied
 embedding status, softcap handling, and matched-target identity bias so
-single-token logit explanations can be compared on the same footing.
+single-token logit accounts can be compared on the same footing.
 
 The evaluation makes three commitments. First, model-specific readout layers
 are handled before reporting decision fidelity. Second, the SAE architecture,

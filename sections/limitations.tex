@@ -1,63 +1,57 @@
 \section*{Limitations}
 
-\paragraph{Scope of explanation.}
-SRP targets linear scalar readout questions at the final LM head: which sparse
-readout directions support or oppose a chosen token logit, contrast, or margin
-for a given hidden state. The feature-resolved DLA analysis composes this
-readout account with additive residual-stream attribution, yielding candidates
-for later intervention studies rather than a standalone causal circuit claim.
+\paragraph{Scope of score accounts.}
+SRP gives local score accounts for linear scalar readout targets at the final LM
+head. Feature-resolved DLA composes these accounts with additive residual-stream
+attribution, yielding intervention candidates rather than causal circuit claims.
 
 \paragraph{Fidelity and labels.}
-As in other sparse dictionary settings, the learned basis can depend on recipe
+Reported diagnostics make SRP accounts auditable in their operating regimes. As
+in other sparse dictionary settings, the learned basis can depend on recipe
 choices
 \citep{elhage2022superposition,karvonen2025saebench,makelov2024principled}. We
 therefore report reconstruction error, sign agreement, replacement fidelity, and
-stability checks with the decompositions themselves. Feature labels are
-row-level summaries of high-scoring unembedding rows; the measured objects are
-feature ids, signed terms, and residual errors.
+stability checks. Feature labels summarize high-scoring unembedding rows; the
+measured objects are feature ids, signed terms, and residual errors.
 
 \paragraph{Readout-specific caveats.}
-Because SRP factorizes vocabulary rows, some labels and groupings can reflect
+SRP supports token-level, group-contrast, and benchmark-format readout accounts
+while retaining vocabulary-geometry caveats. Labels and groupings can reflect
 tokenizer geometry, token frequency, row norms, or surface-form artifacts
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
-Group contrasts reduce dependence on any single row, while benchmark-format
-targets measure reconstruction of task-shaped readout scores rather than
-end-to-end task solving. The readout-edit experiment is likewise a constrained
-test of lexical score movement, with broader behavioral effects left to direct
-intervention and generation-level evaluation.
+Group contrasts reduce single-row dependence; benchmark-format targets measure
+linear readout reconstruction, not task solving. The readout edit is a
+constrained lexical-score test; broader behavioral effects require intervention
+and generation-level evaluation.
 
 \section*{Ethics Statement}
 
-This work is an interpretability study of pretrained language-model readouts. We
-do not collect new human-subject data or evaluate deployed systems. The
-experiments use public model checkpoints and held-out text-derived hidden states,
-including C4 continuations; as a web-crawl-derived resource, C4 may contain
-offensive, private, copyrighted, or otherwise sensitive text
-\citep{raffel2020exploring,dodge2021documenting}. We use these data only to
-measure readout reconstruction and do not make claims about the social validity
-of individual tokens, labels, or generated outputs.
+This work studies pretrained language-model readouts. It collects no new
+human-subject data and evaluates no deployed systems. Experiments use public
+checkpoints and held-out text-derived hidden states, including C4 continuations;
+C4 may contain offensive, private, copyrighted, or sensitive text
+\citep{raffel2020exploring,dodge2021documenting}. We use it only to measure
+readout reconstruction and make no social-validity claims about individual
+tokens, labels, or generated outputs.
 
-SRP can make lexical and semantic readout directions easier to inspect and, in
-the readout-edit stress test, easier to move. This has dual-use implications:
-the same diagnostic tools that support auditing could also inform attempts to
-manipulate model outputs. We therefore frame the edit experiment narrowly, report
-distribution shift and off-target probes, and do not present the method as a
-safety filter, moderation system, or deployment-ready control mechanism.
+SRP makes lexical readout directions and row-level labels easier to inspect and,
+in the readout-edit stress test, move. This is dual use: auditing tools could
+also inform output manipulation. We frame the edit as a readout-level stress
+test, report distribution shift and off-target probes, and reserve
+safety-filter, moderation, or deployment-control claims for direct system-level
+evaluations.
 
 \section*{Reproducibility Statement}
 
 The main experiments report exact-versus-reconstructed scores, sign agreement,
-relative reconstruction error, and null/reference baselines for the scalar
-targets being interpreted. Appendices~\ref{app:model-suite-selection}--%
-\ref{app:robustness-controls} specify the model suite, dictionary widths,
-TopK budgets, seed convention, row sampling, selection order, tokenization
-filters, target construction, and denominator controls. Dictionary selection
-uses row reconstruction, replacement fidelity, and sparse code usage; held-out
-logit-difference targets are reserved for later fidelity checks.
+relative error, and null/reference baselines for interpreted targets.
+Appendices~\ref{app:model-suite-selection}--\ref{app:robustness-controls}
+specify models, dictionary settings, seeds, row sampling, selection order,
+tokenization filters, target construction, and denominator controls. Dictionary
+selection uses row reconstruction, replacement fidelity, and sparse code usage;
+held-out logit-difference targets are reserved for later checks.
 
-The main remaining reproducibility risks are computational cost, checkpoint and
-tokenizer versioning, and tokenizer-specific filtering decisions for
-single-token targets. For this reason, local score accounts include explicit
-reconstruction errors, and qualitative interpretations are restricted to
-operating regimes where the selected target is reconstructed with sufficient
-fidelity.
+Remaining risks are computational cost, checkpoint/tokenizer versioning, and
+tokenizer-specific filtering for single-token targets. Local accounts include
+explicit reconstruction errors, and qualitative interpretations are restricted
+to sufficiently reconstructed targets.

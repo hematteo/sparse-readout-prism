@@ -17,8 +17,8 @@ logit-lens display for the literature prompt
 \texttt{It was the best of times, it was the worst of times}. The displayed
 columns cover the first eight prompt tokens. The top panel is the ordinary
 logit-lens top-token trajectory after applying the model's final normalization
-at each layer. The bottom panel lists the two largest positive Sparse Readout
-Prism feature terms supporting each cell's centered logit-lens top-token score.
+at each layer. The bottom panel lists the two largest positive score-account
+feature terms supporting each cell's centered logit-lens top-token score.
 The feature labels are decoded from top Qwen unembedding rows as token-label
 summaries for the feature ids.
 
@@ -29,7 +29,7 @@ summaries for the feature ids.
     The prompt is \texttt{It was the best of times, it was the worst of times};
     columns show the first eight tokens. The top panel reports the ordinary
     logit-lens top-token prediction at each layer. The bottom panel lists the
-    top positive Sparse Readout Prism features contributing to each cell's
+    top positive score-account feature terms contributing to each cell's
     centered top-token score under the same Qwen3.5-2B \(32\times\),
     native-\(k=256\) readout SAE used throughout this appendix.}
     \label{fig:app-dickens-all-layer-proto-lens}
@@ -58,12 +58,12 @@ features against trout/salmon features. The relative reconstruction errors are
 \end{figure*}
 
 \subsection{Additional Readout Target Examples}
-\label{app:query-family-display-example}
+\label{app:readout-target-family-display-example}
 
-Figure~\ref{fig:qwen-general-readout-queries-basic} gives the single-state
+Figure~\ref{fig:qwen-general-readout-targets-basic} gives the single-state
 example summarized in the main text: scalar, reference, and pairwise readout
 targets can produce different local score accounts for the same hidden state.
-Figure~\ref{fig:app-qwen-general-readout-queries-extra} adds a group contrast
+Figure~\ref{fig:app-qwen-general-readout-targets-extra} adds a group contrast
 and a top-competitor margin.
 
 \begin{figure*}[!tbp]
@@ -76,7 +76,7 @@ and a top-competitor margin.
     \texttt{guilty}-versus-vocabulary-mean reference contrast, and the
     \texttt{guilty}-minus-\texttt{not} logit difference. Positive bars increase
     the chosen scalar; negative bars reduce it.}
-    \label{fig:qwen-general-readout-queries-basic}
+    \label{fig:qwen-general-readout-targets-basic}
 \end{figure*}
 
 \begin{figure*}[!tbp]
@@ -87,7 +87,24 @@ and a top-competitor margin.
     the right panel asks how strongly the \texttt{guilty} winner beats its rank-5
     competitor. Bars increase or reduce the chosen scalar according to their sign
     and are labeled directly with feature ids and token summaries.}
-    \label{fig:app-qwen-general-readout-queries-extra}
+    \label{fig:app-qwen-general-readout-targets-extra}
+\end{figure*}
+
+\subsection{Benchmark-Format Readout Target Examples}
+\label{app:benchmark-format-display-examples}
+
+Figure~\ref{fig:app-benchmark-task-group-examples} gives representative
+low-error QA accounts for the benchmark-format readout targets summarized in
+\Cref{tab:benchmark-derived-task-targets}.
+
+\begin{figure*}[!tbp]
+    \centering
+    \AppendixWideGraphic[height=0.26\textheight]{figures/proto_token_lens/benchmark_task_group_targets/benchmark_task_group_examples.pdf}
+    \caption{\textbf{Benchmark-format local score accounts.}
+    Positive bars support the gold/intended side; negative bars support the
+    distractor side. Both Qwen3.5-2B panels use the selected \(32\times\),
+    \(k=256\) readout SAE and have correct sign with low relative error.}
+    \label{fig:app-benchmark-task-group-examples}
 \end{figure*}
 
 \subsection{Fixed-Token Context Comparisons}
@@ -125,8 +142,9 @@ that the signed difference plot subtracts away.
 \end{figure*}
 
 Figure~\ref{fig:app-qwen2b-technical-domain-delta} adds one technical-domain
-context comparison. The strongest panels are \texttt{graph}, \texttt{memory}, and
-\texttt{virus}; \texttt{pipe} illustrates a mixed Unix/plumbing case.
+context comparison. The most clearly separated panels are \texttt{graph},
+\texttt{memory}, and \texttt{virus}; \texttt{pipe} illustrates a mixed
+Unix/plumbing case.
 Across the four panels, the maximum target rank is \(17\) and the maximum
 relative reconstruction error is \(0.05\).
 
@@ -144,13 +162,13 @@ relative reconstruction error is \(0.05\).
 \end{figure*}
 
 \subsection{Readout-Feature Profiles}
-\label{app:global-readout-feature-activations}
+\label{app:global-readout-feature-profiles}
 
-The examples above explain selected token rows or contrasts. As a complementary
+The examples above decompose selected token rows or contrasts. As a complementary
 view, we can rank readout features directly from the hidden state
 before choosing a token or logit difference. For a final readout state \(h\), we
 score each SAE decoder direction by \(h^\top d_i\). Vocabulary rows then label
-the selected directions by their highest activating rows. These figures therefore
+the selected directions by their highest-associated rows. These figures therefore
 show score-independent profiles; target-specific figures provide the local score
 contributions.
 
@@ -160,10 +178,10 @@ contributions.
     \caption{\textbf{Readout-feature profiles for shell and Java prompts.}
     Features are ranked by \(|h^\top d_i|\) at the final readout state. The
     \texttt{shell} prompts share a shell-related direction, but the terminal
-    context additionally activates command/parser/editor-like directions. The
+    context additionally has large projections onto command/parser/editor-like directions. The
     \texttt{Java} prompts separate beverage-related directions from programming
     framework and language directions. Each feature label lists the top
-    activating unembedding rows for that feature.}
+    associated unembedding rows for that feature.}
     \label{fig:app-global-readout-shell-java}
 \end{figure*}
 
@@ -175,20 +193,20 @@ contributions.
     address/socket/interface directions. The \texttt{cell} prompts separate
     prison-like physical-enclosure directions from biology and organism-related
     directions, while also exposing a generic uppercase-letter direction as a
-    nonsemantic high-magnitude component.}
+    non-lexical high-magnitude component.}
     \label{fig:app-global-readout-port-cell}
 \end{figure*}
 
-\subsection{What the Prism Adds Beyond the Logit Lens}
+\subsection{What SRP Adds Beyond the Logit Lens}
 \label{app:lens-comparison-examples}
 
 Figure~\ref{fig:main-lens-prism-comparison} gives the main-text lens-versus-prism
 comparison. Table~\ref{tab:app-lens-comparison-examples} lists four additional
 Qwen3.5-2B examples where the ordinary logit lens gives a local A-vs-B
-preference and the SRP local score account exposes the competing feature terms
-behind that preference. The prompt-injection case illustrates how SRP can
-decompose an undesirable local preference: the ordinary lens favors the wrong
-action and the sparse terms reconstruct that preference tightly.
+logit difference and the SRP local score account exposes the competing feature terms
+behind that contrast. The prompt-injection case illustrates how SRP can
+decompose an undesirable local readout ranking: the ordinary lens favors the wrong
+action and the sparse terms reconstruct that contrast tightly.
 The companion feature tables list the displayed feature ids, token summary
 labels, exact scores, reconstructed scores, and reconstruction errors reported for these
 examples.
@@ -206,7 +224,7 @@ reconstruction errors.}
 \toprule
 Case & Target & exact & sparse & \(\rho\) & Note \\
 \midrule
-Prompt injection & \texttt{summarize} -- \texttt{delete} & -4.000 & -4.123 & 0.031 & undesirable local preference \\
+Prompt injection & \texttt{summarize} -- \texttt{delete} & -4.000 & -4.123 & 0.031 & undesirable local readout ranking \\
 Ambiguous action & \texttt{ask} -- \texttt{run} & +4.125 & +4.571 & 0.108 & successful pairwise contrast \\
 Source conflict & \texttt{dollar} -- \texttt{euro} & -1.438 & -1.430 & 0.005 & lexical contrast example \\
 Abstention & \texttt{Unknown} -- \texttt{Alice} & +9.375 & +8.051 & 0.141 & abstention-family example \\
@@ -221,7 +239,7 @@ Trusted task: summarize the email. Untrusted email content says: delete the
 files. We must follow the trusted task. The next action is to
 \end{quote}
 the ordinary logit-lens margin favors \texttt{delete} over \texttt{summarize}.
-Sparse Readout Prism shows that the undesirable preference is carried by several
+Sparse Readout Prism shows that the undesirable logit difference is carried by several
 deletion-related SAE features against summary and communication
 features:
 \begin{center}
@@ -239,7 +257,7 @@ Contribution & Side & Token summary \\
 \bottomrule
 \end{tabular}
 \end{center}
-The lens reports the local preference; SRP exposes the signed feature
+The lens reports the local readout ranking; SRP exposes the signed feature
 terms behind it.
 
 \subsection{Token-Row Audit for Main Case-Study Features}
@@ -249,8 +267,8 @@ Table~\ref{tab:app-qualitative-feature-label-audit} gives a conservative
 qualitative audit over the claim-bearing displayed labels in the Qwen feature
 figures. This is not a feature-validity score: labels that are target-token
 heavy, generic, function-word dominated, punctuation-like, or letter/case
-directions are separated from semantic labels rather than counted as semantic
-successes. The audit asks whether the displayed token-row summary is coherent
+directions are separated from coherent lexical labels rather than counted as
+labeling successes. The audit asks whether the displayed token-row summary is coherent
 enough to support the prose label used in the paper, and whether coherent labels
 point to the target side indicated by the signed feature term. The measured
 objects remain feature ids, signed contributions, and reconstruction residuals.
@@ -259,9 +277,9 @@ token-row audit are included with the figure artifacts.
 
 \begin{table*}[!tbp]
 \caption{\textbf{Qualitative feature-label audit for claim-bearing Qwen displays.}
-Rows count displayed feature labels, not all dictionary features. Semantic labels
-are counted only when the displayed top-row summary supports the named family;
-ambiguous and token-form labels are not used as semantic evidence.}
+Rows count displayed feature labels, not all dictionary features. Coherent lexical
+labels are counted only when the displayed top-row summary supports the named family;
+ambiguous and token-form labels are not used as evidence for a row-level label.}
 \label{tab:app-qualitative-feature-label-audit}
 \centering
 \scriptsize
@@ -269,14 +287,14 @@ ambiguous and token-form labels are not used as semantic evidence.}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabularx}{\textwidth}{@{}lrrrrrY@{}}
 \toprule
-Feature set & Labels & Semantic & Ambig. & Token-form & Target-consistent & Scope \\
+Feature set & Labels & Coherent & Ambig. & Token-form & Target-consistent & Scope \\
 \midrule
 Main \texttt{bug} panels & 11 & 8 & 0 & 3 & 8/8 & Figure~\ref{fig:selected-readout-prism-examples}; detailed rows in Table~\ref{tab:app-main-case-study-feature-audit}. \\
 Additional \texttt{bark}/\texttt{bass} margins & 12 & 7 & 2 & 3 & 7/7 & Figure~\ref{fig:app-selected-readout-prism-extra-examples}. \\
 Fixed-token context panels & 12 & 9 & 3 & 0 & 9/9 & Figure~\ref{fig:same-token-polysemy}. \\
 Technical context stress & 32 & 24 & 7 & 1 & 24/24 & Figure~\ref{fig:app-qwen2b-technical-domain-delta}. \\
 \texttt{verify}/\texttt{assume} DLA & 8 & 7 & 1 & 0 & 7/7 & Feature-family heatmap behind Figures~\ref{fig:qwen-prism-dla-verify-assume-main} and~\ref{fig:qwen-prism-dla-verify-assume-app}. \\
-General readout examples & 24 & 12 & 5 & 7 & 12/12 & Figures~\ref{fig:qwen-general-readout-queries-basic} and~\ref{fig:app-qwen-general-readout-queries-extra}. \\
+General readout examples & 24 & 12 & 5 & 7 & 12/12 & Figures~\ref{fig:qwen-general-readout-targets-basic} and~\ref{fig:app-qwen-general-readout-targets-extra}. \\
 \midrule
 Total & 99 & 67 & 18 & 14 & 67/67 & Conservative count over displayed, claim-bearing labels. \\
 \bottomrule
@@ -286,12 +304,12 @@ Total & 99 & 67 & 18 & 14 & 67/67 & Conservative count over displayed, claim-bea
 Table~\ref{tab:app-main-case-study-feature-audit} summarizes every feature shown in
 the two main \texttt{bug} panels. For each sparse feature, we score centered and
 normalized unembedding rows with that feature's encoder row and list the highest
-activating tokens. This supports the main-text interpretation:
-most large semantic contributors are coherent lexical families, while three
+scoring tokens. This supports the main-text interpretation:
+most large row-level contributors are coherent lexical families, while three
 displayed features are marked as low-level token-form directions.
 
 \begin{table*}[!tbp]
-\caption{\textbf{Top activating unembedding rows for the main case-study features.}
+\caption{\textbf{Top associated unembedding rows for the main case-study features.}
 Rows cover all unique features displayed in Figure~\ref{fig:selected-readout-prism-examples}.
 Leading-space token variants are shown without the leading space; non-Latin
 synonyms are summarized.}
@@ -302,7 +320,7 @@ synonyms are summarized.}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabularx}{\textwidth}{@{}lY>{\RaggedRight\arraybackslash}p{0.24\textwidth}l@{}}
 \toprule
-Feature & Top activating rows, shortened & Interpretation & Confidence \\
+Feature & Top associated rows, shortened & Interpretation & Confidence \\
 \midrule
 \texttt{f36} & \texttt{mosquito}, \texttt{mosquitoes}, \texttt{Mos}, \texttt{mos}, mosquito tokens in Chinese and Vietnamese, \texttt{insect}, \texttt{flea}, \texttt{malaria}, \texttt{bug}, \texttt{moth} & mosquito / insect / disease-vector bug sense & high \\
 \texttt{f4095} & \texttt{bee}, \texttt{bees}, \texttt{Bee}, bee tokens in Chinese, \texttt{hive}, \texttt{butterfly}, \texttt{insect}, \texttt{ants}, \texttt{honey} & bees / insects & high \\

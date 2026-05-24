@@ -16,7 +16,7 @@ pairwise logit difference, a group contrast, a reference contrast, or a
 top-competitor margin. The hidden state's readout feature projection vector
 \(\{h^\top d_i\}_i\) is available before selecting such a target; support for a
 particular token or contrast becomes defined only after that vector is combined
-with the target coefficients \(\beta_i(q)\). Distribution-wide explanations
+with the target coefficients \(\beta_i(q)\). Distribution-wide accounts
 therefore require measuring reconstruction over the relevant vocabulary slice or
 target group. This distinction matters because a token can be supported above a
 reference while still losing to a named alternative or a group contrast, and a
@@ -65,9 +65,9 @@ objects of analysis.
 \paragraph{Qwen evidence.}
 Across Qwen sizes, the selected dictionary settings preserve held-out signed
 readout targets and readout behavior on hidden states with reconstruction errors
-small enough to support the reported local score accounts. These rows
-provide most of the qualitative displays as the strongest target-fidelity
-operating points in the evaluated suite.
+small enough to support the reported local score accounts. These rows provide
+the fixed display setting and Qwen-family companion analyses used for most
+qualitative figures.
 
 \paragraph{Additional families.}
 The additional model-family rows report the same metric suite under

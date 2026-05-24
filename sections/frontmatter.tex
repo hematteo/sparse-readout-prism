@@ -1,26 +1,21 @@
 \begin{abstract}
-Lens-style analyses decode language model hidden states through the final
-unembedding, making internal states interpretable as vocabulary-level
-predictions. This interface is central to many interpretability workflows, but
-it has an important limitation: each logit or contrast is treated as an atomic
-score. As a result, lens methods can reveal what a model favors without showing
-which shared readout features support or oppose that preference. We introduce
-Sparse Readout Prism (SRP), a sparse factorization of the language model readout
-that turns selected readout scores into feature-resolved local accounts. SRP
-decomposes the unembedding into sparse token-row structure and shared readout
-directions, allowing hidden states to be projected onto a reusable feature basis
-and selected scores to be expressed as signed feature contributions with
-explicit residuals.
+Lens-style analyses expose language-model hidden states through the final
+unembedding into vocabulary logits. This gives a vocabulary-level view, but a
+selected logit or contrast is still a single score: it identifies an outcome
+without showing which readout directions support it, which oppose it, or what
+residual remains outside the account. We introduce Sparse Readout Prism (SRP), a
+sparse feature decomposition for logit-lens readouts that factorizes the LM head
+into sparse token-row coefficients and shared readout directions. Given a hidden
+state and scalar readout target, SRP decomposes the selected score into signed
+feature contributions plus an explicit residual in original logit coordinates.
 
-We evaluate SRP across model families by testing when the factorized readout
-preserves the original LM-head behavior and selected scalar targets. In reliable
-regimes, SRP preserves held-out contrast signs at high rates, with the strongest
-settings below 0.10 median relative reconstruction error, and learned sparse
-support outperforms null and reference baselines. These decompositions show how
-target choice and prompt context reweight the same readout-feature basis, and
-they compose with residual-stream attribution and constrained readout-side edits.
-More broadly, SRP extends logit-lens analysis from vocabulary-level outcomes to
-calibrated, feature-level accounts of readout evidence, providing a basis for
-more auditable studies of how language models express preferences through their
-final readout.
+We use fidelity tests to identify when these feature-level accounts preserve the
+original LM-head score. Across the Qwen settings selected by these diagnostics,
+SRP preserves held-out contrast signs at \(0.949\)--\(0.958\) with median
+relative reconstruction error below \(0.10\), and learned sparse structure
+outperforms null and reference baselines. In sign-preserved, low-error cases,
+local score accounts show how target choice and prompt context reweight a shared
+readout-feature basis, compose with residual-stream attribution, and supply
+directions for constrained readout-side edits. SRP extends logit-lens analysis
+from vocabulary outcomes to auditable feature-level accounts of readout evidence.
 \end{abstract}

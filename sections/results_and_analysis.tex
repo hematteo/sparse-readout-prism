@@ -1,30 +1,27 @@
 \section{Results and Analysis}
 \label{sec:results}
 
-The results follow the dependency chain established in
-\Cref{sec:experimental-setup}: first readout replacement and target
-reconstruction, then support baselines, then local analyses. For signed feature
-accounts, we report whether the sparse reconstruction preserves the original
-sign and its local relative error \(\rho\); unless otherwise stated, aggregate
-low-error counts use \(\rho<0.5\).
+We first identify when SRP accounts are reliable enough to read: LM-head
+replacement, target reconstruction, sign preservation, relative error \(\rho\),
+and sparse-structure baselines define the operating regime. We then use
+sign-preserved, low-error accounts to analyze benchmark-format targets, target
+choice, prompt context, residual-stream components, and constrained readout-side
+edits. Unless stated otherwise, aggregate low-error counts use \(\rho<0.5\).
 
-\subsection{The Sparse Readout Factorization Preserves LM-Head Behavior}
+\subsection{The Sparse Readout Factorization Identifies High-Fidelity Readout Regimes}
 
 \paragraph{Calibration before interpretation.}
-Before interpreting any feature bars, we ask two pragmatic questions. If
-\(\widehat{\WU}\) replaces the original LM head on held-out hidden states, does it
-preserve the readout's top-token behavior and distribution? And for the pairwise
-logit differences inspected below, do the reconstructed margins keep the original
-size and sign? These checks determine which examples can be read as feature-level
-accounts rather than artifacts of a poor sparse substitute.
+Before interpreting feature bars, we test held-out top-token behavior,
+distributions, and pairwise-margin size and sign to mark examples whose residuals
+are small enough for local readout interpretation.
 
 \begin{table}[t]
 \caption{\textbf{Readout replacement and target fidelity.}
-cfg gives dictionary width multiplier/TopK budget. Replacement metrics use
-held-out hidden states; logit-difference metrics use the main held-out target
-subset. rowEV is row-centered explained variance for reconstructed held-out
-unembedding rows; top1 is argmax agreement with the original LM head. Full model
-names and counts are in
+cfg gives dictionary width multiplier / TopK active-feature budget; rowEV is
+row-centered explained variance for reconstructed unembedding rows. Replacement
+metrics use held-out hidden states; logit-difference metrics use the main
+held-out target subset. Higher is better for rowEV, top1, Sign, and \(\rho<0.5\);
+lower is better for KL and median \(\rho\). Full names/counts:
 Appendix~\ref{app:model-suite-selection}.}
 \label{tab:readout-query-fidelity-summary}
 \centering
@@ -50,53 +47,45 @@ Q-9B   & 32/256 & 0.857 & 0.900 & 0.105 & 0.949 & 0.098 & 0.823 \\
 G-E2B  & 32/256 & 0.834 & 0.333 & 6.37  & 0.914 & 0.269 & 0.691 \\
 G-E4B  & 32/256 & 0.827 & 0.736 & 1.22  & 0.940 & 0.160 & 0.786 \\
 \addlinespace[1pt]
-Min-8B & 32/256 & 0.888 & 0.904 & 0.087 & \multicolumn{3}{c}{--\hspace{3pt}(replacement only)} \\
+Min-8B & 32/256 & 0.888 & 0.904 & 0.087 & 0.949 & 0.068 & 0.888 \\
 R1-Q-7B & 32/256 & 0.844 & 0.760 & 0.489 & 0.921 & 0.147 & 0.787 \\
 R1-L-8B & 32/256 & 0.888 & 0.754 & 0.434 & 0.926 & 0.134 & 0.830 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Qwen gives the cleanest operating point.}
-\Cref{tab:readout-query-fidelity-summary} reports row reconstruction, LM-head
-replacement, and held-out logit-difference reconstruction for the \(k=256\)
-settings used below. We measure margins by sign agreement, median relative error
-\(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\),
-and the fraction with \(\rho<0.5\). Qwen is strongest: replacement top-1
-\(0.887\)--\(0.900\), sign agreement \(0.949\)--\(0.958\), and median
-\(\rho<0.10\). Gemma usually keeps the sign but with larger errors. The
-reasoning-distilled checkpoints have weaker replacement top-1/KL, yet still
-preserve contrastive signs well (sign \(0.921\)--\(0.926\), median
-\(\rho<0.15\)); Appendix~\ref{app:readout-factorizer-transfer-comparisons}
-expands this pattern. Across families, errors and sign flips concentrate near
-small exact margins (\Cref{fig:readout-query-fidelity-result}). Thus the most
-reliable setting for the case studies is signed contrasts with nontrivial
-margins; RowEV alone is only a capacity metric, not a guarantee that a local
-display is trustworthy.
+\paragraph{Qualitative operating regime.}
+\Cref{tab:readout-query-fidelity-summary} separates three evidence sources: row
+reconstruction, replacement behavior, and held-out logit-difference
+reconstruction for the \(k=256\) settings used below, with
+\(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\).
+Some settings best preserve top-1/KL; others keep contrast signs despite weaker
+full-readout replacement. Gemma keeps signs with larger target errors. Errors
+and flips concentrate near small exact margins
+(\Cref{fig:readout-query-fidelity-result}), so case studies use signed contrasts
+with nontrivial margins and small residuals. RowEV alone is a capacity metric.
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_five_model_margin_fidelity.pdf}
     \caption{\textbf{Held-out logit-difference fidelity.}
-    (A) Median relative reconstruction error by exact-margin magnitude, with
-    \(\rho=|m_{\mathrm{exact}}-m_{\mathrm{recon}}|/(|m_{\mathrm{exact}}|+0.5)\).
-    (B) Decision flip rate. Flips concentrate in small-margin cases; calibration
-    appears in Appendix Figure~\ref{fig:app-readout-query-margin-reconstruction}.}
+    Median relative error and decision flip rate by exact-margin magnitude.
+    Flips concentrate in small-margin cases; calibration appears in
+    Appendix Figure~\ref{fig:app-readout-query-margin-reconstruction}.}
     \label{fig:readout-query-fidelity-result}
 \end{figure}
 
-\subsection{Learned Token-Row Support Drives Target Reconstruction}
+\subsection{Learned Token-Row Sparse Structure Improves Target Reconstruction}
 
 High-dimensional sparse bases can recover some output-embedding structure by
-capacity alone. We therefore test whether the learned token-to-feature support,
-rather than just the size of the basis, is responsible for the margin
-reconstruction above.
+capacity alone; we test whether learned token-to-feature sparsity drives margin
+reconstruction.
 
 \begin{table}[t]
 \caption{\textbf{Null and reference baselines for Qwen3.5-2B.}
-All methods use the full baseline/null logit-difference set: 1,348 items over
-848 bootstrap base-case clusters. The last column is the fraction with preserved
-sign and \(\rho<0.5\).}
+Full baseline/null logit-difference set: 1,348 items over 848 bootstrap
+clusters. Lower median \(\rho\) and higher Sign / Sign \& \(\rho<0.5\) are
+better.}
 \label{tab:main-baseline-null-comparison}
 \centering
 \scriptsize
@@ -110,56 +99,44 @@ Sparse Readout Prism & 0.081 & 0.941 & 0.774 \\
 Nearest-row ridge & 0.260 & 0.861 & 0.622 \\
 PCA, 1024 dims & 0.470 & 0.829 & 0.539 \\
 Shuffled sparse codes & 1.090 & 0.502 & 0.081 \\
-Random support & 1.141 & 0.407 & 0.069 \\
+Random sparse pattern & 1.141 & 0.407 & 0.069 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Support controls.}
+\paragraph{Sparse-structure controls.}
 On the full Qwen3.5-2B logit-difference set, SRP has the lowest median error and
 largest sign-preserved low-error subset
-(\Cref{tab:main-baseline-null-comparison}).
-Nearest-row ridge \citep{hoerl1970ridge} and PCA \citep{jolliffe2002principal}
-references retain some sign structure, while shuffled codes and random supports
-approach chance, indicating dependence on learned token-to-feature support. The
-full error tail appears in
+(\Cref{tab:main-baseline-null-comparison}). Nearest-row ridge
+\citep{hoerl1970ridge} and PCA \citep{jolliffe2002principal} retain some sign
+structure, while shuffled codes and random sparse patterns approach chance. Thus
+the learned sparse code pattern reconstructs this target set better than
+capacity-matched null/reference comparisons; the full tail is in
 Appendix~\ref{app:robustness-key-quantitative}.
-Thus the sparse code support learned from vocabulary rows, not merely the
-availability of a large basis, drives the reconstruction used by the local
-accounts.
 
 \subsection{Scalar Readout Targets Extend Beyond Token Pairs}
 
-The same accounting identity also covers targets that look more like benchmark
-decisions than curated token pairs. We instantiate task-shaped readout contrasts
-for QA
-\citep{rajpurkar2018squad2,yang2018hotpotqa}, abstention, ContractNLI labels
-through LegalBench \citep{koreeda2021contractnli,guha2023legalbench}, and
-SecurityEval safe/unsafe actions \citep{siddiq2022securityeval}. These rows ask
-whether the sparse reconstruction carries the intended readout contrast while
-keeping the evaluation at the readout level.
-For example, a QA item is converted into a linear contrast between the average
-row for the gold answer token(s) and the average row for fixed distractor
-token(s); the table evaluates reconstruction of that contrast, not the model's
-end-to-end answer accuracy.
+To test whether SRP handles task-shaped readout questions, we construct
+benchmark-format readout targets from dataset-derived linear contrasts. We
+instantiate QA \citep{rajpurkar2018squad2,yang2018hotpotqa}, abstention,
+ContractNLI labels via LegalBench
+\citep{koreeda2021contractnli,guha2023legalbench}, and SecurityEval safe/unsafe
+actions \citep{siddiq2022securityeval}; QA contrasts, for example, average
+gold-answer rows against fixed distractor rows. These targets evaluate
+readout-target reconstruction rather than end-to-end task accuracy.
 
-\Cref{tab:benchmark-derived-task-targets} shows sign reconstruction on
-Qwen3.5-0.8B and Qwen3.5-2B. Qwen3.5-2B is strongest on answerable QA,
-multi-hop distractors, and legal labels; SecurityEval is harder because its
-safe/unsafe-action contrast is spread across many lexical forms, so no small
-token group captures the target as cleanly. These rows measure whether the
-chosen readout contrast is reconstructed and should not be read as benchmark
-task accuracy.
-\Cref{fig:benchmark-task-group-examples} shows representative low-error QA
-accounts.
+\Cref{tab:benchmark-derived-task-targets} shows that answerable-QA,
+multi-hop-distractor, and legal-label rows have lower error than SecurityEval,
+whose safe/unsafe-action contrast spans many lexical forms. SRP therefore
+reconstructs several dataset-derived linear contrasts beyond curated token pairs
+while remaining a readout-level fidelity test. Representative low-error QA
+accounts appear in Appendix~\ref{app:benchmark-format-display-examples}.
 
 \begin{table}[t]
 \caption{\textbf{Benchmark-format readout-target fidelity.}
-Rows evaluate benchmark-format scalar targets: answer versus distractor,
-abstention versus entity, label contrast, or safe versus unsafe action. The last
-column reports sign agreement with \(\rho<0.5\), where
-\(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\).
-All rows aggregate 300 targets; family rows break down Qwen3.5-2B.}
+Rows evaluate answer-vs-distractor, abstention-vs-entity, label, or
+safe-vs-unsafe readout targets. Last column: sign agreement with \(\rho<0.5\).
+All aggregate rows use 300 targets; family rows break down Qwen3.5-2B.}
 \label{tab:benchmark-derived-task-targets}
 \centering
 \scriptsize
@@ -169,8 +146,8 @@ All rows aggregate 300 targets; family rows break down Qwen3.5-2B.}
 \toprule
 Model & Target source & \(n\) & Med. \(\rho\) & Sign & \makecell{Sign \&\\ \(\rho<.5\)} \\
 \midrule
-Q-0.8B & all task targets & 300 & 0.180 & 0.983 & 0.933 \\
-Q-2B & all task targets & 300 & 0.129 & 0.943 & 0.840 \\
+Q-0.8B & all benchmark-format targets & 300 & 0.180 & 0.983 & 0.933 \\
+Q-2B & all benchmark-format targets & 300 & 0.129 & 0.943 & 0.840 \\
 \addlinespace[1pt]
 Q-2B & SQuAD2 answerable & 50 & 0.150 & 1.000 & 0.900 \\
 Q-2B & HotpotQA distractor & 75 & 0.125 & 0.933 & 0.907 \\
@@ -181,102 +158,70 @@ Q-2B & SecurityEval & 50 & 0.393 & 0.880 & 0.600 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/proto_token_lens/benchmark_task_group_targets/benchmark_task_group_examples.pdf}
-\caption{\textbf{Benchmark-format local score accounts.}
-    Positive bars support the gold/intended side; negative bars support the
-    distractor side. Both Qwen3.5-2B panels use the selected \(32\times\),
-    \(k=256\) readout SAE and have correct sign with low relative error. Feature
-    labels summarize rows with large sparse coefficients.}
-    \label{fig:benchmark-task-group-examples}
-\end{figure}
+\subsection{Local Score Accounts Expose Feature Competition Within Token Rankings}
 
-\subsection{Local Accounts Expose Feature Competition Within Token Preferences}
-
-With the low-error regime identified, we turn to the content of the bars. The
-first case studies keep the scoring question simple: one token against another,
-with shared readout directions carrying the positive and negative evidence.
-
-\paragraph{From token preferences to feature terms.}
-Top-token lens summaries compress a preference into one score. In
-\Cref{fig:main-lens-prism-comparison}, the same
-\texttt{verify}-versus-\texttt{assume} margin is broken into supporting and
-opposing readout features, with the leftover reconstruction error shown next to
-the bars.
+With the low-error regime identified, we inspect token-vs-token accounts. Labels
+summarize high-coefficient rows; feature ids, signed contributions, and residuals
+are measured.
 
 \paragraph{Polysemous-token case studies.}
-For the main case studies, we apply SRP to low-error Qwen3.5-2B polysemous-token
-logit differences in \Cref{fig:selected-readout-prism-examples}. In an insect
-context, \texttt{bug} receives positive terms from features labeled by mosquito-,
-bee-, and beetle-associated rows against error-token rows; in software, the
-positive terms shift toward defect, crash, and debug rows. The two \(32\times\),
-\(k=256\) panels have relative reconstruction errors \(0.185\) and \(0.003\).
-Additional \texttt{bark} and \texttt{bass} cases, plotting conventions, and
-label audits appear in
+SRP decomposes low-error Qwen3.5-2B polysemous-token logit differences
+(\Cref{fig:selected-readout-prism-examples}). In insect context,
+\texttt{bug} draws positive mosquito-, bee-, and beetle-labeled terms against
+error-token rows; in software, positives shift toward defect, crash, and debug
+rows. The panels have relative errors \(0.185\) and \(0.003\). Additional
+\texttt{bark}/\texttt{bass} cases, plotting conventions, and label audits appear in
 \cref{fig:app-selected-readout-prism-extra-examples,app:display-taxonomy,tab:app-main-case-study-feature-audit}.
-These sign-preserved, low-\(\rho\) examples show target-local support: the same
-surface token can be supported by different feature families as the competing
-alternative and prompt context change. They do not by themselves isolate whether
-the change comes from the target, the prompt context, or both; the next two
-sections separate those effects. Aggregate frequencies are reported in the
-appendix tables.
+These sign-preserved, low-\(\rho\) examples show that the same surface token can
+be supported by different row-labeled feature groups as target and context
+change. The next sections separate those factors; aggregate frequencies are in
+the appendix.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.86\columnwidth]{figures/proto_token_lens/qwen2b_32x_section43_polysemy_margin_curated_examples/qwen2b_32x_margin_examples_main2_onecol_with_tokens.pdf}
     \caption{\textbf{Sparse Readout Prism case studies.}
-    Positive/negative bars support the first/second token; the axis is signed
-    contribution. Relative reconstruction errors are \(0.185\) and \(0.003\).
-    Both panels use the selected Qwen3.5-2B unembedding-row SAE
-    (\(D=65536\), \(k=256\)); feature names summarize rows with large sparse
-    coefficients;
-    see \cref{tab:app-main-case-study-feature-audit}.}
+    Positive/negative bars support the first/second token. Relative errors are
+    \(0.185\) and \(0.003\). Both panels use the selected Qwen3.5-2B
+    unembedding-row SAE (\(D=65536\), \(k=256\)); see
+    \cref{tab:app-main-case-study-feature-audit}.}
     \label{fig:selected-readout-prism-examples}
 \end{figure}
 
-\subsection{Target Choice Selects Support from a Shared Projection Profile}
+\subsection{Target Choice Selects Signed Terms from Shared Readout Feature Projections}
 
-We use the scalar-target interface to compare several scoring questions on the
-same hidden states. The empirical question is whether the sparse account remains
-reliable as targets move from reference contrasts to sharper pair and group
-margins.
+Having established a low-error operating regime, we next ask how the selected
+target changes the account. We compare scoring questions on the same hidden
+states, from reference contrasts to sharper pair and group margins.
 
 \paragraph{Target-family reliability.}
-Large hidden-state projections become signed evidence only through the target
-coefficients, so fidelity must be interpreted per target family. For instance, a
-feature with a large projection may support a raw token logit, drop out after
-subtracting the vocabulary-mean row, or become negative evidence when the
-comparison token uses that feature more strongly.
+Target coefficients turn projections into signed evidence: a feature may support
+a raw logit, drop out after mean subtraction, or become negative evidence when
+the comparison token uses it more.
 
-The aggregate metrics follow this pattern. In the five-model Qwen/Gemma suite,
-reference contrasts are easiest: 301 top-token-versus-vocabulary-mean cases give
-1,505 model--case rows with median \(\rho=0.021\) and perfect sign agreement.
-Pairwise and group contrasts are harder: top-1 versus top-5 margins have median
-\(\rho=0.253\), while top-1 versus top-2 margins fall to \(0.824\) sign
-agreement. We therefore interpret each display only at its stated score and
-report the local sign and error; full counts and examples are in
+In the five-model Qwen/Gemma subset, 301 top-token-versus-vocabulary-mean cases
+give 1,505 model--case rows with median \(\rho=0.021\) and perfect sign
+agreement. Pairwise/group contrasts are harder: top-1 versus top-5 margins have
+median \(\rho=0.253\), while top-1 versus top-2 margins fall to \(0.824\) sign
+agreement. This pattern shows why local accounts must name the target they
+decompose: reference contrasts are easy to reconstruct, while sharper competitor
+margins are the stress test. We interpret each display at its stated score and
+report local sign/error; full counts/examples are in
 \Cref{tab:app-general-readout-query-families} and
-Appendix~\ref{app:query-family-display-example}.
+Appendix~\ref{app:readout-target-family-display-example}.
 
 \subsection{Context Reweights Fixed Token-Row Coefficients}
 
-The converse experiment keeps the token row fixed and changes the prompt. Any
-change in the displayed bars must then come from the hidden state's projections,
-not from a different set of token-row coefficients.
+Here the token row is fixed and only the prompt changes, so bar changes come from
+hidden-state projections.
 
 \paragraph{Context reweighting.}
-In \Cref{fig:same-token-polysemy}, Qwen3.5-2B reweights
-\texttt{bug}, \texttt{ring}, and \texttt{bridge} toward context-appropriate
-feature families.
-Each displayed centered-token account has relative reconstruction error below
-\(0.05\), using the same \(\rho\) convention as the fidelity tables. For example,
-the \texttt{bug} row shifts from mosquito- and bee-like features to defect-,
-crash-, and debug-like features; \texttt{bridge} shifts from river/crossing
-features to networking features. Additional prompt-level views are in
-Appendix~\ref{app:additional-qwen-display-examples}. Because the fitted
-token-row coefficients are fixed after training, these changes isolate the
-context-dependent projection term.
+In \Cref{fig:same-token-polysemy}, the fixed setting reweights \texttt{bug},
+\texttt{ring}, and \texttt{bridge} toward features whose row labels match the
+prompt context; each centered-token account has \(\rho<0.05\). \texttt{bug}
+shifts from mosquito/bee to defect/crash/debug labels, and \texttt{bridge} from
+river/crossing to networking labels. Additional views are in
+Appendix~\ref{app:additional-qwen-display-examples}.
 
 \begin{figure}[t]
     \centering
@@ -291,12 +236,11 @@ context-dependent projection term.
 \subsection{Readout Feature Terms Compose with Direct Logit Attribution}
 \label{sec:feature-resolved-component-decomposition}
 
-Because the bars are linear in the final hidden state, we can split them across
-standard additive residual-stream decompositions. This asks where the supporting
-and opposing readout evidence is written in the realized forward pass.
+Because the bars are linear in the final hidden state, additive residual-stream
+decompositions can split them by component.
 
 \paragraph{Component-level readout terms.}
-SRP therefore composes with residual-stream direct logit attribution (DLA)
+SRP composes with residual-stream direct logit attribution (DLA)
 \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. If
 \(h\approx\sum_c h_c\), an SAE feature term for target \(q\) splits into
 \[
@@ -305,51 +249,44 @@ SRP therefore composes with residual-stream direct logit attribution (DLA)
 For \(q=w_A-w_B\), \(\beta_i(q)=z_{A,i}-z_{B,i}\); for
 \(q=w_A-\bar{w}_{\mathcal{V}}\),
 \(\beta_i(q)=z_{A,i}-\bar{z}_{\mathcal{V},i}\). This yields additive
-component-by-feature attribution from one forward pass. The same terms can serve
-as inputs to later causal interventions
-\citep{geiger2023causalabstraction} that test component or feature necessity.
+component-by-feature attribution; later interventions can test necessity
+\citep{geiger2023causalabstraction}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.86\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_semantic_table.pdf}
     \caption{\textbf{Feature-resolved component attribution for a
     \texttt{verify}-\texttt{assume} margin.}
-    Rows are residual components; columns group feature families, unembedding
-    residual, and ordinary DLA. Red supports \texttt{verify}; blue supports
-    \texttt{assume}.}
+    Rows are residual components; columns group feature-label families,
+    unembedding residual, and ordinary DLA.}
     \label{fig:qwen-prism-dla-verify-assume-main}
 \end{figure}
 
-\Cref{fig:qwen-prism-dla-verify-assume-main} applies this decomposition to a
-Qwen3.5-2B
-\texttt{verify}-minus-\texttt{assume} target. The exact margin is \(+4.31\), the
-residual-stream DLA sum is \(+4.36\), and the sparse feature sum is \(+4.28\)
-(\(\rho=0.009\)), separating verification/checking support from
-assumption-family opposition. A row-centered \texttt{verify} companion appears in
-Appendix~\ref{app:feature-resolved-dla}.
+\Cref{fig:qwen-prism-dla-verify-assume-main} decomposes a Qwen3.5-2B
+\texttt{verify}-minus-\texttt{assume} target. The exact margin is \(+4.31\), DLA
+sum \(+4.36\), and sparse feature sum \(+4.28\) (\(\rho=0.009\)), separating
+verification/checking support from assumption-family opposition. A row-centered
+\texttt{verify} companion appears in Appendix~\ref{app:feature-resolved-dla}.
 
 \FloatBarrier
 
 \subsection{Selected Readout Features Move Held-Out Lexical Scores}
 \label{sec:readout-feature-edits}
 
-Finally, we test whether directions selected from local SRP accounts act as
-narrow readout-side controls for the corresponding lexical target.
+Finally, we ask whether directions selected from local accounts transfer to
+held-out lexical readout scores.
 
 \paragraph{Constrained readout edit.}
-We edit logits along ten Qwen3.5-2B decoder directions selected from five
-discovery terms, then measure candidate-constrained lexical logit differences on
-discovery and disjoint held-out tokens.
-The edit adds a fixed logit-space vector derived from the selected decoder
-directions; discovery terms choose the directions, while held-out terms test
-whether the same readout-side directions move related lexical scores that were
-not directly selected.
+The test edits logits along ten Qwen3.5-2B decoder directions selected from five
+discovery terms, then measures specified lexical logit differences on discovery
+and held-out tokens. It is candidate-constrained rather than an open-ended
+generation evaluation.
 
 \begin{table}[H]
-\caption{\textbf{Qwen3.5-2B readout edit.}
-All methods use intervention scale \(16\). \(\Delta p_{\mathrm{bad}}\) is
-reported as a positive reduction in probability assigned to the profane-token
-side of held-out candidate pairs; median KL is next-token distribution shift.}
+\caption{\textbf{Constrained Qwen3.5-2B readout-side lexical edit.}
+All methods use intervention scale \(16\). \(\Delta p_{\mathrm{bad}}\) is a
+positive reduction in held-out profane-token probability; median KL is
+next-token distribution shift.}
 \label{tab:main-readout-edit}
 \centering
 \scriptsize
@@ -361,7 +298,7 @@ Method & \makecell{Disc.\\flip} & \makecell{Held-out\\flip} &
 \makecell{Held-out\\\(\Delta p_{\mathrm{bad}}\)} &
 \makecell{Median\\KL} \\
 \midrule
-SRP features (10) & \(0.450\) & \(0.359\) & \(0.398\) & \(0.679\) \\
+Readout SAE directions (10) & \(0.450\) & \(0.359\) & \(0.398\) & \(0.679\) \\
 Discovery token bias & \(0.450\) & \(0.000\) & \(0.000\) & \(0.001\) \\
 Oracle token bias & \(0.450\) & \(0.359\) & \(0.404\) & \(0.004\) \\
 Random features & \(0.013\) & \(0.156\) & \(0.078\) & \(1.363\) \\
@@ -370,12 +307,12 @@ No intervention & \(0.000\) & \(0.000\) & \(0.000\) & \(0.000\) \\
 \end{tabular}
 \end{table}
 
-\Cref{tab:main-readout-edit} shows that SRP features selected from discovery
-tokens move held-out lexical logit differences (flip rate \(0.359\)), matching
-the oracle held-out flip rate, though with larger distribution shift, while a
-discovery-token-only bias has no held-out effect. R1-Distill-Qwen-7B shows the
-same pattern (Appendix~\ref{app:lexical-control-stress-test}). This demonstrates
-constrained movement of the specified readout scores, rather than broad
-behavioral control.
+\Cref{tab:main-readout-edit} shows that readout SAE directions selected from
+discovery tokens move held-out lexical logit differences (flip rate \(0.359\)),
+matching the oracle held-out flip rate with larger distribution shift; a
+discovery-token-only bias has no held-out effect. Appendix~\ref{app:lexical-control-stress-test}
+repeats this on R1-Distill-Qwen-7B. These results show readout-score movement
+from discovered directions; evaluating downstream generation behavior is the next
+evaluation layer.
 
 \FloatBarrier

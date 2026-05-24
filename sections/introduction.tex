@@ -5,74 +5,61 @@ unembedding matrix, or LM head; we call this interface the \emph{readout}.
 Lens-style methods use this interface, or a learned variant of it, to decode
 hidden states into vocabulary distributions, top-token summaries, prompted
 continuations, or natural-language descriptions
-\citep{nostalgebraist2020,belrose2023tuned,ghandeharioun2024patchscopes}. This
-is a useful probe because it asks a simple readout question: what vocabulary
-evidence does this hidden state expose?
+\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}. A
+logit-lens probe asks a simple readout question: what vocabulary evidence does
+this hidden state expose? The limitation is that each selected score remains a
+dense dot product. A token logit is \(h^\top w_t\), a pairwise logit difference is
+\(h^\top(w_A-w_B)\), and more general linear readout scores remain combinations
+of unembedding rows. Lens-style summaries can identify favored tokens or
+contrasts, but not which shared readout directions support the score, which
+oppose it, or how much remains outside a sparse feature decomposition.
 
-The limitation is that each selected score remains a dense readout dot product.
-A token logit is \(h^\top w_t\); a pairwise preference is
-\(h^\top(w_A-w_B)\); group targets and local margins are still linear
-combinations of unembedding rows. Lens-style summaries can therefore say which
-tokens or contrasts are favored, but not which shared readout features support
-the score, which features oppose it, or how much of the score is left outside a
-sparse feature account.
+Sparse Readout Prism (SRP) factorizes the readout itself. It learns sparse
+token-row coefficients and shared decoder directions for the LM head; we call
+these directions \emph{readout features}. Given a hidden state and a chosen
+scalar readout target, i.e. a selected linear function of unembedding rows, SRP
+asks which reusable directions add support, which add opposition, and how much
+remains in the reconstruction residual. We call this signed, target-specific
+decomposition a \emph{local score account}: it accounts for one selected linear
+readout score for one hidden state and target, not global model behavior.
 
-Sparse Readout Prism (SRP) is a sparse feature decomposition for logit-lens
-readouts, built on sparse-autoencoder and dictionary-learning machinery
+To make these readout scores decomposable, SRP applies sparse-autoencoder and
+dictionary-learning machinery to the LM head itself
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}. It
 factorizes the final unembedding matrix into sparse token-row coefficients and
 shared readout directions,
 \[
     \WU \approx \mathbf{1}\mu^\top + ZD_{\mathrm{feat}} .
 \]
-This gives a sparse feature basis for the readout itself. For a hidden state
-\(h\), the vector \(D_{\mathrm{feat}}h\) gives readout feature projections
-before any token, contrast, or margin has been selected. In this paper, a
-readout feature is a decoder direction learned from unembedding rows; it is not a
-hidden-state SAE activation. A scalar readout target---a token logit, reference
-contrast, pairwise logit difference, group contrast, or local competitor
-margin---then turns those projections into signed feature contributions for the
-chosen score, together with an explicit reconstruction residual.
+The factorization gives a reusable readout-feature basis before any target is
+chosen. For hidden state \(h\), \(D_{\mathrm{feat}}h\) gives readout feature
+projections onto directions learned from unembedding rows, not hidden-state SAE
+activations. A scalar readout target---a token logit, reference contrast,
+pairwise logit difference, group contrast, or top-competitor margin---then turns
+those projections into signed feature contributions plus a residual.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_verify_assume/qwen2b_lens_prism_comparison_verify_assume.pdf}
     \caption{\textbf{From lens output to a local score account.}
     A logit lens reports that a hidden state favors \texttt{verify} over
-    \texttt{assume}. SRP keeps the same pairwise target fixed and decomposes it
-    into signed sparse readout-feature terms: verification/checking support,
+    \texttt{assume}. Using the SRP factorization, a local score account keeps the
+    same pairwise target fixed and decomposes it into signed sparse
+    readout-feature terms: verification/checking support,
     assumption-related opposition, and a small reconstruction residual.}
     \label{fig:main-lens-prism-comparison}
 \end{figure}
 
-\Cref{fig:main-lens-prism-comparison} makes this limitation concrete. We test
-whether the next-token state treats source checking as a better action than
-assumption. We prompt the model with ``The source has not been checked yet. The
-appropriate next action is to'' and measure the pairwise logit-lens score
-\(h^\top(w_{\texttt{verify}}-w_{\texttt{assume}})\). The score is positive, so
-the lens tells us the outcome: the hidden state favors \texttt{verify} over
-\texttt{assume}. What it does not tell us is which shared readout features
-produce that preference or which features push against it. SRP applies to the
-same scalar target and decomposes the outcome into signed readout-feature terms:
-verification/checking features supply positive support, assumption-related
-features push the other way, and the residual reports the part not captured by
-the sparse factorization. The example is one instance of the general identity:
-factor the readout, project the hidden state through readout features, choose a
-scalar readout target, and decompose the selected score.
+\Cref{fig:main-lens-prism-comparison} illustrates this identity on a
+\texttt{verify}-minus-\texttt{assume} margin: SRP keeps the pairwise target fixed,
+attributes support to verification/checking features, opposition to
+assumption-related features, and reports the residual.
 
-In this paper, we propose SRP, and it contributes:
-\begin{itemize}
-    \item a sparse dictionary factorization of the final unembedding / LM head,
-    yielding sparse token-row coefficients and shared readout directions.
-    \item target-independent readout feature projections for hidden states,
-    which scalar readout targets convert into signed feature terms.
-    \item a unified scalar-target formalism for token logits, reference
-    contrasts, pairwise logit differences, group contrasts, and local margins.
-    \item fidelity diagnostics---LM-head replacement quality, target
-    reconstruction error, sign agreement, and null/reference baselines---that
-    identify when the decompositions preserve the selected readout behavior.
-    \item demonstrations that the factorized readout separates target choice
-    from context reweighting, composes with residual-stream direct logit
-    attribution, and supports constrained readout-side edits that move held-out
-    lexical scores.
-\end{itemize}
+We contribute: (i) a sparse dictionary factorization of the final unembedding /
+LM head; (ii) target-independent readout feature projections that scalar readout
+targets convert into signed feature terms; (iii) a target formalism for token
+logits, reference contrasts, logit differences, group contrasts, and margins;
+(iv) fidelity diagnostics for replacement, reconstruction, sign agreement, and
+baselines; and (v) low-error demonstrations showing how target choice, prompt
+context, residual-stream components, and constrained readout-side edits interact
+with the same readout-feature basis.

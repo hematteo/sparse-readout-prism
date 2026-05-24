@@ -3,7 +3,7 @@
 \section{Readout SAE Transfer and Model-Family Comparisons}
 \label{app:readout-factorizer-transfer-comparisons}
 
-This appendix reports how the selected readout-SAE recipe transfers across the
+This appendix reports how the selected readout SAE recipe transfers across the
 smaller Qwen/Gemma suite and targeted cross-family or post-training rows.
 
 \subsection{Transfer to Smaller Models}
@@ -238,10 +238,10 @@ Model & Dictionary setting & Width / $k$ & rowEV & top1 & KL & dead & rare & Rol
 
 Both Ministral dictionary settings have healthy usage and decision-fidelity
 metrics (dead $< 0.03$, KL $< 0.14$ bits).
-Decision fidelity (top1, KL) is comparable to or slightly stronger than
-Qwen3.5-9B at the matched 32$\times$, $k=256$ point, supporting the claim
-that the row-factorization recipe transfers beyond the Qwen family when the
-readout is geometrically clean (untied, softcap-free). The rare feature rate
+Decision fidelity (top1, KL) falls in the high-fidelity range of the matched
+32$\times$, $k=256$ comparison rows, supporting the claim that the
+row-factorization recipe transfers beyond the Qwen family when the readout is
+geometrically clean (untied, softcap-free). The rare feature rate
 is high at both points; we report it as a usage statistic, following the same
 convention as the Qwen3.5-9B
 32$\times$, $k=256$ row.
@@ -279,23 +279,23 @@ analysis that helps explain this separation.
 \paragraph{Attribution of the post-training effect.}
 The R1-distilled checkpoints differ from the base-model rows in architecture,
 tokenizer, and pretraining lineage as well as post-training. The repeated pattern
-across two distillation lineages makes post-training a plausible explanation; a
+across two distillation lineages makes post-training a plausible contributor; a
 matched base-vs.-distill ablation within one architecture would further isolate
 the effect.
 
-\paragraph{R1 contrastive query fidelity.}
-We also ran the held-out contrastive query-fidelity check on the two
+\paragraph{R1 contrastive readout-target fidelity.}
+We also ran the held-out contrastive readout-target fidelity check on the two
 R1-distilled checkpoints. Table~\ref{tab:app-k-r1-qfid} reports these results
 using the same bank version as the five-model run. Sign agreement remains close
 to the five-model baseline; the fraction below the residual threshold is
 comparable in the fidelity setting and lower under the stricter setting.
 
 \begin{table}[!tbp]
-\caption{Held-out contrastive query-fidelity metrics for the R1-distilled
+\caption{Held-out contrastive readout-target fidelity metrics for the R1-distilled
 checkpoints under the same contrast-bank version as the five-model run.
 ``sign'' is contrastive sign agreement; ``median resid.'' is the median relative
 residual $|\Delta\text{margin}|/|\text{exact margin}|$; ``resid.\(<0.5\)''
-is the fraction of held-out queries with relative residual below $0.5$.}
+is the fraction of held-out readout targets with relative residual below $0.5$.}
 \label{tab:app-k-r1-qfid}
 \centering
 \scriptsize
@@ -364,16 +364,17 @@ checkpoints: max/median is $1.5$--$1.6$ for the base-model rows and
 $1.7$--$2.0$ for the distilled rows, with R1-Distill-Llama-8B the most
 extreme. Second, the lower tail is compressed: minimum row norms rise
 from $0.25$--$0.38$ on the base-model rows to $0.42$--$0.57$ on the distilled
-rows. Net effect: the row-norm distribution is bimodally widened after
-reasoning distillation. The coefficient of variation tracks this
-($0.12$ on base models vs $0.14$--$0.16$ on distilled models).
+rows. In these comparison rows, the row-norm distribution is wider for the
+reasoning-distilled checkpoints than for the base-model rows. The coefficient of
+variation tracks this ($0.12$ on base models vs $0.14$--$0.16$ on distilled
+models).
 
 The row-centered-and-normalized SAE recipe therefore operates on a heavier-tailed
 norm distribution for the distilled rows, which is consistent with the
 observed pattern: row reconstruction (which is uniform in $L_2$) is preserved,
 while decision fidelity (which is exponential in the logit error and dominated
 by the heaviest rows) separates from rowEV. This characterizes a second-order
-property of reasoning-distilled readouts and motivates norm-aware SAE recipes as
-a natural extension for those targets.
+property of these reasoning-distilled comparison rows and motivates norm-aware
+SAE recipes as a natural extension for those targets.
 
 \ReadoutSAEFloatBarrier

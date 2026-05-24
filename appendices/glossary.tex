@@ -59,11 +59,15 @@ only where SRP uses a specialized readout version.
 
 \begin{description}[leftmargin=0.28\linewidth,style=nextline]
     \item[Sparse Readout Prism]
-    The sparse feature decomposition introduced here: train an SAE on
-    unembedding rows to obtain a sparse feature basis for the readout, sparse
-    code entries for token rows, an LM head replacement, and readout feature
-    projections. With a scalar readout target, the same basis decomposes a
-    selected score into signed feature terms plus reconstruction error.
+    The sparse feature decomposition introduced here: an SAE trained on
+    unembedding rows factorizes the final readout into sparse code entries for
+    token rows and shared readout directions, yielding a sparse feature basis
+    for the readout and a reconstructed LM head.
+
+    \item[Score accounting]
+    The downstream use of the SRP basis with a hidden state and scalar readout
+    target to decompose a selected score into signed feature terms plus
+    reconstruction error.
 
     \item[Readout SAE]
     The sparse autoencoder trained on unembedding rows. It reconstructs a row as

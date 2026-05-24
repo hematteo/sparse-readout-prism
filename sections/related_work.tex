@@ -1,56 +1,41 @@
 \section{Related Work}
 
-\paragraph{Lens-style readouts: the interface.}
+\paragraph{Lens-style readouts.}
 Lens-style methods expose hidden states through vocabulary distributions,
 future-token predictions, continuations, or descriptions
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
-They are closest to SRP in interface: a hidden state is inspected by asking what
-the model can read out from it. Lens variants typically change the inspection
-map, the layer being decoded, or the representation being queried. SRP uses the
-same interface as input to a readout-side accounting step: after a token score or
-contrast is chosen, the selected scalar is expanded into sparse feature terms and
-an unreconstructed residual. This makes the comparison with lens methods direct
-without treating SRP as another decoder map.
+They are closest to SRP in interface: asking what a hidden state reads out.
+Where lens variants change the map, layer, or representation, SRP keeps the
+selected score fixed and expands it into sparse feature terms plus residual.
 
-\paragraph{Output geometry: the object.}
-SRP treats the final unembedding, or LM head, as the object to be factorized.
-Output embeddings have long been studied as learned representations and as part
-of the geometry that shapes language-model predictions
+\paragraph{Output-embedding geometry.}
+SRP factorizes the final unembedding, or LM head. Output embeddings have been
+studied as learned representations and prediction-shaping geometry
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
-This work motivates caution about interpreting raw vocabulary logits: token
-rows, weight tying, softmax rank constraints, and vocabulary segmentation all
-affect the final scores. SRP makes this geometry explicit by learning sparse
-token-row coefficients and shared readout directions for \(\WU\). The resulting
-basis is readout-side: target coefficients are fixed by unembedding-row
-geometry, while the current context enters through hidden-state projections onto
-the learned directions.
+Token rows, weight tying, softmax rank constraints, and vocabulary segmentation
+affect final scores. SRP makes this geometry explicit through sparse token-row
+coefficients and shared readout directions: target coefficients are fixed by
+unembedding-row geometry, while context enters through hidden-state projections.
 
-\paragraph{Sparse dictionaries: the machinery.}
+\paragraph{Sparse dictionaries.}
 Activation-SAE work learns dictionaries over hidden-state distributions and has
 developed evaluation practice for sparse features
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,karvonen2025saebench,makelov2024principled}.
-SRP uses sparse-dictionary machinery but changes the fitted object: the training
-examples are unembedding rows rather than activation vectors. Its sparse codes
-are therefore token-row coefficients, and its decoder directions are readout
-directions used by the LM head. A hidden state's coordinate \(h^\top d_i\) is a
-projection onto such a direction, not an SAE activation in the usual
-activation-SAE sense. This distinction matters because SRP's local terms are
-formed only after a scalar readout target supplies the corresponding target
-coefficient.
+SRP uses the machinery but fits unembedding rows rather than activation vectors:
+codes are token-row coefficients, decoder directions are LM-head readout
+directions, and \(h^\top d_i\) is a projection rather than an activation-SAE
+code. Local terms form only after a scalar readout target supplies a coefficient.
 
-\paragraph{Logit attribution and circuits: the composition.}
+\paragraph{Logit attribution and circuits.}
 Component attribution and logit-prism methods ask where logit evidence is
 written in the residual stream
 \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. Automated circuit
 discovery, causal abstraction, transcoders, and circuit-tracing systems pursue
 internal mechanisms and intervention-tested structure
 \citep{conmy2023acdc,geiger2023causalabstraction,dunefsky2024transcoders,ameisen2025circuittracing}.
-SRP addresses a complementary axis: it factorizes the rows against which the
-final hidden state is scored. Because its terms are linear in the readout, they
-compose with residual-stream attribution: a signed readout-feature contribution
-can be split across residual components in a realized forward pass. This gives
-an additive feature-resolved attribution account; causal interventions are still
-needed to test component or feature necessity. SRP reports replacement fidelity,
-target reconstruction, sign agreement, and residual terms to mark when these
-readout-level accounts are interpretable. Broader positioning appears in
-Appendix~\ref{app:extended-related-work}.
+SRP instead factorizes the rows against which the final hidden state is scored.
+Because its terms are linear, signed readout-feature contributions can be split
+across residual components in a realized forward pass. Causal interventions are
+still needed to test necessity; SRP uses replacement fidelity, target
+reconstruction, sign agreement, and residuals to mark interpretable readout-level
+accounts. Broader positioning appears in Appendix~\ref{app:extended-related-work}.

@@ -113,7 +113,7 @@ Gemma-4-E4B  & 16$\times$, $k=128$ & $0.693$ & $0.669$ & $1.82$ & $0.040$ & stri
 Qwen3.5-0.8B & 32$\times$, $k=256$ & $0.877$ & $0.891$ & $0.135$ & $0.001$ & high-fidelity result \\
 Qwen3.5-2B   & 32$\times$, $k=256$ & $0.847$ & $0.887$ & $0.136$ & $0.010$ & high-fidelity runner-up \\
 Qwen3.5-9B   & 16$\times$, $k=256$ & $0.761$ & $0.874$ & $0.167$ & $0.061$ & compact 9B fidelity comparison \\
-Qwen3.5-9B   & 32$\times$, $k=256$ & $0.857$ & $0.900$ & $0.105$ & $0.292$ & strongest 9B fidelity point \\
+Qwen3.5-9B   & 32$\times$, $k=256$ & $0.857$ & $0.900$ & $0.105$ & $0.292$ & high-capacity 9B fidelity point \\
 Gemma-4-E2B  & 32$\times$, $k=256$ & $0.834$ & $0.333$ & $6.37$ & $0.038$ & fidelity row; softcap-correct \\
 Gemma-4-E4B  & 32$\times$, $k=256$ & $0.827$ & $0.736$ & $1.22$ & $0.078$ & fidelity row; softcap-correct \\
 \bottomrule
@@ -161,8 +161,8 @@ Qwen BatchTopK control \citep{bussmann2024batchtopk}
 Qwen capacity sweep
 & higher-$k$ screening runs, 16$\times$ and 32$\times$ 20k runs, OMP comparison
 & width and active budget $k$
-& $D=131072$, $k=256$ is the best-fidelity capacity point; $D=65536$, $k=256$
-is the compact comparison \\
+& compares the 32$\times$, $k=256$ high-capacity point with the 16$\times$,
+$k=256$ compact point \\
 \addlinespace
 Qwen JumpReLU control \citep{rajamanoharan2024jumprelu}
 & four JumpReLU cells and matched TopK controls
@@ -172,13 +172,13 @@ Qwen JumpReLU control \citep{rajamanoharan2024jumprelu}
 Small-model transfer
 & complete four-model width/$k$ screening grid plus 20k runs
 & model family, width, $k$
-& Qwen3.5-0.8B 16$\times$, $k=128$ gives the strongest strict-budget rowEV;
-Qwen3.5-0.8B 32$\times$, $k=256$ gives the strongest high-fidelity rowEV \\
+& selects representative native $k=128$ and $k=256$ transfer rows under the
+shared metric suite \\
 \bottomrule
 \end{tabularx}
 \end{table*}
 
-The following readout-SAE appendices follow this evidence map: first the
+The following readout SAE appendices follow this evidence map: first the
 Qwen3.5-9B recipe, then the capacity and operating-point comparisons, then
 smaller-model transfer and additional metric analyses.
 
