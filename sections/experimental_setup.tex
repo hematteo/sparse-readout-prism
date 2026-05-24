@@ -23,8 +23,11 @@ setting, meaning dictionary width \(D=32d_{\mathrm{model}}\) and TopK budget
 evaluation details are in Appendix~\ref{app:model-suite-selection}. We score
 final LM-head inputs and select readout SAEs by held-out row reconstruction,
 replacement fidelity, and sparse code usage; held-out logit-difference targets
-are reserved for downstream fidelity evaluation. Prompt/target sets,
-coefficients, and tokenization filters are fixed before evaluation.
+are reserved for downstream fidelity evaluation. The replacement evaluation uses
+10,000 neutral C4 continuations per model, while target-fidelity evaluations use
+preconstructed prompt/target sets with fixed linear coefficients. Prompt/target
+sets, coefficients, split assignment, and tokenization filters are fixed before
+evaluation.
 
 \paragraph{Evaluation sequence.}
 We report LM-head replacement fidelity, learned-support baselines, scalar
@@ -32,8 +35,9 @@ targets beyond token pairs, local decompositions of target and context effects,
 feature-resolved DLA, and a constrained readout-edit stress test in that order.
 
 \paragraph{Reading local score accounts.}
-Qualitative accounts report the original score, sparse feature sum,
-reconstruction error, and sign status. Score-independent appendix figures rank
-readout feature projections \(h^\top d_i\) before target selection.
+Qualitative accounts use the reporting convention from
+\Cref{sec:method-faithfulness}: original score, sparse feature sum, residual,
+and sign status where relevant. Score-independent appendix figures rank readout
+feature projections \(h^\top d_i\) before target selection.
 Appendix~\ref{app:robustness-controls} summarizes controls and token-level
 audits.

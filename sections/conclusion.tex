@@ -1,0 +1,22 @@
+\section{Conclusion}
+
+We introduced Sparse Readout Prism as a readout-side sparse factorization and
+tested when its induced local accounts remain faithful to the original LM head.
+The central object is an accounting basis for selected logits, contrasts, and
+margins: feature terms are reported together with offset and residual terms in
+the model's raw logit coordinates.
+
+The experiments first establish the operating regime. LM-head replacement
+fidelity, target reconstruction, sign agreement, and support baselines identify
+settings where the sparse factorization preserves readout behavior and selected
+scalar targets. The qualitative sections then use those settings to compare
+target choices, prompt contexts, feature-resolved residual-stream attribution,
+and constrained readout-side edits.
+
+SRP therefore moves lens-style readouts from atomic vocabulary scores to
+feature-resolved readout decompositions. The same signed terms apply beyond
+curated token pairs, compose with direct logit attribution, and can select
+readout-side directions that move held-out lexical scores. SRP does not by
+itself establish causal mechanisms or sequence-level behavior, but it supplies a
+calibrated readout-linear basis for asking those questions with explicit
+residuals and fidelity diagnostics.

@@ -1,12 +1,11 @@
 \section{Method: Sparse Readout Prism}
 \label{sec:method}
 
-Sparse Readout Prism (SRP) is a sparse feature decomposition for logit-lens
-readouts. It factorizes the final unembedding, or LM head, into sparse
-token-row coefficients and shared readout directions. Projecting a hidden state
-onto these directions gives target-independent readout feature projections; a
-chosen scalar readout target then turns those projections into signed local
-feature contributions with an explicit residual.
+This section defines the SRP objects used in the experiments: the raw-space row
+factorization, the projection coordinates induced by the learned dictionary, the
+linear scalar targets, and the local score identity. The construction keeps score
+accounting in the model's original logit coordinates, so each displayed account
+has a corresponding residual term.
 
 \subsection{Sparse Factorization of the Readout}
 \label{sec:method-factorization}
@@ -109,8 +108,8 @@ For a hidden state \(h\), define
 The vector \(p(h)\) is the readout feature projection vector: it records how the
 hidden state projects onto each learned readout direction before any token,
 contrast, or scalar target has been selected. A projection coordinate is not
-signed support by itself; it becomes support or opposition only after
-multiplication by a row code or target coefficient. We use full readout
+evidence for a token by itself. It becomes support or opposition only after the
+chosen target supplies a coefficient for that readout feature. We use full readout
 replacement to measure global faithfulness of the factorization, and the local
 contributions below to measure target-conditioned accounts. All quantitative
 reconstructions use the full feature sum, while visualizations may truncate
@@ -172,9 +171,11 @@ Then the group contrast is
 This keeps the target linear while reducing dependence on one tokenizer row. The
 vocabulary-mean row gives a reference contrast. We also use margins to nearby
 competitors, \(w_u-\sum_{r\in\mathcal{R}}\pi_r w_r\), with fixed competitor set
-\(\mathcal{R}\) and weights \(\pi\). The main target families are token logits,
-reference contrasts, logit differences, group contrasts, and top-competitor
-margins.
+\(\mathcal{R}\) and weights \(\pi\). In the main experiments, these competitor
+sets are chosen before evaluation from the original LM-head ranking, such as the
+top-2 or top-5 alternatives, and the weights are then held fixed. The main target
+families are token logits, reference contrasts, logit differences, group
+contrasts, and top-competitor margins.
 
 The scalar \(s_\alpha(h)\) is the unit of a local score account. Fixing it before
 combining the target with the SRP basis keeps token preferences, reference

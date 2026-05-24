@@ -1,13 +1,10 @@
 \section{Discussion and Future Work}
 \label{app:extended-discussion-limitations}
 
-This appendix expands the discussion summarized in the main paper.
-Sparse Readout Prism separates readout feature projections from a local score
-account. The readout SAE lets us estimate how a hidden state aligns with each
-learned decoder direction before resolving a next-token score. Once a selected
-vocabulary logit, logit difference, or group contrast is chosen, the method
-identifies which SAE features contribute signed support to that scalar and
-reports the reconstruction error alongside the account.
+This appendix gives the longer version of the scope and future-work discussion.
+It focuses on boundary cases that are only summarized in the main paper: target
+scope, relation to activation SAEs, cross-family interpretation, DLA composition,
+and possible extensions.
 
 \subsection{What Sparse Readout Prism Explains}
 \label{app:extended-discussion-query-scope}
@@ -82,11 +79,11 @@ why the paper reports all three before interpreting feature contributions.
 \label{app:extended-discussion-prism-dla}
 
 \paragraph{Readout versus components.}
-Sparse Readout Prism is an unembedding-side local score account. It asks which
-SAE features make a selected vocabulary logit or contrast large or small once a hidden state is
-being scored against the unembedding. Component-level attribution asks a
-different question: which residual-stream components supplied projection onto the
-chosen score's readout direction in the realized forward pass.
+Readout-side and component-side analyses answer different questions. The SRP
+account asks which unembedding-side SAE terms score a chosen logit or contrast;
+component-level attribution asks which residual-stream components supplied
+projection onto the chosen score's readout direction in the realized forward
+pass.
 
 \paragraph{Residual terms.}
 Combining these views gives additive component-by-feature terms. The analysis
@@ -100,11 +97,9 @@ causal circuit claims can then be pursued with interventions when needed.
 \paragraph{Extensions.}
 Natural extensions include controlled interventions on SAE decoder directions,
 cross-model feature-alignment analyses, distributional accounts of local
-top-\(k\) frontiers, and broader model-family sweeps. These build on the central
-claim: for selected readout targets with
-small reported reconstruction error, a readout SAE turns an atomic token-row dot
-product into auditable SAE feature terms plus an explicit reconstruction error
-term.
+top-\(k\) frontiers, and broader model-family sweeps. They all depend on the same
+reliability condition used in the main text: interpret the feature terms only
+when the selected target has a small reported residual.
 
 \paragraph{Residual-stream census.}
 SRP can also measure what is readout-readable before a hidden state is reduced to

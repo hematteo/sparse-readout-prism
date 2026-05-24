@@ -27,11 +27,12 @@ shared readout directions,
 \]
 This gives a sparse feature basis for the readout itself. For a hidden state
 \(h\), the vector \(D_{\mathrm{feat}}h\) gives readout feature projections
-before any token, contrast, or margin has been selected. A scalar readout
-target---a token logit, reference contrast, pairwise logit difference, group
-contrast, or local competitor margin---then turns those projections into signed
-feature contributions for the chosen score, together with an explicit
-reconstruction residual.
+before any token, contrast, or margin has been selected. In this paper, a
+readout feature is a decoder direction learned from unembedding rows; it is not a
+hidden-state SAE activation. A scalar readout target---a token logit, reference
+contrast, pairwise logit difference, group contrast, or local competitor
+margin---then turns those projections into signed feature contributions for the
+chosen score, together with an explicit reconstruction residual.
 
 \begin{figure}[H]
     \centering

@@ -6,13 +6,11 @@ future-token predictions, continuations, or descriptions
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
 They are closest to SRP in interface: a hidden state is inspected by asking what
 the model can read out from it. Lens variants typically change the inspection
-map, the layer being decoded, or the representation being queried. SRP keeps the
-lens-style question but changes what happens after a score is selected. It
-factorizes the model's own final readout, projects hidden states onto the
-resulting readout directions, and uses scalar targets to turn those projections
-into signed feature terms. Thus a lens can show that a hidden state favors one
-token or contrast, while SRP asks which sparse readout features support, oppose,
-or fail to reconstruct that scalar.
+map, the layer being decoded, or the representation being queried. SRP uses the
+same interface as input to a readout-side accounting step: after a token score or
+contrast is chosen, the selected scalar is expanded into sparse feature terms and
+an unreconstructed residual. This makes the comparison with lens methods direct
+without treating SRP as another decoder map.
 
 \paragraph{Output geometry: the object.}
 SRP treats the final unembedding, or LM head, as the object to be factorized.
