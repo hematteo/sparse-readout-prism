@@ -64,7 +64,8 @@ For the 32$\times$, $k=256$ capacity run, coefficient refitting contributes
 $+0.006$ rowEV, while support selection contributes $+0.038$. The encoder
 reaches $95.1\%$ of the signed-OMP proxy, similar to the $D=32768$, $k=128$
 ratio. Dense rank-256 reconstruction is $0.155$, so the $k=256$ sparse code is
-about $5.9\times$ more EV-efficient than the same-rank dense reference.
+about $5.9\times$ better by unexplained-variance reduction than the same-rank
+dense reference, since \((1-0.155)/(1-0.858)\approx5.9\).
 
 \paragraph{Small-model support-selection analysis.}
 The same analysis was run on the 16$\times$, $k=128$ small-model transfer 5k

@@ -3,26 +3,42 @@
 
 \Cref{sec:feature-resolved-component-decomposition} uses Sparse Readout Prism
 terms inside ordinary direct-logit-attribution accounting as an additive
-accounting identity. This appendix states the identity. For a scalar readout target
-\(q=\sum_t \alpha_t w_t\), Sparse Readout Prism gives
+accounting identity. This appendix states the identity. For a scalar readout
+target \(q=\sum_t \alpha_t w_t\), let \(m_\alpha=\sum_t\alpha_t\) and
+\(r_q=\sum_t\alpha_t r_t\). Sparse Readout Prism gives
 \[
-    q = \sum_i \beta_i(q)d_i + r_q ,
+    q = m_\alpha\mu+\sum_i \beta_i(q)d_i + r_q ,
 \]
-where \(d_i\) is an SAE decoder direction and \(r_q\) is the unembedding
-reconstruction error for the selected target. At a hidden state \(h\),
+where \(d_i\) is an SAE decoder direction and \(r_q\) is the readout
+reconstruction residual for the selected target. The displayed targets below
+are zero-sum centered or contrast targets, so \(m_\alpha=0\) and the offset
+term cancels; raw token-logit targets would retain it. At a hidden state \(h\),
 \[
-    h^\top q = \sum_i \beta_i(q)h^\top d_i + h^\top r_q .
+    h^\top q
+    =
+    m_\alpha h^\top\mu
+    +
+    \sum_i \beta_i(q)h^\top d_i
+    +
+    h^\top r_q .
 \]
 Under the fixed final-normalization convention used for DLA, decompose
-\(h\approx\sum_c h_c\). The DLA term for component \(c\) and SAE feature \(i\)
-is
+\(h\approx\sum_c h_c\). The component offset, SAE feature, and residual terms
+are
 \[
-    M_{c,i}(q)=\beta_i(q)\,h_c^\top d_i,
+    \begin{aligned}
+    O_c(q)&=m_\alpha\,h_c^\top\mu,\\
+    M_{c,i}(q)&=\beta_i(q)\,h_c^\top d_i,\\
+    R_c(q)&=h_c^\top r_q .
+    \end{aligned}
 \]
-with component reconstruction error term \(R_c(q)=h_c^\top r_q\). We therefore
-report two separate gaps: the DLA additivity error between \(h^\top q\) and
-\(\sum_c h_c^\top q\), and the readout SAE reconstruction gap between
-\(h^\top q\) and \(\sum_{c,i}M_{c,i}(q)\).
+For the zero-sum targets used in the figures, \(O_c(q)=0\). We therefore report
+two separate gaps: the DLA additivity error between \(h^\top q\) and
+\(\sum_c h_c^\top q\), and the readout SAE residual \(h^\top r_q\) (or its
+componentized version \(\sum_c R_c(q)\) under the same DLA approximation).
+The difference between \(h^\top q\) and a componentized feature-only sum
+\(\sum_{c,i}M_{c,i}(q)\) contains both sources unless the residual and DLA
+additivity terms are included separately.
 
 The main display uses the pairwise logit difference
 \(q=w_{\mathrm{verify}}-w_{\mathrm{assume}}\), for which

@@ -76,9 +76,10 @@ terms \{\texttt{fucking}, \texttt{fucked}, \texttt{bullshit}, \texttt{shitty},
 \texttt{piss}, \texttt{pissed}\}. The intervention is a one-step logit edit:
 for selected decoder directions \(d_f\), we add
 \(v\WU^\top\) to the logits with
-\(v=-\alpha\sum_{f\in F} d_f/\|d_f\|_2\). The reported intervention scale is
-\(\alpha=16\). The primary candidate-constrained grid has 16 prompts, 9
-profane-to-reference candidate pairs, 10 intervention scales, and 5 methods
+\(v=-\alpha\sum_{f\in F} d_f/\|d_f\|_2\). With this sign convention, positive
+\(\alpha\) suppresses the selected profanity-associated directions. The reported
+intervention scale is \(\alpha=16\). The primary candidate-constrained grid has
+16 prompts, 9 profane-to-reference candidate pairs, 10 intervention scales, and 5 methods
 (none, SAE feature edit, discovery token bias, oracle token bias, and
 norm-matched random feature edit), giving 7200 evaluated rows.
 
@@ -95,7 +96,9 @@ the row-level description used for this steering test.
 \caption{\textbf{Primary Qwen3.5-2B steering comparison.}
 All methods use intervention scale 16. Discovery token bias penalizes only the
 five discovery token ids; oracle token bias penalizes the full evaluation lexicon.
-Random features are norm-matched to the selected SAE feature edit.}
+Random features are norm-matched to the selected SAE feature edit.
+\(\Delta p_{\mathrm{bad}}\) is reported as a positive reduction in probability
+assigned to the profane-token side.}
 \label{tab:lexical-control-primary-methods}
 \centering
 \scriptsize
