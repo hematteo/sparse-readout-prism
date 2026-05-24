@@ -7,10 +7,10 @@ or through a learned lens
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
 A logit-lens probe asks: what vocabulary evidence does this hidden state expose?
 This view is useful, but each selected logit or contrast remains a dense dot
-product with an unembedding row or readout direction: it identifies favored
+product with an unembedding row or readout direction: it identifies high-scoring
 tokens without showing which shared directions support or oppose the score, or
-what residual remains. We introduce Sparse Readout Prism (SRP), a sparse feature
-decomposition for logit-lens readouts. SRP factorizes the LM head into sparse
+what residual remains. We introduce Sparse Readout Prism (SRP), a sparse feature decomposition for
+logit-lens readouts, built from a sparse factorization of the unembedding matrix. SRP factorizes the LM head into sparse
 token-row coefficients and shared decoder directions, or \emph{readout
 features}. Given a hidden state and scalar readout target, SRP decomposes the
 score into positive and negative feature terms plus a reconstruction residual;
@@ -52,7 +52,7 @@ features, and reports the residual.
 
 The paper contributes:
 \begin{itemize}
-    \item a sparse dictionary factorization of the final unembedding / LM head
+    \item a novel sparse dictionary factorization of the final unembedding / LM head
     that defines a reusable readout-feature basis;
     \item a scalar readout-target formalism that turns token scores, token
     contrasts, group contrasts, and margins into signed feature contributions;
