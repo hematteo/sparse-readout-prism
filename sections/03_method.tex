@@ -11,14 +11,12 @@ feature terms and reconstruction error.
     \includegraphics[width=\columnwidth]{figures/schematic_tikz/readout_query_one_column.pdf}
     \vspace{-0.8\baselineskip}
     \caption{\textbf{Local score account schematic.}
-    A centered or contrast readout target is expressed in SAE features learned
-    from unembedding rows. For a two-sided contrast such as \(w_A-w_B\), the
-    right-hand axis labels \(A\) and \(B\) denote the competing token or token-set
-    sides: positive feature bars support \(A\) over \(B\), while negative bars
-    support \(B\) over \(A\). At hidden state \(h\), each signed term is the
-    target coefficient times \(h\)'s feature projection; the hatched bar is
-    reconstruction error. Raw token-logit targets additionally include the
-    shared offset term.}
+    A centered or contrast readout target is decomposed into SAE features learned
+    from unembedding rows. For \(w_A-w_B\), \(A\) and \(B\) are the competing
+    token or token-set sides: positive bars support \(A\) over \(B\), negative bars
+    support \(B\) over \(A\). At hidden state \(h\), each signed term is a target
+    coefficient times \(h\)'s feature projection; hatching marks reconstruction
+    error. Raw token-logit targets also include a shared offset.}
     \label{fig:readout-query-schematic}
 \end{figure}
 
