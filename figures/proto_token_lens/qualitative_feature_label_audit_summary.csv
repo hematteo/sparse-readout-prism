@@ -1,0 +1,8 @@
+feature_set,n_displayed_labels,semantic_coherent,nonsemantic_or_ambiguous,token_form_artifact,target_consistent_semantic,notes
+main bug panels,11,8,0,3,8,Table 21 detailed token-row audit
+additional bark/bass margins,12,7,2,3,7,additional polysemy margin panels
+fixed-token context panels,12,9,3,0,9,main fixed-token context shifts
+technical context stress,32,24,7,1,24,appendix technical-domain stress figure
+verify/assume DLA,8,7,1,0,7,displayed family heatmap labels
+general readout examples,24,12,5,7,12,scalar/reference/pairwise/group query examples
+total,99,67,18,14,67,conservative qualitative count over claim-bearing displayed labels

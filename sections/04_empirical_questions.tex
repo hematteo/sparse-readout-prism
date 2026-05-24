@@ -1,12 +1,16 @@
 \section{Results and Analysis}
 \label{sec:results}
 
-The results test four claims. First, SRP reconstructs selected readout targets
-with high sign fidelity in identifiable regimes. Second, learned
-token-to-feature support contributes beyond sparse capacity. Third, the
-same hidden-state profile yields different accounts under different scalar
-targets and prompt contexts. Fourth, the resulting feature terms compose with
-residual-stream attribution and narrow readout-side edits.
-For signed feature accounts, we report whether the sparse reconstruction
-preserves the original sign and its local relative error \(\rho\); unless
-otherwise stated, aggregate low-error counts use \(\rho<0.5\).
+The method defines two linked objects: a sparse factorization of the final LM
+head and a scalar-target interface that turns readout feature projections into
+signed local terms. The results follow that dependency chain. We first test
+whether the factorized readout preserves LM-head behavior on held-out hidden
+states, then ask whether learned token-to-feature support reconstructs selected
+targets beyond what sparse capacity alone provides. With this calibrated
+operating point, we show that the scalar-target formalism covers readout
+targets beyond curated token pairs. Finally, we use the resulting terms to
+separate target choice from context reweighting and to compose SRP with
+residual-stream attribution and constrained readout-side edits. For signed
+feature accounts, we report whether the sparse reconstruction preserves the
+original sign and its local relative error \(\rho\); unless otherwise stated,
+aggregate low-error counts use \(\rho<0.5\).

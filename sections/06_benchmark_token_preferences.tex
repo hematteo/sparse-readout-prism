@@ -1,11 +1,14 @@
-\subsection{Feature Competition Within Token Preferences}
+\subsection{Local Accounts Expose Feature Competition Within Token Preferences}
 
-We now fix the target type and inspect which shared readout features carry the
-positive and negative terms in low-error logit differences.
+Having calibrated where sparse target reconstructions are faithful, we inspect
+what the resulting terms reveal. We first fix the target type to pairwise logit
+differences and ask which shared readout features carry the positive and
+negative evidence.
 
-\paragraph{From preferences to features.}
-Logit differences expose feature competition compressed by top-token lens
-summaries. In \Cref{fig:main-lens-prism-comparison}, a
+\paragraph{From token preferences to feature terms.}
+Top-token lens summaries compress a preference into one score. SRP keeps that
+score fixed but decomposes it into signed readout-feature terms with an explicit
+residual. In \Cref{fig:main-lens-prism-comparison}, a
 \texttt{verify}-versus-\texttt{assume} preference becomes signed SRP feature
 terms with explicit reconstruction error.
 
@@ -20,7 +23,8 @@ cases, plotting conventions, and label audits appear in
 \cref{fig:app-selected-readout-prism-extra-examples,app:display-taxonomy,tab:app-main-case-study-feature-audit}.
 These sign-preserved, low-\(\rho\) examples show target-local support: the same
 surface token can be supported by different feature families as the competing
-alternative and context change; aggregate frequencies are in the tables.
+alternative and prompt context change. Aggregate frequencies are reported in the
+appendix tables.
 
 \begin{figure}[H]
     \centering

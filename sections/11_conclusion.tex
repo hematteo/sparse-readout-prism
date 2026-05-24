@@ -1,25 +1,28 @@
 \section{Conclusion}
 
-Sparse Readout Prism factorizes the final readout into a shared sparse basis,
-while scalar targets specify the score being explained. This separates a
-hidden state's target-independent readout profile from support for a particular
-token, reference contrast, group contrast, or local margin. The resulting local
-account is explicit: each displayed feature term is the product of a target
-coefficient fixed by unembedding-row geometry and a context-dependent projection
-of the current hidden state, with offset and reconstruction error reported
-alongside the feature sum.
+Sparse Readout Prism is a sparse feature decomposition for logit-lens readouts.
+It factorizes the final unembedding, or LM head, into sparse token-row
+coefficients and shared readout directions. For a hidden state, this yields a
+readout feature projection vector before target selection; a scalar readout
+target---a token logit, reference contrast, pairwise or group contrast, or local
+margin---then turns those projections into signed feature contributions for the
+chosen score, with offset and reconstruction residual reported alongside the
+feature sum.
 
-Across the model suite, replacement fidelity, target reconstruction, and sign
-agreement identify faithful regimes. Within those regimes, SRP shows that
-readout explanations are query-local: changing the target changes which active
-features count as support, and changing the prompt reweights the same token row
-through the hidden-state profile. The case studies expose feature competition in
-polysemous token preferences, benchmark-format contrasts, and feature-resolved
-DLA, while the readout-edit experiment tests whether selected directions move
-held-out lexical scores.
+The experiments test when this factorized readout can be interpreted. LM-head
+replacement fidelity, target reconstruction, sign agreement, and support
+baselines identify regimes where the sparse factorization preserves the original
+readout behavior and selected scalar targets. In those regimes, SRP separates
+target choice from context reweighting: changing the target changes the
+coefficients \(\beta_i(q)\), while changing the prompt changes the projections
+\(p_i(h)\). This separation shows why the same hidden state can yield different
+support under different readout targets, and why the same token row can be
+reweighted across prompt contexts.
 
-SRP therefore provides a calibrated accounting layer for the final readout. In
-faithful regimes, an atomic logit or margin decomposes into sparse output-row
-feature support plus measured residual error. These readout-level accounts
-connect lens-style summaries to intervention-based mechanistic analysis, while
-the reported diagnostics mark where the sparse account is reliable.
+SRP therefore moves lens-style readouts from atomic vocabulary scores to
+feature-resolved readout decompositions. The same signed terms apply beyond
+curated token pairs, compose with direct logit attribution, and can select
+readout-side directions that move held-out lexical scores. SRP does not by
+itself establish causal mechanisms or sequence-level behavior, but it supplies a
+calibrated readout-linear basis for asking those questions with explicit
+residuals and fidelity diagnostics.

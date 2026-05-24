@@ -2,14 +2,14 @@
 \label{app:glossary}
 
 This glossary keeps the manuscript-specific vocabulary small. Standard
-mechanistic-interpretability terms are used in their usual sense; we define them
+mechanistic interpretability terms are used in their usual sense; we define them
 only where SRP uses a specialized readout version.
 
 \subsection{Core Objects}
 
 \begin{description}[leftmargin=0.28\linewidth,style=nextline]
     \item[Readout]
-    The model's final unembedding or LM-head map from hidden states to vocabulary
+    The model's final unembedding or LM head map from hidden states to vocabulary
     logits. In this paper, readout refers to this final interface, not to the
     whole model.
 
@@ -50,7 +50,7 @@ only where SRP uses a specialized readout version.
     group versus an abstention group. This reduces dependence on one tokenizer
     row.
 
-    \item[Top-competitor margin]
+    \item[Top competitor margin]
     A contrast between the current top token and one or more nearby competitors,
     \(w_u-\sum_{r\in\mathcal{R}}\pi_r w_r\).
 \end{description}
@@ -59,11 +59,11 @@ only where SRP uses a specialized readout version.
 
 \begin{description}[leftmargin=0.28\linewidth,style=nextline]
     \item[Sparse Readout Prism]
-    The reusable readout factorization introduced here: train an SAE on
-    unembedding rows to obtain reusable readout features, sparse row
-    coefficients, a sparse LM-head replacement, and profiles. When combined
-    with a scalar readout target, the same readout basis gives a local score
-    account.
+    The sparse feature decomposition introduced here: train an SAE on
+    unembedding rows to obtain a sparse feature basis for the readout, sparse
+    code entries for token rows, an LM head replacement, and readout feature
+    projections. With a scalar readout target, the same basis decomposes a
+    selected score into signed feature terms plus reconstruction error.
 
     \item[Readout SAE]
     The sparse autoencoder trained on unembedding rows. It reconstructs a row as
@@ -73,21 +73,20 @@ only where SRP uses a specialized readout version.
     A reusable direction learned by the readout SAE. Its projection at hidden
     state \(h\) is \(h^\top d_i\).
 
-    \item[Sparse coefficient, \(z_{t,i}\)]
-    The coefficient with which token row \(t\) uses SAE feature \(i\).
+    \item[Sparse coefficient / code entry, \(z_{t,i}\)]
+    The sparse code entry with which token row \(t\) uses SAE feature \(i\).
 
     \item[Shared offset, \(\mu\)]
-    The common readout-space offset used by the SAE. For zero-sum targets such
+    The common readout offset used by the SAE. For zero sum targets such
     as logit differences and group contrasts, its contribution cancels.
 
     \item[Native \(k\)]
-    The active-feature budget of the trained TopK SAE. Display cutoffs may hide
+    The active feature budget of the trained TopK SAE. Display cutoffs may hide
     small bars, but they do not change this reconstruction budget.
 
-    \item[Profile]
-    A score-independent hidden-state profile: the ranking of readout SAE
-    directions by their projection \(h^\top d_i\) before choosing a scalar
-    target.
+    \item[Projection profile]
+    The ranked pattern of readout feature projections \(h^\top d_i\) before
+    choosing a scalar readout target.
 \end{description}
 
 \subsection{Decomposition and Measures}
@@ -97,17 +96,17 @@ only where SRP uses a specialized readout version.
     The amount the chosen readout target uses SAE feature \(i\):
     \(\beta_i(\alpha)=\sum_t\alpha_t z_{t,i}\).
 
-    \item[SAE feature contribution, \(c_i(h,\alpha)\)]
+    \item[Signed feature contribution, \(c_i(h,\alpha)\)]
     The signed term \(c_i(h,\alpha)=\beta_i(\alpha)h^\top d_i\). Positive terms
     raise the chosen scalar; negative terms lower it.
 
-    \item[Local score account]
-    The account obtained by combining a scalar readout target with the SRP
-    readout basis. It reports signed SAE feature contributions plus reconstruction
-    error for that chosen target.
+    \item[Score decomposition at a hidden state]
+    The decomposition obtained by combining a scalar readout target with the SRP
+    readout basis at hidden state \(h\). It reports signed feature terms plus
+    reconstruction error for the chosen target.
 
     \item[Feature sum, \(s_{\mathrm{feat}}\)]
-    The sum of all SAE feature contributions, \(\sum_i c_i(h,\alpha)\), before
+    The sum of all signed feature contributions, \(\sum_i c_i(h,\alpha)\), before
     adding offset or reconstruction error terms.
 
     \item[Reconstruction error, \(\epsilon\)]
@@ -153,7 +152,7 @@ only where SRP uses a specialized readout version.
     metrics for model decision evidence.
 
     \item[Top-1 agreement / top-5 overlap]
-    Agreement between original and reconstructed LM-head rankings on held-out
+    Agreement between original and reconstructed LM head rankings on held-out
     hidden states. Top-1 compares the argmax token; top-5 overlap is the average
     overlap between the two top-five sets and is not top-five accuracy.
 
@@ -162,15 +161,15 @@ only where SRP uses a specialized readout version.
     states and compares the resulting readout distribution with the original
     one using top-1 agreement, KL, and ordering agreement.
 
-    \item[Softcap-correct]
+    \item[Softcap correct]
     A Gemma evaluation that applies the model's monotone final-logit softcap
     before computing top-1 agreement or KL, matching the model's actual output
     path.
 
-    \item[Strict-budget / high-fidelity settings]
-    Two native-\(k\) operating regimes for readout SAEs. The strict-budget
-    setting uses native \(k=128\) for fixed-budget comparability; the
-    high-fidelity setting uses native \(k=256\) when readout fidelity is the
+    \item[Strict budget / high fidelity settings]
+    Two native-\(k\) operating regimes for readout SAEs. The strict budget
+    setting uses native \(k=128\) for fixed budget comparability; the
+    high fidelity setting uses native \(k=256\) when readout fidelity is the
     primary constraint.
 
     \item[Sparse code usage]
@@ -188,25 +187,25 @@ only where SRP uses a specialized readout version.
 
 \begin{description}[leftmargin=0.28\linewidth,style=nextline]
     \item[Direct logit attribution, DLA]
-    A component-level account that projects residual-stream components
-    onto the readout direction for a selected target. We use DLA as
-    additive attribution unless paired with interventions.
+    Component attribution that projects residual stream components onto the
+    readout direction for a selected target. We use DLA as additive attribution
+    unless paired with interventions.
 
     \item[DLA by SAE feature]
-    The combined view that splits DLA-style component contributions across the
+    The combined view that splits DLA component contributions across the
     readout features for a realized forward pass.
 
     \item[Additivity error]
-    The gap between the exact target score and the sum of component-attribution
+    The gap between the exact target score and the sum of component attribution
     terms. It is reported separately from the readout SAE reconstruction error.
 
-    \item[Token-level audit item]
-    A tokenizer or row-level factor, such as token length, frequency, row norm,
-    capitalization, whitespace, punctuation, special-token status, or
+    \item[Token audit item]
+    A tokenizer or row factor, such as token length, frequency, row norm,
+    capitalization, whitespace, punctuation, special token status, or
     tokenization collision.
 
     \item[Tokenization collision]
     A case where tokenization makes the intended lexical contrast brittle or
-    ambiguous. Such cases are handled through token-level audits or converted
+    ambiguous. Such cases are handled through token audits or converted
     to explicit group contrasts.
 \end{description}

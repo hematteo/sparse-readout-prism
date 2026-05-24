@@ -2,12 +2,16 @@
 \label{sec:experimental-setup}
 
 \paragraph{Experimental design.}
-We evaluate the readout SAE as both a final-LM-head factorization and a basis
-for local score accounts. On held-out C4 hidden states
-\citep{raffel2020exploring,dodge2021documenting}, we measure row reconstruction
-and replacement fidelity before testing whether sparse feature sums recover
-chosen scalar targets. Baselines compare learned token-to-feature support with
-row capacity alone.
+The experiments follow the construction in the method. First, SRP must be a
+useful sparse factorization of the final LM head, so we evaluate row
+reconstruction and replacement fidelity on held-out C4 hidden states
+\citep{raffel2020exploring,dodge2021documenting}. Second, its feature terms
+must reconstruct the scalar readout targets that we interpret, so we measure
+exact-versus-reconstructed score, sign agreement, and relative error. Third, we
+compare against reference and null baselines to test whether learned
+token-to-feature support matters beyond sparse capacity. We then use the
+calibrated operating regimes for local analyses of target choice, prompt
+context, feature-resolved attribution, and constrained readout-side edits.
 
 \paragraph{Setup, selection, and units.}
 The suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
@@ -23,12 +27,13 @@ are reserved for downstream fidelity evaluation. Prompt/target sets,
 coefficients, and tokenization filters are fixed before evaluation.
 
 \paragraph{Evaluation sequence.}
-We report replacement/target fidelity, baselines, target and context variation,
+We report LM-head replacement fidelity, learned-support baselines, scalar
+targets beyond token pairs, local decompositions of target and context effects,
 feature-resolved DLA, and a constrained readout-edit stress test in that order.
 
 \paragraph{Reading local score accounts.}
 Qualitative accounts report the original score, sparse feature sum,
 reconstruction error, and sign status. Score-independent appendix figures rank
-decoder directions by \(h^\top d_i\) before target selection.
+readout feature projections \(h^\top d_i\) before target selection.
 Appendix~\ref{app:robustness-controls} summarizes controls and token-level
 audits.

@@ -12,8 +12,8 @@ summarized in Appendix~\ref{app:readout-factorizer-sweeps}.
 The first Qwen3.5-9B sweep fixed the interpretability budget at $k=128$ and
 selected a no-PCA recipe. A 5k screening sweep identified the recipe family, a
 20k continuation evaluated convergence of the selected recipe, and the older 50k
-matryoshka run anchored the comparison against the previous long-trained
-baseline. The selected TopK recipe's own convergence ladder provides the
+matryoshka run \citep{bussmann2025matryoshka} anchored the comparison against
+the previous long-trained baseline. The selected TopK recipe's own convergence ladder provides the
 step-count evidence, while the previous recipe serves as an architectural
 reference point.
 
@@ -77,7 +77,8 @@ reconstruction error from $0.064$ to $0.038$ in the matched TopK hybrid cell.
 & Ramp $\lambda_{\mathrm{prism}}$ to $10^{-3}$ after $70\%$ of training. \\
 \addlinespace
 Architecture
-& At $D=32768$/5k, plain TopK exceeded matryoshka variants in rowEV
+& At $D=32768$/5k, plain TopK exceeded matryoshka variants
+\citep{bussmann2025matryoshka} in rowEV
 ($0.567$ vs $0.559/0.554$) at about $3.6\times$ lower cost.
 & Use plain TopK for Qwen/Gemma. \\
 \addlinespace

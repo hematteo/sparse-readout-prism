@@ -1,8 +1,9 @@
-\subsection{DLA by SAE Feature}
+\subsection{Readout Feature Terms Compose with Direct Logit Attribution}
 \label{sec:feature-resolved-component-decomposition}
 
-We next ask where supporting readout features are written in the realized
-residual stream.
+The signed feature terms above are readout-linear, so they can be combined with
+standard additive residual-stream decompositions. We ask where the supporting
+and opposing readout features are written in the realized residual stream.
 
 \paragraph{Component-level readout terms.}
 Because SRP is readout-linear, its feature terms compose with residual-stream
@@ -16,10 +17,10 @@ For \(q=w_A-w_B\), \(\beta_i(q)=z_{A,i}-z_{B,i}\); for
 \(q=w_A-\bar{w}_{\mathcal{V}}\),
 \(\beta_i(q)=z_{A,i}-\bar{z}_{\mathcal{V},i}\). This yields additive
 component-by-feature attribution from one forward pass. The same terms can serve
-as inputs to later causal interventions \citep{geiger2023causalabstraction} that
-test component or feature necessity.
+as inputs to later causal interventions
+\citep{geiger2023causalabstraction} that test component or feature necessity.
 
-\begin{figure}[!b]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.86\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_semantic_table.pdf}
     \caption{\textbf{Feature-resolved component attribution for a
@@ -38,11 +39,13 @@ residual-stream DLA sum is \(+4.36\), and the sparse feature sum is \(+4.28\)
 assumption-family opposition. A row-centered \texttt{verify} companion appears in
 Appendix~\ref{app:feature-resolved-dla}.
 
-\subsection{Readout Feature Edits Move Held-Out Lexical Scores}
+\FloatBarrier
+
+\subsection{Selected Readout Features Move Held-Out Lexical Scores}
 \label{sec:readout-feature-edits}
 
-Finally, we test whether SRP directions selected by a local account act as
-narrow readout-side controls.
+Finally, we test whether directions selected from local SRP accounts act as
+narrow readout-side controls for the corresponding lexical target.
 
 \paragraph{Constrained readout edit.}
 We edit logits along ten Qwen3.5-2B decoder directions selected from five
@@ -76,9 +79,9 @@ No intervention & \(0.000\) & \(0.000\) & \(0.000\) & \(0.000\) \\
 
 \Cref{tab:main-readout-edit} shows that SRP features selected from discovery
 tokens move held-out lexical logit differences (flip rate \(0.359\)), matching
-an oracle token-bias edit while a discovery-token-only bias has no held-out
-effect. R1-Distill-Qwen-7B shows the same pattern
-(Appendix~\ref{app:lexical-control-stress-test}). This establishes readout-score
-control for the specified lexical target.
+the oracle held-out flip rate, though with larger distribution shift, while a
+discovery-token-only bias has no held-out effect. R1-Distill-Qwen-7B shows the
+same pattern (Appendix~\ref{app:lexical-control-stress-test}). This establishes
+readout-score control for the specified lexical target.
 
 \FloatBarrier

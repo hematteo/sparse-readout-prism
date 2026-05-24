@@ -1,0 +1,18 @@
+{
+  "audit_csv": "/Users/m/Desktop/readout_prism_workspace/Sparse_Readout_Prism/figures/proto_token_lens/qualitative_feature_label_audit_features.csv",
+  "audit_row_count": 99,
+  "checkpoint": "/Volumes/MH_PRO5_2TB/readout-prism-archive/converged-all/results/qwen35_2b_sae/converge/topk_d65536_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt",
+  "chunk_size": 4096,
+  "description_policy": "Descriptions are conservative prose labels derived from the top-20 token rows; ambiguous and token-form rows remain marked separately from semantic evidence.",
+  "elapsed_seconds": 28.24,
+  "feature_count": 91,
+  "long_csv": "/Users/m/Desktop/readout_prism_workspace/results/feature_label_audit/qualitative_feature_label_audit_top20_tokens_long.csv",
+  "metric": "Top-20 token rows by ReLU encoder preactivation after center-normalizing each tied unembedding row W_U[t].",
+  "model_snapshot": "/Volumes/MH_PRO5_2TB/hf_cache/hub/models--Qwen--Qwen3.5-2B/snapshots/15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "refined_descriptions_csv": "/Users/m/Desktop/readout_prism_workspace/results/feature_label_audit/qualitative_feature_label_audit_refined_descriptions.csv",
+  "safetensors_file": "/Volumes/MH_PRO5_2TB/hf_cache/hub/models--Qwen--Qwen3.5-2B/snapshots/15852e8c16360a2fea060d615a32b45270f8a8fc/model.safetensors-00001-of-00001.safetensors",
+  "top_n": 20,
+  "unembedding_key": "model.language_model.embed_tokens.weight",
+  "vocab_size": 248077,
+  "wide_csv": "/Users/m/Desktop/readout_prism_workspace/results/feature_label_audit/qualitative_feature_label_audit_top20_tokens.csv"
+}

@@ -1,0 +1,100 @@
+feature_set,source,feature_id,token_summary,label_category,claim_use,side_consistency,notes
+main bug panels,Figure 5/Table 21,f36,mosquito/mosquitoes/insect,semantic_coherent,claim_bearing,target_consistent,mosquito or insect family
+main bug panels,Figure 5/Table 21,f4095,bee/bees/insect,semantic_coherent,claim_bearing,target_consistent,bee or insect family
+main bug panels,Figure 5/Table 21,f18302,Beetle/beetle/bug,semantic_coherent,claim_bearing,target_consistent,beetle or bug token family with mixed surface forms
+main bug panels,Figure 5/Table 21,f58330,error/_error/ERROR,semantic_coherent,claim_bearing,target_consistent,programming error-token feature
+main bug panels,Figure 5/Table 21,f13081,Error/error/errors,semantic_coherent,claim_bearing,target_consistent,error or exception surface forms
+main bug panels,Figure 5/Table 21,f59571,M/J/G/K,token_form_artifact,navigation_only,not_counted,single leading-space capitals
+main bug panels,Figure 5/Table 21,f21804,defect/defects/flaw,semantic_coherent,claim_bearing,target_consistent,defect or software-bug sense
+main bug panels,Figure 5/Table 21,f43419,Crash/crash/crashes,semantic_coherent,claim_bearing,target_consistent,software crash or panic family
+main bug panels,Figure 5/Table 21,f5680,debug/Debug/debugging,semantic_coherent,claim_bearing,target_consistent,debugging code-token family
+main bug panels,Figure 5/Table 21,f34693,p/j/d/b,token_form_artifact,navigation_only,not_counted,single lowercase leading-space letters
+main bug panels,Figure 5/Table 21,f23681,M/P/S/K,token_form_artifact,navigation_only,not_counted,single uppercase letters
+additional bark/bass margins,Figure 19,f55275,Bark/bark,semantic_coherent,claim_bearing,target_consistent,bark or tree-side label
+additional bark/bass margins,Figure 19,f61230,bark/Bark,nonsemantic_or_ambiguous,navigation_only,not_counted,target-token-heavy label
+additional bark/bass margins,Figure 19,f30192,wood/Wood/woods,semantic_coherent,claim_bearing,target_consistent,wood or tree-side family
+additional bark/bass margins,Figure 19,f27429,cat,semantic_coherent,claim_bearing,target_consistent,animal competitor family
+additional bark/bass margins,Figure 19,f40106,that/the/and,token_form_artifact,navigation_only,not_counted,function-word feature
+additional bark/bass margins,Figure 19,f13856,dog/dogs,semantic_coherent,claim_bearing,target_consistent,dog competitor family
+additional bark/bass margins,Figure 19,f37669,bassi,nonsemantic_or_ambiguous,navigation_only,not_counted,fragmentary bass-like label
+additional bark/bass margins,Figure 19,f42908,percussion/drum,semantic_coherent,claim_bearing,target_consistent,music or percussion family
+additional bark/bass margins,Figure 19,f62935,Music/music,semantic_coherent,claim_bearing,target_consistent,music family
+additional bark/bass margins,Figure 19,f59571,M/J/G,token_form_artifact,navigation_only,not_counted,single uppercase letters
+additional bark/bass margins,Figure 19,f23681,M/P/S,token_form_artifact,navigation_only,not_counted,single uppercase letters
+additional bark/bass margins,Figure 19,f44118,trout/salmon/fish,semantic_coherent,claim_bearing,target_consistent,fish competitor family
+fixed-token context panels,Figure 6,f43419,Crash/crash,semantic_coherent,claim_bearing,target_consistent,software crash family
+fixed-token context panels,Figure 6,f21804,defect/defects,semantic_coherent,claim_bearing,target_consistent,software defect family
+fixed-token context panels,Figure 6,f52267,Issue/issues,semantic_coherent,claim_bearing,target_consistent,software issue family
+fixed-token context panels,Figure 6,f32574,sect,nonsemantic_or_ambiguous,navigation_only,not_counted,fragmentary insect-like surface form
+fixed-token context panels,Figure 6,f4095,bee/bees,semantic_coherent,claim_bearing,target_consistent,insect family
+fixed-token context panels,Figure 6,f36,mosquito/mosquitoes,semantic_coherent,claim_bearing,target_consistent,insect family
+fixed-token context panels,Figure 6,f54655,address/addresses,semantic_coherent,claim_bearing,target_consistent,network-address family
+fixed-token context panels,Figure 6,f9991,engineer,nonsemantic_or_ambiguous,navigation_only,not_counted,weak bridge-side relation
+fixed-token context panels,Figure 6,f1070,hybrid,nonsemantic_or_ambiguous,navigation_only,not_counted,ambiguous general term
+fixed-token context panels,Figure 6,f62208,boat,semantic_coherent,claim_bearing,target_consistent,river or crossing-side family
+fixed-token context panels,Figure 6,f55298,river,semantic_coherent,claim_bearing,target_consistent,river or crossing-side family
+fixed-token context panels,Figure 6,f54636,jembatan/bridge,semantic_coherent,claim_bearing,target_consistent,bridge translation or structure family
+technical context stress,Figure 24,f13835,grafico/graficos/grafica,semantic_coherent,claim_bearing,target_consistent,chart or graph display family
+technical context stress,Figure 24,f4247,chart/Chart/charts,semantic_coherent,claim_bearing,target_consistent,chart family
+technical context stress,Figure 24,f37682,grafik/Graph/graphs,semantic_coherent,claim_bearing,target_consistent,graph or chart family
+technical context stress,Figure 24,f7977,diagram/diagrams,semantic_coherent,claim_bearing,target_consistent,diagram family
+technical context stress,Figure 24,f11016,experiment,nonsemantic_or_ambiguous,navigation_only,not_counted,weak data-structure relation
+technical context stress,Figure 24,f49799,vertices/vertex,semantic_coherent,claim_bearing,target_consistent,graph-structure family
+technical context stress,Figure 24,f104,institution,nonsemantic_or_ambiguous,navigation_only,not_counted,weak data-structure relation
+technical context stress,Figure 24,f32168,edges/edge,semantic_coherent,claim_bearing,target_consistent,graph-structure family
+technical context stress,Figure 24,f47974,Memory/memory/memories,semantic_coherent,claim_bearing,target_consistent,memory family
+technical context stress,Figure 24,f34735,taste/Taste/tastes,nonsemantic_or_ambiguous,navigation_only,not_counted,sensory association rather than memory label
+technical context stress,Figure 24,f30917,recall/recalling,semantic_coherent,claim_bearing,target_consistent,human-memory family
+technical context stress,Figure 24,f15063,remembers/remember,semantic_coherent,claim_bearing,target_consistent,human-memory family
+technical context stress,Figure 24,f24245,memori/memoria,semantic_coherent,claim_bearing,target_consistent,memory word family
+technical context stress,Figure 24,f49056,Memory/memory/Speicher,nonsemantic_or_ambiguous,navigation_only,not_counted,target-token-heavy multilingual label
+technical context stress,Figure 24,f62412,RAM/_ram/Ram,semantic_coherent,claim_bearing,target_consistent,computer-memory family
+technical context stress,Figure 24,f24940,memoria/memoire/memoria,semantic_coherent,claim_bearing,target_consistent,human-memory multilingual family
+technical context stress,Figure 24,f59852,protein/proteins,semantic_coherent,claim_bearing,target_consistent,biological-virus context family
+technical context stress,Figure 24,f62888,acid/acids,semantic_coherent,claim_bearing,target_consistent,biological or molecular family
+technical context stress,Figure 24,f15524,hurricane,nonsemantic_or_ambiguous,navigation_only,not_counted,weak or unclear medical-virus relation
+technical context stress,Figure 24,f58166,vision,nonsemantic_or_ambiguous,navigation_only,not_counted,weak or unclear medical-virus relation
+technical context stress,Figure 24,f32627,VM/vm,semantic_coherent,claim_bearing,target_consistent,software or virtual-machine family
+technical context stress,Figure 24,f34366,virus/boots,nonsemantic_or_ambiguous,navigation_only,not_counted,mixed virus and software-token fragments
+technical context stress,Figure 24,f38036,virus/Virus/viruses,semantic_coherent,claim_bearing,target_consistent,software-virus token family
+technical context stress,Figure 24,f62961,malware/Mal,semantic_coherent,claim_bearing,target_consistent,malware family
+technical context stress,Figure 24,f44301,tube/tubes,semantic_coherent,claim_bearing,target_consistent,plumbing pipe family
+technical context stress,Figure 24,f15816,tub/Tube/tubes,semantic_coherent,claim_bearing,target_consistent,plumbing tube family
+technical context stress,Figure 24,f25707,tank/tanks,semantic_coherent,claim_bearing,target_consistent,plumbing or container family
+technical context stress,Figure 24,f61019,bottle/bottles,semantic_coherent,claim_bearing,target_consistent,plumbing or container family
+technical context stress,Figure 24,f12662,km/TR/gest/of,token_form_artifact,navigation_only,not_counted,fragment/function-token mixture
+technical context stress,Figure 24,f8233,localhost,semantic_coherent,claim_bearing,target_consistent,Unix or server family
+technical context stress,Figure 24,f9280,callback,semantic_coherent,claim_bearing,target_consistent,programming callback family
+technical context stress,Figure 24,f64688,queue/queues,semantic_coherent,claim_bearing,target_consistent,programming or systems queue family
+verify/assume DLA,Figure 28/family heatmap,f25948,verify,semantic_coherent,claim_bearing,target_consistent,verification family
+verify/assume DLA,Figure 28/family heatmap,f47092,check,semantic_coherent,claim_bearing,target_consistent,checking family
+verify/assume DLA,Figure 28/family heatmap,f64402,assume,semantic_coherent,claim_bearing,target_consistent,assumption family
+verify/assume DLA,Figure 28/family heatmap,f62519,Assuming,semantic_coherent,claim_bearing,target_consistent,assumption family
+verify/assume DLA,Figure 28/family heatmap,f27888,assumptions,semantic_coherent,claim_bearing,target_consistent,assumption family
+verify/assume DLA,Figure 28/family heatmap,f16851,Verify,semantic_coherent,claim_bearing,target_consistent,verification family
+verify/assume DLA,Figure 28/family heatmap,f4205,thanks/letter,nonsemantic_or_ambiguous,navigation_only,not_counted,top rows are correspondence or thanks tokens rather than verification tokens
+verify/assume DLA,Figure 28/family heatmap,f4592,assume,semantic_coherent,claim_bearing,target_consistent,assumption family
+general readout examples,Figures 20-21,f29839,culprit/offense,semantic_coherent,claim_bearing,target_consistent,legal guilt-related family
+general readout examples,Figures 20-21,f19085,gu/Gu/gu,nonsemantic_or_ambiguous,navigation_only,not_counted,token fragment
+general readout examples,Figures 20-21,f39358,happy/happy,semantic_coherent,claim_bearing,target_consistent,coherent affective label but not central to claim
+general readout examples,Figures 20-21,f16310,Gu/Gu/gu,nonsemantic_or_ambiguous,navigation_only,not_counted,token fragment
+general readout examples,Figures 20-21,f13473,accused/acusado,semantic_coherent,claim_bearing,target_consistent,legal accusation family
+general readout examples,Figures 20-21,f9249,responsible,semantic_coherent,claim_bearing,target_consistent,responsibility family
+general readout examples,Figures 20-21,f37898,convicted/sentenced,semantic_coherent,claim_bearing,target_consistent,legal conviction family
+general readout examples,Figures 20-21,f18716,guilty/guilt,semantic_coherent,claim_bearing,target_consistent,guilty family
+general readout examples,Figures 20-21,f47071,not/Not,semantic_coherent,claim_bearing,target_consistent,negation family
+general readout examples,Figures 20-21,f2073,Not/_not,semantic_coherent,claim_bearing,target_consistent,negation family
+general readout examples,Figures 20-21,f254,in,token_form_artifact,navigation_only,not_counted,function-word feature
+general readout examples,Figures 20-21,f2996,punctuation/M,token_form_artifact,navigation_only,not_counted,punctuation and letter fragments
+general readout examples,Figures 20-21,f23681,M/P/S,token_form_artifact,navigation_only,not_counted,single uppercase letters
+general readout examples,Figures 20-21,f46953,the/an/a,token_form_artifact,navigation_only,not_counted,articles or function words
+general readout examples,Figures 20-21,f18884,are/has/is,token_form_artifact,navigation_only,not_counted,auxiliary/function words
+general readout examples,Figures 20-21,f41099,red/Red/红色,semantic_coherent,claim_bearing,target_consistent,red color-token family
+general readout examples,Figures 20-21,f37327,Blue,nonsemantic_or_ambiguous,navigation_only,not_counted,color label mixed with punctuation
+general readout examples,Figures 20-21,f31242,green,semantic_coherent,claim_bearing,target_consistent,color family
+general readout examples,Figures 20-21,f46269,BLUE,nonsemantic_or_ambiguous,navigation_only,not_counted,color label dominated by capitalization
+general readout examples,Figures 20-21,f19687,black,semantic_coherent,claim_bearing,target_consistent,color family
+general readout examples,Figures 20-21,f2359,unknown,semantic_coherent,claim_bearing,target_consistent,abstention family
+general readout examples,Figures 20-21,f786,punctuation,token_form_artifact,navigation_only,not_counted,punctuation feature
+general readout examples,Figures 20-21,f25997,effects/Effects,nonsemantic_or_ambiguous,navigation_only,not_counted,coherent but not interpretable for local target
+general readout examples,Figures 20-21,f59571,M/J/G,token_form_artifact,navigation_only,not_counted,single uppercase letters

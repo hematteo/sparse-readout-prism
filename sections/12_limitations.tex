@@ -1,39 +1,66 @@
 \section*{Limitations}
 
-\paragraph{Readout scope.}
-SRP targets final-unembedding alignment: it identifies which sparse readout
-directions support or oppose a chosen scalar once the hidden state reaches the
-LM head. The feature-resolved DLA analysis composes SRP with additive
-residual-stream attribution, providing candidates for intervention studies that
-test component or feature necessity.
+\paragraph{Scope of explanation.}
+SRP targets linear scalar readout questions at the final LM head: which sparse
+readout directions support or oppose a chosen token logit, contrast, or margin
+for a given hidden state. The feature-resolved DLA analysis composes this
+readout account with additive residual-stream attribution, yielding candidates
+for later intervention studies rather than a standalone causal circuit claim.
 
-\paragraph{Dictionary non-uniqueness.}
-The sparse basis is not unique: dictionary features can split, merge, rotate, or
-depend on recipe choices. We therefore treat reconstruction error, sign
-agreement, replacement fidelity, and stability checks as part of the result
-rather than as auxiliary diagnostics. Feature names are row-level summaries from
-high-activating unembedding rows; the measured objects are feature ids, signed
-terms, and residual errors.
+\paragraph{Fidelity and labels.}
+As in other sparse dictionary settings, the learned basis can depend on recipe
+choices
+\citep{elhage2022superposition,karvonen2025saebench,makelov2024principled}. We
+therefore report reconstruction error, sign agreement, replacement fidelity, and
+stability checks with the decompositions themselves. Feature labels are
+row-level summaries of high-scoring unembedding rows; the measured objects are
+feature ids, signed terms, and residual errors.
 
-\paragraph{Target and model coverage.}
-SRP currently handles linear scalar targets at the final readout. Distributional
-claims, multi-token answer quality, and sequence-level behavior require chosen
-linear proxies or additional evaluation. The strongest qualitative evidence in
-the paper comes from Qwen settings with good target fidelity; other families and
-diffuse targets can preserve signs while having larger errors. Small exact
-margins are especially fragile, so displayed accounts should be read together
-with their local reconstruction error.
+\paragraph{Readout-specific caveats.}
+Because SRP factorizes vocabulary rows, some labels and groupings can reflect
+tokenizer geometry, token frequency, row norms, or surface-form artifacts
+\citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
+Group contrasts reduce dependence on any single row, while benchmark-format
+targets measure reconstruction of task-shaped readout scores rather than
+end-to-end task solving. The readout-edit experiment is likewise a constrained
+test of lexical score movement, with broader behavioral effects left to direct
+intervention and generation-level evaluation.
 
-\paragraph{Tokenizer and benchmark effects.}
-Because SRP factorizes vocabulary rows, labels and feature groupings can reflect
-tokenizer geometry, token frequency, row norms, special tokens, and surface-form
-artifacts. Contrasts and group targets reduce dependence on any one row but do
-not remove it. Benchmark-format rows measure whether task-shaped readout targets
-are reconstructed, not whether the model solved the underlying task.
+\section*{Ethics Statement}
 
-\paragraph{Readout edits.}
-The readout-edit experiment tests constrained movement of specified lexical
-scores. It should not be interpreted as broad behavioral control, safety editing,
-or evidence that the same directions have the same causal role throughout the
-network. Larger behavioral effects require intervention studies that track
-distribution shift, downstream generations, and off-target changes.
+This work is an interpretability study of pretrained language-model readouts. We
+do not collect new human-subject data or evaluate deployed systems. The
+experiments use public model checkpoints and held-out text-derived hidden states,
+including C4 continuations; as a web-crawl-derived resource, C4 may contain
+offensive, private, copyrighted, or otherwise sensitive text
+\citep{raffel2020exploring,dodge2021documenting}. We use these data only to
+measure readout reconstruction and do not make claims about the social validity
+of individual tokens, labels, or generated outputs.
+
+SRP can make lexical and semantic readout directions easier to inspect and, in
+the readout-edit stress test, easier to move. This has dual-use implications:
+the same diagnostic tools that support auditing could also inform attempts to
+manipulate model outputs. We therefore frame the edit experiment narrowly, report
+distribution shift and off-target probes, and do not present the method as a
+safety filter, moderation system, or deployment-ready control mechanism. Feature
+labels are descriptive summaries of high-scoring vocabulary rows and may reflect
+tokenizer artifacts or corpus biases; they should not be treated as human
+categories.
+
+\section*{Reproducibility Statement}
+
+The main experiments report exact-versus-reconstructed scores, sign agreement,
+relative reconstruction error, and null/reference baselines for the scalar
+targets being interpreted. Appendices~\ref{app:model-suite-selection}--%
+\ref{app:robustness-controls} specify the model suite, dictionary widths,
+TopK budgets, seed convention, row sampling, selection order, tokenization
+filters, target construction, and denominator controls. Dictionary selection
+uses row reconstruction, replacement fidelity, and sparse code usage; held-out
+logit-difference targets are reserved for later fidelity checks.
+
+The main remaining reproducibility risks are computational cost, checkpoint and
+tokenizer versioning, and tokenizer-specific filtering decisions for
+single-token targets. For this reason, local score accounts include explicit
+reconstruction errors, and qualitative interpretations are restricted to
+operating regimes where the selected target is reconstructed with sufficient
+fidelity.

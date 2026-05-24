@@ -1,9 +1,8 @@
-\subsection{Context Reweights a Fixed Token Row}
+\subsection{Context Reweights Fixed Token-Row Coefficients}
 
-The previous sections varied targets and inspected feature competition within
-low-error preferences. Here we keep the token row fixed and vary the prompt,
-asking how context changes the profile term \(h^\top d_i\) while the token-row
-coefficients remain fixed.
+The previous sections varied target coefficients. We now keep the token row
+fixed and vary the prompt, asking how context changes the projection term
+\(h^\top d_i\) while the token-row coefficients remain fixed.
 
 \paragraph{Context reweighting.}
 Holding the target token fixed isolates this context-dependent factor. In
@@ -16,7 +15,7 @@ features to defect-, crash-, and debug-like features; \texttt{bridge} shifts
 from river/crossing features to networking features. Additional prompt-level
 views are in Appendix~\ref{app:additional-qwen-display-examples}.
 Because fitted token-row coefficients are fixed after training the readout SAE,
-the displayed change isolates the hidden-state profile.
+the displayed change isolates the hidden-state projection profile.
 
 \begin{figure}[t]
     \centering

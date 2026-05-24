@@ -76,8 +76,8 @@ separate operating regimes; truncated $k=256$ dictionaries are over-budget
 comparisons.
 Within each regime, rowEV is paired with top1, KL, reconstruction error, achieved eval-$L_0$
 where applicable, and usage statistics. Orthogonal matching pursuit (OMP) rows
-are sparse-inference comparisons over fixed dictionaries; deployed metrics use
-the learned TopK encoders.
+\citep{pati1993orthogonal} are sparse-inference comparisons over fixed
+dictionaries; deployed metrics use the learned TopK encoders.
 
 \paragraph{Per-model settings.}
 The sweep ultimately supports two operating regimes. The strict-budget rows
@@ -164,7 +164,7 @@ Qwen capacity sweep
 & $D=131072$, $k=256$ is the best-fidelity capacity point; $D=65536$, $k=256$
 is the compact comparison \\
 \addlinespace
-Qwen JumpReLU control
+Qwen JumpReLU control \citep{rajamanoharan2024jumprelu}
 & four JumpReLU cells and matched TopK controls
 & LR, prism ramp, controller target-$L_0$
 & rejects JumpReLU as a reported readout SAE \\

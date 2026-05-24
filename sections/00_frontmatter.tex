@@ -1,19 +1,26 @@
 \begin{abstract}
-Lens-style methods reveal which tokens a language-model hidden state favors, but
-treat each score as a single readout dot product. Sparse Readout Prism
-(SRP) adds a calibrated accounting layer beneath such scores: it turns a
-selected readout target into signed sparse-feature terms, together with explicit
-reconstruction error. SRP factorizes the final unembedding into shared sparse
-directions and token-row coefficients, separating the target-independent
-readout-feature profile of a hidden state from the scalar target being explained,
-such as a token logit, contrast, or margin. Across model families, replacement
-fidelity, target reconstruction error, and sign agreement identify regimes where
-these decompositions are faithful to the selected score. On held-out base-model
-token-pair logit differences, SRP preserves signs in 91.4 to 95.8\% of cases,
-with the strongest operating points below 0.10 median relative reconstruction
-error; null and reference baselines show that learned token-to-feature support
-matters. Together, these results show that atomic lens scores can hide
-structured feature competition, making SRP a calibrated way to study which
-readout features support a local preference, which oppose it, and which
-generalize under intervention.
+Lens-style analyses decode language model hidden states through the final
+unembedding, making internal states interpretable as vocabulary-level
+predictions. This interface is central to many interpretability workflows, but
+it has an important limitation: each logit or contrast is treated as an atomic
+score. As a result, lens methods can reveal what a model favors without showing
+which shared readout features support or oppose that preference. We introduce
+Sparse Readout Prism (SRP), a sparse factorization of the language model readout
+that turns selected readout scores into feature-resolved local accounts. SRP
+decomposes the unembedding into sparse token-row structure and shared readout
+directions, allowing hidden states to be projected onto a reusable feature basis
+and selected scores to be expressed as signed feature contributions with
+explicit residuals.
+
+We evaluate SRP across model families by testing when the factorized readout
+preserves the original LM-head behavior and selected scalar targets. In reliable
+regimes, SRP preserves held-out contrast signs at high rates, with the strongest
+settings below 0.10 median relative reconstruction error, and learned sparse
+support outperforms null and reference baselines. These decompositions show how
+target choice and prompt context reweight shared readout features, and they
+compose with residual-stream attribution and constrained readout-side edits. More
+broadly, SRP extends logit-lens analysis from vocabulary-level outcomes to
+calibrated, feature-level accounts of readout evidence, providing a basis for
+more auditable studies of how language models express preferences through their
+final readout.
 \end{abstract}

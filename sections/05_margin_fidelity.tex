@@ -1,11 +1,13 @@
-\subsection{Fidelity Calibration: Readout and Target Reconstruction}
+\subsection{The Sparse Readout Factorization Preserves LM-Head Behavior}
 
 \paragraph{Replacement vs. target fidelity.}
-We evaluate SRP by replacing \(\WU\) with \(\widehat{\WU}\) on held-out hidden
-states and by reconstructing pairwise logit differences used in feature
-analyses. The first tests LM-head behavior; the second tests whether local
-feature sums recover each target's size and sign. Together, these diagnostics
-define the operating regime in which SRP feature accounts are evidence-bearing.
+SRP is useful as an interpretability layer only where the factorized readout
+tracks the original LM head. We therefore evaluate two linked quantities:
+replacement fidelity after substituting \(\widehat{\WU}\) for \(\WU\) on
+held-out hidden states, and target fidelity for the pairwise logit differences
+used in local feature analyses. Replacement tests whether the sparse
+factorization preserves readout behavior; target fidelity tests whether the
+displayed feature sums recover the selected score's size and sign.
 
 \begin{table}[t]
 \caption{\textbf{Readout replacement and target fidelity.}
@@ -44,10 +46,10 @@ R1-L-8B & 32/256 & 0.888 & 0.754 & 0.434 & 0.926 & 0.134 & 0.830 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Fidelity.}
-\Cref{tab:readout-query-fidelity-summary} reports row reconstruction, LM-head
+\paragraph{Readout and target fidelity.}
+\Cref{tab:readout-query-fidelity-summary} reports row reconstruction,
 replacement, and held-out logit-difference fidelity for the \(k=256\) settings
-used below. Target fidelity uses sign agreement, median relative error
+used below. We evaluate target fidelity with sign agreement, median relative error
 \(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\),
 and the fraction with \(\rho<0.5\). Qwen is strongest: replacement top-1
 \(0.887\)--\(0.900\), sign agreement \(0.949\)--\(0.958\), and median
@@ -57,9 +59,10 @@ errors. The reasoning-distilled checkpoints have lower replacement top-1/KL
 but preserve contrastive signs well (sign \(0.921\)--\(0.926\), median
 \(\rho<0.15\)); Appendix~\ref{app:readout-factorizer-transfer-comparisons}
 expands this pattern. Target reconstruction and sign agreement calibrate the
-local accounts interpreted below; rowEV remains a readout-capacity metric. These
-metrics identify SRP's most reliable regime: signed contrasts with nontrivial
-margins, with most ambiguity concentrated in small exact margins.
+local accounts interpreted below. RowEV remains a readout-capacity metric rather
+than a sufficient condition for faithful local accounts. These metrics identify
+SRP's most reliable regime: signed contrasts with nontrivial margins, with most
+ambiguity concentrated in small exact margins.
 
 \begin{figure}[t]
     \centering
@@ -72,10 +75,11 @@ margins, with most ambiguity concentrated in small exact margins.
     \label{fig:readout-query-fidelity-result}
 \end{figure}
 
-\subsection{Reference and Null Baselines}
+\subsection{Learned Token-Row Support Drives Target Reconstruction}
 
-We next ask how much reconstruction comes from learned token-to-feature support,
-beyond the capacity of a high-dimensional sparse basis.
+High-dimensional sparse bases can reconstruct some readout structure by
+capacity alone. We therefore ask whether SRP's learned token-row support is
+responsible for the target fidelity above.
 
 \begin{table}[t]
 \caption{\textbf{Null and reference baselines for Qwen3.5-2B.}
@@ -100,33 +104,35 @@ Random support & 1.141 & 0.407 & 0.069 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Baseline controls.}
+\paragraph{Support controls.}
 On the full Qwen3.5-2B logit-difference set, SRP has the lowest median error and
 largest sign-preserved low-error subset
 (\Cref{tab:main-baseline-null-comparison}).
-Nearest-row and PCA references retain some sign structure, while shuffled codes
-and random supports approach chance, indicating dependence on learned
-token-to-feature support. The full error tail appears in
+Nearest-row ridge \citep{hoerl1970ridge} and PCA \citep{jolliffe2002principal}
+references retain some sign structure, while shuffled codes and random supports
+approach chance, indicating dependence on learned token-to-feature support. The
+full error tail appears in
 Appendix~\ref{app:robustness-key-quantitative}.
-Thus matching vocabulary-row support is the driver beyond sparse low-rank
-capacity.
+Thus the sparse code support learned from vocabulary rows, not merely the
+availability of a large basis, drives the reconstruction used by the local
+accounts.
 
-\subsection{Benchmark-Format Scalar Targets Can Be Reconstructed}
+\subsection{Scalar Readout Targets Extend Beyond Token Pairs}
 
-The same accounting identity also handles task-shaped readout targets for QA
+The scalar-target interface is not tied to hand-picked token pairs. The same
+accounting identity applies to any linear combination of vocabulary rows, so we
+instantiate task-shaped readout targets for QA
 \citep{rajpurkar2018squad2,yang2018hotpotqa}, abstention, ContractNLI labels
 through LegalBench \citep{koreeda2021contractnli,guha2023legalbench}, and
-SecurityEval safe/unsafe actions \citep{siddiq2022securityeval}. Each target is
-linear in vocabulary rows, so the same additive account and sign/\(\rho\)
-summaries apply. This tests whether SRP handles decision-shaped readout
-contrasts beyond hand-picked token pairs.
+SecurityEval safe/unsafe actions \citep{siddiq2022securityeval}. These targets
+test whether SRP reconstructs decision-shaped readout contrasts while keeping
+the evaluation at the readout level.
 
 \Cref{tab:benchmark-derived-task-targets} shows sign reconstruction on
 Qwen3.5-0.8B and Qwen3.5-2B. Qwen3.5-2B is strongest on answerable QA,
 multi-hop distractors, and legal labels; SecurityEval is harder because its
 safe/unsafe-action contrast is diffuse. These rows isolate readout-target
-fidelity, separating reconstruction of benchmark-shaped targets from task
-accuracy.
+fidelity and should not be read as benchmark task accuracy.
 \Cref{fig:benchmark-task-group-examples} shows representative low-error QA
 accounts.
 

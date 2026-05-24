@@ -245,6 +245,44 @@ terms behind it.
 \subsection{Token-Row Audit for Main Case-Study Features}
 \label{app:main-case-study-feature-audit}
 
+Table~\ref{tab:app-qualitative-feature-label-audit} gives a conservative
+qualitative audit over the claim-bearing displayed labels in the Qwen feature
+figures. This is not a feature-validity score: labels that are target-token
+heavy, generic, function-word dominated, punctuation-like, or letter/case
+directions are separated from semantic labels rather than counted as semantic
+successes. The audit asks whether the displayed token-row summary is coherent
+enough to support the prose label used in the paper, and whether coherent labels
+point to the target side indicated by the signed feature term. The measured
+objects remain feature ids, signed contributions, and reconstruction residuals.
+The row-level source table, refined feature descriptions, and full top-20
+token-row audit are included with the figure artifacts.
+
+\begin{table*}[!tbp]
+\caption{\textbf{Qualitative feature-label audit for claim-bearing Qwen displays.}
+Rows count displayed feature labels, not all dictionary features. Semantic labels
+are counted only when the displayed top-row summary supports the named family;
+ambiguous and token-form labels are not used as semantic evidence.}
+\label{tab:app-qualitative-feature-label-audit}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}lrrrrrY@{}}
+\toprule
+Feature set & Labels & Semantic & Ambig. & Token-form & Target-consistent & Scope \\
+\midrule
+Main \texttt{bug} panels & 11 & 8 & 0 & 3 & 8/8 & Figure~\ref{fig:selected-readout-prism-examples}; detailed rows in Table~\ref{tab:app-main-case-study-feature-audit}. \\
+Additional \texttt{bark}/\texttt{bass} margins & 12 & 7 & 2 & 3 & 7/7 & Figure~\ref{fig:app-selected-readout-prism-extra-examples}. \\
+Fixed-token context panels & 12 & 9 & 3 & 0 & 9/9 & Figure~\ref{fig:same-token-polysemy}. \\
+Technical context stress & 32 & 24 & 7 & 1 & 24/24 & Figure~\ref{fig:app-qwen2b-technical-domain-delta}. \\
+\texttt{verify}/\texttt{assume} DLA & 8 & 7 & 1 & 0 & 7/7 & Feature-family heatmap behind Figures~\ref{fig:qwen-prism-dla-verify-assume-main} and~\ref{fig:qwen-prism-dla-verify-assume-app}. \\
+General readout examples & 24 & 12 & 5 & 7 & 12/12 & Figures~\ref{fig:qwen-general-readout-queries-basic} and~\ref{fig:app-qwen-general-readout-queries-extra}. \\
+\midrule
+Total & 99 & 67 & 18 & 14 & 67/67 & Conservative count over displayed, claim-bearing labels. \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
 Table~\ref{tab:app-main-case-study-feature-audit} summarizes every feature shown in
 the two main \texttt{bug} panels. For each sparse feature, we score centered and
 normalized unembedding rows with that feature's encoder row and list the highest

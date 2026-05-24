@@ -15,12 +15,13 @@ mismatch.
 
 \paragraph{Support selection.}
 On the Qwen3.5-9B $D=32768$, $k=128$ recipe, the trained encoder reaches rowEV
-$0.621$. Nonnegative least-squares on the encoder's own support reaches
-$0.625$, nonnegative OMP reaches $0.647$, and signed-OMP reaches $0.655$. The
-coefficient gap is therefore small (about $0.004$), while
-same-coefficient-class support-selection headroom is about $0.026$. Dense
-rank-128 reconstruction is $0.101$, far below the sparse dictionary, showing
-that the result goes beyond low-rank PCA structure.
+$0.621$. Nonnegative least-squares \citep{lawson1974solving} on the encoder's
+own support reaches $0.625$, nonnegative OMP \citep{pati1993orthogonal} reaches
+$0.647$, and signed-OMP reaches $0.655$. The coefficient gap is therefore small
+(about $0.004$), while same-coefficient-class support-selection headroom is
+about $0.026$. Dense rank-128 reconstruction is $0.101$, far below the sparse
+dictionary, showing that the result goes beyond low-rank PCA structure
+\citep{jolliffe2002principal}.
 Figure~\ref{fig:app-k-omp-diagnostic} shows both the strict-budget recipe and
 the high-fidelity 32$\times$, $k=256$ run. The right-hand table labels the
 latter OMP numbers as sparse-reconstruction ceilings; deployed-encoder metrics
@@ -96,37 +97,44 @@ use rowEV, top1, KL, reconstruction error metrics, and usage statistics jointly.
 \paragraph{Alternative recipes and denominator controls.}
 The non-selected recipes are ruled out by concrete matched-comparison reasons.
 At $D=32768$/5k, plain TopK exceeded the matryoshka variants in rowEV
-($0.567$ vs.\ $0.559/0.554$) at lower cost, and the $D=16384$ fixed-$k=128$
-cell trailed $D=32768$ by about $0.06$ rowEV. Calibrated BatchTopK
-\citep{bussmann2024batchtopk} reached rowEV $0.531$ on the matched frontier
-cell. Qwen JumpReLU missed the intended target $L_0=256$ (achieved about
-$38$--$68$), and step- or sparsity-matched TopK controls had higher rowEV
-($0.42$--$0.44$ vs.\ $0.26$--$0.31$), with mixed logit metrics. Finally,
-tokenizer/non-token-row audits support the denominator choice: structural
-non-token rows were $5.4\%$ of rows, and excluding non-token readout rows changed
-rowEV by $+0.0016$.
+\citep{bussmann2025matryoshka} ($0.567$ vs.\ $0.559/0.554$) at lower cost, and
+the $D=16384$ fixed-$k=128$ cell trailed $D=32768$ by about $0.06$ rowEV.
+Calibrated BatchTopK \citep{bussmann2024batchtopk} reached rowEV $0.531$ on the
+matched frontier cell. Qwen JumpReLU \citep{rajamanoharan2024jumprelu} missed
+the intended target $L_0=256$ (achieved about $38$--$68$), and step- or
+sparsity-matched TopK controls had higher rowEV ($0.42$--$0.44$ vs.\
+$0.26$--$0.31$), with mixed logit metrics. Finally, tokenizer/non-token-row
+audits support the denominator choice: structural non-token rows were $5.4\%$ of
+rows, and excluding non-token readout rows changed rowEV by $+0.0016$.
 
 \subsection{Reproducibility and Selection Details}
 \label{app:readout-factorizer-limitations}
 
-The Qwen/Gemma readout SAEs were selected on row reconstruction, logit metrics,
-and sparse code usage statistics, leaving the logit-difference target set for
-the later fidelity checks. Most reported dictionary settings use seed
-\(0\), with the Qwen3.5-0.8B 32$\times$, $k=256$ three-seed window providing the
+The Qwen/Gemma readout SAEs were selected before downstream qualitative
+interpretation using row reconstruction, replacement-logit metrics, and sparse
+code usage statistics. The logit-difference target set was reserved for the
+later fidelity checks, so target reconstruction is evaluated after dictionary
+selection. Most reported dictionary settings use seed \(0\), with the
+Qwen3.5-0.8B 32$\times$, $k=256$ three-seed window providing the
 seed-variation snapshot above.
 For Qwen3.5-9B, tokenizer-aligned text-token-only EV and frequency-stratified
 fidelity are replaced by tokenizer-free denominator controls: the tokenizer row
 count did not cleanly align with the $\WU$ rows, and no vocab-aligned unigram
 table was available. The tokenizer-free non-token-row audit therefore serves as
-the denominator-control result. Gemma rowEV is measured on the linear pre-softcap
-unembedding rows and is cap-independent; Gemma top1/KL are now evaluated under
-the model's $30\tanh(\cdot/30)$ \texttt{final\_logit\_softcapping}. Since the
-cap is strictly monotone (hence argmax-invariant), top1 is cap-independent and
-the cap affects only KL.
+the denominator-control result for that model. Gemma rowEV is measured on the
+linear pre-softcap unembedding rows and is cap-independent; Gemma top1/KL are
+evaluated under the model's $30\tanh(\cdot/30)$
+\texttt{final\_logit\_softcapping}. Since the cap is strictly monotone, top1 is
+cap-independent and the cap affects only KL.
 The selected operating points and reported claims come from the Qwen/Gemma
 sweeps and the targeted Ministral/R1 comparison rows above; earlier Pythia-160M
 architecture and continuity sweeps \citep{biderman2023pythia} are
 design-history records.
+Exact replication depends on using the same model checkpoint revisions,
+tokenizers, final-normalization and softcap code paths, target filters, and
+single-token eligibility rules. For this reason, every interpreted local score
+account reports the exact score, reconstructed score, reconstruction error, and,
+for signed targets, sign agreement.
 
 \paragraph{Training and evaluation recipe.}
 \begingroup
