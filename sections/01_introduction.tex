@@ -4,9 +4,12 @@ Language models map hidden states to vocabulary logits through the final
 unembedding matrix, or LM head; we call this interface the \emph{readout}.
 Lens-style methods decode hidden states into vocabulary distributions, top-token
 summaries, prompted continuations, or natural-language descriptions
-\citep{nostalgebraist2020,belrose2023tuned,ghandeharioun2024patchscopes}, but
-their scores remain atomic: they show which token or contrast is favored, not
-which readout directions support, oppose, or ignore that selected score.
+\citep{nostalgebraist2020,belrose2023tuned,ghandeharioun2024patchscopes}.
+However, these methods leave each readout score as a single scalar. They can
+show that a hidden state favors one token or contrast, but not whether that
+score is supported by semantically aligned readout features, opposed by
+competing features, or reconstructed poorly enough that no sparse account should
+be trusted.
 
 \begin{figure}[H]
     \centering
@@ -23,8 +26,10 @@ which readout directions support, oppose, or ignore that selected score.
 address. After the prompt ``The source has not been checked yet. The appropriate
 next action is to'', a logit lens says that the hidden state favors
 \texttt{verify} over \texttt{assume}. This answers which token is preferred, but
-not why that preference appears in the readout. SRP keeps the same question fixed
-and breaks the score into signed readout-feature terms. In this account,
+not which shared readout features account for the preference, which features push
+against it, or how much of the score remains unexplained by the sparse account.
+SRP keeps the same question fixed and breaks the score into signed
+readout-feature terms. In this account,
 verification/checking features support the preference, while assumption-related
 features push the other way.
 
