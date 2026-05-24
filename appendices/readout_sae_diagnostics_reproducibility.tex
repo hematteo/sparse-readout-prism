@@ -110,6 +110,18 @@ rows, and excluding non-token readout rows changed rowEV by $+0.0016$.
 \subsection{Reproducibility and Selection Details}
 \label{app:readout-factorizer-limitations}
 
+The main experiments report exact-versus-reconstructed scores, sign agreement,
+relative error, and null/reference baselines for interpreted targets.
+Appendices~\ref{app:model-suite-selection}--\ref{app:robustness-controls}
+specify models, dictionary settings, seeds, row sampling, selection order,
+tokenization filters, target construction, and denominator controls. Dictionary
+selection uses row reconstruction, replacement fidelity, and sparse code usage;
+held-out logit-difference targets are reserved for later checks. Remaining
+risks are computational cost, checkpoint/tokenizer versioning, and
+tokenizer-specific filtering for single-token targets. Local decompositions include
+explicit reconstruction errors, and qualitative interpretations are restricted
+to sufficiently reconstructed targets.
+
 The Qwen/Gemma readout SAEs were selected before downstream qualitative
 interpretation using row reconstruction, replacement-logit metrics, and sparse
 code usage statistics. The logit-difference target set was reserved for the
@@ -133,7 +145,7 @@ design-history records.
 Exact replication depends on using the same model checkpoint revisions,
 tokenizers, final-normalization and softcap code paths, target filters, and
 single-token eligibility rules. For this reason, every interpreted local score
-account reports the exact score, reconstructed score, reconstruction error, and,
+decomposition reports the exact score, reconstructed score, reconstruction error, and,
 for signed targets, sign agreement.
 
 \paragraph{Training and evaluation recipe.}

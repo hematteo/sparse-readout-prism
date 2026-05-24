@@ -1,10 +1,21 @@
 \section{Conclusion}
 
-Sparse Readout Prism factorizes the LM head to turn selected readout scores into
-signed feature-level accounts with explicit residuals in raw logit coordinates.
-Replacement, target-reconstruction, sign, and baseline diagnostics identify
-settings where those accounts preserve readout behavior. In those settings, SRP
-compares targets and contexts, composes with residual-stream attribution, and
-supplies directions for constrained readout-side edits. SRP does not replace
-causal intervention or generation-level evaluation, but it provides an auditable
-readout-linear basis for choosing where those evaluations should focus.
+Sparse Readout Prism factorizes the LM head to turn a selected readout score
+from an opaque dot product into signed feature terms with an explicit residual in
+raw logit coordinates. Replacement, target-reconstruction, sign, and baseline
+diagnostics identify settings where those terms preserve readout behavior. In
+those settings, SRP compares targets and contexts, composes with residual-stream
+attribution, and supplies directions for constrained readout-side edits. Causal
+intervention and generation-level evaluation remain separate tests; SRP provides
+a residual-checked readout-linear basis for choosing where they should focus.
+
+\paragraph{Future work.}
+SRP applies to linear readout maps, so a natural next step is to compose it with
+tuned lenses, logit-prism variants, and future-token lenses, factorizing the
+effective readout used at each layer rather than only the final LM head. This
+would allow lens methods to be compared by decoded tokens and by their signed
+sparse feature terms and residuals. A complementary direction is a
+layerwise residual-stream census: track readout-feature projections before target
+selection to study when evidence becomes readout-readable, when it becomes
+target-specific, and which residual components supply the corresponding feature
+terms.

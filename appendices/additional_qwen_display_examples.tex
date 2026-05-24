@@ -17,8 +17,8 @@ logit-lens display for the literature prompt
 \texttt{It was the best of times, it was the worst of times}. The displayed
 columns cover the first eight prompt tokens. The top panel is the ordinary
 logit-lens top-token trajectory after applying the model's final normalization
-at each layer. The bottom panel lists the two largest positive score-account
-feature terms supporting each cell's centered logit-lens top-token score.
+at each layer. The bottom panel lists the two largest positive decomposition
+terms supporting each cell's centered logit-lens top-token score.
 The feature labels are decoded from top Qwen unembedding rows as token-label
 summaries for the feature ids.
 
@@ -29,7 +29,7 @@ summaries for the feature ids.
     The prompt is \texttt{It was the best of times, it was the worst of times};
     columns show the first eight tokens. The top panel reports the ordinary
     logit-lens top-token prediction at each layer. The bottom panel lists the
-    top positive score-account feature terms contributing to each cell's
+    top positive decomposition terms contributing to each cell's
     centered top-token score under the same Qwen3.5-2B \(32\times\),
     native-\(k=256\) readout SAE used throughout this appendix.}
     \label{fig:app-dickens-all-layer-proto-lens}
@@ -62,7 +62,7 @@ features against trout/salmon features. The relative reconstruction errors are
 
 Figure~\ref{fig:qwen-general-readout-targets-basic} gives the single-state
 example summarized in the main text: scalar, reference, and pairwise readout
-targets can produce different local score accounts for the same hidden state.
+targets can produce different local score decompositions for the same hidden state.
 Figure~\ref{fig:app-qwen-general-readout-targets-extra} adds a group contrast
 and a top-competitor margin.
 
@@ -91,16 +91,16 @@ and a top-competitor margin.
 \end{figure*}
 
 \subsection{Benchmark-Format Readout Target Examples}
-\label{app:benchmark-format-display-examples}
+\label{app:benchmark-derived-display-examples}
 
 Figure~\ref{fig:app-benchmark-task-group-examples} gives representative
-low-error QA accounts for the benchmark-format readout targets summarized in
+low-error QA decompositions for the benchmark-derived readout targets summarized in
 \Cref{tab:benchmark-derived-task-targets}.
 
 \begin{figure*}[!tbp]
     \centering
     \AppendixWideGraphic[height=0.26\textheight]{figures/proto_token_lens/benchmark_task_group_targets/benchmark_task_group_examples.pdf}
-    \caption{\textbf{Benchmark-format local score accounts.}
+    \caption{\textbf{Benchmark-derived local score decompositions.}
     Positive bars support the gold/intended side; negative bars support the
     distractor side. Both Qwen3.5-2B panels use the selected \(32\times\),
     \(k=256\) readout SAE and have correct sign with low relative error.}
@@ -157,7 +157,7 @@ relative reconstruction error is \(0.05\).
     edge/vertex-like graph-structure support; \texttt{memory} separates human
     memory from computer-memory/RAM support; \texttt{virus} separates
     biological-virus features from malware/antivirus features. \texttt{pipe}
-    shows a mixed technical/plumbing local score account.}
+    shows a mixed technical/plumbing local score decomposition.}
     \label{fig:app-qwen2b-technical-domain-delta}
 \end{figure*}
 
@@ -203,7 +203,7 @@ contributions.
 Figure~\ref{fig:main-lens-prism-comparison} gives the main-text lens-versus-prism
 comparison. Table~\ref{tab:app-lens-comparison-examples} lists four additional
 Qwen3.5-2B examples where the ordinary logit lens gives a local A-vs-B
-logit difference and the SRP local score account exposes the competing feature terms
+logit difference and the SRP local score decomposition exposes the competing feature terms
 behind that contrast. The prompt-injection case illustrates how SRP can
 decompose an undesirable local readout ranking: the ordinary lens favors the wrong
 action and the sparse terms reconstruct that contrast tightly.

@@ -1,13 +1,13 @@
 \section*{Limitations}
 
-\paragraph{Scope of score accounts.}
-SRP gives local score accounts for linear scalar readout targets at the final LM
-head. Feature-resolved DLA composes these accounts with additive residual-stream
+\paragraph{Scope of score decompositions.}
+SRP gives local score decompositions for linear scalar readout targets at the final LM
+head. Feature-resolved DLA composes these decompositions with additive residual-stream
 attribution, yielding intervention candidates rather than causal circuit claims.
 
 \paragraph{Fidelity and labels.}
-Reported diagnostics make SRP accounts auditable in their operating regimes. As
-in other sparse dictionary settings, the learned basis can depend on recipe
+Reported diagnostics expose SRP residuals and sign checks in their operating regimes, but
+as in other sparse dictionary settings the learned basis can depend on recipe
 choices
 \citep{elhage2022superposition,karvonen2025saebench,makelov2024principled}. We
 therefore report reconstruction error, sign agreement, replacement fidelity, and
@@ -15,16 +15,17 @@ stability checks. Feature labels summarize high-scoring unembedding rows; the
 measured objects are feature ids, signed terms, and residual errors.
 
 \paragraph{Readout-specific caveats.}
-SRP supports token-level, group-contrast, and benchmark-format readout accounts
-while retaining vocabulary-geometry caveats. Labels and groupings can reflect
+SRP supports token-level, group-contrast, and benchmark-derived readout decompositions
+while inheriting vocabulary-geometry caveats: labels and groupings can reflect
 tokenizer geometry, token frequency, row norms, or surface-form artifacts
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
-Group contrasts reduce single-row dependence; benchmark-format targets measure
-linear readout reconstruction, not task solving. The readout edit is a
-constrained lexical-score test; broader behavioral effects require intervention
-and generation-level evaluation.
+Group contrasts reduce single-row dependence; benchmark-derived targets measure
+linear readout reconstruction, not task solving; and the readout edit is a
+constrained lexical-score test. SRP provides a residual-checked readout-linear basis
+for candidate evidence terms, while causal mechanisms and generation-level
+effects require targeted interventions.
 
-\section*{Ethics Statement}
+\section*{Ethical Considerations}
 
 This work studies pretrained language-model readouts. It collects no new
 human-subject data and evaluates no deployed systems. Experiments use public
@@ -40,18 +41,3 @@ also inform output manipulation. We frame the edit as a readout-level stress
 test, report distribution shift and off-target probes, and reserve
 safety-filter, moderation, or deployment-control claims for direct system-level
 evaluations.
-
-\section*{Reproducibility Statement}
-
-The main experiments report exact-versus-reconstructed scores, sign agreement,
-relative error, and null/reference baselines for interpreted targets.
-Appendices~\ref{app:model-suite-selection}--\ref{app:robustness-controls}
-specify models, dictionary settings, seeds, row sampling, selection order,
-tokenization filters, target construction, and denominator controls. Dictionary
-selection uses row reconstruction, replacement fidelity, and sparse code usage;
-held-out logit-difference targets are reserved for later checks.
-
-Remaining risks are computational cost, checkpoint/tokenizer versioning, and
-tokenizer-specific filtering for single-token targets. Local accounts include
-explicit reconstruction errors, and qualitative interpretations are restricted
-to sufficiently reconstructed targets.

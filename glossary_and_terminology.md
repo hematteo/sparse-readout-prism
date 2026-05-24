@@ -7,12 +7,12 @@ This file controls terminology for the Sparse Readout Prism paper. Use it to kee
 ## 2. Terminology Policy
 
 - Prefer standard literature terms where they exist: use "logit lens", "unembedding matrix", "LM head", "sparse autoencoder", "decoder direction", "reconstruction error", "direct logit attribution", "baseline", and "ablation" in their usual senses.
-- Use paper-specific terms only when they name a real SRP object or distinction: "Sparse Readout Prism", "readout feature", "readout feature projection", "scalar readout target", "target coefficient", "signed feature contribution", and "local score account".
-- Define key terms before relying on them, especially "readout", "scalar readout target", "readout feature projection", "local score account", and "feature label".
+- Use paper-specific terms only when they name a real SRP object or distinction: "Sparse Readout Prism", "readout feature", "readout feature projection", "scalar readout target", "target coefficient", "signed feature contribution", and "local score decomposition".
+- Define key terms before relying on them, especially "readout", "scalar readout target", "readout feature projection", "local score decomposition", and "feature label".
 - Keep "readout" narrowly scoped to the final unembedding / LM head interface. Do not use it for the whole model, a prompt, a generation, or an internal computation.
 - Avoid calling hidden-state projections onto readout SAE decoder directions "feature activations". In SAE literature, "activation" usually refers to the sparse encoder output for the object on which the SAE was trained.
 - Treat "faithful", "interpretable", "robust", "general", "causal", and "control" as evidence-sensitive words. Use them only with the diagnostics, scope, and caveats stated in the paper.
-- Keep terminology stable across sections. Do not alternate between "query", "target", "score", "account", and "explanation" unless the distinction is intentional.
+- Keep terminology stable across sections. Do not alternate between "query", "target", "score", "decomposition", and "explanation" unless the distinction is intentional.
 - Match wording to evidence: SRP reconstructs and decomposes selected linear readout scores; it does not by itself explain arbitrary behavior, probabilities, full generations, or causal mechanisms.
 
 ### High-Priority Replacements
@@ -23,8 +23,8 @@ These are the highest-value cleanup substitutions to run before submission.
 |---|---|---|
 | feature activation, profile activation | readout feature projection; projection coordinate | Hidden-state dot products `h^T d_i` are not SAE encoder activations. |
 | query | scalar readout target; readout target | The formal object is a selected linear readout target, not a generic query. |
-| explanation, explains | local score account; decomposes; accounts for | SRP accounts for selected linear readout scores, not arbitrary behavior. |
-| benchmark performance, task accuracy | benchmark-format readout-target fidelity | The benchmark-derived rows evaluate readout contrast reconstruction, not end-to-end task success. |
+| explanation, explains | local score decomposition; decomposes | SRP decomposes selected linear readout scores, not arbitrary behavior. |
+| benchmark performance, task accuracy | benchmark-derived readout-target fidelity | The benchmark-derived rows evaluate readout contrast reconstruction, not end-to-end task success. |
 | steering, control | constrained readout-side edit; readout-level intervention | The edit experiment is score-level and candidate-constrained. |
 | robust | controlled; consistent across tested settings | "Robust" needs stronger perturbation/distribution/seed evidence unless scoped to controls. |
 | semantic feature | feature label; row-level descriptor | Feature labels summarize associated token rows and are not ground-truth semantics. |
@@ -54,13 +54,13 @@ These are the highest-value cleanup substitutions to run before submission.
 | readout feature | Paper-specific term | A reusable SAE decoder direction learned from unembedding rows; used by token rows and projected against hidden states. | Use as the intuitive name for `d_i` after defining it. | Do not equate with hidden-state SAE feature or semantic feature. | Paper-specific specialization of SAE decoder direction. | Introduction and Method. Define before examples. Citation to SAE literature nearby. |
 | SAE decoder direction, `d_i` | Standard literature term | A learned dictionary direction; in SRP it is a readout-side direction in hidden-state space. | Use in mathematical prose; pair with "readout feature direction" for readability. | Avoid "neuron" or "latent concept" unless separately justified. | Standard SAE / dictionary-learning terminology. | Method factorization. Citation required when SAE introduced. |
 | sparse code entry / token-row coefficient, `z_{t,i}` | Standard literature term / adapted | Sparse coefficient with which token row `t` uses readout feature `i`. | Use "sparse code entry" in SAE contexts and "token-row coefficient" in readout-target contexts. | Do not call it a hidden-state activation. | Standard sparse coding term, adapted to unembedding rows. | Method factorization. Citation to SAE literature. |
-| shared offset, `mu` | Standard technical term | Common row offset in the raw-space row reconstruction; cancels for zero-sum contrasts. | Use in score identities and when explaining raw token logits. | Do not hide it as a dense correction term. | Standard centering / affine reconstruction term. | Method factorization and score accounting. Citation not needed. |
+| shared offset, `mu` | Standard technical term | Common row offset in the raw-space row reconstruction; cancels for zero-sum contrasts. | Use in score identities and when explaining raw token logits. | Do not hide it as a dense correction term. | Standard centering / affine reconstruction term. | Method factorization and score decomposition. Citation not needed. |
 | raw readout coordinates | Needs clarification | The model's original logit/contrast coordinate system after mapping SAE quantities back from any centering or row normalization. | Use to reassure readers that displayed scores are in original model units. | Do not imply preprocessing is absent; say quantities are mapped back. | Paper-specific bookkeeping phrase. | Method after training preprocessing. No citation needed. |
-| row reconstruction | Standard literature term / needs clarification | Reconstruction of held-out unembedding rows by the readout SAE. | Use as a capacity and fit metric, not as proof that local accounts are valid. | Do not conflate with target reconstruction or LM-head replacement fidelity. | Standard reconstruction objective/evaluation term. | Experimental Setup. Citation to SAE literature optional. |
+| row reconstruction | Standard literature term / needs clarification | Reconstruction of held-out unembedding rows by the readout SAE. | Use as a capacity and fit metric, not as proof that local decompositions are valid. | Do not conflate with target reconstruction or LM-head replacement fidelity. | Standard reconstruction objective/evaluation term. | Experimental Setup. Citation to SAE literature optional. |
 | row reconstruction objective | Standard literature term / adapted | The mean-squared reconstruction objective used to train the readout SAE on preprocessed unembedding rows. | Use when describing SAE training. | Do not present it as an objective for end-to-end language modeling or task behavior. | Standard autoencoder objective applied to readout rows. | Method factorization subsection. Cite SAE literature nearby. |
 | rowEV | Needs clarification | Row-centered explained variance for reconstructed held-out unembedding rows. | Use as a row reconstruction capacity metric paired with replacement and target fidelity. | Do not use as the only evidence that feature bars are interpretable. | Adapted metric label. | Define in Results table caption and glossary. No citation needed. |
 
-### Target and Score Accounting Terms
+### Target and Score Decomposition Terms
 
 | Term | Category | Definition in this paper | Preferred usage | Avoid / Do not use | Literature grounding | First-use guidance |
 |---|---|---|---|---|---|---|
@@ -72,29 +72,29 @@ These are the highest-value cleanup substitutions to run before submission.
 | token logit | Standard literature term | The scalar score `h^T w_A` for token `A`. | Use for raw token score targets. | Do not confuse with probability after softmax. | Standard language-model terminology. | Method target families. Citation not needed. |
 | centered logit / reference contrast | Standard term / adapted | A token logit after subtracting a reference row, usually vocabulary mean or shared offset. | Prefer "reference contrast" when a particular reference row is defined. | Do not call it a probability-normalized score. | Standard linear contrast idea; paper-specific target family. | Method target families. Cite output-embedding caveats if motivating. |
 | pairwise logit difference | Standard literature term | The contrast `h^T(w_A-w_B)`; positive values support `A` over `B`. | Use for token-token signed margins. | Avoid "pairwise preference" unless clarifying that it is a logit difference, not a human preference label. | Standard in logit attribution and lens analyses. | Introduction and Method. Citation optional. |
-| group contrast | Standard term / adapted | A linear contrast between average rows for two token groups. | Use for answer-vs-distractor, abstention-vs-entity, label, or action-family readout targets. | Do not imply it measures end-to-end group task performance. | Adapted from linear contrast terminology. | Method target families and benchmark-format target section. Citation for datasets, not for the term. |
+| group contrast | Standard term / adapted | A linear contrast between average rows for two token groups. | Use for answer-vs-distractor, abstention-vs-entity, label, or action-family readout targets. | Do not imply it measures end-to-end group task performance. | Adapted from linear contrast terminology. | Method target families and benchmark-derived target section. Citation for datasets, not for the term. |
 | local competitor margin / top-competitor margin | Needs clarification | A contrast between a selected token and fixed nearby competitors from the original LM-head ranking. | Prefer one canonical phrase: "top-competitor margin" in tables and "local competitor margin" only when emphasizing local ranking. | Do not call it a classification margin unless the candidate set and weights are specified. | Adapted margin concept. | Method target families. No citation needed. |
 | target coefficient, `beta_i(q)` | Paper-specific term | The coefficient with which scalar target `q` uses readout feature `i`; e.g. `sum_t alpha_t z_{t,i}`. | Use when discussing the readout/target-side factor. | Do not call it an activation or context effect. | Paper-specific term derived from sparse row coefficients. | Method local score decomposition. |
 | signed feature contribution, `c_i(h,q)` | Paper-specific term | The target coefficient times the hidden-state projection, `beta_i(q) p_i(h)`, positive or negative for the chosen scalar target. | Use for bars in local score plots and analysis of support/opposition. | Avoid "feature importance" unless tied to the selected target and residual. | Paper-specific contribution term. | Introduction and Method. |
 | support / opposition | Needs clarification | Directional contribution relative to a specified signed target: positive terms raise the chosen scalar; negative terms lower it. | Use only after the target and sign convention are stated. | Do not imply moral, behavioral, or causal support. | Standard sign interpretation adapted to SRP. | Figure captions and Method. |
-| local score account | Paper-specific term | The target-conditioned decomposition of one selected scalar score at one hidden state into offset, signed feature terms, and residual. | Use for displayed, target-local SRP decompositions. | Do not call it a global explanation of model behavior. | Paper-specific term needed to avoid overclaiming "explanation". | Introduction, at first example. No citation needed. |
-| score decomposition at a hidden state | Paper-specific / standard mathematical phrase | The mathematical identity underlying a local score account. | Use in formal sections and appendices. | Do not alternate with "explanation" unless scoped. | Paper-specific instantiation of linear decomposition. | Method local score decomposition. |
-| feature sum, `s_feat` | Paper-specific bookkeeping term | Sum of all signed feature contributions before adding offset or residual terms. | Use in figure diagnostics and score accounting. | Do not confuse with displayed top bars if bars are truncated. | Paper-specific reporting term. | Method faithfulness subsection or appendix. |
-| reconstruction residual / reconstruction error, `epsilon` | Standard literature term | Difference between the exact target score and reconstructed score from offset plus feature sum. | Prefer "reconstruction error" for scalar target error; "residual" for the explicit leftover term. | Do not use "unexplained behavior"; it is unmodeled readout score under the sparse factorization. | Standard reconstruction terminology. | Method faithfulness diagnostics. Citation optional. |
+| local score decomposition | Paper-specific term | The target-conditioned decomposition of one selected scalar score at one hidden state into offset, signed feature terms, and residual. | Use for displayed, target-local SRP decompositions. | Do not call it a global explanation of model behavior. | Paper-specific term needed to avoid overclaiming "explanation". | Introduction, at first example. No citation needed. |
+| score decomposition at a hidden state | Paper-specific / standard mathematical phrase | The mathematical identity underlying a local score decomposition. | Use in formal sections and appendices. | Do not alternate with "explanation" unless scoped. | Paper-specific instantiation of linear decomposition. | Method local score decomposition. |
+| feature sum, `s_feat` | Paper-specific bookkeeping term | Sum of all signed feature contributions before adding offset or residual terms. | Use in figure diagnostics and score decomposition. | Do not confuse with displayed top bars if bars are truncated. | Paper-specific reporting term. | Method residual-diagnostics subsection or appendix. |
+| reconstruction residual / reconstruction error, `epsilon` | Standard literature term | Difference between the exact target score and reconstructed score from offset plus feature sum. | Prefer "reconstruction error" for scalar target error; "residual" for the explicit leftover term. | Do not use "unexplained behavior"; it is unmodeled readout score under the sparse factorization. | Standard reconstruction terminology. | Method fidelity diagnostics. Citation optional. |
 | relative reconstruction error, `rho` | Needs clarification | Normalized scalar target reconstruction error, `abs(epsilon)/(abs(s_exact)+delta)`, with `delta=0.5` logit in aggregate summaries. | Use for aggregate and figure reliability reporting. | Do not compare values if denominator conventions differ. | Paper-specific metric convention. | Results before first table or table caption. |
-| sign agreement / sign flip | Standard evaluation term | Whether reconstructed signed target has the same sign as the exact target; a flip reverses the supported side. | Use for signed contrasts and margins. | Do not use for unsigned raw logits without defining a threshold. | Standard binary agreement term. | Method faithfulness and Results. |
+| sign agreement / sign flip | Standard evaluation term | Whether reconstructed signed target has the same sign as the exact target; a flip reverses the supported side. | Use for signed contrasts and margins. | Do not use for unsigned raw logits without defining a threshold. | Standard binary agreement term. | Method residual diagnostics and Results. |
 
 ### Metrics, Evaluation, and Display Terms
 
 | Term | Category | Definition in this paper | Preferred usage | Avoid / Do not use | Literature grounding | First-use guidance |
 |---|---|---|---|---|---|---|
 | LM-head replacement fidelity | Needs clarification | Evaluation of substituting reconstructed `W_U` for the original LM head on held-out hidden states and comparing readout behavior. | Use for global readout behavior preservation. | Do not use as a synonym for local target fidelity. | Paper-specific metric grouping over standard top-1/KL comparisons. | Experimental Setup and Results. |
-| target reconstruction / target fidelity | Needs clarification | Exact-versus-reconstructed score behavior for held-out scalar readout targets. | Use as the primary evidence for interpreting local accounts. | Do not conflate with task accuracy or generation quality. | Paper-specific metric grouping using standard reconstruction and sign metrics. | Experimental Setup and Results. |
+| target reconstruction / target fidelity | Needs clarification | Exact-versus-reconstructed score behavior for held-out scalar readout targets. | Use as the primary evidence for interpreting local decompositions. | Do not conflate with task accuracy or generation quality. | Paper-specific metric grouping using standard reconstruction and sign metrics. | Experimental Setup and Results. |
 | replacement metrics: top-1 agreement, top-5 overlap, KL | Standard evaluation terms | Metrics comparing original and reconstructed LM-head outputs on held-out hidden states. | Use with exact definitions and units; KL is in bits in appendices. | Do not call top-5 overlap "top-5 accuracy". | Standard ranking/divergence metrics. | Results table captions. Citation not needed. |
 | null baseline | Standard evaluation term | A comparison designed to destroy task-relevant structure, such as shuffled sparse codes or random support. | Use only for methods expected to remove learned token-to-feature support. | Do not call PCA or nearest-row ridge "null" if they retain structured information. | Standard experimental terminology. | Results baseline section. |
 | reference baseline | Standard evaluation term | A structured comparison such as nearest-row ridge or PCA that retains some output-embedding geometry. | Use for non-null comparison methods. | Do not use "baseline" for arbitrary alternatives not evaluated. | Standard evaluation terminology; PCA/ridge have their own literature. | Results baseline section. Cite `jolliffe2002principal,hoerl1970ridge`. |
 | learned token-to-feature support | Needs clarification | The learned pattern of sparse code support connecting token rows to readout SAE features. | Use when explaining why shuffled/random controls matter. | Avoid "semantic support" unless supported by labels and audits. | Paper-specific phrasing over sparse code support. | Results baseline section. |
-| benchmark-format readout target | Paper-specific term | A scalar readout target constructed from benchmark examples, e.g. answer-vs-distractor or safe-vs-unsafe token groups. | Use to stress readout-level evaluation of benchmark-shaped contrasts. | Do not call these "benchmark performance" or "task accuracy". | Paper-specific experimental setting; datasets are standard. | Results section on SQuAD2, HotpotQA, LegalBench/ContractNLI, SecurityEval. Cite datasets. |
+| benchmark-derived readout target | Paper-specific term | A scalar readout target constructed from benchmark examples, e.g. answer-vs-distractor or safe-vs-unsafe token groups. | Use to stress readout-level evaluation of benchmark-shaped contrasts. | Do not call these "benchmark performance" or "task accuracy". | Paper-specific experimental setting; datasets are standard. | Results section on SQuAD2, HotpotQA, LegalBench/ContractNLI, SecurityEval. Cite datasets. |
 | target set | Needs clarification | Fixed evaluation input containing prompts, token targets/groups, linear coefficients, and tokenization filters. | Use in Experimental Setup and Reproducibility. | Do not use interchangeably with dataset if targets are constructed from datasets. | Paper-specific evaluation bookkeeping. | Experimental Setup. |
 | evaluation item | Needs clarification | One evaluated readout target after filters; prompt variants and target variants may share a base case. | Use for row counts. | Do not call every prompt an evaluation item if multiple targets derive from it. | Paper-specific bookkeeping. | Appendix or tables. |
 | base case | Needs clarification | Cluster of variants from the same prompt/target template used as bootstrap unit. | Use in confidence interval or aggregation discussions. | Do not use as "baseline". | Paper-specific evaluation bookkeeping. | Robustness appendix. |
@@ -119,12 +119,12 @@ These are the highest-value cleanup substitutions to run before submission.
 ### Sparse Readout Prism (SRP)
 
 - **Definition:** SRP is the paper's method: a sparse factorization of the final unembedding / LM head that turns selected linear readout scores into signed feature terms plus explicit residuals.
-- **Why this term is needed:** The paper needs a name for the full method, including the factorization, projection basis, scalar target formalism, and score accounting.
+- **Why this term is needed:** The paper needs a name for the full method, including the factorization, projection basis, scalar target formalism, and score decomposition.
 - **Closest standard term(s):** logit lens, sparse dictionary factorization, sparse autoencoder, direct logit attribution.
 - **How it differs from those terms:** SRP is not just a lens decoder, not a generic SAE, and not component attribution. It factorizes the output readout itself and uses scalar readout targets to produce target-local signed terms.
 - **Where to introduce it:** Abstract and first half of Introduction, after defining the readout/logit-lens interface.
 - **Suggested first-use sentence:** "We introduce **Sparse Readout Prism (SRP)**, a sparse feature decomposition for logit-lens readouts that factorizes the final unembedding / LM head and decomposes selected linear readout scores into signed feature terms plus explicit residuals."
-- **Acceptable shorthand after first use:** SRP; the SRP factorization; SRP local account; SRP readout basis.
+- **Acceptable shorthand after first use:** SRP; the SRP factorization; SRP local decomposition; SRP readout basis.
 - **Risks / reviewer concerns:** The name may sound broader than the evidence if the prose says SRP explains model behavior generally. Keep the claim at readout-linear score decomposition unless additional experiments are cited.
 
 ### readout SAE
@@ -198,32 +198,32 @@ These are the highest-value cleanup substitutions to run before submission.
 - **Definition:** `c_i(h,q)=beta_i(q) p_i(h)`, the signed local term contributed by readout feature `i` to target `q` at hidden state `h`.
 - **Why this term is needed:** It is the central plotted quantity and the bridge between target-side coefficients and context-side projections.
 - **Closest standard term(s):** attribution term; contribution; feature importance.
-- **How it differs from those terms:** It is a readout-linear accounting term, not a causal attribution unless paired with interventions.
+- **How it differs from those terms:** It is a readout-linear decomposition term, not a causal attribution unless paired with interventions.
 - **Where to introduce it:** Method subsection "Local Score Decomposition"; also in Introduction around the main figure.
 - **Suggested first-use sentence:** "The **signed feature contribution** is `c_i(h,q)=beta_i(q)p_i(h)`: positive terms raise the chosen scalar target and negative terms lower it."
 - **Acceptable shorthand after first use:** signed contribution; feature term; contribution bar.
 - **Risks / reviewer concerns:** Avoid "importance" without residual and target context; the contribution is local to one target and hidden state.
 
-### local score account
+### local score decomposition
 
 - **Definition:** A target-local decomposition of one selected readout score at one hidden state into offset, signed feature terms, and residual/error terms.
 - **Why this term is needed:** It avoids overclaiming "explanation" while giving a stable name to the displayed SRP output.
-- **Closest standard term(s):** local explanation; attribution; decomposition; accounting identity.
-- **How it differs from those terms:** It is an additive readout score account, not a global behavioral explanation or causal mechanism.
+- **Closest standard term(s):** local explanation; attribution; decomposition; decomposition identity.
+- **How it differs from those terms:** It is an additive readout score decomposition, not a global behavioral explanation or causal mechanism.
 - **Where to introduce it:** Introduction, with the first `verify` versus `assume` example.
-- **Suggested first-use sentence:** "We call the signed, target-specific decomposition a **local score account**: local because it accounts for one selected linear readout score at one hidden state and target."
-- **Acceptable shorthand after first use:** local account; score account; SRP account.
-- **Risks / reviewer concerns:** "Account" may still read as explanatory. Always pair with reconstruction residual and claim scope.
+- **Suggested first-use sentence:** "We call the signed, target-specific decomposition a **local score decomposition**: local because it decomposes one selected linear readout score at one hidden state and target."
+- **Acceptable shorthand after first use:** local decomposition; score decomposition; SRP decomposition.
+- **Risks / reviewer concerns:** "Decomposition" can still read as explanatory if residuals are hidden. Always pair it with reconstruction residual and claim scope.
 
-### benchmark-format readout target
+### benchmark-derived readout target
 
 - **Definition:** A scalar readout target built from benchmark examples, such as answer-vs-distractor, abstention-vs-entity, label, or safe-vs-unsafe token-group contrasts.
 - **Why this term is needed:** It distinguishes readout-level reconstruction of benchmark-shaped targets from end-to-end benchmark performance.
 - **Closest standard term(s):** benchmark task; evaluation target; task contrast.
 - **How it differs from those terms:** It evaluates reconstruction of a constructed linear readout contrast, not whether the model solves the task.
 - **Where to introduce it:** Results subsection "Scalar Readout Targets Extend Beyond Token Pairs".
-- **Suggested first-use sentence:** "We use **benchmark-format readout targets** for task-shaped linear contrasts derived from benchmark examples; these evaluate readout-target reconstruction, not end-to-end task accuracy."
-- **Acceptable shorthand after first use:** benchmark-format target; task-shaped readout contrast.
+- **Suggested first-use sentence:** "We use **benchmark-derived readout targets** for task-shaped linear contrasts derived from benchmark examples; these evaluate readout-target reconstruction, not end-to-end task accuracy."
+- **Acceptable shorthand after first use:** benchmark-derived target; task-shaped readout contrast.
 - **Risks / reviewer concerns:** Reviewers may object if prose implies benchmark success. Keep "readout-level" explicit.
 
 ### feature-resolved DLA
@@ -292,13 +292,13 @@ These are the highest-value cleanup substitutions to run before submission.
 |---|---|---|---|---|
 | feature activation | Misleading for `h^T d_i`; in SAE literature, activation usually means encoder output. | The readout SAE is trained on unembedding rows, so hidden-state projections are not SAE activations. | readout feature projection; projection coordinate | Acceptable only for token-row SAE code entries if clearly referring to encoder outputs on unembedding rows. |
 | profile activation | Nonstandard and doubly confusing. | It mixes "projection profile" with SAE activation language. | projection profile; readout feature projection vector | Avoid in main text. |
-| explanation | Too broad if used without scope. | SRP accounts for selected linear readout scores, not arbitrary model behavior. | local score account; score decomposition; readout-level account | Acceptable when scoped: "local explanation for a selected linear readout score" and accompanied by residuals. |
-| explains model behavior | Overclaims beyond evidence. | The method does not establish sequence-level behavior, task accuracy, or mechanisms by itself. | decomposes selected readout scores; accounts for selected logits/contrasts | Only with strong qualifiers and separate behavioral evidence. |
-| causal explanation | Unsupported by additive accounting alone. | Causal claims require interventions or an identification argument. | additive account; candidate mechanism for later intervention | Acceptable only for the readout-edit score intervention or separately tested causal interventions. |
+| explanation | Too broad if used without scope. | SRP decomposes selected linear readout scores, not arbitrary model behavior. | local score decomposition; score decomposition; readout-level decomposition | Acceptable when scoped: "local explanation for a selected linear readout score" and accompanied by residuals. |
+| explains model behavior | Overclaims beyond evidence. | The method does not establish sequence-level behavior, task accuracy, or mechanisms by itself. | decomposes selected readout scores; decomposes selected logits/contrasts | Only with strong qualifiers and separate behavioral evidence. |
+| causal explanation | Unsupported by additive decomposition alone. | Causal claims require interventions or an identification argument. | additive decomposition; candidate mechanism for later intervention | Acceptable only for the readout-edit score intervention or separately tested causal interventions. |
 | causal circuit | Stronger than feature-resolved DLA. | DLA by SAE feature is additive attribution over a forward pass, not a necessity/sufficiency test. | component-by-feature attribution; candidates for intervention | Acceptable only after causal interventions establish circuit claims. |
-| faithful | Evidence-sensitive. | Reviewers may ask faithful to what, under what metric, and at what scale. | preserves the selected readout score with small residual; sign-preserved low-error account | Acceptable when paired with reconstruction error, sign agreement, replacement fidelity, and target scope. |
+| faithful | Evidence-sensitive. | Reviewers may ask faithful to what, under what metric, and at what scale. | preserves the selected readout score with small residual; sign-preserved low-error decomposition | Acceptable when paired with reconstruction error, sign agreement, replacement fidelity, and target scope. |
 | faithfulness | Same issue as "faithful"; can imply global interpretability. | Local residuals do not guarantee global model explanation. | reconstruction fidelity; target fidelity; replacement fidelity | Acceptable for named diagnostics after definition. |
-| robust | Requires perturbation/distribution/seed evidence. | The paper has controls and some cross-family/seed evidence, but not arbitrary robustness. | consistent across tested settings; controlled by tokenization/frequency checks | Acceptable in "Robustness and Fidelity Controls" as appendix/control framing; qualify each claim. |
+| robust | Requires perturbation/distribution/seed evidence. | The paper has controls and some cross-family/seed evidence, but not arbitrary robustness. | consistent across tested settings; controlled by tokenization/frequency checks | Acceptable in "Fidelity Checks and Controls" as appendix/control framing; qualify each claim. |
 | general | Vague and broad. | The method is evaluated on several target families and model families, not all tasks/models. | across evaluated target families; beyond token pairs; in the tested model suite | Acceptable only with the scope stated. |
 | scalable | Requires explicit scaling evidence in size/data/compute/tasks. | Sweeps vary width, `k`, model family, and model size, but the paper should not imply unlimited scaling. | tested across dictionary widths/model families; higher-capacity setting | Acceptable if referring to a measured axis and table. |
 | efficient | Requires cost/time/data comparison. | The paper reports fidelity metrics, not a primary efficiency claim. | compact; fixed-budget; lower dictionary width; lower active-feature budget | Acceptable when supported by compute/cost numbers or budget comparisons. |
@@ -306,7 +306,7 @@ These are the highest-value cleanup substitutions to run before submission.
 | state-of-the-art | Promotional and unsupported. | The paper does not benchmark against all interpretability methods. | competitive with baselines on our target reconstruction metrics | Avoid unless a full benchmark justifies it. |
 | novel | Usually unnecessary and can irritate reviewers. | The contribution should be shown by definitions and comparisons. | new in this paper; introduced here; paper-specific | Use sparingly in contribution statement if venue style permits. |
 | first | Strong priority claim. | Requires exhaustive literature search. | to our knowledge; we introduce | Use only if verified and scoped narrowly. |
-| framework | Overused and vague. | SRP is mainly a method/factorization/accounting identity, not necessarily a broad framework. | method; factorization; accounting identity; formalism | Acceptable for Patchscopes title or if describing the scalar-target formalism broadly. |
+| framework | Overused and vague. | SRP is mainly a method/factorization/decomposition identity, not necessarily a broad framework. | method; factorization; decomposition identity; formalism | Acceptable for Patchscopes title or if describing the scalar-target formalism broadly. |
 | pipeline | Implementation-flavored and vague. | It obscures the mathematical contribution. | method; evaluation sequence; procedure | Acceptable only for reproducibility/implementation descriptions. |
 | system | Implies deployed software or full model. | SRP is not a standalone system in the paper. | method; readout factorization; analysis | Avoid unless discussing software. |
 | agent | Not applicable to final readout analysis. | The model is not acting autonomously in the experiments. | model; language model; checkpoint | Avoid. |
@@ -317,8 +317,8 @@ These are the highest-value cleanup substitutions to run before submission.
 | interpretable feature | Evidence-sensitive. | Interpretability depends on labels, audits, residuals, and scope. | labeled readout feature; readable feature label | Acceptable when label status and reconstruction quality are clear. |
 | control | Can imply deployment/safety control. | The readout edit is constrained and score-level. | constrained readout-side edit; readout-level intervention; lexical score movement | Acceptable as "control" only with "readout-side" and caveats. |
 | steering | Often implies broad behavioral steering. | The edit experiment mostly measures candidate-constrained lexical scores. | readout edit; readout-level intervention | Acceptable in appendix title/prose if paired with "constrained" and score-level scope. |
-| benchmark performance | Not what benchmark-format targets evaluate. | The table reconstructs readout contrasts, not task accuracy. | benchmark-format readout-target fidelity; readout-level contrast reconstruction | Avoid unless actual task performance is measured. |
-| task accuracy | Unsupported for benchmark-format readout targets. | The paper does not evaluate end-to-end answers in those rows. | sign reconstruction; target fidelity; contrast reconstruction | Use only if true end-to-end task accuracy is added. |
+| benchmark performance | Not what benchmark-derived targets evaluate. | The table reconstructs readout contrasts, not task accuracy. | benchmark-derived readout-target fidelity; readout-level contrast reconstruction | Avoid unless actual task performance is measured. |
+| task accuracy | Unsupported for benchmark-derived readout targets. | The paper does not evaluate end-to-end answers in those rows. | sign reconstruction; target fidelity; contrast reconstruction | Use only if true end-to-end task accuracy is added. |
 | preference | Overloaded with human preference/RLHF. | Pairwise logit differences are model readout contrasts, not preference labels. | logit difference; token preference if explicitly a readout preference | Use "preference" only informally after defining it as a logit-lens preference. |
 | query | Overloaded with prompts/database queries; weaker than target. | The formal object is a scalar linear target. | scalar readout target | Acceptable in informal notes or if "query" is explicitly defined as the target. |
 | margin | Needs specification. | Different margins mean pairwise, group, or top-competitor comparisons. | pairwise logit difference; top-competitor margin; group contrast | Acceptable when the compared sides and weights are specified. |
@@ -327,7 +327,7 @@ These are the highest-value cleanup substitutions to run before submission.
 
 | Concept | Preferred term | Allowed variants | Disallowed variants | Notes |
 |---|---|---|---|---|
-| Full method | Sparse Readout Prism (SRP) | SRP; SRP factorization; SRP local account | prism alone before definition; sparse prism if undefined | Spell out once in Abstract/Introduction. |
+| Full method | Sparse Readout Prism (SRP) | SRP; SRP factorization; SRP local decomposition | prism alone before definition; sparse prism if undefined | Spell out once in Abstract/Introduction. |
 | Final output map | readout | final unembedding; LM head; unembedding matrix when mathematical | model; output layer without definition; decoder | Define readout as final unembedding / LM head. |
 | Matrix being factorized | unembedding matrix, `W_U` | LM head matrix; output embedding matrix in literature context | embedding matrix if input embeddings are meant | Use `W_U` in equations. |
 | Learned row factorizer | readout SAE | SAE trained on unembedding rows; row-factorization SAE | activation SAE; hidden-state SAE | Repeat contrast with activation SAEs. |
@@ -338,9 +338,9 @@ These are the highest-value cleanup substitutions to run before submission.
 | Quantity to decompose | scalar readout target | readout target; selected scalar; target `q` | query as formal term; task; label | Must be linear in readout rows unless proxy is stated. |
 | Target-side feature weight | target coefficient | coefficient; `beta_i(q)` | activation; context coefficient | Fixed by target and readout SAE. |
 | Local plotted term | signed feature contribution | signed contribution; feature term; contribution bar | importance score; causal effect | Local to one hidden state and target. |
-| Displayed decomposition | local score account | local account; score decomposition; readout account | global explanation; causal explanation | Always report residual/error. |
+| Displayed decomposition | local score decomposition | local decomposition; score decomposition; readout decomposition | global explanation; causal explanation | Always report residual/error. |
 | Positive/negative bars | support/opposition | supports first side; supports comparison side | good/bad evidence; causal support | Sign depends on target convention. |
-| Error in SRP score account | reconstruction error | residual; readout SAE residual; `epsilon` | noise; unexplained behavior | Keep separate from DLA additivity error. |
+| Error in SRP score decomposition | reconstruction error | residual; readout SAE residual; `epsilon` | noise; unexplained behavior | Keep separate from DLA additivity error. |
 | Normalized local error | relative reconstruction error, `rho` | relative error | accuracy; loss | State denominator convention. |
 | Signed-target correctness | sign agreement | sign preservation; sign flip rate | accuracy without context | Use only for signed contrasts/margins. |
 | Global LM-head substitution metric | LM-head replacement fidelity | readout replacement; replacement metrics | target fidelity; row reconstruction | Uses held-out hidden states. |
@@ -348,7 +348,7 @@ These are the highest-value cleanup substitutions to run before submission.
 | Output distribution comparison | KL | KL divergence; KL in bits | loss unless specified | State direction if necessary. |
 | Row reconstruction metric | rowEV | row-centered explained variance | fidelity by itself | RowEV is capacity/fit, not sufficient for local interpretation. |
 | Comparison methods | baselines | null baselines; reference baselines | ablations unless a component is removed | Separate null vs reference baselines. |
-| Dataset-derived contrast | benchmark-format readout target | task-shaped readout contrast; benchmark-shaped target | benchmark result; benchmark accuracy | Readout-level only. |
+| Dataset-derived contrast | benchmark-derived readout target | task-shaped readout contrast; benchmark-shaped target | benchmark result; benchmark accuracy | Readout-level only. |
 | Feature label | feature label | row-level descriptor; token summary label | semantic label; ground-truth feature name | Feature id is stable object. |
 | Attribution composition | feature-resolved DLA | DLA by SAE feature; component-by-feature attribution | causal circuit; circuit discovery | Additive unless interventions are performed. |
 | Readout edit experiment | constrained readout-side edit | readout edit; readout-level intervention; lexical score movement | behavioral control; safety filter; policy steering | Keep candidate-constrained score scope. |
@@ -359,20 +359,20 @@ These are the highest-value cleanup substitutions to run before submission.
 
 | Term | Evidence required | Current evidence in paper | Recommendation |
 |---|---|---|---|
-| faithful | Explicit target of faithfulness, reconstruction error, sign agreement for signed targets, and replacement fidelity where relevant. | Local accounts report exact score, feature sum, residual, `rho`, and sign; replacement and target-fidelity tables exist. | Use as "faithful to the selected readout score" or "faithful enough to read under reported residuals"; avoid global "faithful explanation". |
-| interpretable | Evidence that humans can read labels plus fidelity diagnostics and caveats. | Feature labels are row-level summaries; local accounts have residuals; limitations state label caveats. | Prefer "readable", "inspectable", or "auditable"; use "interpretability method" for field positioning only. |
-| auditable | Explicit residuals, sign checks, and controls. | Strong: residuals, target reconstruction, sign agreement, token audits, null/reference baselines. | Safe when scoped to local readout accounts. |
+| faithful | Explicit target of faithfulness, reconstruction error, sign agreement for signed targets, and replacement fidelity where relevant. | Local decompositions report exact score, feature sum, residual, `rho`, and sign; replacement and target-fidelity tables exist. | Use as "faithful to the selected readout score" or "faithful enough to read under reported residuals"; avoid global "faithful explanation". |
+| interpretable | Evidence that humans can read labels plus fidelity diagnostics and caveats. | Feature labels are row-level summaries; local decompositions have residuals; limitations state label caveats. | Prefer "readable under reported residuals", "residual-checked", or "diagnosed"; use "interpretability method" for field positioning only. |
+| auditable | Explicit residuals, sign checks, and controls. | Strong: residuals, target reconstruction, sign agreement, token audits, null/reference baselines. | Use sparingly; prefer explicit residuals, sign checks, and audits. |
 | robust | Perturbations, distributions, seeds, model families, or controls. | Controls include tokenization/frequency/row norm; some model-family and seed-window evidence. | Prefer "controlled" or "consistent across tested settings"; use "robustness controls" as appendix framing, not broad robustness claim. |
 | general | Broad variation across tasks/models/settings. | Several target families and model families, but qualitative focus on Qwen and readout-level targets. | Use "beyond token pairs", "across evaluated target families", or "in the tested model suite". |
 | scalable | Evidence across scale, data, compute, or task variation. | Sweeps vary model size, width, `k`, and some families. | Say "tested across dictionary widths and model families"; avoid "scalable" as a main claim. |
 | efficient | Cost/time/data/compute comparison. | Fixed-budget/high-fidelity regimes, but not an efficiency benchmark. | Use "compact", "fixed-budget", or "native `k=128`" instead. |
 | causal | Interventions or identification argument. | Additive DLA is non-causal; readout edit is an intervention on scores. | Use "causal" only for the constrained readout edit's score-level effect or when discussing future interventions. |
 | controls / control | Defined intervention and measured off-target effects. | Readout edit moves constrained lexical scores; off-target probes and distribution shift are reported. | Say "constrained readout-side edit" or "readout-level intervention"; avoid deployment-control language. |
-| explains | Clear object being explained and diagnostics. | SRP explains/accounts for selected linear readout scores with residuals. | Prefer "accounts for", "decomposes", "identifies feature terms for"; if using "explains", add "one selected readout score". |
+| explains | Clear object being explained and diagnostics. | SRP decomposes selected linear readout scores with residuals. | Prefer "decomposes" or "identifies feature terms for"; if using "explains", add "one selected readout score". |
 | semantic | Human-interpretable labels with validation. | Feature labels derived from associated token rows and audited qualitatively. | Use "row-level descriptor" or "feature label"; avoid "semantic feature" unless qualified. |
 | aligned | Preference/alignment evidence. | Not an alignment paper. | Avoid, except in technical phrases like "tokenizer-aligned". |
 | reasoning | Behavioral reasoning evidence or model-name context. | The paper includes reasoning-distilled checkpoints only as comparison rows. | Use only in "reasoning-distilled checkpoint/readout"; do not claim SRP explains reasoning. |
-| benchmark | Standard dataset/task evaluation. | Benchmark-format readout targets are constructed from datasets, not full task performance. | Use "benchmark-format readout target" and "readout-level fidelity"; avoid "benchmark performance". |
+| benchmark | Standard dataset/task evaluation. | Benchmark-derived readout targets are constructed from datasets, not full task performance. | Use "benchmark-derived readout target" and "readout-level fidelity"; avoid "benchmark performance". |
 | state-of-the-art | Comprehensive benchmark against current methods. | Not present. | Avoid. |
 | first | Exhaustive priority search. | Not established. | Avoid or use "to our knowledge" only for narrow, verified claims. |
 
@@ -402,21 +402,21 @@ These are the highest-value cleanup substitutions to run before submission.
 
 > The **signed feature contribution** is `c_i(h,q)=beta_i(q)p_i(h)`: positive terms raise the chosen scalar target and negative terms lower it.
 
-> We call the signed, target-specific decomposition a **local score account** because it accounts for one selected linear readout score at one hidden state and target.
+> We call the signed, target-specific decomposition a **local score decomposition** because it decomposes one selected linear readout score at one hidden state and target.
 
 > The **reconstruction error** `epsilon=s_exact-s_recon` is the part of the selected scalar target not captured by the offset and sparse feature terms.
 
-> For signed contrasts, **sign agreement** means that the reconstructed scalar target has the same sign as the exact target, so the reconstructed account supports the same side of the contrast.
+> For signed contrasts, **sign agreement** means that the reconstructed scalar target has the same sign as the exact target, so the reconstructed decomposition supports the same side of the contrast.
 
 > **LM-head replacement fidelity** measures whether substituting the reconstructed readout for the original LM head preserves held-out readout behavior, such as top-token agreement and KL.
 
-> **Target reconstruction** measures exact-versus-reconstructed scores for held-out scalar readout targets and is the primary evidence for interpreting local score accounts.
+> **Target reconstruction** measures exact-versus-reconstructed scores for held-out scalar readout targets and is the primary evidence for interpreting local score decompositions.
 
 > A **feature label** is a row-level summary derived from vocabulary rows strongly associated with an SAE feature; the measured object remains the feature id and its signed contribution.
 
 > We use **feature-resolved DLA** for the additive decomposition that splits residual-stream direct logit attribution terms across SRP readout features.
 
-> A **benchmark-format readout target** is a task-shaped linear contrast derived from benchmark examples; it evaluates readout-target reconstruction rather than end-to-end task accuracy.
+> A **benchmark-derived readout target** is a task-shaped linear contrast derived from benchmark examples; it evaluates readout-target reconstruction rather than end-to-end task accuracy.
 
 > A **constrained readout-side edit** changes specified logits along selected readout SAE decoder directions and is evaluated as a readout-level intervention on lexical scores.
 
@@ -429,10 +429,10 @@ These are the highest-value cleanup substitutions to run before submission.
 - Search for "robust", "robustness", and "general". Qualify with the tested controls, target families, model families, or operating regimes.
 - Search for "causal", "cause", "circuit", and "mechanism". Keep DLA language additive unless an intervention is actually reported.
 - Search for "control" and "steering". Replace broad uses with "constrained readout-side edit" or "readout-level intervention" unless generation-level behavior is evaluated.
-- Search for "benchmark", "task accuracy", and "performance". For SQuAD2/HotpotQA/LegalBench/SecurityEval rows, say "benchmark-format readout-target fidelity" unless measuring end-to-end task accuracy.
+- Search for "benchmark", "task accuracy", and "performance". For SQuAD2/HotpotQA/LegalBench/SecurityEval rows, say "benchmark-derived readout-target fidelity" unless measuring end-to-end task accuracy.
 - Search for "preference". Use "pairwise logit difference" or "token preference under the readout" to avoid confusion with human preference labels.
 - Search for "baseline" and "ablation". Use "baseline" only for evaluated comparison methods and "ablation" only when a component or recipe choice is removed/modified.
-- Search for "framework", "pipeline", "system", and "approach". Prefer "method", "factorization", "formalism", "evaluation sequence", or "accounting identity" where more precise.
+- Search for "framework", "pipeline", "system", and "approach". Prefer "method", "factorization", "formalism", "evaluation sequence", or "decomposition identity" where more precise.
 - Search for "feature label", "semantic", and label descriptions. Confirm labels are described as row-level summaries, not ground-truth semantics.
 - Search for "rowEV". Ensure it is never the sole justification for interpreting local feature bars.
 - Search for "top-5". Ensure top-5 overlap is not called top-5 accuracy.
@@ -444,14 +444,14 @@ These are the highest-value cleanup substitutions to run before submission.
 
 ### Resolved Decisions for Submission
 
-- Use **local score account** in prose and figure captions; use **local score decomposition** in formal Method prose when referring to the mathematical identity.
+- Use **local score decomposition** in prose and figure captions; use **local score decomposition** in formal Method prose when referring to the mathematical identity.
 - Define **scalar readout target** on first use, then use **readout target** once the scalar and linear scope is clear.
 - Keep **projection profile** out of the main technical spine. Use it only as display shorthand after defining **readout feature projection vector**.
 - Pair **readout feature** with **SAE decoder direction** at first use in each major section that discusses labels or qualitative examples.
 - Use **constrained readout-side edit** in main-text prose. Reserve **feature steering** for appendix headings only if the score-level scope is explicit.
 - Avoid **robust** outside "robustness controls" unless the sentence names the tested perturbation, model-family, seed, or tokenization/frequency control.
 - Prefer **low-residual**, **sign-preserved**, or **small relative reconstruction error** in qualitative captions rather than bare **faithful**.
-- Define **benchmark-format readout target** before the first benchmark table and state that it measures readout-target reconstruction, not end-to-end task accuracy.
+- Define **benchmark-derived readout target** before the first benchmark table and state that it measures readout-target reconstruction, not end-to-end task accuracy.
 - Keep **reasoning-distilled readout/checkpoint** as a model-suite descriptor only; do not frame any result as explaining reasoning.
 - Keep **feature label** as the canonical term, but immediately define it as a row-level summary. Do not rename it to "row-summary label" unless reviewers object.
 - Collapse **local competitor margin** and **top-competitor margin** to **top-competitor margin** in definitions and tables. Use "local" only when explaining that the competitor set is chosen for the current hidden state or ranking.
@@ -460,5 +460,4 @@ These are the highest-value cleanup substitutions to run before submission.
 ### Remaining Questions
 
 - Should the paper keep both **centered logit** and **reference contrast**, or standardize on **reference contrast** everywhere except when describing raw token-logit centering?
-- Should **local score account** remain in the abstract, or should the abstract use the more neutral phrase **local score decomposition**?
 - Should feature labels in the main figures include feature ids visually, so the prose can more cleanly distinguish labels from measured objects?

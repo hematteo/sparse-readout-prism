@@ -1,20 +1,20 @@
-% Additive accounting identities for Sparse Readout Prism.
+% Additive decomposition identities for Sparse Readout Prism.
 
-\section{SRP Score Accounting Identities}
-\label{app:score-accounting}
+\section{SRP Score Decomposition Identities}
+\label{app:score-decomposition}
 \label{app:interpreting-sparse-readout-prism-figures}
 \label{app:additional-diagnostics}
 
-This appendix states the accounting identities used by the figures and control
+This appendix states the decomposition identities used by the figures and control
 tables and fixes the bookkeeping conventions used when a trained readout SAE is
-displayed in figures. The identities are the same local score account introduced in
+displayed in figures. The identities are the same local score decomposition introduced in
 \Cref{sec:method-local-score}. All reported scores are evaluated in the
 model's raw readout space. If training used centering or row normalization, the
 SAE coefficients, reconstructed rows, and residual terms are first mapped back
 to that space.
 
-\subsection{Raw-Space Row Accounting}
-\label{app:score-accounting-row-factorization}
+\subsection{Raw-Space Row Decomposition}
+\label{app:score-decomposition-row-factorization}
 
 Let \(w_t\in\R^d\) be the unembedding row for token \(t\). Under the row
 preprocessing convention used by the reported analyses,
@@ -24,7 +24,7 @@ preprocessing convention used by the reported analyses,
     x_t&=\sum_i \widetilde z_{t,i}\widetilde d_i+\widetilde r_t,
     \end{aligned}
 \]
-with \(a_t=1\) for unnormalized rows. The raw-space accounting then uses
+with \(a_t=1\) for unnormalized rows. The raw-space decomposition then uses
 \[
     z_{t,i}=a_t\widetilde z_{t,i},
     \qquad
@@ -36,11 +36,11 @@ so that
 \[
     w_t=\mu+\sum_i z_{t,i}d_i+r_t .
 \]
-The displayed local score account contains only this shared offset, SAE feature
+The displayed local score decomposition contains only this shared offset, SAE feature
 terms, and the explicit residual term; no hidden dense base term is added.
 
 \subsection{Scalar Target Identity}
-\label{app:score-accounting-linear-query}
+\label{app:score-decomposition-linear-query}
 
 A scalar readout target is a linear function of vocabulary rows,
 \[
@@ -54,7 +54,7 @@ Define the target coefficient and SAE feature contribution as
     \qquad
     c_i(h,\alpha)=\beta_i(\alpha)\,h^\top d_i .
 \]
-Substituting the raw-space row accounting gives the exact grouped identity
+Substituting the raw-space row decomposition gives the exact grouped identity
 \[
 \begin{aligned}
     s_\alpha(h)
@@ -79,9 +79,9 @@ reference contrasts, and top-competitor margins, the offset term
 cancels.
 
 \subsection{Error, Sign, and Display Rules}
-\label{app:score-accounting-fidelity}
+\label{app:score-decomposition-fidelity}
 \label{app:display-taxonomy}
-\label{app:display-residual-accounting}
+\label{app:display-residual-decomposition}
 
 For a scalar readout target \(q_\alpha\), the exact and reconstructed scores are
 \[

@@ -4,9 +4,9 @@
 Lens-style methods expose hidden states through vocabulary distributions,
 future-token predictions, continuations, or descriptions
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
-They are closest to SRP in interface: asking what a hidden state reads out.
-Where lens variants change the map, layer, or representation, SRP keeps the
-selected score fixed and expands it into sparse feature terms plus residual.
+They are closest to SRP in interface: asking what a hidden state reads out. Lens
+variants change the map, layer, or representation; SRP keeps the selected score
+fixed and expands it into sparse feature terms plus residual.
 
 \paragraph{Output-embedding geometry.}
 SRP factorizes the final unembedding, or LM head. Output embeddings have been
@@ -19,7 +19,7 @@ unembedding-row geometry, while context enters through hidden-state projections.
 
 \paragraph{Sparse dictionaries.}
 Activation-SAE work learns dictionaries over hidden-state distributions and has
-developed evaluation practice for sparse features
+established evaluation practice for sparse features
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,karvonen2025saebench,makelov2024principled}.
 SRP uses the machinery but fits unembedding rows rather than activation vectors:
 codes are token-row coefficients, decoder directions are LM-head readout
@@ -35,7 +35,7 @@ internal mechanisms and intervention-tested structure
 \citep{conmy2023acdc,geiger2023causalabstraction,dunefsky2024transcoders,ameisen2025circuittracing}.
 SRP instead factorizes the rows against which the final hidden state is scored.
 Because its terms are linear, signed readout-feature contributions can be split
-across residual components in a realized forward pass. Causal interventions are
-still needed to test necessity; SRP uses replacement fidelity, target
-reconstruction, sign agreement, and residuals to mark interpretable readout-level
-accounts. Broader positioning appears in Appendix~\ref{app:extended-related-work}.
+across residual components in a realized forward pass. Causal interventions still
+test necessity; SRP instead reports residuals and sign checks for readout-level
+decompositions.
+Broader positioning appears in Appendix~\ref{app:extended-related-work}.

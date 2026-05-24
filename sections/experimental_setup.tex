@@ -2,14 +2,12 @@
 \label{sec:experimental-setup}
 
 \paragraph{Claim-to-test map.}
-We evaluate SRP in the order needed to trust a local score account. First, held-out
-row reconstruction and LM-head replacement on C4 hidden states
-\citep{raffel2020exploring,dodge2021documenting} test whether the factorized
-readout preserves broad readout behavior. Second, scalar-target reconstruction
-compares exact and reconstructed scores, sign agreement, and relative error for
-the specific targets used in local accounts. Third, reference and null baselines
-test whether learned token-row sparsity improves those target reconstructions
-before we interpret qualitative examples.
+We test the prerequisites for reading feature bars: held-out row reconstruction
+and LM-head replacement on C4 hidden states
+\citep{raffel2020exploring,dodge2021documenting}; scalar-target reconstruction
+of exact score, sign, and relative error; and reference/null baselines that ask
+whether learned token-row sparsity improves the reconstruction before qualitative
+interpretation.
 
 \paragraph{Models, selection, and units.}
 The model suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
@@ -19,18 +17,17 @@ probing tokenizer family, output geometry, scale, and post-training recipe.
 Qualitative displays use one fixed low-error setting, Qwen3.5-2B \(32\times\),
 \(k=256\), where \(D=32d_{\mathrm{model}}\) is dictionary width and \(k\) is the
 TopK active-feature budget. We score final LM-head inputs and select readout SAEs
-by held-out row reconstruction, replacement fidelity, and sparse code usage;
-held-out logit-difference targets are reserved for downstream target-fidelity
-evaluation. Replacement uses 10,000 neutral C4 continuations per model;
-target-fidelity evaluations use preconstructed prompt/target sets with fixed
-linear coefficients, split assignment, and tokenization filters. Model
-identifiers and details are in Appendix~\ref{app:model-suite-selection}.
+by held-out row reconstruction, replacement fidelity, and sparse code usage. We
+reserve held-out logit-difference targets for downstream target-fidelity checks.
+Replacement uses 10,000 neutral C4 continuations per model; target-fidelity
+evaluations use preconstructed prompt/target sets with fixed linear
+coefficients, split assignment, and tokenization filters. Model identifiers and
+details are in Appendix~\ref{app:model-suite-selection}.
 
-\paragraph{Reading local score accounts.}
-Each displayed account should be read as an account of its stated scalar readout
-target, not as a global explanation of model behavior. Qualitative accounts report
-original score, sparse feature sum, residual, relative error, and sign status
-where relevant. Score-independent appendix figures rank readout feature
-projections \(h^\top d_i\) before target selection;
-Appendix~\ref{app:robustness-controls} summarizes controls and token-level
-audits.
+\paragraph{Reading local score decompositions.}
+Each display names its scalar readout target and reports the original score,
+sparse feature sum, residual, relative error, and sign status where relevant.
+Those displays make local readout claims rather than global behavior claims.
+Score-independent appendix figures rank readout feature projections \(h^\top
+d_i\) before target selection; Appendix~\ref{app:robustness-controls}
+summarizes checks, controls, and token-level audits.

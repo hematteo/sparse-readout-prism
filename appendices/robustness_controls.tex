@@ -1,22 +1,22 @@
-\section{Robustness and Fidelity Controls}
+\section{Fidelity Checks and Controls}
 \label{app:robustness-controls}
 
-This appendix collects the controls needed to interpret and reproduce the local
-score accounts: tokenization and filtering rules, row-norm and frequency checks,
-split construction, dictionary settings, and aggregate metrics. The accounting
-definitions themselves are stated in Appendix~\ref{app:score-accounting}.
+This appendix collects the checks and controls needed to interpret and reproduce the local
+score decompositions: tokenization and filtering rules, row-norm and frequency checks,
+split construction, dictionary settings, and aggregate metrics. The decomposition
+definitions themselves are stated in Appendix~\ref{app:score-decomposition}.
 
 \subsection{Controls}
 \label{app:robustness-summary}
 
 Table~\ref{tab:app-robustness-control-ledger} groups the measurements used to
-read a local score account. The table summarizes the controls; the
+read a local score decomposition. The table summarizes the checks and controls; the
 quantitative summaries below report their aggregate outcomes.
 
 \begin{table*}[!tbp]
-\caption{\textbf{Controls supporting local score accounts.}
-The controls verify that a displayed local score account tracks the intended
-readout target and account for prompt, tokenization, and SAE artifacts. The
+\caption{\textbf{Checks and controls supporting local score decompositions.}
+The checks verify that a displayed local score decomposition tracks the intended
+readout target and control for prompt, tokenization, and SAE artifacts. The
 evaluation setup specifies the token choices, target coefficients, split
 assignment, and tokenization rules used for the aggregate metrics.}
 \label{tab:app-robustness-control-ledger}
@@ -26,12 +26,12 @@ assignment, and tokenization rules used for the aggregate metrics.}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabularx}{\textwidth}{@{}p{0.22\textwidth}Y Y@{}}
 \toprule
-Control & What it tests & How it is specified \\
+Check or control & What it tests & How it is specified \\
 \midrule
 Reconstruction error and sign agreement &
 Feature bars are reported with relative reconstruction error and, for contrasts, the
 signs of both the exact and reconstructed scores. &
-Reported local score accounts include exact score, reconstructed score,
+Reported local score decompositions include exact score, reconstructed score,
 reconstruction error, and \(\rho\). \\
 \addlinespace
 Swapped and matched contrasts &
@@ -156,7 +156,7 @@ Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
     references, shuffled sparse codes, and random support under the same
     reconstruction error and sign summaries. The readout SAE
     preserves sign and keeps a larger low-error tail than the null support
-    controls, while PCA references lose that low-error tail as the
+    null controls, while PCA references lose that low-error tail as the
     compactness constraint tightens.}
     \label{fig:app-robustness-baseline-comparisons}
 \end{figure*}
@@ -164,7 +164,7 @@ Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
 \subsection{Operating-Regime Cases}
 \label{app:robustness-operating-regime}
 
-Operating-regime cases define when a compact local score account is
+Operating-regime cases define when a compact local score decomposition is
 evidence-bearing. Qualitative interpretation uses cases where the target score is
 larger than the reconstruction error, the reconstructed contrast preserves sign,
 the exact model readout supports the intended target, contribution mass is
