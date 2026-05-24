@@ -22,23 +22,75 @@ feature terms and reconstruction error.
 
 \subsubsection{SAE Over Unembedding Rows}
 
-For token row \(t\), the readout SAE fits
+% For token row \(t\), the readout SAE fits
+% \[
+%     \widehat{w}_t = \mu + \sum_{i=1}^{D} z_{t,i} d_i,
+%     \qquad
+%     r_t = w_t-\widehat{w}_t,
+% \]
+% where \(\mu\) is a shared offset, \(d_i\in\R^d\) a decoder direction,
+% \(z_{t,i}\) token row \(t\)'s sparse coefficient, and \(r_t\) the residual. We
+% map fitted quantities back to raw readout coordinates before decomposing logits
+% or contrasts, so \(w_t=\mu+\sum_i z_{t,i}d_i+r_t\). Stacking
+% \(\widehat{w}_t^\top\) gives \(\widehat{\WU}\); Appendix~\ref{app:score-accounting}
+% gives centering and row-normalization details.
+
+% Reported TopK models center and optionally row-normalize rows,
+% \(x_t=(w_t-\mu)/a_t\), with \(a_t=1\) when rows are not normalized. An encoder
+% produces a \(D\)-dimensional pre-code, keeps the \(k\) largest entries, and
+% decodes with directions \(\widetilde d_i\):
+% \[
+%     \widetilde z_t
+%     =
+%     \operatorname{TopK}_k(f_\theta(x_t)),
+%     \qquad
+%     \widehat{x}_t
+%     =
+%     \sum_{i=1}^{D}\widetilde z_{t,i}\widetilde d_i .
+% \]
+% The objective is row reconstruction,
+% \[
+%     \min_{\theta,\{\widetilde d_i\}}
+%     \frac{1}{|\mathcal{V}|}
+%     \sum_{t\in\mathcal{V}}
+%     \left\|x_t-\widehat{x}_t\right\|_2^2
+% \].
+% After fitting, we return all quantities to raw readout space:
+% \(z_{t,i}=a_t\widetilde z_{t,i}\), \(d_i=\widetilde d_i\), and
+% \(r_t=a_t(x_t-\widehat{x}_t)\). Thus later equations decompose the model's
+% original logits or contrasts as \(w_t=\mu+\sum_i z_{t,i}d_i+r_t\), without an
+% added dense correction term. The width \(D\) and native sparsity \(k\) are
+% selected by held-out reconstruction and readout-replacement fidelity.
+% Appendices~\ref{app:readout-factorizer-sweeps}--%
+% \ref{app:readout-factorizer-diagnostics-reproducibility} give the selection
+% overview, recipe sweeps, transfer rows, diagnostics, and reproducibility terms.
+
+For each token row \(t\), the readout SAE approximates the corresponding
+unembedding vector as
 \[
     \widehat{w}_t = \mu + \sum_{i=1}^{D} z_{t,i} d_i,
     \qquad
     r_t = w_t-\widehat{w}_t,
 \]
-where \(\mu\) is a shared offset, \(d_i\in\R^d\) a decoder direction,
-\(z_{t,i}\) token row \(t\)'s sparse coefficient, and \(r_t\) the residual. We
-map fitted quantities back to raw readout coordinates before decomposing logits
-or contrasts, so \(w_t=\mu+\sum_i z_{t,i}d_i+r_t\). Stacking
-\(\widehat{w}_t^\top\) gives \(\widehat{\WU}\); Appendix~\ref{app:score-accounting}
-gives centering and row-normalization details.
+where \(\mu\) is a shared offset, \(d_i\in\R^d\) is a decoder direction,
+\(z_{t,i}\) is the sparse coefficient of token row \(t\), and \(r_t\) denotes
+the residual. Before decomposing logits or contrasts, we map all fitted
+quantities back to the original readout coordinates, so that
+\[
+    w_t=\mu+\sum_i z_{t,i}d_i+r_t .
+\]
+Stacking the fitted rows \(\widehat{w}_t^\top\) yields
+\(\widehat{\WU}\). Appendix~\ref{app:score-accounting} provides details on
+centering and row normalization.
 
-Reported TopK models center and optionally row-normalize rows,
-\(x_t=(w_t-\mu)/a_t\), with \(a_t=1\) when rows are not normalized. An encoder
-produces a \(D\)-dimensional pre-code, keeps the \(k\) largest entries, and
-decodes with directions \(\widetilde d_i\):
+The reported TopK models first center, and optionally row-normalize, the
+readout rows:
+\[
+    x_t = \frac{w_t-\mu}{a_t},
+\]
+where \(a_t=1\) when row normalization is not used. An encoder produces a
+\(D\)-dimensional pre-code, retains the \(k\) largest entries, and decodes the
+result using directions \(\widetilde d_i\):
 \[
     \widetilde z_t
     =
@@ -48,22 +100,34 @@ decodes with directions \(\widetilde d_i\):
     =
     \sum_{i=1}^{D}\widetilde z_{t,i}\widetilde d_i .
 \]
-The objective is row reconstruction,
+The model is trained to minimize row-wise reconstruction error,
 \[
     \min_{\theta,\{\widetilde d_i\}}
     \frac{1}{|\mathcal{V}|}
     \sum_{t\in\mathcal{V}}
-    \left\|x_t-\widehat{x}_t\right\|_2^2
-\].
-After fitting, we return all quantities to raw readout space:
-\(z_{t,i}=a_t\widetilde z_{t,i}\), \(d_i=\widetilde d_i\), and
-\(r_t=a_t(x_t-\widehat{x}_t)\). Thus later equations decompose the model's
-original logits or contrasts as \(w_t=\mu+\sum_i z_{t,i}d_i+r_t\), without an
-added dense correction term. The width \(D\) and native sparsity \(k\) are
-selected by held-out reconstruction and readout-replacement fidelity.
-Appendices~\ref{app:readout-factorizer-sweeps}--%
-\ref{app:readout-factorizer-diagnostics-reproducibility} give the selection
-overview, recipe sweeps, transfer rows, diagnostics, and reproducibility terms.
+    \left\|x_t-\widehat{x}_t\right\|_2^2 .
+\]
+After fitting, we convert the learned representation back to raw readout
+space by setting
+\[
+    z_{t,i}=a_t\widetilde z_{t,i},
+    \qquad
+    d_i=\widetilde d_i,
+    \qquad
+    r_t=a_t(x_t-\widehat{x}_t).
+\]
+Consequently, all subsequent decompositions are expressed in terms of the
+model's original logits or contrasts,
+\[
+    w_t=\mu+\sum_i z_{t,i}d_i+r_t,
+\]
+with no additional dense correction term. The width \(D\) and native sparsity
+\(k\) are selected using held-out reconstruction quality and
+readout-replacement fidelity. Appendices~\ref{app:readout-factorizer-sweeps}--%
+\ref{app:readout-factorizer-diagnostics-reproducibility} provide the selection
+procedure, recipe sweeps, transfer rows, diagnostics, and reproducibility
+details.
+
 
 \subsubsection{Full Readout Replacement and Profiles}
 
