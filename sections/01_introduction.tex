@@ -12,11 +12,26 @@ which readout directions support, oppose, or ignore that selected score.
     \centering
     \includegraphics[width=0.92\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_verify_assume/qwen2b_lens_prism_comparison_verify_assume.pdf}
     \caption{\textbf{From lens output to a local score account.}
-    A logit lens reports a \texttt{verify}-over-\texttt{assume} preference.
-    SRP decomposes the same 4.31-logit target into sparse support, opposition,
-    and a 0.04-logit reconstruction error.}
+    A logit lens reports that a hidden state favors \texttt{verify} over
+    \texttt{assume}. SRP keeps the same 4.31-logit pairwise target fixed and
+    decomposes it into signed sparse readout-feature terms: verification/checking
+    support, assumption-related opposition, and a 0.04-logit reconstruction
+    error.}
     \label{fig:main-lens-prism-comparison}
 \end{figure}
+
+We use \Cref{fig:main-lens-prism-comparison} as the running example for what an
+SRP account contains. For a Qwen3.5-2B hidden state after the prompt ``The source
+has not been checked yet. The appropriate next action is to'', the ordinary
+logit lens assigns logits \(17.5\) and \(13.2\) to \texttt{verify} and
+\texttt{assume}, giving the selected target
+\(w_{\texttt{verify}}-w_{\texttt{assume}}=+4.31\). SRP does not change the
+question; it reconstructs that same margin as a \(+4.28\) sparse feature sum
+plus a \(+0.04\) residual. The largest positive terms are
+verification/checking features, while negative assumption-family terms reduce the
+margin. The rest of the paper repeats this pattern: choose a scalar readout
+target, decompose its local score into signed reusable readout features, and
+check reconstruction before interpreting support or opposition.
 
 Sparse Readout Prism (SRP) turns such scores into calibrated local accounts. It
 factorizes unembedding rows with a sparse autoencoder (SAE), giving shared
