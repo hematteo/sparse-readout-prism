@@ -1,0 +1,15 @@
+.DS_Store
+
+# LaTeX build outputs
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+
+# Local build products
+/main.pdf
+/figures/proto_token_lens/**/*.pt
