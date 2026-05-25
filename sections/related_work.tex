@@ -21,8 +21,9 @@ standardized diagnostics \citep{karvonen2025saebench,makelov2024principled}.
 SRP applies this sparse-dictionary vocabulary to LM-head rows rather than
 hidden states. Concurrent anonymous work studies unembedding dynamics across
 training checkpoints via parameter-trajectory crosscoding
-\citep{anonymous2026learningreadout}; SRP instead studies a fixed LM-head
-factorization in trained models.
+\citep{anonymous2026learningreadout}; SRP instead factorizes the LM head of a
+trained model, yielding a basis usable at inference for local score
+decompositions, feature-resolved DLA, and readout-side edits.
 
 \paragraph{Additive attribution and mechanisms.}
 Direct logit attribution decomposes residual-stream components against token

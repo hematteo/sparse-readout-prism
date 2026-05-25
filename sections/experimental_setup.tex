@@ -1,11 +1,10 @@
 \section{Evaluation Setup}
 \label{sec:experimental-setup}
 
-\subsection{Research Questions}
-\label{subsec:evaluation-questions}
+\paragraph{Research Questions}\label{subsec:evaluation-questions}
 Experiments first calibrate whether SRP accounts are usable
-(\Cref{subsec:metrics-and-baselines}); conditional on these checks, the
-analysis asks five questions:
+(calibration checks below); conditional on these checks, the analysis asks five
+questions:
 \begin{description}[leftmargin=!,labelwidth=2.7em]
     \item[RQ1:] What does SRP add to an ordinary logit-lens preference?
     \item[RQ2:] How does the chosen readout question change the sparse account?
@@ -17,10 +16,8 @@ analysis asks five questions:
     attribution and constrained readout-side edits?
 \end{description}
 
-\subsection{Models, Readout SAEs, and Held-Out Targets}
-\label{subsec:models-and-targets}
-
-\paragraph{Model suite.}
+\paragraph{Models, Readout SAEs, and Held-Out Targets}\label{subsec:models-and-targets}
+\emph{Model suite.}
 The suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
 \citep{gemma4official,gemma4collection}, Ministral \citep{liu2026ministral3},
 and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1},
@@ -28,12 +25,12 @@ spanning tokenizer family, output geometry, scale, and post-training recipe.
 Model identifiers and details are in
 Appendix~\ref{app:model-suite-selection}.
 
-\paragraph{Qualitative display setting.}
+\emph{Qualitative display setting.}
 Qualitative examples use one fixed low-error setting, Qwen3.5-2B
 \(32\times\), \(k=256\), where \(D=32d_{\mathrm{model}}\) is dictionary width
 and \(k\) is the TopK active-feature budget.
 
-\paragraph{Dictionary selection and held-out score checks.}
+\emph{Dictionary selection and held-out score checks.}
 We fit readout SAEs on final LM-head inputs, select them by held-out row
 reconstruction, replacement fidelity, and sparse code usage, and reserve
 held-out logit differences for downstream score-reconstruction checks.
@@ -43,8 +40,7 @@ evaluations use prebuilt prompt/score sets with fixed linear
 coefficients, split assignment, and tokenization filters. These splits keep
 dictionary selection separate from score-reconstruction evaluation.
 
-\subsection{Metrics, Baselines, and Operating Regimes}
-\label{subsec:metrics-and-baselines}
+\paragraph{Metrics, Baselines, and Operating Regimes}\label{subsec:metrics-and-baselines}
 Calibration uses three checks: basis, score, and baselines.
 \emph{Basis metrics.} Held-out row reconstruction and LM-head replacement on C4
 hidden states check whether the readout SAE preserves the readout it replaces.
@@ -56,7 +52,7 @@ learned token-row structure improves over dense low-rank structure, lexical
 neighborhoods, or sparse capacity alone. Sign flips, large relative error,
 weak replacement fidelity, or parity with baselines mark failure modes.
 
-\paragraph{Scope and interpretation rule.}
+\emph{Scope and interpretation rule.}
 All downstream analyses are readout-level: they describe how the LM head
 decomposes a selected score, not how the model generates. We read feature bars
 only when the selected score is reconstructed with small residual and, for
