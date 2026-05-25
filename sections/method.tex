@@ -45,7 +45,7 @@ codes, directions, and residuals are mapped back to raw readout coordinates
 before any score decomposition. Every displayed term then remains in original logit
 units, with no hidden dense correction. Width \(D\), sparsity \(k\), and
 preprocessing details are given in
-appendices~\ref{app:readout-factorizer-sweeps}--%
+Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility} and
 \ref{app:score-decomposition}.
 
@@ -161,7 +161,7 @@ reconstruction gives
     &\quad + h^\top \sum_{t\in\mathcal{V}} \alpha_t r_t .
 \end{aligned}
 \]
-The shared-offset term \(\left(\sum_t\alpha_t\right) h^\top\mu\) vanishes
+The shared-offset term \(\left(\sum_t\alpha_t\right) h^\top\mu\) cancels out
 whenever the coefficients sum to zero, which covers logit differences,
 group and vocabulary-mean contrasts, and top-competitor margins
 (\Cref{sec:method-score-coefficients}).
