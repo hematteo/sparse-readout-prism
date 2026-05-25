@@ -10,13 +10,10 @@ For a fixed hidden state and scalar readout target, SRP decomposes the selected
 score into signed feature contributions plus an explicit residual in original
 logit coordinates.
 
-We evaluate the SRP basis and selected-target decompositions across multiple
-model families and readout geometries, measuring LM-head replacement, target
-reconstruction, sign preservation, and baselines. In representative
-high-fidelity settings, the fixed SRP basis preserves held-out contrast signs at
-\(0.949\)--\(0.958\) with median relative reconstruction error below \(0.10\),
-and learned sparse structure outperforms null and reference baselines. In
-sign-preserved, low-error cases, the same readout-feature basis shows how target
-choice, prompt context, residual-stream components, and constrained readout-side
-edits change the signed terms.
+Across model families and readout geometries, SRP preserves held-out contrast
+signs at \(0.949\)--\(0.958\), keeps median relative reconstruction error below
+\(0.10\) in high-fidelity settings, and outperforms null and reference
+baselines. We then use the same fixed basis to analyze how target choice, prompt
+context, residual-stream components, and constrained readout-side edits change
+signed terms.
 \end{abstract}
