@@ -2,18 +2,25 @@
 \label{sec:experimental-setup}
 
 \paragraph{Claim-to-test map.}
-We test the prerequisites for reading feature bars: held-out row reconstruction
-and LM-head replacement on C4 hidden states
-\citep{raffel2020exploring,dodge2021documenting}; scalar-target reconstruction
-of exact score, sign, and relative error; and reference/null baselines that ask
-whether learned token-row sparsity improves the reconstruction before qualitative
-interpretation.
+The experiments test the prerequisites for interpreting a local score
+decomposition. First, held-out row reconstruction and LM-head replacement on C4
+hidden states \citep{raffel2020exploring,dodge2021documenting} ask whether the
+fitted readout SAE preserves the readout it replaces. Second, scalar-target
+reconstruction of exact score, sign, and relative error asks whether a selected
+linear target is reconstructed well enough for its feature bars to be read.
+Third, null and reference baselines ask whether learned token-row sparse
+structure, rather than dense low-rank structure, lexical neighborhoods, or sparse
+capacity alone, accounts for reconstruction gains. We treat sign flips, large
+relative error, weak replacement fidelity, or parity with baselines as failure
+modes for interpretation. Qualitative displays and downstream analyses are
+therefore validation-gated readout use cases, not independent evidence of
+generation-level behavior.
 
 \paragraph{Models, selection, and units.}
 The model suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
 \citep{gemma4official,gemma4collection}, Ministral \citep{liu2026ministral3},
 and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1},
-probing tokenizer family, output geometry, scale, and post-training recipe.
+varying tokenizer family, output geometry, scale, and post-training recipe.
 Qualitative displays use one fixed low-error setting, Qwen3.5-2B \(32\times\),
 \(k=256\), where \(D=32d_{\mathrm{model}}\) is dictionary width and \(k\) is the
 TopK active-feature budget. We score final LM-head inputs and select readout SAEs
@@ -21,13 +28,15 @@ by held-out row reconstruction, replacement fidelity, and sparse code usage. We
 reserve held-out logit-difference targets for downstream target-fidelity checks.
 Replacement uses 10,000 neutral C4 continuations per model; target-fidelity
 evaluations use preconstructed prompt/target sets with fixed linear
-coefficients, split assignment, and tokenization filters. Model identifiers and
-details are in Appendix~\ref{app:model-suite-selection}.
+coefficients, split assignment, and tokenization filters. These splits keep model
+selection separate from target-fidelity evaluation. Model identifiers and details
+are in Appendix~\ref{app:model-suite-selection}.
 
 \paragraph{Reading local score decompositions.}
-Each display names its scalar readout target and reports the original score,
-sparse feature sum, residual, relative error, and sign status where relevant.
-Those displays make local readout claims rather than global behavior claims.
-Score-independent appendix figures rank readout feature projections \(h^\top
-d_i\) before target selection; Appendix~\ref{app:robustness-controls}
+Interpretability displays are read only after the relevant fidelity checks. Each
+display names its scalar readout target and reports the original score, sparse
+feature sum, residual, relative error, and sign status where relevant. Those
+displays make local readout claims rather than global behavioral or causal
+claims. Score-independent appendix figures rank readout feature projections
+\(h^\top d_i\) before target selection; Appendix~\ref{app:robustness-controls}
 summarizes checks, controls, and token-level audits.
