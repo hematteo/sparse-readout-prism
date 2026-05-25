@@ -1,14 +1,16 @@
 \section{Method: Sparse Readout Prism}
 \label{sec:method}
 
-SRP has four steps: factorize LM-head rows, project hidden states onto learned
-readout directions, choose a scalar readout target, and combine target
-coefficients with projections to obtain signed terms plus a residual. This keeps
-the logit-lens interface fixed: a hidden state \(h\) is still read out through
-the LM head \(\WU\), but selected logits, contrasts, group scores, and margins
-are decomposed through the row factorization of \(\WU\). The subsections below
-separate what is learned from the LM head, what is computed from \(h\), what the
-target supplies, and what remains in the residual.
+The SRP factorization is learned before any target is chosen. It first
+factorizes LM-head rows and projects hidden states onto the learned readout
+directions. The selected-target layer then chooses a scalar readout target and
+combines target coefficients with hidden-state projections to obtain signed
+terms plus a residual. This keeps the logit-lens interface fixed: a hidden state
+\(h\) is still read out through the LM head \(\WU\), but selected logits,
+contrasts, group scores, and margins are decomposed through the same row
+factorization of \(\WU\). The subsections below separate what SRP learns from the
+LM head, what is computed from \(h\), what target selection supplies, and what
+remains in the residual.
 
 \subsection{Sparse Factorization of the Readout}
 \label{sec:method-factorization}

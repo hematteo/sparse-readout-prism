@@ -13,7 +13,7 @@ This file controls terminology for the Sparse Readout Prism paper. Use it to kee
 - Avoid calling hidden-state projections onto readout SAE decoder directions "feature activations". In SAE literature, "activation" usually refers to the sparse encoder output for the object on which the SAE was trained.
 - Treat "faithful", "interpretable", "robust", "general", "causal", and "control" as evidence-sensitive words. Use them only with the diagnostics, scope, and caveats stated in the paper.
 - Keep terminology stable across sections. Do not alternate between "query", "target", "score", "decomposition", and "explanation" unless the distinction is intentional.
-- Match wording to evidence: SRP reconstructs and decomposes selected linear readout scores; it does not by itself explain arbitrary behavior, probabilities, full generations, or causal mechanisms.
+- Match wording to evidence: the fixed SRP basis and selected scalar readout targets reconstruct and decompose selected linear readout scores; they do not by themselves explain arbitrary behavior, probabilities, full generations, or causal mechanisms.
 
 ### High-Priority Replacements
 
@@ -23,7 +23,7 @@ These are the highest-value cleanup substitutions to run before submission.
 |---|---|---|
 | feature activation, profile activation | readout feature projection; projection coordinate | Hidden-state dot products `h^T d_i` are not SAE encoder activations. |
 | query | scalar readout target; readout target | The formal object is a selected linear readout target, not a generic query. |
-| explanation, explains | local score decomposition; decomposes | SRP decomposes selected linear readout scores, not arbitrary behavior. |
+| explanation, explains | local score decomposition; decomposes | The fixed SRP basis plus a selected target decomposes selected linear readout scores, not arbitrary behavior. |
 | benchmark performance, task accuracy | benchmark-derived readout-target fidelity | The benchmark-derived rows evaluate readout contrast reconstruction, not end-to-end task success. |
 | steering, control | constrained readout-side edit; readout-level intervention | The edit experiment is score-level and candidate-constrained. |
 | robust | controlled; consistent across tested settings | "Robust" needs stronger perturbation/distribution/seed evidence unless scoped to controls. |
@@ -67,7 +67,7 @@ These are the highest-value cleanup substitutions to run before submission.
 | readout feature projection, `p_i(h)=h^T d_i` | Paper-specific term | The projection of hidden state `h` onto readout feature direction `d_i`. | Use for hidden-state coordinates induced by the readout SAE. | Do not call it a feature activation in technical prose. | Paper-specific use of standard projection onto SAE decoder directions. | Introduction and Method. Define before target coefficients. |
 | readout feature projection vector, `p(h)=D_feat h` | Paper-specific term | The vector of all readout feature projections before a scalar target is selected. | Use to distinguish target-independent hidden-state projections from target-specific signed contributions. | Avoid "activation vector" or "evidence vector". | Paper-specific but mathematically direct. | Method feature-projection subsection. No citation needed beyond SAE. |
 | projection profile | Needs clarification | Informal shorthand for the ranked pattern of readout feature projections before target selection. | Use only after "readout feature projection vector" is defined. | Do not use as the formal mathematical term. Avoid "profile activation". | Paper-local shorthand. | If used, introduce in appendix/display text only. No citation needed. |
-| scalar readout target | Paper-specific term | A chosen scalar linear function of unembedding rows, `q_alpha=sum_t alpha_t w_t`, scored as `s_alpha(h)=h^T q_alpha`. | Use as the formal term for the quantity SRP decomposes. | Avoid "query" as the main formal term; avoid implying nonlinear quantities are directly supported. | Paper-specific formalization of standard linear logits and contrasts. | Method, before target families. No citation needed. |
+| scalar readout target | Paper-specific term | A chosen scalar linear function of unembedding rows, `q_alpha=sum_t alpha_t w_t`, scored as `s_alpha(h)=h^T q_alpha`. | Use as the formal term for the quantity decomposed on the fixed SRP basis. | Avoid "query" as the main formal term; avoid implying nonlinear quantities are directly supported. | Paper-specific formalization of standard linear logits and contrasts. | Method, before target families. No citation needed. |
 | readout target | Paper-specific shorthand | Short form of "scalar readout target" after first definition. | Use when the scalar/linear nature is already clear. | Do not use for arbitrary benchmark tasks or labels without specifying the linear contrast. | Paper-specific shorthand. | Only after "scalar readout target" is defined. |
 | token logit | Standard literature term | The scalar score `h^T w_A` for token `A`. | Use for raw token score targets. | Do not confuse with probability after softmax. | Standard language-model terminology. | Method target families. Citation not needed. |
 | centered logit / reference contrast | Standard term / adapted | A token logit after subtracting a reference row, usually vocabulary mean or shared offset. | Prefer "reference contrast" when a particular reference row is defined. | Do not call it a probability-normalized score. | Standard linear contrast idea; paper-specific target family. | Method target families. Cite output-embedding caveats if motivating. |
@@ -118,12 +118,12 @@ These are the highest-value cleanup substitutions to run before submission.
 
 ### Sparse Readout Prism (SRP)
 
-- **Definition:** SRP is the paper's method: a sparse factorization of the final unembedding / LM head that turns selected linear readout scores into signed feature terms plus explicit residuals.
-- **Why this term is needed:** The paper needs a name for the full method, including the factorization, projection basis, scalar target formalism, and score decomposition.
+- **Definition:** SRP is the paper's target-independent method: a sparse factorization of the final unembedding / LM head that supplies readout features and token-row coefficients. Selected scalar readout targets then turn this basis into signed feature terms plus explicit residuals.
+- **Why this term is needed:** The paper needs a name for the factorization and projection basis, while keeping the selected-target interface explicit as the target-conditioned layer.
 - **Closest standard term(s):** logit lens, sparse dictionary factorization, sparse autoencoder, direct logit attribution.
-- **How it differs from those terms:** SRP is not just a lens decoder, not a generic SAE, and not component attribution. It factorizes the output readout itself and uses scalar readout targets to produce target-local signed terms.
+- **How it differs from those terms:** SRP is not just a lens decoder, not a generic SAE, and not component attribution. It factorizes the output readout itself; selected scalar readout targets use that factorization to produce target-local signed terms.
 - **Where to introduce it:** Abstract and first half of Introduction, after defining the readout/logit-lens interface.
-- **Suggested first-use sentence:** "We introduce **Sparse Readout Prism (SRP)**, a sparse feature decomposition for logit-lens readouts that factorizes the final unembedding / LM head and decomposes selected linear readout scores into signed feature terms plus explicit residuals."
+- **Suggested first-use sentence:** "We introduce **Sparse Readout Prism (SRP)**, a sparse feature decomposition for logit-lens readouts that factorizes the final unembedding / LM head; selected scalar readout targets then use this basis to decompose linear readout scores into signed feature terms plus explicit residuals."
 - **Acceptable shorthand after first use:** SRP; the SRP factorization; SRP local decomposition; SRP readout basis.
 - **Risks / reviewer concerns:** The name may sound broader than the evidence if the prose says SRP explains model behavior generally. Keep the claim at readout-linear score decomposition unless additional experiments are cited.
 
@@ -174,7 +174,7 @@ These are the highest-value cleanup substitutions to run before submission.
 ### scalar readout target
 
 - **Definition:** A scalar linear function of unembedding rows, `q_alpha=sum_t alpha_t w_t`, scored at hidden state `h` as `s_alpha(h)=h^T q_alpha`.
-- **Why this term is needed:** SRP supports token logits, reference contrasts, pairwise differences, group contrasts, and top-competitor margins through one linear target formalism.
+- **Why this term is needed:** The selected-target interface supports token logits, reference contrasts, pairwise differences, group contrasts, and top-competitor margins through one linear target formalism.
 - **Closest standard term(s):** logit, logit difference, linear probe direction, readout direction, query.
 - **How it differs from those terms:** It is restricted to linear functions of readout rows and is the exact unit decomposed by SRP.
 - **Where to introduce it:** Method subsection "Scalar Readout Targets"; mention in Introduction after SRP.
@@ -229,11 +229,11 @@ These are the highest-value cleanup substitutions to run before submission.
 ### feature-resolved DLA
 
 - **Definition:** The decomposition of direct logit attribution terms across SRP readout features for a realized forward pass.
-- **Why this term is needed:** It names the composition of SRP terms with residual-stream component attribution.
+- **Why this term is needed:** It names the composition of target-conditioned readout terms with residual-stream component attribution.
 - **Closest standard term(s):** direct logit attribution; logit prism; component attribution.
 - **How it differs from those terms:** DLA decomposes by residual component; feature-resolved DLA additionally splits each component contribution across readout SAE features.
 - **Where to introduce it:** Results subsection "Readout Feature Terms Compose with Direct Logit Attribution".
-- **Suggested first-use sentence:** "Because SRP terms are linear in the final hidden state, we can form **feature-resolved DLA** by splitting residual-stream direct logit attribution across readout SAE features."
+- **Suggested first-use sentence:** "Because target-conditioned readout terms are linear in the final hidden state, we can form **feature-resolved DLA** by splitting residual-stream direct logit attribution across readout SAE features."
 - **Acceptable shorthand after first use:** DLA by SAE feature; component-by-feature attribution.
 - **Risks / reviewer concerns:** Do not present it as circuit discovery or causal abstraction. Say interventions are needed to test necessity.
 
@@ -292,7 +292,7 @@ These are the highest-value cleanup substitutions to run before submission.
 |---|---|---|---|---|
 | feature activation | Misleading for `h^T d_i`; in SAE literature, activation usually means encoder output. | The readout SAE is trained on unembedding rows, so hidden-state projections are not SAE activations. | readout feature projection; projection coordinate | Acceptable only for token-row SAE code entries if clearly referring to encoder outputs on unembedding rows. |
 | profile activation | Nonstandard and doubly confusing. | It mixes "projection profile" with SAE activation language. | projection profile; readout feature projection vector | Avoid in main text. |
-| explanation | Too broad if used without scope. | SRP decomposes selected linear readout scores, not arbitrary model behavior. | local score decomposition; score decomposition; readout-level decomposition | Acceptable when scoped: "local explanation for a selected linear readout score" and accompanied by residuals. |
+| explanation | Too broad if used without scope. | The fixed SRP basis plus a selected target decomposes selected linear readout scores, not arbitrary model behavior. | local score decomposition; score decomposition; readout-level decomposition | Acceptable when scoped: "local explanation for a selected linear readout score" and accompanied by residuals. |
 | explains model behavior | Overclaims beyond evidence. | The method does not establish sequence-level behavior, task accuracy, or mechanisms by itself. | decomposes selected readout scores; decomposes selected logits/contrasts | Only with strong qualifiers and separate behavioral evidence. |
 | causal explanation | Unsupported by additive decomposition alone. | Causal claims require interventions or an identification argument. | additive decomposition; candidate mechanism for later intervention | Acceptable only for the readout-edit score intervention or separately tested causal interventions. |
 | causal circuit | Stronger than feature-resolved DLA. | DLA by SAE feature is additive attribution over a forward pass, not a necessity/sufficiency test. | component-by-feature attribution; candidates for intervention | Acceptable only after causal interventions establish circuit claims. |
@@ -368,7 +368,7 @@ These are the highest-value cleanup substitutions to run before submission.
 | efficient | Cost/time/data/compute comparison. | Fixed-budget/high-fidelity regimes, but not an efficiency benchmark. | Use "compact", "fixed-budget", or "native `k=128`" instead. |
 | causal | Interventions or identification argument. | Additive DLA is non-causal; readout edit is an intervention on scores. | Use "causal" only for the constrained readout edit's score-level effect or when discussing future interventions. |
 | controls / control | Defined intervention and measured off-target effects. | Readout edit moves constrained lexical scores; off-target probes and distribution shift are reported. | Say "constrained readout-side edit" or "readout-level intervention"; avoid deployment-control language. |
-| explains | Clear object being explained and diagnostics. | SRP decomposes selected linear readout scores with residuals. | Prefer "decomposes" or "identifies feature terms for"; if using "explains", add "one selected readout score". |
+| explains | Clear object being explained and diagnostics. | The fixed SRP basis plus a selected target decomposes selected linear readout scores with residuals. | Prefer "decomposes" or "identifies feature terms for"; if using "explains", add "one selected readout score". |
 | semantic | Human-interpretable labels with validation. | Feature labels derived from associated token rows and audited qualitatively. | Use "row-level descriptor" or "feature label"; avoid "semantic feature" unless qualified. |
 | aligned | Preference/alignment evidence. | Not an alignment paper. | Avoid, except in technical phrases like "tokenizer-aligned". |
 | reasoning | Behavioral reasoning evidence or model-name context. | The paper includes reasoning-distilled checkpoints only as comparison rows. | Use only in "reasoning-distilled checkpoint/readout"; do not claim SRP explains reasoning. |

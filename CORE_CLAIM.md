@@ -8,10 +8,12 @@ conclusion aligned around the same claim.
 
 Sparse Readout Prism (SRP) is a **sparse feature decomposition for logit lens
 readouts**, built from a sparse dictionary factorization of the final
-unembedding / LM head. It starts from the familiar lens question--what
-vocabulary evidence does this hidden state expose through the readout?--but
-decomposes selected readout scores into sparse feature terms, signed
-contributions for the chosen target, and explicit reconstruction residuals.
+unembedding / LM head. Keep it distinct from the selected-target contribution:
+SRP supplies the target-independent readout basis, while selected scalar readout
+targets specify which linear score is decomposed and what sign convention is
+used. Together, they decompose selected readout scores into sparse feature terms,
+signed contributions for the chosen target, and explicit reconstruction
+residuals.
 
 Use "better logit lens" as the front door, not the ceiling. The motivating
 interface is lens style decoding; the technical contribution is a sparse
@@ -51,15 +53,14 @@ terms only as paper local specializations.
 
 ## Canonical Claim
 
-SRP extends the logit lens view from vocabulary scores to a sparse feature
-decomposition of readout scores. It factorizes the final unembedding / LM head
-matrix, decomposing token rows into sparse SAE codes over shared decoder
-directions. This gives a sparse feature basis for the readout and a reusable
-projection basis for final hidden states.
-Scalar readout targets--linear functions of unembedding rows, such as logits,
-logit differences, and group contrasts--then produce signed feature
-contributions for the chosen target, with explicit reconstruction residuals and
-fidelity diagnostics.
+The paper has two separable contributions. SRP extends the logit lens view from
+vocabulary scores to a sparse feature basis for readout scores: it factorizes the
+final unembedding / LM head matrix, decomposing token rows into sparse SAE codes
+over shared decoder directions. This gives a reusable projection basis for final
+hidden states. The selected scalar readout-target interface then specifies
+linear functions of unembedding rows--such as logits, logit differences, and
+group contrasts--that produce signed feature contributions for the chosen target,
+with explicit reconstruction residuals and fidelity diagnostics.
 
 ## Paper Spine
 
@@ -69,13 +70,13 @@ chosen logit or contrast is still a single dot product with an unembedding row
 or readout direction. SRP keeps the logit lens interface and factorizes the
 readout behind it: the unembedding matrix is decomposed into sparse token row
 codes and shared SAE decoder directions. Projecting a hidden state onto those
-directions gives readout feature projections before target selection; choosing
-a scalar readout target then turns those projections into signed feature
-contributions for the chosen target. The paper shows that this
-factorized readout can replace the LM head in useful regimes, reconstruct
-selected scalar targets across models and target families, and expose target
-choice, context reweighting, DLA by SAE feature, and constrained readout side
-edits.
+directions gives readout feature projections before target selection. A separate
+selected scalar readout target then turns those projections into signed feature
+contributions for the chosen target. The paper shows that the factorized readout
+can replace the LM head in useful regimes; that selected scalar targets can be
+reconstructed across models and target families; and that, under these checks,
+the basis exposes target choice, context reweighting, DLA by SAE feature, and
+constrained readout side edits.
 
 ## Narrative Hierarchy
 
@@ -86,8 +87,8 @@ Use this hierarchy when writing high level prose:
    selected score as an unembedding row dot product.
 3. **Technical move:** SRP factorizes the unembedding matrix into sparse
    token row codes and shared SAE decoder directions.
-4. **Improved lens:** hidden states are projected onto readout features, and
-   chosen scalar readout targets select weighted sums of those projections.
+4. **Selected-target move:** hidden states are projected onto readout features,
+   and chosen scalar readout targets select weighted sums of those projections.
 5. **Auditability:** decompositions report signed feature terms plus
    offset/residual terms, so displayed explanations can be checked against exact
    readout scores.
@@ -270,7 +271,8 @@ For ARR, the safest and strongest contribution is:
 
 ## Short Slogans
 
-- A logit lens tells you the score; SRP decomposes it into sparse feature terms.
+- A logit lens tells you the score; SRP supplies the basis, and selected targets
+  decompose it into sparse feature terms.
 - A sparse feature decomposition for logit lens readouts.
 - Factor the unembedding; project hidden states through readout features.
 - From vocabulary readouts to reusable readout feature projections.

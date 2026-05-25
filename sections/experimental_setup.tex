@@ -2,19 +2,20 @@
 \label{sec:experimental-setup}
 
 \paragraph{Claim-to-test map.}
-The experiments test the prerequisites for interpreting a local score
-decomposition. First, held-out row reconstruction and LM-head replacement on C4
-hidden states \citep{raffel2020exploring,dodge2021documenting} ask whether the
-fitted readout SAE preserves the readout it replaces. Second, scalar-target
-reconstruction of exact score, sign, and relative error asks whether a selected
-linear target is reconstructed well enough for its feature bars to be read.
-Third, null and reference baselines ask whether learned token-row sparse
-structure, rather than dense low-rank structure, lexical neighborhoods, or sparse
-capacity alone, accounts for reconstruction gains. We treat sign flips, large
-relative error, weak replacement fidelity, or parity with baselines as failure
-modes for interpretation. Qualitative displays and downstream analyses are
-therefore validation-gated readout use cases, not independent evidence of
-generation-level behavior.
+The experiments test the two contributions separately before using local score
+decompositions. For the SRP factorization, held-out row reconstruction and
+LM-head replacement on C4 hidden states
+\citep{raffel2020exploring,dodge2021documenting} ask whether the fitted readout
+SAE preserves the readout it replaces. For selected scalar readout targets,
+target reconstruction of exact score, sign, and relative error asks whether the
+chosen linear score is reconstructed well enough for its feature bars to be read.
+Null and reference baselines then ask whether learned token-row sparse structure,
+rather than dense low-rank structure, lexical neighborhoods, or sparse capacity
+alone, accounts for reconstruction gains. We treat sign flips, large relative
+error, weak replacement fidelity, or parity with baselines as failure modes for
+interpretation. Qualitative displays and downstream analyses are therefore
+validation-gated readout use cases, not independent evidence of generation-level
+behavior.
 
 \paragraph{Models, selection, and units.}
 The model suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4

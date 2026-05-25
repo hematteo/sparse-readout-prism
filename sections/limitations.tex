@@ -1,13 +1,15 @@
 \section*{Limitations}
 
 \paragraph{Scope of score decompositions.}
-SRP gives local score decompositions for linear scalar readout targets at the final LM
-head. Feature-resolved DLA composes these decompositions with additive residual-stream
-attribution, yielding intervention candidates rather than causal circuit claims.
+The fixed SRP basis gives local score decompositions only after a linear scalar
+readout target is selected at the final LM head. Feature-resolved DLA composes
+these decompositions with additive residual-stream attribution, yielding
+intervention candidates rather than causal circuit claims.
 
 \paragraph{Fidelity and labels.}
-Reported diagnostics expose SRP residuals and sign checks in their operating regimes, but
-as in other sparse dictionary settings the learned basis can depend on recipe
+Reported diagnostics expose decomposition residuals and sign checks in their
+operating regimes, but as in other sparse dictionary settings the learned basis
+can depend on recipe
 choices
 \citep{elhage2022superposition,karvonen2025saebench,makelov2024principled}. We
 therefore report reconstruction error, sign agreement, replacement fidelity, and
@@ -15,15 +17,16 @@ stability checks. Feature labels summarize high-scoring unembedding rows; the
 measured objects are feature ids, signed terms, and residual errors.
 
 \paragraph{Readout-specific caveats.}
-SRP supports token-level, group-contrast, and benchmark-derived readout decompositions
-while inheriting vocabulary-geometry caveats: labels and groupings can reflect
-tokenizer geometry, token frequency, row norms, or surface-form artifacts
+The selected-target interface supports token-level, group-contrast, and
+benchmark-derived readout decompositions while inheriting vocabulary-geometry
+caveats: labels and groupings can reflect tokenizer geometry, token frequency,
+row norms, or surface-form artifacts
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
 Group contrasts reduce single-row dependence; benchmark-derived targets measure
 linear readout reconstruction, not task solving; and the readout edit is a
-constrained lexical-score test. SRP provides a residual-checked readout-linear basis
-for candidate evidence terms, while causal mechanisms and generation-level
-effects require targeted interventions.
+constrained lexical-score test. The fixed SRP basis provides residual-checked
+readout-linear candidate evidence terms, while causal mechanisms and
+generation-level effects require targeted interventions.
 
 \section*{Ethical Considerations}
 

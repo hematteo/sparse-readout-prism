@@ -4,13 +4,16 @@ unembedding into vocabulary logits, but a selected logit or contrast still
 compresses the readout into one dense score, obscuring supporting and opposing
 directions and residual error. We introduce Sparse Readout Prism (SRP), a sparse
 feature decomposition for logit-lens readouts that factorizes the LM head into
-sparse token-row coefficients and shared readout directions. Given a hidden state
-and scalar readout target, SRP decomposes the score into signed feature
+sparse token-row coefficients and shared readout directions. We pair this
+target-independent basis with selected scalar readout targets, which specify the
+linear score and sign convention. Given a hidden state and selected target, the
+fixed SRP basis and target coefficients decompose the score into signed feature
 contributions plus an explicit residual in original logit coordinates.
 
-We test SRP across multiple model families and readout geometries, measuring
-LM-head replacement, target reconstruction, sign preservation, and baselines. In
-representative high-fidelity settings, SRP preserves held-out
+We test both pieces across multiple model families and readout geometries,
+measuring LM-head replacement, target reconstruction, sign preservation, and
+baselines. In representative high-fidelity settings, the fixed SRP basis
+preserves held-out
 contrast signs at \(0.949\)--\(0.958\) with median relative reconstruction error
 below \(0.10\), and learned sparse structure outperforms null and reference
 baselines. In sign-preserved, low-error cases, the same basis reveals how target
