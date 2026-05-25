@@ -1,16 +1,27 @@
 \section{Conclusion}
 
-Sparse Readout Prism separates the score-independent and score-conditioned parts
-of readout decomposition. It factorizes LM-head rows into shared readout
-features and token-row coefficients; after a token logit, logit difference, or
-other fixed row-combination score fixes the readout direction and sign
-convention, hidden states enter through feature projections that yield signed
-terms plus residuals in raw logit coordinates. Fidelity diagnostics identify
-settings where these terms preserve readout scores. In those settings, the fixed
-SRP basis supports score/context comparisons, feature-resolved attribution, and
-candidate directions for constrained readout-side lexical-score edits.
+Lens-style readouts often invite semantic explanations of individual scores:
+a token is high because a context evokes a topic, sense, or residual-stream
+component. The quantity being explained, however, is a specific readout score.
+Without an explicit score decomposition, token-row geometry, prompt context,
+contrast choice, and reconstruction error can be conflated.
 
-\paragraph{Future work.}
-SRP applies to any effective readout. Extending it to tuned lenses,
-logit-prism variants, and future-token lenses would enable layer-by-layer
-comparison of decoded tokens, signed feature terms, and residuals.
+Sparse Readout Prism makes that decomposition a readout-side object. A sparse
+factorization of the LM head provides shared feature directions and token-row
+coefficients; a selected score then supplies the direction coefficients that
+turn hidden-state projections into signed terms plus an explicit residual. This
+separates what is fixed by the readout basis from what is chosen by the score
+and what is supplied by the current context.
+
+The empirical role of the diagnostics is therefore central. Replacement
+fidelity, score reconstruction, sign agreement, relative error, and baseline
+comparisons decide when the factorized readout is accurate enough to interpret.
+Under those gates, SRP supports readout-level comparisons across score choices,
+contexts, residual-stream components, and candidate lexical edit directions;
+outside them, feature labels alone are not evidence.
+
+This framing makes the broader target concrete: lens explanations should specify
+the score being explained, the coordinate terms that support or oppose it, and
+the residual left by the approximation. Extending SRP to tuned lenses,
+logit-prism variants, and future-token lenses would test whether the same
+discipline can support layer-by-layer readout explanations.

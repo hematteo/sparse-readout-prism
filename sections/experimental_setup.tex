@@ -1,25 +1,22 @@
 \section{Experimental Setup}
 \label{sec:experimental-setup}
 
-\paragraph{Claim-to-test map.}
-The experiments proceed in three stages: testing the SRP basis, then selected
-scores, then validation-gated use cases.
-\emph{Basis tests.} Held-out row reconstruction and LM-head replacement on C4
-hidden states \citep{raffel2020exploring,dodge2021documenting} check whether
-the readout SAE preserves the readout it replaces.
-\emph{Score tests.} Score reconstruction, sign preservation, and relative error
-check whether a selected logit, contrast, or margin is reconstructed well enough
-to read its feature bars.
-\emph{Baseline tests.} Comparisons with nearest-row ridge, PCA, shuffled
-sparse codes, and random sparse patterns check whether learned token-row
-structure improves over dense low-rank structure, lexical neighborhoods, or
-sparse capacity alone.
-Sign flips, large relative error, weak replacement fidelity, or parity with
-baselines mark failure modes. Unless explicitly labeled as interventions, all
-downstream analyses are readout-level and make no direct claims about
-generation behavior.
+\subsection{Evaluation Questions}
+\label{subsec:evaluation-questions}
+We first calibrate when SRP accounts are interpretable, then ask what those
+accounts reveal. Calibration measures whether the factorized readout preserves
+LM-head behavior, whether selected token logits and contrasts are reconstructed
+with low error and preserved sign, and whether the result depends on learned
+token-to-feature support rather than generic sparse capacity. After this
+calibration, the analysis addresses five questions: what SRP adds to an ordinary
+logit-lens preference; how the chosen readout question changes the sparse
+account; which features carry each side of a token preference; how context
+reweights projections for a fixed token row; and whether the same
+readout-feature terms compose with residual-stream attribution and constrained
+readout-side edits.
 
-\paragraph{Models, selection, and units.}
+\subsection{Models, Readout SAEs, and Held-Out Targets}
+\label{subsec:models-and-targets}
 The model suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
 \citep{gemma4official,gemma4collection}, Ministral \citep{liu2026ministral3},
 and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1},
@@ -29,8 +26,25 @@ Qualitative displays use one fixed low-error setting, Qwen3.5-2B \(32\times\),
 TopK active-feature budget. We score final LM-head inputs and select readout SAEs
 by held-out row reconstruction, replacement fidelity, and sparse code usage. We
 reserve held-out logit differences for downstream score-reconstruction checks.
-Replacement uses 10,000 neutral C4 continuations per model; score-reconstruction
+Replacement uses 10,000 neutral C4 continuations per model
+\citep{raffel2020exploring,dodge2021documenting}; score-reconstruction
 evaluations use preconstructed prompt/score sets with fixed linear
 coefficients, split assignment, and tokenization filters. These splits keep model
-selection separate from score-reconstruction evaluation. Model identifiers and details
-are in Appendix~\ref{app:model-suite-selection}.
+selection separate from score-reconstruction evaluation. Model identifiers and
+details are in Appendix~\ref{app:model-suite-selection}.
+
+\subsection{Metrics, Baselines, and Interpretation Rule}
+\label{subsec:metrics-and-baselines}
+Calibration uses three metric layers.
+\emph{Basis metrics.} Held-out row reconstruction and LM-head replacement on C4
+hidden states check whether the readout SAE preserves the readout it replaces.
+\emph{Score metrics.} Score reconstruction, sign preservation, and relative
+error check whether a selected logit, contrast, or margin is reconstructed well
+enough to read its feature bars. \emph{Baselines.} Comparisons with nearest-row
+ridge, PCA, shuffled sparse codes, and random sparse patterns check whether
+learned token-row structure improves over dense low-rank structure, lexical
+neighborhoods, or sparse capacity alone. Sign flips, large relative error,
+weak replacement fidelity, or parity with baselines mark failure modes. A local
+display is read only when the selected score keeps its sign and has small
+reported residual; unless explicitly labeled as interventions, all downstream
+analyses are readout-level and make no direct claims about generation behavior.

@@ -1,58 +1,37 @@
 \section{Related Work}
 
-\paragraph{Lens-style readouts.}
+\paragraph{Lens-style readout interfaces.}
 Lens-style methods inspect hidden states by mapping them to vocabulary
 distributions, future-token predictions, continuations, or descriptions
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
-They are the closest prior work in interface: they ask what a hidden state reads
-out. SRP keeps this interface but factorizes the final readout; a selected token
-logit, logit difference, or explicit row-combination contrast is then decomposed
-into sparse readout-feature terms plus residual. This does not replace learned
-or task-specific lenses; it gives residual-checked decompositions for scores
-from the model's final readout.
+SRP keeps this readout-facing interface but factorizes the model's own LM head
+behind it: a selected token logit or contrast remains a dot product with an
+unembedding row or row combination, and SRP decomposes that readout direction
+into sparse feature terms with residual checks.
 
-\paragraph{Output-embedding geometry.}
-SRP factorizes the final unembedding, or LM head. Output embeddings have been
-studied as learned representations and prediction-shaping geometry
+\paragraph{Output geometry and sparse row dictionaries.}
+Output embeddings have been studied as learned representations and
+prediction-shaping geometry
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
 Token rows, weight tying, softmax rank constraints, and vocabulary segmentation
-affect final scores. SRP uses this geometry as the object of a sparse row
-factorization; selected readout directions combine row coefficients to
-decompose selected logits and contrasts at hidden states, without removing
-tokenizer or output-geometry caveats.
-
-\paragraph{Sparse dictionaries and activation SAEs.}
-Activation-SAE work learns dictionaries over hidden-state distributions and has
-established evaluation practice for sparse features
+affect final scores. Activation-SAE work learns dictionaries over hidden-state
+distributions and has established sparse-feature diagnostics
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,karvonen2025saebench,makelov2024principled}.
-SRP borrows SAE machinery, sparse codes, decoder directions, and reconstruction
-diagnostics, but changes the fitted object. The readout SAE is trained on
-unembedding rows: its sparse codes are token-row coefficients, its decoder
-directions are readout feature directions, and \(h^\top d_i\) is a readout
-feature projection rather than an activation-SAE code. Features become signed
-contributions only after a selected readout direction supplies coefficients, so
-the row factorization alone does not recover activation features or hidden-state
-mechanisms.
+SRP uses SAE machinery on a different object: unembedding rows. Its sparse
+codes are token-row coefficients, its decoder directions are readout feature
+directions, and \(h^\top d_i\) is a hidden-state projection onto that readout
+basis, not an activation-SAE code.
 
-\paragraph{Logit attribution and logit prisms.}
+\paragraph{Additive attribution and mechanisms.}
 Component attribution and logit-prism methods ask where logit evidence is
 written in the residual stream
 \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. The
-selected-score decomposition asks a complementary readout-side question: which
-sparse readout directions raise or lower the selected score. Because the
-selected-direction terms are linear in the hidden state, they compose
-with residual-stream attribution to yield feature-resolved DLA for a realized
-forward pass. This is additive accounting for readout scores, not
-identification of the upstream mechanism that produced a component
-contribution.
-
-\paragraph{Circuits and causal structure.}
-Automated circuit discovery, causal abstraction, transcoders, and
-circuit-tracing systems pursue internal mechanisms and intervention-tested
-structure
+same literature uses standard selected readout objects, including token logits
+and logit-difference directions. SRP asks the complementary readout-side
+question: which sparse readout directions raise or lower a selected score.
+Because the selected-direction terms are linear in the hidden state, they
+compose with residual-stream attribution to yield feature-resolved DLA for a
+realized forward pass. This is additive accounting for readout scores, not
+intervention-tested mechanism discovery
 \citep{conmy2023acdc,geiger2023causalabstraction,dunefsky2024transcoders,ameisen2025circuittracing}.
-SRP differs in level of analysis: it factorizes the rows against which hidden
-states are scored and reports residual-checked local score terms. The resulting
-directions can suggest candidate interventions, but necessity and sufficiency
-remain causal questions for intervention-tested methods.
 Broader positioning appears in Appendix~\ref{app:extended-related-work}.
