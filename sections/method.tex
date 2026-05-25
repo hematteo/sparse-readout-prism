@@ -5,22 +5,95 @@ Throughout, ``readout'' means the final unembedding or LM head
 \(\WU\in\R^{|\mathcal{V}|\times d}\). For hidden state \(h\in\R^d\), row \(t\)
 is \(w_t^\top\), and the full logit vector is \(\WU h\).
 
-Sparse Readout Prism (SRP) decomposes a selected readout score by combining a
-fixed linear combination of LM-head rows with a sparse factorization of the
-final unembedding. We first define the selected score, then introduce the
-readout basis, the score-independent hidden-state projection profile, and the
-local score identity that produces signed feature contributions.
+Sparse Readout Prism (SRP) first factorizes the final unembedding into a sparse
+readout basis: token-row coefficients over shared readout feature directions,
+plus residuals. This basis can reconstruct or replace the full LM head and
+project hidden states into readout-feature coordinates before any token,
+contrast, or margin is selected. For local analysis, a selected token logit,
+logit difference, group contrast, vocabulary-mean contrast, or top-competitor
+margin fixes a readout direction; the same basis then yields signed feature
+contributions plus an explicit residual for that score.
 
-\subsection{Scalar Readout Targets}
-\label{sec:method-scalar-readout-targets}
+\subsection{Sparse Factorization of Readout Rows}
+\label{sec:method-factorization}
+\label{sec:method-fitting-readout-sae}
+
+SRP learns a sparse dictionary for rows of \(\WU\). We call the SAE trained on
+unembedding rows the readout SAE; unlike an activation SAE, its sparse codes
+describe token rows rather than hidden states. Following sparse-autoencoder
+practice
+\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, it
+approximates each unembedding row. In the raw readout coordinates used for all
+score decompositions, the fitted row and residual satisfy
+\[
+    \widehat{w}_t = \mu + \sum_{i=1}^{D} z_{t,i} d_i,
+    \qquad
+    r_t = w_t-\widehat{w}_t,
+\]
+where \(\mu\) is a shared offset, \(d_i\in\R^d\) is a readout feature direction
+(an SAE decoder direction), \(z_{t,i}\) is token row \(t\)'s sparse coefficient,
+and \(r_t\) is the residual. Thus
+\[
+    w_t=\mu+\sum_i z_{t,i}d_i+r_t .
+\]
+
+We fit TopK sparse autoencoders \citep{makhzani2013ksparse,gao2024scaling};
+TopK keeps a fixed active-feature budget \(k\), making row sparsity comparable
+across tokens. When training uses centering or row normalization, fitted codes,
+directions, and residuals are mapped back to raw readout coordinates before any
+score decomposition, so later terms remain in original logit units with no
+hidden dense correction. Width \(D\), sparsity \(k\), and preprocessing details
+are given in appendices~\ref{app:readout-factorizer-sweeps}--%
+\ref{app:readout-factorizer-diagnostics-reproducibility} and
+\ref{app:score-decomposition}.
+
+\subsection{Readout Replacement and Score-Independent Profiles}
+\label{sec:method-feature-projections}
+
+Once the readout feature directions \(d_i\) are fixed, a hidden state supplies
+score-independent projections onto them. Let \(Z\in
+\R^{|\mathcal{V}|\times D}\) collect the sparse row codes and let
+\(D_{\mathrm{feat}}\in\R^{D\times d}\) have rows \(d_i^\top\), with
+\(\mathbf{1}\) denoting the all-ones column vector. Stacking fitted rows yields
+the reconstructed LM head and reconstructed logit vector,
+\[
+    \begin{aligned}
+    \widehat{\WU}
+    &=
+    \mathbf{1}\mu^\top
+    +
+    ZD_{\mathrm{feat}},\\
+    \widehat{\ell}(h)
+    &=
+    \mathbf{1}(\mu^\top h)
+    +
+    Z(D_{\mathrm{feat}}h).
+    \end{aligned}
+\]
+For a hidden state \(h\), define the readout feature projection coordinate and
+projection vector
+\[
+    p_i(h)=h^\top d_i,
+    \qquad
+    p(h)=D_{\mathrm{feat}}h .
+\]
+The vector \(p(h)\) is a score-independent projection profile. The coordinate
+\(p_i(h)\) is not support or opposition for any token or contrast until a
+selected readout direction supplies a coefficient; it becomes a signed local
+term only after multiplication by that coefficient. Full readout replacement
+tests \(\widehat{\ell}(h)\), while the local score decomposition below is
+score-conditioned.
+
+\subsection{Selected Readout Scores}
+\label{sec:method-selected-readout-scores}
 \label{sec:problem-setup}
 
-SRP applies to selected scores that are fixed linear combinations of LM-head
-rows. This restriction gives an exact sparse-plus-residual identity for token
-logits, pairwise logit differences, group contrasts, vocabulary-mean contrasts,
-and top-competitor margins. Formally, let
-\(\alpha\in\R^{|\mathcal{V}|}\) be a vector of vocabulary-row coefficients and
-define
+For local decompositions, SRP applies to selected scores that are fixed linear
+combinations of LM-head rows. This restriction gives an exact
+sparse-plus-residual identity for token logits, pairwise logit differences,
+group contrasts, vocabulary-mean contrasts, and top-competitor margins.
+Formally, let \(\alpha\in\R^{|\mathcal{V}|}\) be a vector of vocabulary-row
+coefficients and define
 \[
     q_\alpha = \sum_{t\in\mathcal{V}} \alpha_t w_t,
     \qquad
@@ -65,87 +138,7 @@ top-competitor margins
 The selected token \(u\), competitor set \(\mathcal{R}\), and weights
 \(\pi_r\ge0\) are fixed from the original LM-head ranking before SRP
 decomposition, with \(\sum_{r\in\mathcal{R}}\pi_r=1\). The corresponding
-\(\beta_i(\alpha)\) forms appear in \Cref{tab:method-special-cases}.
-
-\subsection{Sparse Factorization of Readout Rows}
-\label{sec:method-factorization}
-\label{sec:method-fitting-readout-sae}
-
-SRP learns a sparse dictionary for rows of \(\WU\). We call the SAE trained on
-unembedding rows the readout SAE; unlike an activation SAE, its sparse codes
-describe token rows rather than hidden states. Following sparse-autoencoder
-practice
-\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, it
-approximates each unembedding row. In the raw readout coordinates used for all
-score decompositions, the fitted row and residual satisfy
-\[
-    \widehat{w}_t = \mu + \sum_{i=1}^{D} z_{t,i} d_i,
-    \qquad
-    r_t = w_t-\widehat{w}_t,
-\]
-where \(\mu\) is a shared offset, \(d_i\in\R^d\) is a readout feature direction
-(an SAE decoder direction), \(z_{t,i}\) is token row \(t\)'s sparse coefficient,
-and \(r_t\) is the residual. Thus
-\[
-    w_t=\mu+\sum_i z_{t,i}d_i+r_t .
-\]
-
-We fit TopK sparse autoencoders \citep{makhzani2013ksparse,gao2024scaling} to
-preprocessed rows \(x_t=(w_t-\mu)/a_t\), where \(a_t>0\) and \(a_t=1\) without
-row normalization. TopK keeps a fixed active-feature budget \(k\), making row
-sparsity comparable across tokens. Let \(\widetilde z_{t,i}\) and
-\(\widetilde d_i\) denote the sparse code entries and decoder directions learned
-in this preprocessed space. We convert them back to raw readout coordinates:
-\[
-    z_{t,i}=a_t\widetilde z_{t,i},
-    \qquad
-    d_i=\widetilde d_i,
-    \qquad
-    r_t=a_t(x_t-\widehat{x}_t).
-\]
-This returns decompositions to original logit or contrast units without an
-additional dense correction. Width \(D\) and native sparsity \(k\) are selected
-by held-out reconstruction and readout-replacement fidelity;
-appendices~\ref{app:readout-factorizer-sweeps}--%
-\ref{app:readout-factorizer-diagnostics-reproducibility} give details.
-Appendix~\ref{app:score-decomposition} details centering and row normalization.
-
-\subsection{Readout Replacement and Score-Independent Profiles}
-\label{sec:method-feature-projections}
-
-Once the readout feature directions \(d_i\) are fixed, a hidden state supplies
-score-independent projections onto them. Let \(Z\in
-\R^{|\mathcal{V}|\times D}\) collect the sparse row codes and let
-\(D_{\mathrm{feat}}\in\R^{D\times d}\) have rows \(d_i^\top\), with
-\(\mathbf{1}\) denoting the all-ones column vector. Stacking fitted rows yields
-the reconstructed LM head and reconstructed logit vector,
-\[
-    \begin{aligned}
-    \widehat{\WU}
-    &=
-    \mathbf{1}\mu^\top
-    +
-    ZD_{\mathrm{feat}},\\
-    \widehat{\ell}(h)
-    &=
-    \mathbf{1}(\mu^\top h)
-    +
-    Z(D_{\mathrm{feat}}h).
-    \end{aligned}
-\]
-For a hidden state \(h\), define the readout feature projection coordinate and
-projection vector
-\[
-    p_i(h)=h^\top d_i,
-    \qquad
-    p(h)=D_{\mathrm{feat}}h .
-\]
-The vector \(p(h)\) is a score-independent projection profile. The coordinate
-\(p_i(h)\) is not support or opposition for any token or contrast until a
-selected readout direction supplies a coefficient; it becomes a signed local
-term only after multiplication by that coefficient. Full readout replacement
-tests \(\widehat{\ell}(h)\), while the local score decomposition below is
-score-conditioned.
+sparse-feature coefficients appear in \Cref{tab:method-special-cases}.
 
 \subsection{Local Score Decomposition}
 \label{sec:method-local-score}
@@ -219,11 +212,11 @@ Positive terms raise the chosen score and negative terms lower it. For signed
 contrasts, positive values support the first side and negative values support
 the comparison side.
 
-\subsection{Common Target Coefficients}
-\label{sec:method-target-coefficients}
+\subsection{Common Score Coefficients}
+\label{sec:method-score-coefficients}
 
-\Cref{tab:method-special-cases} lists \(\beta_i(\alpha)\) for common score
-families. Write
+\Cref{tab:method-special-cases} lists \(\beta_i(\alpha)\) for common selected
+scores. Write
 \(\bar{z}_{\mathcal{A},i}=|\mathcal{A}|^{-1}\sum_{a\in\mathcal{A}}z_{a,i}\)
 for the uniform average of feature \(i\)'s sparse coefficient over token group
 \(\mathcal{A}\). For top-competitor margins, write
@@ -231,7 +224,7 @@ for the uniform average of feature \(i\)'s sparse coefficient over token group
 \(\bar{z}_{\pi,\mathcal{R},i}=\sum_{r\in\mathcal{R}}\pi_r z_{r,i}\).
 
 \begin{table}[H]
-\caption{\textbf{Target choices and their sparse-feature coefficients.}
+\caption{\textbf{Selected scores and their sparse-feature coefficients.}
 Rows instantiate the selected readout direction \(q_\alpha\) and corresponding
 direction coefficient \(\beta_i(\alpha)\). Barred quantities denote uniform
 token-set averages or competitor-weighted averages.}

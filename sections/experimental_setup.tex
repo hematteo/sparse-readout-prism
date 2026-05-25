@@ -3,17 +3,19 @@
 
 \subsection{Evaluation Questions}
 \label{subsec:evaluation-questions}
-We first calibrate when SRP accounts are interpretable, then ask what those
-accounts reveal. Calibration measures whether the factorized readout preserves
-LM-head behavior, whether selected token logits and contrasts are reconstructed
-with low error and preserved sign, and whether the result depends on learned
-token-to-feature support rather than generic sparse capacity. After this
-calibration, the analysis addresses five questions: what SRP adds to an ordinary
-logit-lens preference; how the chosen readout question changes the sparse
-account; which features carry each side of a token preference; how context
-reweights projections for a fixed token row; and whether the same
-readout-feature terms compose with residual-stream attribution and constrained
-readout-side edits.
+The experiments first calibrate whether SRP accounts are usable
+(\Cref{subsec:metrics-and-baselines}); conditional on these checks, the
+analysis asks five questions:
+\begin{description}[leftmargin=!,labelwidth=2.7em]
+    \item[RQ1:] What does SRP add to an ordinary logit-lens preference?
+    \item[RQ2:] How does the chosen readout question change the sparse account?
+    \item[RQ3:] Which readout features carry each side of token-vs-token
+    preferences?
+    \item[RQ4:] How does prompt context reweight readout-feature projections for
+    a fixed token row?
+    \item[RQ5:] Can the same readout-feature terms compose with residual-stream
+    attribution and constrained readout-side edits?
+\end{description}
 
 \subsection{Models, Readout SAEs, and Held-Out Targets}
 \label{subsec:models-and-targets}
