@@ -1,24 +1,27 @@
 \section{Results and Analysis}
 \label{sec:results}
 
-The results follow the contribution split. We first test whether the
-target-independent SRP factorization preserves original LM-head behavior. We then
+The results first test the readout factorization before interpreting local
+decompositions. We first test whether the target-independent SRP factorization
+preserves original LM-head behavior. We then
 test whether selected scalar readout targets are reconstructed with the sign and
 error needed for local interpretation, and whether learned sparse row-code
 structure outperforms controls. Only after those checks do we interpret low-error
 local decompositions, compare target and context effects, and show linear
 extensions to feature-resolved component attribution and candidate readout-side
-edits. Unless stated otherwise, aggregate low-error counts use \(\rho<0.5\).
+edits. Unless explicitly marked as interventions, these analyses are
+readout-level; unless stated otherwise, aggregate low-error counts use
+\(\rho<0.5\).
 
 \subsection{The Sparse Readout Factorization Identifies High-Fidelity Readout Regimes}
 
-\paragraph{Question and design.}
-When can the fixed SRP basis support selected-target decompositions? We evaluate
-two prerequisites across the model suite: held-out row reconstruction and LM-head
-replacement test the SRP factorization, while held-out logit-difference
+\paragraph{Fidelity design.}
+The fixed SRP basis supports selected-target decompositions in regimes where it
+preserves both the replaced readout and the selected scalar target. We evaluate
+these prerequisites across the model suite: held-out row reconstruction and
+LM-head replacement test the SRP factorization, while held-out logit-difference
 reconstruction tests selected scalar targets on that fixed basis. The metrics are
-top-token agreement, KL, sign preservation, and relative reconstruction error;
-none is a test of task behavior.
+top-token agreement, KL, sign preservation, and relative reconstruction error.
 
 \begin{table}[t]
 \caption{\textbf{Readout replacement and target fidelity.}
@@ -84,10 +87,10 @@ not evidence that a local feature-bar display is interpretable.
 
 \subsection{Learned Token-Row Sparse Structure Improves Target Reconstruction}
 
-Are the target-reconstruction gains due to learned sparse row-code structure, or
-could generic capacity and output-embedding geometry explain them? We compare SRP
-with nearest-row ridge, PCA, shuffled sparse codes, and random sparse patterns on
-the full Qwen3.5-2B logit-difference set.
+Learned sparse row-code structure yields stronger target reconstruction than
+controls for generic capacity and output-embedding geometry. We compare SRP with
+nearest-row ridge, PCA, shuffled sparse codes, and random sparse patterns on the
+full Qwen3.5-2B logit-difference set.
 
 \begin{table}[t]
 \caption{\textbf{Null and reference baselines for Qwen3.5-2B.}
@@ -126,10 +129,10 @@ Appendix~\ref{app:robustness-key-quantitative}.
 
 \subsection{Selected Scalar Readout Targets Extend Beyond Token Pairs}
 
-Does the selected-target contribution apply beyond curated token pairs? Keeping
-the SRP basis fixed, we express answer, abstention, label, and safe/action
-choices as linear contrasts, then evaluate target reconstruction rather than
-end-to-end task performance. We instantiate QA
+The selected-target interface extends from curated token pairs to
+benchmark-derived answer, abstention, label, and safe/action contrasts. Keeping
+the SRP basis fixed, we express these choices as linear contrasts and evaluate
+target reconstruction. We instantiate QA
 \citep{rajpurkar2018squad2,yang2018hotpotqa}, ContractNLI labels via LegalBench
 \citep{koreeda2021contractnli,guha2023legalbench}, and SecurityEval safe/unsafe
 actions \citep{siddiq2022securityeval}; QA contrasts average gold-answer rows
@@ -139,9 +142,7 @@ against fixed distractor rows.
 multi-hop-distractor, and legal-label rows than on SecurityEval, whose
 safe/unsafe-action contrast spans many lexical forms. The selected-target
 interface therefore supports several benchmark-derived linear readout targets
-beyond curated token pairs.
-These rows test readout-level fidelity rather than end-to-end task accuracy;
-low-error QA examples appear in
+beyond curated token pairs. Low-error QA examples appear in
 Appendix~\ref{app:benchmark-derived-display-examples}.
 
 \begin{table}[t]
@@ -174,14 +175,14 @@ A low-error benchmark-derived row means the selected-target decomposition
 reconstructs the specified answer, label, abstention, or action contrast at the
 readout. The weaker SecurityEval row is consistent with this scope: safe/unsafe
 actions span more heterogeneous lexical forms than compact answer or label
-families, and generation-level coverage requires separate evaluation.
+families.
 
 \subsection{Local Score Decompositions Expose Feature Competition Within Token Rankings}
 
-Given sign-preserved, low-error cases, what do the signed feature terms show
-inside a token ranking? We inspect token-vs-token local score decompositions for
-Qwen3.5-2B. Labels summarize high-coefficient rows; the measured quantities are
-feature ids, signed contributions, and residuals.
+Sign-preserved, low-error local decompositions expose which readout features
+support or oppose tokens within a ranking. We inspect token-vs-token local score
+decompositions for Qwen3.5-2B. Labels summarize high-coefficient rows; the
+measured quantities are feature ids, signed contributions, and residuals.
 
 \paragraph{Polysemous-token case studies.}
 Using the fixed SRP basis, we decompose low-error Qwen3.5-2B polysemous-token
@@ -214,10 +215,10 @@ effects; aggregate frequencies are in the appendix.
 
 \subsection{Target Choice Selects Signed Terms from Shared Readout Feature Projections}
 
-How does target choice change the signed terms when the hidden states are fixed?
-We compare scoring questions on the same hidden states, from reference contrasts
-to sharper pair and group margins. This isolates the target-coefficient side of
-\(c_i(h,q)=\beta_i(q)h^\top d_i\).
+Changing the target changes signed feature terms even when the hidden states are
+fixed. We compare scoring questions on the same hidden states, from reference
+contrasts to sharper pair and group margins. This isolates the target-coefficient
+side of \(c_i(h,q)=\beta_i(q)h^\top d_i\).
 
 \paragraph{Target-family reliability.}
 Target coefficients turn projections into signed contributions: a feature may
@@ -236,14 +237,13 @@ report local sign/error; full counts/examples are in
 Appendix~\ref{app:readout-target-family-display-example}.
 These target-family comparisons show that changing \(q\) changes
 \(\beta_i(q)\), and therefore which readout features count as support or
-opposition. They do not make the projection vector itself target-specific. The
-next section holds the token row fixed and changes the prompt, isolating
-\(h^\top d_i\).
+opposition while the projection vector itself remains fixed. The next section
+holds the token row fixed and changes the prompt, isolating \(h^\top d_i\).
 
 \subsection{Context Reweights Fixed Token-Row Coefficients}
 
-How does prompt context change the decomposition when the selected token row is
-fixed? Here the token-row coefficients stay fixed and only the hidden-state
+Prompt context reweights readout-feature projections when the selected token row
+is fixed. Here the token-row coefficients stay fixed and only the hidden-state
 projections \(h^\top d_i\) change, so bar changes are evidence of context
 reweighting in the readout-feature projection coordinates.
 
@@ -253,8 +253,8 @@ In \Cref{fig:same-token-polysemy}, prompt context reweights \texttt{bug},
 setting; each centered-token score has \(\rho<0.05\). \texttt{bug} shifts from
 mosquito/bee to defect/crash/debug labels, and \texttt{bridge} from
 river/crossing to networking labels. These cases support context-dependent
-reweighting of readout feature projections for a fixed token row; they do not
-show a change in the token-row coefficients or a generation-level intervention.
+reweighting of readout feature projections for a fixed token row, with no change
+in the token-row coefficients.
 Additional views are in Appendix~\ref{app:additional-qwen-display-examples}.
 
 \begin{figure}[t]
@@ -271,9 +271,9 @@ Additional views are in Appendix~\ref{app:additional-qwen-display-examples}.
 \label{sec:feature-resolved-component-decomposition}
 
 \paragraph{Component-level readout terms.}
-Can target-conditioned readout terms be split across residual-stream components
-when an additive decomposition of the final hidden state is available? Because
-these terms are linear in the final hidden state, any additive residual-stream
+Target-conditioned readout terms split across residual-stream components when an
+additive decomposition of the final hidden state is available. Because these
+terms are linear in the final hidden state, any additive residual-stream
 decomposition can pass through the same readout-feature basis. The fixed SRP
 basis therefore composes with
 residual-stream direct logit attribution (DLA)
@@ -313,11 +313,10 @@ Appendix~\ref{app:feature-resolved-dla}.
 \subsection{Selected Readout Features Transfer to Evaluation Tokens}
 \label{sec:readout-feature-edits}
 
-Do directions selected from local bars also move lexical readouts for evaluation
-tokens not used during selection? We treat this as a candidate readout-side
+Directions selected from local bars can move lexical readouts for evaluation
+tokens not used during selection. We treat this as a candidate readout-side
 intervention: the test edits specified logits along selected readout SAE decoder
-directions and measures lexical logit differences, not downstream generation
-behavior.
+directions and measures lexical logit differences.
 
 \paragraph{Constrained readout edit.}
 The test edits logits along ten Qwen3.5-2B decoder directions selected from five
@@ -359,7 +358,6 @@ effect on the evaluation tokens.
 Appendix~\ref{app:lexical-control-stress-test} repeats this on
 R1-Distill-Qwen-7B. These results show that directions discovered from one token
 set can move related lexical readout scores for a separate evaluation set in a
-candidate-constrained test; downstream generation behavior is a separate
-evaluation layer.
+candidate-constrained test.
 
 \FloatBarrier

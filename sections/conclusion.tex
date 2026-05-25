@@ -1,17 +1,15 @@
 \section{Conclusion}
 
-Sparse Readout Prism contributes the target-independent part: it factorizes the
-LM head into shared readout features and token-row coefficients. The selected
-scalar readout-target interface contributes the target-conditioned part: it
-chooses the linear score and sign convention that turn SRP projections into
-signed feature terms with an explicit residual in raw logit coordinates.
-Replacement, target-reconstruction, sign, and baseline diagnostics identify
-settings where those terms preserve readout behavior. In those settings, the
-fixed SRP basis supports comparisons across targets and contexts, composes with
-residual-stream attribution, and supplies directions for constrained readout-side
-edits. Causal intervention and generation-level evaluation remain separate
-tests; the fixed basis provides residual-checked readout-linear candidate terms
-for choosing where they should focus.
+Sparse Readout Prism separates the target-independent and target-conditioned
+parts of readout decomposition. It factorizes LM-head rows into shared readout
+features and token-row coefficients; after a scalar readout target fixes the
+linear score and sign convention, hidden states enter through feature
+projections that yield signed terms plus an explicit residual in raw logit
+coordinates. Replacement, target-reconstruction, sign, and baseline diagnostics
+identify settings where these terms preserve readout behavior. In those
+settings, the fixed SRP basis supports comparisons across targets and contexts,
+composes with residual-stream attribution, and supplies candidate directions for
+constrained readout-side edits.
 
 \paragraph{Future work.}
 SRP applies to linear readout maps, so a natural next step is to compose it with

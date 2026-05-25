@@ -2,7 +2,7 @@
 \label{sec:experimental-setup}
 
 \paragraph{Claim-to-test map.}
-The experiments test the two contributions separately before using local score
+The experiments first test the two contributions, then use local score
 decompositions. For the SRP factorization, held-out row reconstruction and
 LM-head replacement on C4 hidden states
 \citep{raffel2020exploring,dodge2021documenting} ask whether the fitted readout
@@ -13,9 +13,9 @@ Null and reference baselines then ask whether learned token-row sparse structure
 rather than dense low-rank structure, lexical neighborhoods, or sparse capacity
 alone, accounts for reconstruction gains. We treat sign flips, large relative
 error, weak replacement fidelity, or parity with baselines as failure modes for
-interpretation. Qualitative displays and downstream analyses are therefore
-validation-gated readout use cases, not independent evidence of generation-level
-behavior.
+interpretation. Unless explicitly marked as interventions, qualitative displays
+and downstream analyses are validation-gated readout use cases rather than
+evidence about generation behavior.
 
 \paragraph{Models, selection, and units.}
 The model suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
@@ -37,7 +37,7 @@ are in Appendix~\ref{app:model-suite-selection}.
 Interpretability displays are read only after the relevant fidelity checks. Each
 display names its scalar readout target and reports the original score, sparse
 feature sum, residual, relative error, and sign status where relevant. Those
-displays make local readout claims rather than global behavioral or causal
-claims. Score-independent appendix figures rank readout feature projections
+displays support local readout claims within the stated target and fidelity
+boundary. Score-independent appendix figures rank readout feature projections
 \(h^\top d_i\) before target selection; Appendix~\ref{app:robustness-controls}
 summarizes checks, controls, and token-level audits.

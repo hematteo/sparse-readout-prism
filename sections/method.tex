@@ -1,16 +1,19 @@
 \section{Method: Sparse Readout Prism}
 \label{sec:method}
 
-The SRP factorization is learned before any target is chosen. It first
-factorizes LM-head rows and projects hidden states onto the learned readout
-directions. The selected-target layer then chooses a scalar readout target and
-combines target coefficients with hidden-state projections to obtain signed
-terms plus a residual. This keeps the logit-lens interface fixed: a hidden state
-\(h\) is still read out through the LM head \(\WU\), but selected logits,
-contrasts, group scores, and margins are decomposed through the same row
-factorization of \(\WU\). The subsections below separate what SRP learns from the
-LM head, what is computed from \(h\), what target selection supplies, and what
-remains in the residual.
+SRP keeps the logit-lens interface fixed: a hidden state \(h\) is still read out
+through the LM head \(\WU\). The procedure separates four ingredients. First, a
+readout SAE learns a sparse basis for LM-head rows before any target is chosen.
+Second, each hidden state is projected onto that readout-side basis. Third, a
+chosen scalar target supplies coefficients that turn those target-independent
+projections into signed contributions. Fourth, the LM-head row reconstruction
+residual is carried through to the final scalar score. The same row
+factorization therefore decomposes selected logits, contrasts, group scores, and
+margins while keeping the residual explicit.
+
+The subsections follow this order: what SRP learns from the LM head, what is
+computed from \(h\), what target selection supplies, and what remains after the
+sparse reconstruction.
 
 \subsection{Sparse Factorization of the Readout}
 \label{sec:method-factorization}
@@ -22,9 +25,9 @@ is \(w_t^\top\), and the full logit vector is \(\WU h\).
 SRP first learns a sparse dictionary for rows of \(\WU\). One fitted row
 factorization can later be reused for token logits, pairwise contrasts, group
 contrasts, and top-competitor margins. We call the SAE trained on unembedding
-rows the readout SAE; unlike an activation SAE, its sparse codes describe token
-rows rather than hidden states. It follows sparse-autoencoder practice
-\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling} and
+rows the readout SAE. Unlike an activation SAE, its sparse codes describe token
+rows rather than hidden states. Following sparse-autoencoder practice
+\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, it
 approximates each unembedding row. In the raw readout coordinates used for all
 score decompositions, the fitted row and residual satisfy
 \[
@@ -87,9 +90,9 @@ appendices~\ref{app:readout-factorizer-sweeps}--%
 \label{sec:method-feature-projections}
 
 Once the readout feature directions \(d_i\) are fixed, a hidden state supplies
-only projections onto those directions. No scalar target is used in this step,
-so the same projection vector can serve different local decompositions once
-targets supply different coefficients. Let \(Z\in
+projections onto those directions. No scalar target is used in this step, so the
+same projection vector can serve different local decompositions once targets
+supply different coefficients. Let \(Z\in
 \R^{|\mathcal{V}|\times D}\) collect the sparse row codes and let
 \(D_{\mathrm{feat}}\in\R^{D\times d}\) have rows \(d_i^\top\), with
 \(\mathbf{1}\) denoting the all-ones column vector. Then the reconstructed LM
@@ -125,11 +128,11 @@ small bars for readability.
 \subsection{Scalar Readout Targets}
 \label{sec:problem-setup}
 
-A scalar readout target tells SRP which linear score to decompose and which sign
-counts as support. In this paper, every target is a linear combination of
+A scalar readout target specifies which linear score SRP decomposes and which
+sign counts as support. In this paper, every target is a linear combination of
 unembedding rows. Under this restriction, the same row factorization decomposes
-token logits, pairwise contrasts, group scores, and margins, always with an
-explicit residual.
+token logits, pairwise contrasts, group scores, and margins, with an explicit
+residual.
 
 Formally, let \(\alpha\in\R^{|\mathcal{V}|}\) be a vector of vocabulary-row
 coefficients and define
@@ -186,8 +189,7 @@ The scalar \(s_\alpha(h)\) is the unit of a local score decomposition.
 
 After both hidden state \(h\) and target \(q_\alpha\) are fixed, the local score
 identity turns target-independent projections into target-conditioned signed
-terms. All decompositions use raw readout coordinates, and the equality includes
-the residual.
+terms. All decompositions use raw readout coordinates and include the residual.
 
 \begin{figure}[t]
     \centering
@@ -235,8 +237,8 @@ target-independent (Appendix~\ref{app:global-readout-feature-profiles}).
 \subsection{Residual Diagnostics and Target Instantiations}
 \label{sec:method-residual-diagnostics}
 
-The residual term answers whether the sparse feature terms preserve the selected
-readout score closely enough to interpret. Let
+The residual term reports how much of the selected readout score remains outside
+the sparse feature terms. Let
 \(s_{\mathrm{exact}}=s_\alpha(h)\),
 \(s_\mu=(\sum_t\alpha_t)h^\top\mu\),
 \(s_{\mathrm{feat}}=\sum_i c_i(h,\alpha)\), and
