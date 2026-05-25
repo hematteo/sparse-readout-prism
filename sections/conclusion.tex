@@ -10,8 +10,23 @@ labels alone are not evidence.
 
 More broadly, researchers can use SRP to decompose a selected lens score into
 coordinate terms that support or oppose it, together with the residual left by
-the approximation. The same template extends to other linear readouts
-(reward-model heads, classifier heads, retrieval projections); to tuned-lens
-and logit-prism readouts across depth; to activation-level tests of whether
-feature support implies causal responsibility; and to cross-checkpoint
-comparisons of the learned bases.
+the approximation. The same template extends along several axes. Other linear
+readouts --- reward-model heads, classifier heads, and retrieval projections
+--- admit the same factorization and gates, carrying readout-level analyses
+into alignment and retrieval settings. Tuned-lens and logit-prism readouts
+taken across depth give per-layer feature bases, exposing where in the
+residual stream a feature first becomes readout-accessible and how that depth
+signature varies across score families. Activation-level interventions on
+individual decoder directions can test whether feature support implies causal
+responsibility, complementing the additive accounting in feature-resolved DLA
+with sufficiency and necessity checks. Cross-checkpoint comparisons of the
+learned bases ask which features are stable across training and which appear,
+drift, or collapse over the course of pretraining and fine-tuning. A
+residual-stream census measures how projection mass divides between the
+selected score, competing scores, and directions that are active but locally
+unused; comparing this split across layers, prompts, and correct and
+incorrect generations tests whether models carry broad task state beyond the
+immediate readout decision. Throughout, replacement fidelity, score
+reconstruction, and sign agreement remain the gate: feature labels become
+evidence only where the factorized readout reproduces what it is meant to
+interpret.
