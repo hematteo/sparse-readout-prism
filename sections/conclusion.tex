@@ -4,20 +4,13 @@ Sparse Readout Prism separates the target-independent and target-conditioned
 parts of readout decomposition. It factorizes LM-head rows into shared readout
 features and token-row coefficients; after a scalar readout target fixes the
 linear score and sign convention, hidden states enter through feature
-projections that yield signed terms plus an explicit residual in raw logit
-coordinates. Replacement, target-reconstruction, sign, and baseline diagnostics
-identify settings where these terms preserve readout behavior. In those
-settings, the fixed SRP basis supports comparisons across targets and contexts,
-composes with residual-stream attribution, and supplies candidate directions for
-constrained readout-side edits.
+projections that yield signed terms plus residuals in raw logit coordinates.
+Replacement, target-reconstruction, sign, and baseline diagnostics identify
+settings where these terms preserve readout behavior. In those settings, the
+fixed SRP basis supports target/context comparisons, feature-resolved
+attribution, and candidate directions for constrained readout-side edits.
 
 \paragraph{Future work.}
-SRP applies to linear readout maps, so a natural next step is to compose it with
-tuned lenses, logit-prism variants, and future-token lenses, factorizing the
-effective readout used at each layer rather than only the final LM head. This
-would allow lens methods to be compared by decoded tokens and by their signed
-sparse feature terms and residuals. A complementary direction is a
-layerwise residual-stream census: track readout-feature projections before target
-selection to study when evidence becomes readout-readable, when it becomes
-target-specific, and which residual components supply the corresponding feature
-terms.
+Future work can apply SRP to effective readouts from tuned lenses, logit-prism
+variants, and future-token lenses, enabling layerwise comparisons by decoded
+tokens, signed sparse feature terms, and residuals.

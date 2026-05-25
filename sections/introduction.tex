@@ -5,44 +5,32 @@ unembedding matrix, or LM head; we call this interface the \emph{readout}.
 Lens-style methods inspect hidden states in vocabulary space, either through the
 LM head or through a learned lens
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
-These methods can show which tokens or scores a hidden state favors. However,
-after a token, contrast, or margin is selected, the inspected quantity remains
-one dense scalar dot product with an unembedding row or readout direction. The
-score alone does not say which shared readout-side directions support the target,
-which oppose it, or how much reconstruction error remains after a sparse account
-of that score.
+These methods can show which tokens or scores a hidden state favors, but after a
+token, contrast, or margin is selected, the inspected quantity remains one dense
+dot product with an unembedding row or readout direction. This leaves a local
+gap: the score does not identify which shared readout-side directions support or
+oppose the target, or how much residual remains after a sparse account.
 
-This leaves a local gap between vocabulary-space inspection and feature-level
-readout analysis. A lens can identify a token or contrast that a hidden state
-favors, but it does not decompose that selected score into reusable readout-side
-directions. We want a local object: for a fixed hidden state and fixed linear
-readout target, decompose the selected scalar score into sparse signed terms
-while carrying the reconstruction residual explicitly. This gives a readout-level
-decomposition whose fidelity can be checked for the target being interpreted.
-
-Sparse Readout Prism (SRP) supplies this object by separating the basis from the
-target. SRP first learns a sparse dictionary for rows of the final unembedding
-matrix: each vocabulary row receives sparse token-row coefficients over shared
-directions, plus a row reconstruction residual. We call the shared directions
-\emph{readout features}: they are features of the LM-head rows, not
-activation-SAE features of hidden states. Thus SRP uses sparse-autoencoder and
-dictionary-learning machinery
+Sparse Readout Prism (SRP) addresses this gap by separating the basis from the
+target. It learns a sparse dictionary for rows of the final unembedding matrix:
+each vocabulary row receives sparse token-row coefficients over shared directions
+plus a row reconstruction residual. We call the shared directions
+\emph{readout features}: features of LM-head rows, not activation-SAE features
+of hidden states. SRP uses sparse-autoencoder and dictionary-learning machinery
 \citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling},
 but trains the dictionary on unembedding rows rather than on a distribution of
 hidden-state activations.
 
-After the readout features are fixed, the hidden state enters through its
-projections onto those directions. Target selection is a separate analysis
-layer: a \emph{scalar readout target} is a selected linear function of
-unembedding rows, such as a token logit, pairwise logit difference, group
-contrast, reference contrast, or top-competitor margin. The target supplies
-coefficients \(\beta_i\) for readout feature \(i\), while the context supplies
-the projection \(h^\top d_i\). Their product
-\(c_i=\beta_i h^\top d_i\) is a \emph{signed feature contribution}: positive
-terms raise the chosen scalar target and negative terms lower it. The remaining
-row-reconstruction term is carried through as an explicit \emph{residual}; raw
-token-logit targets also report the shared offset. The feature bars and residual
-therefore form a local score decomposition in original logit units.
+After fitting, a hidden state enters through projections onto readout features.
+Target selection is separate: a \emph{scalar readout target} is a selected
+linear function of unembedding rows, such as a token logit, pairwise logit
+difference, group contrast, reference contrast, or top-competitor margin. The
+target supplies coefficients \(\beta_i\), the context supplies projections
+\(h^\top d_i\), and their product
+\(c_i=\beta_i h^\top d_i\) is a \emph{signed feature contribution}. Positive
+terms raise the chosen scalar target and negative terms lower it. Feature terms,
+shared offset when present, and residual form a local score decomposition in
+original logit units.
 
 \begin{figure}[H]
     \centering
@@ -55,37 +43,29 @@ therefore form a local score decomposition in original logit units.
 \end{figure}
 
 \Cref{fig:main-lens-prism-comparison} illustrates this identity on a
-\texttt{verify}-minus-\texttt{assume} margin: the selected pairwise logit
-difference is fixed, positive signed feature contributions come from readout
-features with labels summarizing verification/checking token rows, negative
-signed feature contributions come from features with labels summarizing
-assumption-related token rows, and the residual is reported.
+\texttt{verify}-minus-\texttt{assume} margin with the selected target decomposed
+into signed feature terms and a reported residual.
 
 We evaluate decomposition fidelity with LM-head replacement, target
 reconstruction, sign preservation, relative error, and sparse-structure
-baselines. These diagnostics identify where to interpret feature-bar analyses:
-we focus on small-residual settings and, for signed targets, sign-preserved
-settings. In the Qwen settings selected by these checks, the fixed basis and
-selected targets preserve held-out contrast signs at \(0.949\)--\(0.958\) with
-median relative reconstruction error below \(0.10\).
+baselines. These diagnostics gate interpretation. In the Qwen settings selected
+by these checks, the fixed basis and selected targets preserve held-out contrast
+signs at \(0.949\)--\(0.958\) with median relative reconstruction error below
+\(0.10\).
 
-Within these checked regimes, local decompositions expose supporting and opposing
-readout features for the same scalar target. The fixed basis also lets us compare
-target choices and prompt contexts, compose readout-feature terms with
-residual-stream attribution because the terms remain linear in the hidden state,
-and identify candidate readout-side edit directions. Across these uses, the
-common unit is a local score decomposition reported with its residual. Feature
-labels summarize high-coefficient vocabulary rows; the measured objects are
-feature ids, signed terms, and residuals.
+Within checked regimes, local decompositions expose supporting and opposing
+readout features, compare target choices and prompt contexts, compose with
+residual-stream attribution, and identify candidate readout-side edit directions.
+Across these uses, claims remain tied to feature ids, signed terms, and
+residuals; feature labels summarize high-coefficient vocabulary rows.
 
 The paper contributes:
 \begin{itemize}
     \item a sparse dictionary factorization of the final unembedding / LM head
     into token-row coefficients and shared readout feature directions;
-    \item a scalar readout-target formalism for token logits, pairwise
+    \item a scalar readout-target formalism that converts token logits, pairwise
     differences, group contrasts, reference contrasts, and top-competitor
-    margins, each converted into signed feature contributions plus explicit
-    residuals on the fixed SRP basis;
+    margins into signed feature contributions plus residuals;
     \item a fidelity evaluation suite covering LM-head replacement, target
     reconstruction, sign preservation, relative error, and sparse-structure
     baselines;

@@ -2,26 +2,23 @@
 \label{sec:experimental-setup}
 
 \paragraph{Claim-to-test map.}
-The experiments first test the two contributions, then use local score
-decompositions. For the SRP factorization, held-out row reconstruction and
-LM-head replacement on C4 hidden states
-\citep{raffel2020exploring,dodge2021documenting} ask whether the fitted readout
-SAE preserves the readout it replaces. For selected scalar readout targets,
-target reconstruction of exact score, sign, and relative error asks whether the
-chosen linear score is reconstructed well enough for its feature bars to be read.
-Null and reference baselines then ask whether learned token-row sparse structure,
-rather than dense low-rank structure, lexical neighborhoods, or sparse capacity
-alone, accounts for reconstruction gains. We treat sign flips, large relative
-error, weak replacement fidelity, or parity with baselines as failure modes for
-interpretation. Unless explicitly marked as interventions, qualitative displays
-and downstream analyses are validation-gated readout use cases rather than
-evidence about generation behavior.
+The experiments first test the SRP basis, then selected targets, then
+validation-gated use cases. Held-out row reconstruction and LM-head replacement
+on C4 hidden states \citep{raffel2020exploring,dodge2021documenting} test whether
+the readout SAE preserves the readout it replaces. Target reconstruction, sign
+preservation, and relative error test whether a selected linear score is
+reconstructed well enough for its feature bars to be read. Null and reference
+baselines test whether learned token-row sparse structure improves over dense
+low-rank structure, lexical neighborhoods, or sparse capacity alone. Sign flips,
+large relative error, weak replacement fidelity, or parity with baselines are
+failure modes; unless marked as interventions, downstream analyses are
+readout-level use cases rather than evidence about generation behavior.
 
 \paragraph{Models, selection, and units.}
 The model suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
 \citep{gemma4official,gemma4collection}, Ministral \citep{liu2026ministral3},
 and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1},
-varying tokenizer family, output geometry, scale, and post-training recipe.
+spanning tokenizer family, output geometry, scale, and post-training recipe.
 Qualitative displays use one fixed low-error setting, Qwen3.5-2B \(32\times\),
 \(k=256\), where \(D=32d_{\mathrm{model}}\) is dictionary width and \(k\) is the
 TopK active-feature budget. We score final LM-head inputs and select readout SAEs
@@ -34,10 +31,9 @@ selection separate from target-fidelity evaluation. Model identifiers and detail
 are in Appendix~\ref{app:model-suite-selection}.
 
 \paragraph{Reading local score decompositions.}
-Interpretability displays are read only after the relevant fidelity checks. Each
-display names its scalar readout target and reports the original score, sparse
-feature sum, residual, relative error, and sign status where relevant. Those
-displays support local readout claims within the stated target and fidelity
-boundary. Score-independent appendix figures rank readout feature projections
-\(h^\top d_i\) before target selection; Appendix~\ref{app:robustness-controls}
-summarizes checks, controls, and token-level audits.
+Displays are interpreted only after the relevant fidelity checks. Each names its
+scalar readout target and reports the original score, sparse feature sum,
+residual, relative error, and sign status where relevant. Score-independent
+appendix figures rank readout feature projections \(h^\top d_i\) before target
+selection; Appendix~\ref{app:robustness-controls} summarizes controls and
+token-level audits.

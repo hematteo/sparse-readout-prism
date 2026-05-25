@@ -5,39 +5,33 @@ Lens-style methods inspect hidden states by mapping them to vocabulary
 distributions, future-token predictions, continuations, or descriptions
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
 They are the closest prior work in interface: they ask what a hidden state reads
-out. SRP keeps this interface by factorizing the final readout, while selected
-scalar targets keep the chosen score fixed. Rather than leaving a logit or
-contrast as one dense dot product, the fixed basis and target coefficients
-decompose that linear readout score into sparse readout-feature terms plus an
-explicit residual. This does not replace learned or task-specific lenses; it
+out. SRP keeps this interface but factorizes the final readout; selected scalar
+targets then decompose a fixed logit or contrast into sparse readout-feature
+terms plus residual. This does not replace learned or task-specific lenses; it
 gives residual-checked decompositions for scores from the model's final readout.
 
 \paragraph{Output-embedding geometry.}
-SRP's fitted object is the final unembedding, or LM head. Output embeddings have
-been studied as learned representations and prediction-shaping geometry
+SRP factorizes the final unembedding, or LM head. Output embeddings have been
+studied as learned representations and prediction-shaping geometry
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
 Token rows, weight tying, softmax rank constraints, and vocabulary segmentation
 affect final scores. SRP uses this geometry as the object of a sparse row
-factorization: token rows receive sparse coefficients over shared readout
-feature directions, and scalar readout targets combine those row coefficients
-into target coefficients. The distinction is level of use. Output-embedding work
-characterizes constraints and geometry of the output classifier; the SRP basis
-and selected targets use that geometry to decompose selected linear readout
-scores at hidden states. This does not change the model or remove tokenizer and
-output-embedding caveats.
+factorization; selected targets combine row coefficients to decompose linear
+readout scores at hidden states, without removing tokenizer or output-geometry
+caveats.
 
 \paragraph{Sparse dictionaries and activation SAEs.}
 Activation-SAE work learns dictionaries over hidden-state distributions and has
 established evaluation practice for sparse features
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,karvonen2025saebench,makelov2024principled}.
 SRP borrows SAE machinery, sparse codes, decoder directions, and reconstruction
-diagnostics, but differs in fitted object. The readout SAE is trained on
+diagnostics, but changes the fitted object. The readout SAE is trained on
 unembedding rows: its sparse codes are token-row coefficients, its decoder
 directions are readout feature directions, and \(h^\top d_i\) is a readout
-feature projection rather than an activation-SAE code. A feature becomes a
-signed contribution only when a scalar readout target supplies the target
-coefficient. SRP therefore does not claim to recover activation features or
-hidden-state mechanisms from the row factorization alone.
+feature projection rather than an activation-SAE code. Features become signed
+contributions only after a scalar readout target supplies coefficients, so the
+row factorization alone does not recover activation features or hidden-state
+mechanisms.
 
 \paragraph{Logit attribution and logit prisms.}
 Component attribution and logit-prism methods ask where logit evidence is
@@ -45,20 +39,18 @@ written in the residual stream
 \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. The
 selected-target layer asks a complementary readout-side question: which sparse
 directions in the selected readout direction support or oppose the score.
-Because the target-conditioned terms are linear in the hidden state, they compose
-with residual-stream attribution, yielding feature-resolved DLA for a realized
-forward pass. This composition is additive bookkeeping for readout scores; it
-does not by itself identify the upstream mechanism that produced a component
-contribution.
+Because target-conditioned terms are linear in the hidden state, they compose
+with residual-stream attribution to yield feature-resolved DLA for a realized
+forward pass. This is additive bookkeeping for readout scores, not identification
+of the upstream mechanism that produced a component contribution.
 
 \paragraph{Circuits and causal structure.}
 Automated circuit discovery, causal abstraction, transcoders, and
 circuit-tracing systems pursue internal mechanisms and intervention-tested
 structure
 \citep{conmy2023acdc,geiger2023causalabstraction,dunefsky2024transcoders,ameisen2025circuittracing}.
-SRP differs in level of analysis. It factorizes the rows against which hidden
-states are scored; selected-target decompositions then report residual-checked
-local score terms. The resulting readout feature directions can suggest
-candidate interventions, but necessity and sufficiency remain causal questions
-for intervention-tested methods.
+SRP differs in level of analysis: it factorizes the rows against which hidden
+states are scored and reports residual-checked local score terms. The resulting
+directions can suggest candidate interventions, but necessity and sufficiency
+remain causal questions for intervention-tested methods.
 Broader positioning appears in Appendix~\ref{app:extended-related-work}.
