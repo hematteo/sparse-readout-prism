@@ -16,12 +16,14 @@ attribution, and edits. Aggregate low-error counts use the threshold
 
 \begin{table}[t]
 \caption{\textbf{Readout replacement and selected-score reconstruction.}
-cfg: width multiplier / TopK budget. rowEV: row-centered reconstruction
-explained variance. Replacement uses held-out hidden states; score metrics use
-the main held-out logit-difference subset. Higher is better for rowEV, top1,
-Sign, and \(\rho<0.5\); lower for KL and median \(\rho\). Full names/counts:
-Appendix~\ref{app:model-suite-selection}. Later displays use sign-preserved,
-low-residual cases.}
+Model abbreviations: Q-\(=\)Qwen3.5, G-\(=\)Gemma-4, Min-\(=\)Ministral-3,
+R1-Q-\(=\)DeepSeek-R1-Distill-Qwen, R1-L-\(=\)DeepSeek-R1-Distill-Llama
+(suffix is parameter count). cfg: width multiplier / TopK budget.
+rowEV: row-centered reconstruction explained variance. Replacement uses
+held-out hidden states; score metrics use the main held-out logit-difference
+subset. Higher is better for rowEV, top1, Sign, and \(\rho<0.5\); lower for
+KL and median \(\rho\). Full names/counts: Appendix~\ref{app:model-suite-selection}.
+Later displays use sign-preserved, low-residual cases.}
 \label{tab:readout-query-fidelity-summary}
 \centering
 \scriptsize
@@ -81,8 +83,14 @@ RowEV is a capacity metric, not validation of any feature bar.
     \centering
     \includegraphics[width=\columnwidth]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_five_model_margin_fidelity.pdf}
     \caption{\textbf{Held-out logit-difference fidelity.}
-    Median relative error and decision flip rate by exact-margin magnitude.
-    Flips concentrate at small margins; calibration in
+    SRP reconstruction error and decision flips across five readout SAEs,
+    binned by exact-margin magnitude \(|m_{\mathrm{exact}}|\).
+    \textbf{A.} Median relative error
+    \(|m_{\mathrm{exact}}-m_{\mathrm{recon}}|/|m_{\mathrm{exact}}|\)
+    per bin (log scale). \textbf{B.} Fraction of contrasts whose
+    reconstructed sign differs from the exact sign. Solid: Qwen3.5-0.8B/2B/9B;
+    dashed: Gemma-4-E2B/E4B. Both error and flip rate concentrate at small
+    margins; margin-binned calibration in
     Appendix Figure~\ref{fig:app-readout-query-margin-reconstruction}.}
     \label{fig:readout-query-fidelity-result}
 \end{figure}
@@ -215,9 +223,14 @@ views are in Appendix~\ref{app:additional-qwen-display-examples}.
     \centering
     \includegraphics[width=\columnwidth]{figures/proto_token_lens/qwen2b_32x_domain_features_main3/qwen2b_32x_polysemy_delta_row_onecol.pdf}
     \caption{\textbf{Same selected token, different prompt contexts.}
-    Each panel keeps the output token fixed and subtracts the second prompt
-    context from the first for $h^\top(w_t-\mu)$. Teal/orange bars are larger in
-    the first/second context; the axis is change in signed contribution.}
+    Qwen3.5-2B, \(D=65536\), \(k=256\). Each panel keeps the output token
+    fixed and plots the context-to-context change in signed feature
+    contribution to \(h^\top(w_t-\mu)\) (first minus second context).
+    \textbf{A.} \texttt{bug}: insect minus software context.
+    \textbf{B.} \texttt{bridge}: structure minus network context.
+    Teal bars contribute more in the first context; orange bars contribute
+    more in the second. The \texttt{ring} companion is in
+    Appendix Figure~\ref{fig:app-qwen2b-ring-context-delta}.}
     \label{fig:same-token-polysemy}
 \end{figure}
 
@@ -243,8 +256,16 @@ necessity without interventions \citep{geiger2023causalabstraction}.
     \includegraphics[width=0.86\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_semantic_table.pdf}
     \caption{\textbf{Feature-resolved component attribution for a
     \texttt{verify}-\texttt{assume} margin.}
-    Rows are residual components; columns group feature-label families,
-    unembedding residual, and ordinary DLA.}
+    Qwen3.5-2B (\(D=65536\), \(k=256\)). Heatmap of contributions to
+    \(h^\top(w_{\mathrm{verify}}-w_{\mathrm{assume}})\) in logit units;
+    red supports \texttt{verify}, blue supports \texttt{assume}.
+    Rows are residual-stream components (token embedding plus each layer's
+    contribution after final normalization). The first three columns group
+    SRP feature terms into verify/check, assume, and remaining sparse
+    features; the fourth column is the LM-head reconstruction residual
+    \(h_c^\top r_q\); the rightmost column is ordinary DLA \(h_c^\top q\)
+    per component, for comparison. Quantitative totals are in the
+    surrounding text.}
     \label{fig:qwen-prism-dla-verify-assume-main}
 \end{figure}
 

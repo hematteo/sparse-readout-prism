@@ -137,11 +137,17 @@ corresponding sparse-feature coefficients.
     \includegraphics[width=\columnwidth]{figures/schematic_tikz/readout_query_one_column.pdf}
     \vspace{-0.8\baselineskip}
     \caption{\textbf{Local score decomposition schematic.}
-    A vocabulary-mean or other selected contrast is decomposed into readout features learned
-    from unembedding rows. Positive/negative bars support the first/comparison
-    side; each signed term multiplies a direction coefficient by \(h\)'s readout
-    feature projection. Hatching marks reconstruction error; raw token logits
-    also include a shared offset.}
+    \emph{Left:} the selected readout direction \(q\) (a single LM-head row
+    \(w_A\), a token-token logit difference \(w_A-w_B\), or another fixed
+    row combination) is factorized through the readout SAE into signed
+    feature directions \(\beta_i(q)\,d_i\) plus residual \(r_q\).
+    \emph{Right:} at hidden state \(h\), the resulting score \(h^\top q\)
+    decomposes into per-feature contributions \(\beta_i(q)\,h^\top d_i\)
+    plus the residual term \(h^\top r_q\). For a contrast, \(A\) and \(B\)
+    denote the two sides: positive (blue) bars support \(A\), negative
+    (orange) bars support \(B\). Hatching marks the reconstruction
+    residual; raw token logits additionally include a shared offset
+    \(h^\top\mu\).}
     \label{fig:readout-query-schematic}
 \end{figure}
 

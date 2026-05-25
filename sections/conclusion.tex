@@ -8,8 +8,13 @@ Under those gates, SRP supports readout-level comparisons across score choices,
 contexts, residual-stream components, and candidate lexical edit directions;
 outside them, feature labels alone are not evidence.
 
-This framing makes the broader target concrete: lens explanations should specify
-the score being explained, the coordinate terms that support or oppose it, and
-the residual left by the approximation. Extending SRP to tuned lenses,
-logit-prism variants, and future-token lenses would test whether the same
-discipline supports layer-by-layer readout explanations.
+More broadly, researchers can use SRP to decompose a selected lens score into
+coordinate terms that support or oppose it, together with the residual left by
+the approximation. The same template extends naturally to other linear
+readouts --- reward-model heads, classifier heads, retrieval projections ---
+which currently lack feature-level decompositions; to tuned-lens and
+logit-prism readouts, which would track when features become loaded across
+depth; to activation-level interventions on the nominated edit directions,
+which would test whether feature support implies causal responsibility; and
+to cross-checkpoint comparisons of learned bases, which would indicate which
+readout features survive fine-tuning.

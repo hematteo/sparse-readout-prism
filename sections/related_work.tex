@@ -1,52 +1,39 @@
 \section{Related Work}
 
 \paragraph{Lens-style readout interfaces.}
-SRP keeps the lens-style readout interface but factorizes the model's own LM
-head behind it: a selected token logit or contrast remains a dot product with
-an unembedding row or row combination, and SRP decomposes that readout
-direction into sparse feature terms with residual checks. The original logit
-lens maps hidden states through the model's unembedding
+The logit lens maps hidden states through the model's unembedding
 \citep{nostalgebraist2020}; the tuned lens learns layerwise translators to
 calibrate those predictions \citep{belrose2023tuned}. Future Lens asks whether
 a single hidden state predicts later tokens \citep{pal2023future}, and
 Patchscopes elicits continuations or descriptions by patching representations
 into prompted contexts \citep{ghandeharioun2024patchscopes}. These methods
 vary the hidden-state inspection interface; SRP instead leaves the selected
-readout direction in place and factorizes that direction into sparse readout
-features.
+readout direction in place and decomposes it into sparse readout features.
 
 \paragraph{Output geometry and sparse row dictionaries.}
-SRP applies sparse-dictionary machinery to a different object from prior
-activation-SAE work: unembedding rows. Its sparse codes are token-row
-coefficients, its decoder directions are readout feature directions, and
-\(h^\top d_i\) is a hidden-state projection onto that readout basis, not an
-activation-SAE code. Output embeddings have been studied as learned
-representations and prediction-shaping geometry: output/input weight tying
-changes the classifier geometry \citep{press2017outputembedding,inan2017tying},
-softmax rank constraints limit distribution families
-\citep{yang2018softmaxbottleneck}, and vocabulary segmentation changes the
-rows being scored \citep{bostrom2020bpe}. Activation-SAE work has established
-sparse-feature dictionaries over hidden-state distributions
-\citep{bricken2023monosemanticity,cunningham2023sparse}. Scaling work studies
-capacity and fidelity tradeoffs \citep{gao2024scaling}, while benchmark and
-principled-evaluation work stresses standardized diagnostics
-\citep{karvonen2025saebench,makelov2024principled}. SRP uses the same
-sparse-dictionary vocabulary but fits the dictionary to LM-head rows.
+Output-embedding work studies how weight tying
+\citep{press2017outputembedding,inan2017tying}, softmax rank
+\citep{yang2018softmaxbottleneck}, and tokenizer segmentation
+\citep{bostrom2020bpe} shape the rows being scored. Activation-SAE work
+establishes sparse dictionaries over hidden-state distributions
+\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, with
+standardized diagnostics \citep{karvonen2025saebench,makelov2024principled}.
+SRP applies this sparse-dictionary vocabulary to LM-head rows rather than
+hidden states. Concurrent anonymous work studies unembedding dynamics across
+training checkpoints via parameter-trajectory crosscoding
+\citep{anonymous2026learningreadout}; SRP instead studies a fixed LM-head
+factorization in trained models.
 
 \paragraph{Additive attribution and mechanisms.}
-SRP asks the complementary readout-side question to component attribution:
-which sparse readout directions raise or lower a selected score. The
-selected-direction terms are linear in the hidden state and so compose with
-residual-stream attribution to yield feature-resolved DLA for a realized
-forward pass. Direct logit attribution decomposes residual-stream components
-against token logits or logit-difference directions
+Direct logit attribution decomposes residual-stream components against token
+logits or logit-difference directions
 \citep{elhage2021framework,wang2022ioi}, and logit-prism methods extend this
-additive accounting across transformer components \citep{nguyen2024logitprisms}.
-SRP further decomposes the selected readout direction into sparse readout
-features. This remains additive accounting for readout scores; intervention
-methods address the stronger question of circuit discovery
-\citep{conmy2023acdc}, causal abstraction formalizes mechanism-level
-validation \citep{geiger2023causalabstraction}, and transcoders or
-attribution-graph tracing target feature-level computational graphs
-\citep{dunefsky2024transcoders,ameisen2025circuittracing}.
-Broader positioning appears in Appendix~\ref{app:extended-related-work}.
+across transformer components \citep{nguyen2024logitprisms}. SRP further
+decomposes the selected readout direction into sparse readout features,
+yielding feature-resolved DLA on a realized forward pass. This remains
+additive accounting; intervention methods \citep{conmy2023acdc}, causal
+abstraction \citep{geiger2023causalabstraction}, and transcoder or
+attribution-graph approaches
+\citep{dunefsky2024transcoders,ameisen2025circuittracing} address
+circuit- and mechanism-level questions that SRP does not. Broader positioning
+appears in Appendix~\ref{app:extended-related-work}.
