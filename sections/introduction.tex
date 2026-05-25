@@ -1,12 +1,12 @@
 \section{Introduction}
 
-When a language model assigns a higher logit to one token than another, we would
-like to know not only which token won, but which output-side directions supported
-the score. This matters for debugging surprising predictions and auditing
+When a language model assigns a higher logit to one token than another, we want
+to know not only which token won, but which output-side directions drove the
+score. This matters for debugging surprising predictions and auditing
 readout-level evidence. For example, after a programming prompt, a model may
 rank \texttt{bug} highly; existing lens outputs show the token score, but not
-whether insect-, software-defect-, or generic-noun-related readout structure
-contributed to it, because the selected score remains a single dot product.
+whether readout structure associated with insects, software defects, or generic
+nouns drove it, because the score itself remains a single dot product.
 
 Language models map hidden states to vocabulary logits through the final
 unembedding matrix, or LM head; we call this the \emph{readout}. Lens-style
@@ -14,8 +14,8 @@ methods inspect hidden states through vocabulary distributions, future-token
 predictions, continuations, or descriptions, using the LM head, learned lens
 maps, or representation-patching interfaces
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
-These approaches change which map is read but still surface a final-readout
-score as a single dot product.
+These approaches change which map is read, but the final-readout score still
+arrives as a single dot product.
 
 \begin{figure}[t]
     \centering
@@ -29,23 +29,22 @@ score as a single dot product.
 
 Sparse Readout Prism (SRP) addresses this gap by separating the readout basis
 from the score being decomposed. It learns a sparse dictionary for
-final-unembedding rows: each row
-receives sparse token-row coefficients over shared directions plus a row
-reconstruction residual. We call the shared directions
+final-unembedding rows: each row is expressed as sparse coefficients over
+shared directions plus a reconstruction residual. We call the shared directions
 \emph{readout features}: features of LM-head rows, not activation-SAE features
 of hidden states. SRP uses sparse-autoencoder and dictionary-learning machinery
 \citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling},
 but trains on unembedding rows rather than hidden-state activations.
 
-After fitting, a hidden state enters through projections onto readout features.
+After fitting, a hidden state enters via its projections onto readout features.
 A chosen score fixes a readout direction: standard cases include a token logit
 \(h^\top w_A\), a pairwise logit difference \(h^\top(w_A-w_B)\), a group or
-vocabulary-mean contrast, and a top-competitor margin. This selected direction
+vocabulary-mean contrast, and a top-competitor margin. This direction
 supplies coefficients \(\beta_i\), the context supplies projections
 \(h^\top d_i\), and their product \(c_i=\beta_i h^\top d_i\) is a
 \emph{signed feature contribution}. Positive terms raise the chosen score and
-negative terms lower it. Feature terms, optional offset, and residual give a
-local score decomposition in original logit units.
+negative terms lower it. Feature terms, an optional offset, and the residual
+together give a local score decomposition in original logit units.
 
 \Cref{fig:main-lens-prism-comparison} shows this identity for a fixed
 \texttt{verify}-minus-\texttt{assume} margin.
@@ -58,11 +57,11 @@ contrast signs at \(0.949\)--\(0.958\), with median relative reconstruction
 error below \(0.10\).
 
 This lets us ask readout-level questions a logit lens alone does not answer:
-how feature contributions change with prompt context, how residual-stream
-components contribute additively to a selected score, and which readout
-directions move candidate lexical scores without retraining. Claims remain tied
-to feature ids, signed terms, and residuals; feature labels are descriptive
-summaries of high-coefficient vocabulary rows.
+how feature contributions shift with prompt context, how residual-stream
+components add into a selected score, and which readout directions move
+candidate lexical scores without retraining. Claims remain tied to feature
+ids, signed terms, and residuals; feature labels are descriptive summaries of
+high-coefficient vocabulary rows.
 
 The paper contributes:
 \begin{itemize}

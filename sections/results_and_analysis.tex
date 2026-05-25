@@ -1,11 +1,14 @@
 \section{Results and Analysis}
 \label{sec:results}
 
-We first test readout replacement and selected-score reconstruction, then
-interpret only low-error local decompositions. We then compare score and context effects and show
-linear extensions to feature-resolved component attribution and candidate
-readout-side lexical-score edits. Aggregate low-error counts use \(\rho<0.5\); analyses are
-readout-level unless explicitly marked as interventions.
+The results make two checks before interpretation. First, we test whether the
+factorized readout preserves LM-head outputs and selected readout scores.
+Second, we compare against baselines that retain dense geometry, lexical
+neighborhoods, or sparse capacity without the learned token-row support. We then
+interpret only sign-preserved, low-error decompositions, using them to compare
+score choice, prompt context, residual-stream components, and constrained
+readout-side lexical-score edits. Aggregate low-error counts use \(\rho<0.5\);
+analyses are readout-level unless explicitly marked as interventions.
 
 \subsection{Fidelity Gates Identify Usable Regimes}
 
@@ -55,6 +58,10 @@ score errors are larger. Errors and flips concentrate near small exact margins
 (\Cref{fig:readout-query-fidelity-result}), so case studies use signed
 contrasts with nontrivial margins and small residuals. RowEV is a capacity
 metric, not validation of any feature bar.
+These gates determine which decompositions we treat as interpretable: a local
+display is used only when the selected score keeps its sign and has a small
+reported residual. The remaining results therefore test what the validated basis
+lets us compare, not whether every feature label is semantic.
 
 \paragraph{Why row capacity and decision fidelity diverge.}
 The reasoning-distilled rows (R1-Q-7B, R1-L-8B) hold base-level rowEV while
@@ -76,7 +83,7 @@ quantities, and we report both before reading any local decomposition.
     \label{fig:readout-query-fidelity-result}
 \end{figure}
 
-\subsection{Learned Sparse Codes Beat Capacity Baselines}
+\subsection{On Qwen3.5-2B, Learned Sparse Codes Beat Capacity Baselines}
 
 We compare SRP with nearest-row ridge, PCA, shuffled sparse codes, and random
 sparse patterns to test whether learned sparse row codes improve over generic
@@ -273,12 +280,12 @@ Appendix~\ref{app:feature-resolved-dla}.
 
 \FloatBarrier
 
-\subsection{Selected Features Transfer to Held-Out Tokens}
+\subsection{Selected Readout Directions Move Evaluation Lexical Scores}
 \label{sec:readout-feature-edits}
 
-Directions selected from local bars can move lexical scores for evaluation
-tokens not used during selection. We treat this as a candidate readout-side
-intervention on specified lexical logit differences.
+Directions selected from local bars can move specified lexical logit differences
+on a separate evaluation set not used during direction selection. We treat this
+as a candidate readout-side intervention.
 
 \paragraph{Constrained readout edit.}
 The test edits logits along ten Qwen3.5-2B decoder directions selected from five
