@@ -46,12 +46,10 @@ original logit units.
 \texttt{verify}-minus-\texttt{assume} margin with the selected target decomposed
 into signed feature terms and a reported residual.
 
-We evaluate decomposition fidelity with LM-head replacement, target
-reconstruction, sign preservation, relative error, and sparse-structure
-baselines. These diagnostics gate interpretation. In the Qwen settings selected
-by these checks, the fixed basis and selected targets preserve held-out contrast
-signs at \(0.949\)--\(0.958\) with median relative reconstruction error below
-\(0.10\).
+Replacement, target-reconstruction, sign, error, and baseline checks gate
+interpretation. In the Qwen settings selected by these checks, the fixed basis
+and selected targets preserve held-out contrast signs at \(0.949\)--\(0.958\)
+with median relative reconstruction error below \(0.10\).
 
 Within checked regimes, local decompositions expose supporting and opposing
 readout features, compare target choices and prompt contexts, compose with
@@ -66,9 +64,8 @@ The paper contributes:
     \item a scalar readout-target formalism that converts token logits, pairwise
     differences, group contrasts, reference contrasts, and top-competitor
     margins into signed feature contributions plus residuals;
-    \item a fidelity evaluation suite covering LM-head replacement, target
-    reconstruction, sign preservation, relative error, and sparse-structure
-    baselines;
+    \item a fidelity evaluation suite for gating interpretation of SRP
+    decompositions;
     \item readout-level analyses of target choice, prompt context,
     feature-resolved residual-stream attribution, and candidate readout-side edit
     directions, restricted to cases with the relevant fidelity checks.

@@ -32,10 +32,9 @@ Thus
 \[
     w_t=\mu+\sum_i z_{t,i}d_i+r_t .
 \]
-The sparse feature sum is the reconstructed row; \(r_t\) carries later score
-residuals.
-Stacking fitted rows yields \(\widehat{\WU}\); Appendix~\ref{app:score-decomposition}
-details centering and row normalization.
+Stacking fitted rows yields \(\widehat{\WU}\), and \(r_t\) carries later score
+residuals; Appendix~\ref{app:score-decomposition} details centering and row
+normalization.
 
 We fit TopK sparse autoencoders \citep{makhzani2013ksparse,gao2024scaling} so
 row sparsity is comparable across tokens. Training uses preprocessed rows
@@ -69,9 +68,9 @@ After fitting, we convert back to raw readout space,
     \qquad
     r_t=a_t(x_t-\widehat{x}_t).
 \]
-This puts all decompositions in original logit or contrast units, with no
-additional dense correction term. Width \(D\) and native sparsity \(k\) are
-selected by held-out reconstruction and readout-replacement fidelity;
+This returns decompositions to original logit or contrast units without an
+additional dense correction. Width \(D\) and native sparsity \(k\) are selected
+by held-out reconstruction and readout-replacement fidelity;
 appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility} give details.
 

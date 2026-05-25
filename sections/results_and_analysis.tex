@@ -9,10 +9,6 @@ analyses are readout-level unless explicitly marked as interventions.
 
 \subsection{The Sparse Readout Factorization Identifies High-Fidelity Readout Regimes}
 
-\paragraph{Fidelity design.}
-\Cref{tab:readout-query-fidelity-summary} summarizes the held-out row,
-replacement, and logit-difference checks used to gate later displays.
-
 \begin{table}[t]
 \caption{\textbf{Readout replacement and target fidelity.}
 cfg gives dictionary width multiplier / TopK active-feature budget; rowEV is
@@ -20,7 +16,7 @@ row-centered explained variance for reconstructed unembedding rows. Replacement
 metrics use held-out hidden states; logit-difference metrics use the main
 held-out target subset. Higher is better for rowEV, top1, Sign, and \(\rho<0.5\);
 lower is better for KL and median \(\rho\). Full names/counts:
-Appendix~\ref{app:model-suite-selection}.}
+Appendix~\ref{app:model-suite-selection}. These checks gate later displays.}
 \label{tab:readout-query-fidelity-summary}
 \centering
 \scriptsize
@@ -74,9 +70,8 @@ feature-bar validation.
 \subsection{Learned Token-Row Sparse Structure Improves Target Reconstruction}
 
 We compare SRP with nearest-row ridge, PCA, shuffled sparse codes, and random
-sparse patterns on the full Qwen3.5-2B logit-difference set to test whether
-learned sparse row codes improve over generic capacity and output-embedding
-geometry.
+sparse patterns to test whether learned sparse row codes improve over generic
+capacity and output-embedding geometry.
 
 \begin{table}[t]
 \caption{\textbf{Null and reference baselines for Qwen3.5-2B.}
