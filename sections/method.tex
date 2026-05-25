@@ -37,9 +37,8 @@ Thus
 \[
     w_t=\mu+\sum_i z_{t,i}d_i+r_t .
 \]
-The residual is carried forward as the only approximation term in later score
-decompositions; without it, the sparse feature sum is a reconstruction rather
-than an exact identity.
+Including this residual keeps the later score accounting explicit; the sparse
+feature sum alone is the reconstructed part of the score.
 Stacking fitted rows yields \(\widehat{\WU}\); Appendix~\ref{app:score-decomposition}
 details centering and row normalization.
 
@@ -194,8 +193,9 @@ the residual.
     \vspace{-0.8\baselineskip}
     \caption{\textbf{Local score decomposition schematic.}
     A centered or contrast readout target is decomposed into readout features learned
-    from unembedding rows, not activation-SAE features. For \(w_A-w_B\), \(A\) and
-    \(B\) are the competing token or token-set sides: positive bars support \(A\)
+    from unembedding rows, rather than from hidden-state activations. For
+    \(w_A-w_B\), \(A\) and \(B\) are the competing token or token-set sides:
+    positive bars support \(A\)
     over \(B\), negative bars support \(B\) over \(A\). At hidden state \(h\), each
     signed term multiplies a target coefficient by \(h\)'s readout feature
     projection; hatching marks
