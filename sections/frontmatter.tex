@@ -1,12 +1,13 @@
 \begin{abstract}
-Lens-style analyses map hidden states through the final unembedding into
-vocabulary logits, but a selected logit or contrast is one dense score. It does
-not say which directions in the readout raise or lower that score, nor how
-much error a sparse account would incur. We introduce Sparse Readout Prism
-(SRP), which factorizes LM-head rows into sparse token-row coefficients over
-shared directions. Given a hidden state and a chosen score, such as a token
-logit or logit difference, SRP decomposes that score into signed feature
-contributions plus an explicit residual in original logit coordinates.
+Lens-style methods report which vocabulary tokens a hidden state favors, but
+each token logit or contrast remains a single dense dot product with the LM
+head; the readout directions that raise or lower that score, and the error a
+sparse account would incur, stay hidden. Sparse Readout Prism (SRP)
+factorizes LM-head rows into sparse token-row coefficients over shared
+readout directions, projects a hidden state onto those directions, and---once
+a token logit, logit difference, or contrast is selected---multiplies the
+coefficients by the projections to produce signed feature contributions plus
+an explicit residual in original logit coordinates.
 
 In high-fidelity Qwen settings, SRP preserves held-out contrast signs at
 \(0.949\)--\(0.958\) and keeps median relative reconstruction error below

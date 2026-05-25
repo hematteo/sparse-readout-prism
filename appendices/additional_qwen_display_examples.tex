@@ -94,9 +94,38 @@ and a top-competitor margin.
 \subsection{Benchmark-Format Readout Contrast Examples}
 \label{app:benchmark-derived-display-examples}
 
-Figure~\ref{fig:app-benchmark-task-group-examples} gives representative
-low-error QA decompositions for the benchmark-derived readout contrasts summarized in
-\Cref{tab:benchmark-derived-task-targets}.
+\Cref{tab:benchmark-derived-task-targets} reports reconstruction for
+benchmark-derived answer, abstention, label, and safe/action contrasts
+instantiated as fixed LM-head row combinations
+\citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}.
+The rows measure readout-contrast reconstruction, not task solving. Lower-error
+QA examples appear in Figure~\ref{fig:app-benchmark-task-group-examples}.
+
+\begin{table}[!tbp]
+\caption{\textbf{Benchmark-derived readout-contrast reconstruction.}
+Rows evaluate answer-vs-distractor, abstention-vs-entity, label, or
+safe-vs-unsafe readout contrasts. Last column: sign agreement with \(\rho<0.5\).
+All aggregate rows use 300 contrasts; family rows break down Qwen3.5-2B.}
+\label{tab:benchmark-derived-task-targets}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.0pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Model & Contrast source & \(n\) & Med. \(\rho\) & Sign & \makecell{Sign \&\\ \(\rho<.5\)} \\
+\midrule
+Q-0.8B & all benchmark-derived contrasts & 300 & 0.180 & 0.983 & 0.933 \\
+Q-2B & all benchmark-derived contrasts & 300 & 0.129 & 0.943 & 0.840 \\
+\addlinespace[1pt]
+Q-2B & SQuAD2 answerable & 50 & 0.150 & 1.000 & 0.900 \\
+Q-2B & HotpotQA distractor & 75 & 0.125 & 0.933 & 0.907 \\
+Q-2B & LegalBench ContractNLI & 50 & 0.053 & 1.000 & 1.000 \\
+Q-2B & SQuAD2 unanswerable & 75 & 0.157 & 0.920 & 0.787 \\
+Q-2B & SecurityEval & 50 & 0.393 & 0.880 & 0.600 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure*}[!tbp]
     \centering

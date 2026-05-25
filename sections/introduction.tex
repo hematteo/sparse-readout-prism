@@ -14,9 +14,10 @@ For debugging surprising predictions and auditing readout-level evidence, this
 single score is often too coarse. After a programming prompt, for example, a
 model may rank \texttt{bug} highly; a lens output shows that score, but not
 whether output-side structure associated with insects, software defects, or
-generic nouns supports it. The missing object is a sparse, reusable basis for
-the readout itself, together with checks that this basis preserves the original
-LM-head behavior.
+generic nouns supports it. The lens reports the scalar score, not a sparse
+readout-side account of that score. The missing object is a sparse, reusable
+basis for the readout itself, together with checks that this basis preserves
+the original LM-head behavior.
 
 Sparse Readout Prism (SRP) addresses this gap by factorizing the final readout.
 It learns a sparse dictionary for final-unembedding rows: each token row is
@@ -62,12 +63,15 @@ readout directions move candidate lexical scores without retraining.
 
 The paper contributes:
 \begin{itemize}
-    \item a sparse dictionary factorization of the LM head into token-row
-    coefficients and shared readout feature directions;
-    \item a reusable basis for full readout reconstruction or replacement and
-    for score-independent hidden-state projections;
-    \item local decompositions of standard readout scores into signed feature
-    contributions plus explicit residuals;
-    \item readout-level analyses of score choice, prompt context,
-    residual-stream attribution, and candidate readout-side edits.
+    \item \emph{Method.} A sparse dictionary factorization of the LM head into
+    token-row coefficients and shared readout feature directions, supporting
+    full readout reconstruction, score-independent hidden-state projections,
+    and local decompositions of standard readout scores into signed feature
+    contributions plus explicit residuals.
+    \item \emph{Diagnostics.} Replacement fidelity, score reconstruction, sign
+    agreement, relative error, and baseline comparisons that decide when a
+    sparse readout account is faithful enough to interpret.
+    \item \emph{Analyses.} Readout-level use of the same decomposition for
+    score choice, prompt context, residual-stream attribution, and
+    constrained readout-side edits.
 \end{itemize}

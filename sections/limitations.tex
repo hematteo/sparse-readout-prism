@@ -34,19 +34,17 @@ summaries of row geometry rather than ground-truth semantics.
 
 \section*{Ethical Considerations}
 
-This work studies pretrained language-model readouts. It collects no new
-human-subject data and evaluates no deployed systems. Experiments use public
-checkpoints and held-out text-derived hidden states, including C4 continuations;
-C4 may contain offensive, private, copyrighted, or sensitive text
-\citep{raffel2020exploring,dodge2021documenting}. We use it only to measure
+This work studies pretrained language-model readouts, collects no new
+human-subject data, and evaluates no deployed systems. Experiments use public
+checkpoints and held-out text-derived hidden states, including C4 continuations,
+which may contain offensive, private, copyrighted, or sensitive text
+\citep{raffel2020exploring,dodge2021documenting}. We use C4 only to measure
 readout reconstruction and make no social-validity claims about individual
 tokens, labels, or generated outputs.
 
 SRP makes lexical readout directions and row-level labels easier to inspect and,
 in the readout-edit stress test, moves specified lexical scores --- a dual-use
-property of auditing
-tools. SRP is constructed so that claims rest on measured coordinate objects
-(feature ids, signed contributions, residuals) rather than label semantics;
-the edit is reported with distribution shift and off-target probes.
-Safety-filter, moderation, and deployment-control claims require direct
-system-level evaluation, which we do not undertake here.
+property of auditing tools. Claims rest on measured coordinate objects rather
+than label semantics; the edit is reported with distribution shift and
+off-target probes. Safety-filter, moderation, and deployment-control claims
+require direct system-level evaluation, which we do not undertake here.
