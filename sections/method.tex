@@ -2,10 +2,14 @@
 \label{sec:method}
 
 SRP keeps the logit-lens interface fixed: a hidden state \(h\) is still read out
-through the LM head \(\WU\). It fits a readout SAE to LM-head rows before target
-selection, projects \(h\) onto the learned readout features, uses a selected
-target to form signed contributions, and carries the row reconstruction residual
-to the final scalar score.
+through the LM head \(\WU\). We separate two objects. The \emph{readout SAE} is
+the dictionary mechanism: a standard TopK sparse autoencoder
+\citep{makhzani2013ksparse,gao2024scaling} fit to LM-head rows rather than
+hidden-state activations. \emph{Sparse Readout Prism} names the full protocol
+that combines this basis with a chosen linear target to produce local score
+accounts: projecting \(h\) onto the learned directions, applying target
+coefficients to form signed terms, and carrying the row reconstruction residual
+through to the final scalar score.
 
 \subsection{Sparse Factorization of the Readout}
 \label{sec:method-factorization}
@@ -32,18 +36,19 @@ Thus
 \[
     w_t=\mu+\sum_i z_{t,i}d_i+r_t .
 \]
-Stacking fitted rows yields \(\widehat{\WU}\), and \(r_t\) carries later score
-residuals; Appendix~\ref{app:score-decomposition} details centering and row
-normalization.
+Stacking fitted rows yields \(\widehat{\WU}\), and \(r_t\) supplies the
+residual term in later score decompositions;
+Appendix~\ref{app:score-decomposition} details centering and row normalization.
 
 We fit TopK sparse autoencoders \citep{makhzani2013ksparse,gao2024scaling} so
 row sparsity is comparable across tokens. Training uses preprocessed rows
 \[
     x_t = \frac{w_t-\mu}{a_t},
 \]
-where \(a_t=1\) without row normalization. The encoder \(f_\theta\) maps \(x_t\)
-to a \(D\)-dimensional pre-code; \(\operatorname{TopK}_k\) keeps the \(k\)
-largest entries and decodes with directions \(\widetilde d_i\):
+where \(a_t>0\), with \(a_t=1\) without row normalization. The encoder
+\(f_\theta\) maps \(x_t\) to a \(D\)-dimensional pre-code;
+\(\operatorname{TopK}_k\) keeps the \(k\) largest entries and decodes with
+directions \(\widetilde d_i\):
 \[
     \widetilde z_t
     =
@@ -161,16 +166,16 @@ vocabulary mean gives a reference contrast. When the relevant alternative is the
 model's local ranking, we use top-competitor margins
 \(w_u-\sum_{r\in\mathcal{R}}\pi_r w_r\), with selected token \(u\), competitor
 set \(\mathcal{R}\) fixed from the original LM-head ranking before SRP
-decomposition, and fixed weights \(\sum_{r\in\mathcal{R}}\pi_r=1\).
-
-The scalar \(s_\alpha(h)\) is the unit of a local score decomposition.
+decomposition, and fixed weights \(\pi_r\ge0\) with
+\(\sum_{r\in\mathcal{R}}\pi_r=1\).
 
 \subsection{Local Score Decomposition}
 \label{sec:method-local-score}
 
-After \(h\) and \(q_\alpha\) are fixed, the local score identity turns
-target-independent projections into target-conditioned signed terms. All
-decompositions use raw readout coordinates and include the residual.
+The scalar \(s_\alpha(h)\) is the unit decomposed below. Once \(h\) and
+\(q_\alpha\) are fixed, the local identity turns target-independent projections
+into target-conditioned signed terms. All decompositions use raw readout
+coordinates and include the residual.
 
 \begin{figure}[t]
     \centering
@@ -228,11 +233,18 @@ the sparse feature terms. Let
     =
     h^\top\sum_{t\in\mathcal{V}}\alpha_t r_t .
 \]
-This residual is the target-reconstruction diagnostic: small \(|\epsilon|\)
-means the displayed bars reconstruct the chosen score, while large
-\(|\epsilon|\) marks incomplete sparse accounting. Figures report the original
-target score, feature sum, offset when present, and reconstruction error. Signed
-contrasts also require sign preservation.
+Aggregate summaries use relative reconstruction error
+\[
+    \rho(h,\alpha)=
+    \frac{|\epsilon|}{|s_{\mathrm{exact}}|+\delta},
+    \qquad
+    \delta=0.5\ \text{logit}.
+\]
+The residual is the target-reconstruction diagnostic: small \(|\epsilon|\) or
+\(\rho\) means the full feature sum, plus offset when present, reconstructs the
+chosen score, while large error marks incomplete sparse accounting. Figures
+report the original target score, feature sum, offset when present, and
+reconstruction error. Signed contrasts also require sign preservation.
 
 \Cref{tab:method-special-cases} lists \(\beta_i(\alpha)\) for the target
 families. Write

@@ -1,15 +1,21 @@
 \section{Introduction}
 
+When a language model assigns a higher logit to one token than another, we would
+like to know not only which token won, but which output-side directions supported
+the score. This matters for debugging surprising predictions and auditing
+readout-level evidence. For example, after a programming prompt, a model may
+rank \texttt{bug} highly; existing lens outputs show the token score, but not
+whether insect-, software-defect-, or generic-noun-related readout structure
+contributed to it, because the selected score remains a single dot product.
+
 Language models map hidden states to vocabulary logits through the final
-unembedding matrix, or LM head; we call this the \emph{readout}.
-Lens-style methods inspect hidden states in vocabulary space, either through the
-LM head or through a learned lens
+unembedding matrix, or LM head; we call this the \emph{readout}. Lens-style
+methods inspect hidden states through vocabulary distributions, future-token
+predictions, continuations, or descriptions, using the LM head, learned lens
+maps, or representation-patching interfaces
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
-These methods show which tokens or scores a hidden state favors, but once a
-token, contrast, or margin is selected, the inspected quantity remains one dense
-dot product with an unembedding row or readout direction. This leaves a local
-gap: the score does not identify which shared readout-side directions support or
-oppose the target, or how much residual remains after a sparse account.
+These approaches change which map is read but still surface a final-readout
+score as a single dot product.
 
 \begin{figure}[t]
     \centering
@@ -44,27 +50,29 @@ units.
 \Cref{fig:main-lens-prism-comparison} shows this identity for a fixed
 \texttt{verify}-minus-\texttt{assume} margin.
 
-Replacement, target-reconstruction, sign, error, and baseline checks gate
-interpretation. In the Qwen settings selected by these checks, the fixed basis
-and selected targets preserve held-out contrast signs at \(0.949\)--\(0.958\)
-with median relative reconstruction error below \(0.10\).
+We gate interpretation with LM-head replacement, target reconstruction, sign
+agreement, relative error, and comparison against null and reference baselines.
+In the high-fidelity Qwen rows in
+\Cref{tab:readout-query-fidelity-summary}, the fixed basis preserves held-out
+contrast signs at \(0.949\)--\(0.958\), with median relative reconstruction
+error below \(0.10\).
 
-Within checked regimes, local decompositions expose support and opposition,
-compare target and context effects, compose with residual-stream attribution,
-and identify candidate readout-side edit directions.
-Across these uses, claims remain tied to feature ids, signed terms, and
-residuals; feature labels summarize high-coefficient vocabulary rows.
+This lets us ask readout-level questions a logit lens alone does not answer:
+how feature contributions change with prompt context, how residual-stream
+components contribute additively to a target, and which readout directions move
+candidate lexical scores without retraining. Claims remain tied to feature ids,
+signed terms, and residuals; feature labels are descriptive summaries of
+high-coefficient vocabulary rows.
 
 The paper contributes:
 \begin{itemize}
-    \item a novel sparse dictionary factorization of the final unembedding / LM head
-    into token-row coefficients and shared readout feature directions;
-    \item a scalar readout-target formalism that converts token logits, pairwise
+    \item a sparse dictionary factorization of the LM head into token-row
+    coefficients and shared feature directions;
+    \item a scalar-target formalism that converts token logits, pairwise
     differences, group contrasts, reference contrasts, and top-competitor
     margins into signed feature contributions plus residuals;
-    \item a fidelity evaluation suite for gating interpretation of SRP
-    decompositions;
-    \item readout-level analyses of target choice, prompt context,
-    feature-resolved residual-stream attribution, and candidate readout-side edit
-    directions, restricted to cases with the relevant fidelity checks.
+    \item a fidelity suite that gates interpretation of SRP decompositions;
+    \item analyses of target choice, prompt context, feature-resolved
+    residual-stream attribution, and candidate edit directions, each restricted
+    to cases with the relevant diagnostics reported.
 \end{itemize}

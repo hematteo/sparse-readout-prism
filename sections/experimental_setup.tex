@@ -2,17 +2,22 @@
 \label{sec:experimental-setup}
 
 \paragraph{Claim-to-test map.}
-The experiments first test the SRP basis, then selected targets, then
-validation-gated use cases. Held-out row reconstruction and LM-head replacement
-on C4 hidden states \citep{raffel2020exploring,dodge2021documenting} test whether
-the readout SAE preserves the readout it replaces. Target reconstruction, sign
-preservation, and relative error test whether a selected linear score is
-reconstructed well enough for its feature bars to be read. Null and reference
-baselines test whether learned token-row sparse structure improves over dense
-low-rank structure, lexical neighborhoods, or sparse capacity alone. Sign flips,
-large relative error, weak replacement fidelity, or parity with baselines are
-failure modes; unless marked as interventions, downstream analyses are
-readout-level use cases rather than evidence about generation behavior.
+The experiments proceed in three stages: testing the SRP basis, then selected
+targets, then validation-gated use cases.
+\emph{Basis tests.} Held-out row reconstruction and LM-head replacement on C4
+hidden states \citep{raffel2020exploring,dodge2021documenting} check whether
+the readout SAE preserves the readout it replaces.
+\emph{Target tests.} Target reconstruction, sign preservation, and relative
+error check whether a selected score is reconstructed well enough to read its
+feature bars.
+\emph{Baseline tests.} Comparisons with nearest-row ridge, PCA, shuffled
+sparse codes, and random sparse patterns check whether learned token-row
+structure improves over dense low-rank structure, lexical neighborhoods, or
+sparse capacity alone.
+Sign flips, large relative error, weak replacement fidelity, or parity with
+baselines mark failure modes. Unless explicitly labeled as interventions, all
+downstream analyses are readout-level and make no direct claims about
+generation behavior.
 
 \paragraph{Models, selection, and units.}
 The model suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
@@ -31,8 +36,8 @@ selection separate from target-fidelity evaluation. Model identifiers and detail
 are in Appendix~\ref{app:model-suite-selection}.
 
 \paragraph{Reading local score decompositions.}
-After fidelity checks, each display names its scalar readout target and reports
-the original score, sparse feature sum, residual, relative error, and sign
-status. Score-independent appendix figures rank readout feature projections
-\(h^\top d_i\) before target selection; Appendix~\ref{app:robustness-controls}
-summarizes controls and token-level audits.
+Each display names its scalar target and reports the original score, sparse
+feature sum, residual, relative error, and sign status. Score-independent
+appendix figures rank feature projections \(h^\top d_i\) before target
+selection; Appendix~\ref{app:robustness-controls} summarizes controls and
+token-level audits.

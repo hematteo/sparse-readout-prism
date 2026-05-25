@@ -2,23 +2,24 @@
 
 \paragraph{Scope of score decompositions.}
 The fixed SRP basis gives local score decompositions only after selecting a
-linear scalar readout target at the final LM head. Because readout features are
-learned from LM-head rows and hidden states enter through projections onto those
-features, the target determines signed support and opposition, and residuals
-determine whether term-level interpretation is trustworthy. Feature-resolved DLA
-is additive bookkeeping over residual-stream components, and the readout edit is
-a constrained lexical-score test. Both can nominate candidate directions; causal
+linear scalar target at the final LM head. Features are learned from LM-head
+rows and hidden states enter through projections onto them, so the target
+fixes signed support and opposition, while residuals govern whether
+term-level interpretation is trustworthy. Feature-resolved DLA is additive
+accounting over residual-stream components, and the readout edit is a
+constrained lexical-score test. Both nominate candidate directions; causal
 necessity, sufficiency, and generation-level effects require separate
 intervention studies.
 
 \paragraph{Fidelity and labels.}
-Reported diagnostics expose decomposition residuals and sign checks in their
-operating regimes, but as in other sparse dictionary settings the learned basis
-can depend on recipe choices
-\citep{elhage2022superposition,karvonen2025saebench,makelov2024principled}. We
-therefore report reconstruction error, sign agreement, replacement fidelity, and
-stability checks. Feature labels summarize high-scoring unembedding rows; the
-measured objects are feature ids, signed terms, and residual errors.
+SRP separates the measured coordinate objects --- feature ids, signed terms,
+and residual errors --- from label summaries of high-scoring unembedding rows.
+As in other sparse dictionary settings, the learned basis can depend on recipe
+choices
+\citep{elhage2022superposition,karvonen2025saebench,makelov2024principled};
+reconstruction error, sign agreement, replacement fidelity, and stability
+checks are reported so that interpretation tracks the measured objects rather
+than the labels.
 
 \paragraph{Readout-specific caveats.}
 The selected-target interface supports token-level, group-contrast, and
@@ -40,9 +41,10 @@ C4 may contain offensive, private, copyrighted, or sensitive text
 readout reconstruction and make no social-validity claims about individual
 tokens, labels, or generated outputs.
 
-SRP makes lexical readout directions and row-level labels easier to inspect and,
-in the readout-edit stress test, move. This is dual use: auditing tools could
-also inform output manipulation. We frame the edit as a readout-level stress
-test, report distribution shift and off-target probes, and reserve
-safety-filter, moderation, or deployment-control claims for direct system-level
-evaluations.
+SRP makes lexical readout directions and row-level labels easier to inspect
+and, in the readout-edit stress test, move --- a dual-use property of auditing
+tools. SRP is constructed so that claims rest on measured coordinate objects
+(feature ids, signed contributions, residuals) rather than label semantics;
+the edit is reported with distribution shift and off-target probes.
+Safety-filter, moderation, and deployment-control claims require direct
+system-level evaluation, which we do not undertake here.
