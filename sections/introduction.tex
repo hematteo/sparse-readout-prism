@@ -14,14 +14,10 @@ logit-difference direction.
     \centering
     \includegraphics[width=0.75\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_verify_assume/qwen2b_lens_prism_comparison_verify_assume.pdf}
     \caption{\textbf{From lens output to a local score decomposition.}
-    Qwen3.5-2B at a single final hidden state.
-    \textbf{A.} Logit-lens scores for \texttt{verify} (\(17.5\)) and
-    \texttt{assume} (\(13.2\)), giving margin \(+4.31\).
-    \textbf{B.} SRP decomposition of that same margin into signed
-    readout-feature contributions in logit units: positive bars support
-    \texttt{verify}, negative bars support \texttt{assume}; labels give
-    feature ids and top-row token summaries. Feature sum \(+4.26\),
-    reconstruction residual \(+0.05\).}
+    Qwen3.5-2B. \textbf{A.} Logit-lens scores \texttt{verify} (\(17.5\)) vs
+    \texttt{assume} (\(13.2\)), margin \(+4.31\). \textbf{B.} SRP decomposition
+    of that margin in logit units; positive bars support \texttt{verify},
+    negative support \texttt{assume}. Feature sum \(+4.26\), residual \(+0.05\).}
     \label{fig:main-lens-prism-comparison}
 \end{figure}
 

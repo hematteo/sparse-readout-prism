@@ -2,19 +2,16 @@
 
 Sparse Readout Prism separates what is fixed by a sparse readout basis from
 what is chosen by the score and what is supplied by context. Replacement
-fidelity, score reconstruction, sign agreement, relative error, and baseline
-comparisons decide when the factorized readout is accurate enough to interpret.
-Under those gates, SRP supports readout-level comparisons across score choices,
-contexts, residual-stream components, and candidate lexical edit directions;
-outside them, feature labels alone are not evidence.
+fidelity, score reconstruction, sign agreement, and baseline comparisons decide
+when the factorized readout is accurate enough to interpret. Under those gates,
+SRP supports readout-level comparisons across score choices, contexts,
+residual-stream components, and candidate lexical edits; outside them, feature
+labels alone are not evidence.
 
 More broadly, researchers can use SRP to decompose a selected lens score into
 coordinate terms that support or oppose it, together with the residual left by
-the approximation. The same template extends naturally to other linear
-readouts --- reward-model heads, classifier heads, retrieval projections ---
-which currently lack feature-level decompositions; to tuned-lens and
-logit-prism readouts, which would track when features become loaded across
-depth; to activation-level interventions on the nominated edit directions,
-which would test whether feature support implies causal responsibility; and
-to cross-checkpoint comparisons of learned bases, which would indicate which
-readout features survive fine-tuning.
+the approximation. The same template extends to other linear readouts
+(reward-model heads, classifier heads, retrieval projections); to tuned-lens
+and logit-prism readouts across depth; to activation-level tests of whether
+feature support implies causal responsibility; and to cross-checkpoint
+comparisons of the learned bases.
