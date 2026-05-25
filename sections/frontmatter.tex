@@ -1,19 +1,18 @@
 \begin{abstract}
 Lens-style analyses map language-model hidden states through the final
-unembedding into vocabulary logits, but once a logit or contrast is selected,
-the readout is still represented by one dense score. That score does not
-identify the readout-side directions that support or oppose the target, nor the
-reconstruction error of a sparse account. We introduce Sparse Readout Prism
-(SRP), a sparse feature decomposition for logit-lens readouts that factorizes
-LM-head rows into sparse token-row coefficients over shared readout directions.
-For a fixed hidden state and scalar readout target, SRP decomposes the selected
-score into signed feature contributions plus an explicit residual in original
-logit coordinates.
+unembedding into vocabulary logits, but a selected logit or contrast remains
+one dense score that does not identify the readout-side directions that support
+or oppose the target, nor the reconstruction error of a sparse account. We
+introduce Sparse Readout Prism (SRP), a sparse feature decomposition for
+logit-lens readouts that factorizes LM-head rows into sparse token-row
+coefficients over shared readout directions. Given a hidden state and scalar
+readout target, SRP decomposes the selected score into signed feature
+contributions plus an explicit residual in original logit coordinates.
 
 Across model families and readout geometries, SRP preserves held-out contrast
 signs at \(0.949\)--\(0.958\), keeps median relative reconstruction error below
 \(0.10\) in high-fidelity settings, and outperforms null and reference
-baselines. We then use the same fixed basis to analyze how target choice, prompt
+baselines. We use the same fixed basis to analyze how target choice, prompt
 context, residual-stream components, and constrained readout-side edits change
 signed terms.
 \end{abstract}
