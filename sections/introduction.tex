@@ -27,7 +27,10 @@ output-side structure associated with insects, software defects, or generic
 nouns supports it. The lens reports the scalar score, not a readout-side
 account of it. The lens lacks a sparse, reusable basis for the readout matrix
 itself, paired with checks that this basis preserves the original LM-head
-behavior.
+behavior. When a lens ranking changes across prompts, the natural follow-up is
+whether the change comes from the selected token rows, the context-dependent
+hidden-state projection, shared output-embedding geometry, or approximation
+error; a scalar lens score does not separate these factors.
 
 Sparse Readout Prism (SRP) supplies this basis by factorizing the LM-head
 matrix directly: each token row is expressed as sparse coefficients over a
@@ -36,7 +39,10 @@ shared dictionary of directions plus a residual. We call the shared directions
 sparse-autoencoder features trained on hidden-state activations. SRP uses
 sparse-autoencoder and dictionary-learning machinery
 \citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling},
-but trains on unembedding rows rather than hidden states.
+but trains on unembedding rows rather than hidden states. This fitted object is
+what keeps the decomposition in logit units: activation SAEs can describe
+hidden-state coordinates, but they do not by themselves decompose the LM-head
+rows that define a chosen lens score.
 
 Before any score is selected, SRP projects a hidden state onto the readout
 feature directions, yielding a score-independent view in readout-feature
