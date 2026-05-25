@@ -11,28 +11,28 @@ continuations, or descriptions
 leaving the readout direction itself unfactorized.
 
 \paragraph{Output geometry and sparse row dictionaries.}
-SRP applies sparse-dictionary machinery to a different object than prior
+SRP applies sparse-dictionary machinery to a different object from prior
 activation-SAE work: unembedding rows. Its sparse codes are token-row
 coefficients, its decoder directions are readout feature directions, and
 \(h^\top d_i\) is a hidden-state projection onto that readout basis, not an
 activation-SAE code. Output embeddings have been studied as learned
 representations and prediction-shaping geometry
-\citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe},
-where token rows, weight tying, softmax rank constraints, and vocabulary
-segmentation affect final scores; activation-SAE work has established
+\citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}:
+token rows, weight tying, softmax rank constraints, and vocabulary
+segmentation all affect final scores; activation-SAE work has established
 sparse-feature dictionaries and diagnostics over hidden-state distributions
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,karvonen2025saebench,makelov2024principled}.
 
 \paragraph{Additive attribution and mechanisms.}
 SRP asks the complementary readout-side question to component attribution:
-which sparse readout directions raise or lower a selected score. Because the
-selected-direction terms are linear in the hidden state, they compose with
+which sparse readout directions raise or lower a selected score. The
+selected-direction terms are linear in the hidden state and so compose with
 residual-stream attribution to yield feature-resolved DLA for a realized
 forward pass. Component attribution and logit-prism methods locate where logit
 evidence is written in the residual stream
 \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms} using standard
-readout objects such as token logits and logit-difference directions; this is
-additive accounting for readout scores, not intervention-tested mechanism
+readout objects such as token logits and logit-difference directions; this
+is additive accounting for readout scores, not intervention-tested mechanism
 discovery
 \citep{conmy2023acdc,geiger2023causalabstraction,dunefsky2024transcoders,ameisen2025circuittracing}.
 Broader positioning appears in Appendix~\ref{app:extended-related-work}.

@@ -10,8 +10,8 @@ definitions themselves are stated in Appendix~\ref{app:score-decomposition}.
 \label{app:robustness-summary}
 
 Table~\ref{tab:app-robustness-control-ledger} groups the measurements used to
-read a local score decomposition. The table summarizes the checks and controls; the
-quantitative summaries below report their aggregate outcomes.
+read a local score decomposition. Aggregate outcomes for these checks appear
+in the quantitative summaries below.
 
 \begin{table*}[!tbp]
 \caption{\textbf{Checks and controls supporting local score decompositions.}
@@ -64,33 +64,33 @@ metrics. \\
 \subsection{Key Quantitative Results}
 \label{app:robustness-key-quantitative}
 
-The key quantitative result is that the readout SAE evaluation separates broad
-readout replacement from selected-score reconstruction. On the all-row contrast set,
+The readout SAE evaluation separates broad readout replacement from
+selected-score reconstruction. On the all-row contrast set,
 aggregating both held-out halves, the Qwen3.5-0.8B/2B/9B settings give sign
 agreement \(0.940\)--\(0.951\), median \(\rho=0.091\)--\(0.107\), and
 \(\rho<0.5\) fractions \(0.790\)--\(0.818\). The main-text fidelity table
 reports the prespecified high-fidelity subset of this evaluation, which is why
-its Qwen sign and reconstruction error ranges are slightly tighter; it also
+its Qwen sign and reconstruction error ranges are tighter; it also
 reports Gemma score-reconstruction rows and Ministral/R1 replacement rows under the
 same metric conventions. The baseline/null table fixes Qwen3.5-2B and evaluates
-every method on its 1,348-row full logit-difference set. The C4 replacement
-evaluation is harder because many positions are local near-ties, but Qwen still
-gives \(0.822\)--\(0.838\) top-1 agreement and \(0.634\)--\(0.667\)
+every method on its 1,348-row full logit-difference set. Many C4 positions are
+local near-ties, which lowers headline numbers; Qwen still reaches
+\(0.822\)--\(0.838\) top-1 agreement and \(0.634\)--\(0.667\)
 preservation of the top-1--top-2 ordering at relative error \(0.5\) on 10,000
 neutral C4 continuations per model
 \citep{raffel2020exploring,dodge2021documenting}. For confident Qwen margins,
 \(|m_{\mathrm{exact}}|\ge2\), C4 top-1 agreement rises to \(0.97\)--\(1.00\)
 and top-1--top-2 ordering preservation to \(0.84\)--\(0.96\). Additional
-model-family rows use the same metric suite and separate row reconstruction,
+model-family rows use the same metric suite, separating row reconstruction,
 replacement fidelity, and selected-score reconstruction. Null and reference
 baseline comparisons preserve the same ordering: shuffled and random support
 approach chance sign agreement, and dense PCA underperforms Sparse Readout Prism
-at comparable compactness. The baseline panel in
+at comparable compactness.
 Figure~\ref{fig:app-robustness-baseline-comparisons} reports the same score set
-and metrics as the Sparse Readout Prism row. Across the score-group and
-baseline comparisons, tokenization filters, row-norm controls, frequency
-controls, KL, sign agreement, and relative reconstruction error are evaluated
-with the same definitions.
+and metrics as the Sparse Readout Prism row. Tokenization filters, row-norm
+controls, frequency controls, KL, sign agreement, and relative reconstruction
+error use the same definitions across the score-group and baseline
+comparisons.
 
 \begin{table*}[!tbp]
 \caption{\textbf{Score and contrast groups at the main \(k=256\) setting.}
@@ -126,12 +126,11 @@ Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
     \centering
     \AppendixCompactGraphic[height=0.27\textheight]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_five_model_margin_reconstruction.pdf}
     \caption{\textbf{Exact versus reconstructed logit differences.}
-    Binned exact margins are plotted against binned reconstructed margins for
-    the five-model held-out contrast set; the dashed line is perfect
-    reconstruction. This global calibration plot supports the main-text
-    reconstruction error and decision-flip summaries, but is separated from the main figure
-    because the decision boundary is better captured by the margin-binned
-    summaries.}
+    Binned exact versus reconstructed margins on the five-model held-out
+    contrast set; the dashed line marks perfect reconstruction. Global
+    calibration companion to the main-text reconstruction error and
+    decision-flip summaries; the decision boundary is better captured by
+    margin-binned views.}
     \label{fig:app-readout-query-margin-reconstruction}
 \end{figure}
 
@@ -139,11 +138,11 @@ Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
     \centering
     \AppendixCompactGraphic[height=0.28\textheight]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_reliability_figure.pdf}
     \caption{\textbf{Margin size controls signed-contrast reliability.}
-    The held-out contrast set shows tight aggregate reconstruction error behavior;
+    Aggregate reconstruction error is tight on the held-out contrast set;
     sign agreement is lowest near zero exact margins. Raising the minimum
     \(|m_{\mathrm{exact}}|\) increases sign agreement while reducing retained
-    coverage. Feature displays therefore report explicit reconstruction error and
-    sign agreement in addition to row reconstruction.}
+    coverage. Feature displays therefore report reconstruction error and
+    sign agreement alongside row reconstruction.}
     \label{fig:app-robustness-margin-reliability}
 \end{figure}
 

@@ -41,7 +41,7 @@
 \section{How Were the Readout SAEs Selected?}
 \label{app:readout-factorizer-sweeps}
 
-This appendix documents how the readout SAEs used in the main text were chosen. The
+This appendix documents how the readout SAEs used in the main text are chosen. The
 selection criterion combines row reconstruction with readout-distribution
 preservation after substituting $\widehat{\WU}$ for $\WU$: rowEV,
 top-1 agreement, KL in bits, selected-logit reconstruction errors when available, and
@@ -57,14 +57,14 @@ over held-out hidden states. top5 is mean top-five set overlap,
 $|\mathrm{top5}(\WU h)\cap\mathrm{top5}(\widehat{\WU}h)|/5$; as a set-overlap
 metric, it can be lower or higher than top1. KL is
 $D_{\mathrm{KL}}(p_{\WU}(\cdot\mid h)\|p_{\widehat{\WU}}(\cdot\mid h))$ in
-bits. Selected logit reconstruction errors measure the absolute fractional error on the
+bits. Selected-logit reconstruction error is the absolute fractional error on the
 original top logit.
 
 \paragraph{Qwen3.5-9B unembedding object.}
 The Qwen3.5-9B experiments factorize the final unembedding matrix
 $\WU\in\R^{248320\times4096}$. Hidden states used for prism loss and
 evaluation are the final RMSNorm outputs immediately before the language-model
-head. This was confirmed by an \texttt{lm\_head} pre-hook: the captured input
+head. An \texttt{lm\_head} pre-hook confirms this: the captured input
 reproduces the model readout with no additional post-readout transform. The
 remaining reconstruction-vs-readout discrepancy is consistent with the model's
 bf16 LM-head precision floor as the relevant limit.
@@ -80,7 +80,7 @@ where applicable, and usage statistics. Orthogonal matching pursuit (OMP) rows
 dictionaries; deployed metrics use the learned TopK encoders.
 
 \paragraph{Per-model settings.}
-The sweep ultimately supports two operating regimes. The strict-budget rows
+The sweep supports two operating regimes. The strict-budget rows
 preserve a native $k=128$ interpretability budget, while the
 high-fidelity rows use native $k=256$ encoders when readout fidelity is
 the primary constraint. Table~\ref{tab:app-k-model-finalists} summarizes these

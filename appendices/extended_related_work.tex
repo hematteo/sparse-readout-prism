@@ -1,8 +1,8 @@
 \section{Extended Related Work}
 \label{app:extended-related-work}
 
-This appendix records broader recent context that is useful for positioning but
-not needed for the main argument.
+This appendix records broader context relevant to positioning but not required
+for the main argument.
 
 \paragraph{Modern lens variants.}
 Recent work extends lens-style inspection beyond the original next-token logit
@@ -13,30 +13,29 @@ targets settings where direct single-token decoding is limited: ContextualLens
 and LatentLens use richer contextual representations for vision-language models
 \citep{phukan2025contextuallens,krojer2026latentlens}, and Indic-TunedLens
 adapts tuned-lens-style decoding to Indian languages
-\citep{panchal2026indictunedlens}. These methods keep the hidden-state
-inspection interface current by varying what is decoded, which representation is
-used, or where the interface is applied. SRP borrows the same readout-facing
-motivation, but differs in object: it keeps the model's own final LM head and
-factorizes the rows used to score selected token logits, logit differences, and
-other fixed row-combination scores. It is not a
-replacement lens for future-token decoding, vision-language representations, or
-multilingual settings; these variants are complementary front ends to
+\citep{panchal2026indictunedlens}. These methods extend the hidden-state inspection interface by varying what is
+decoded, which representation is used, or where the interface is applied. SRP
+shares the readout-facing motivation but differs in object: it retains the
+model's final LM head and factorizes the rows used to score selected token
+logits, logit differences, and other fixed row-combination scores. SRP is not
+a replacement lens for future-token decoding, vision-language representations,
+or multilingual settings; those variants are complementary front ends to
 hidden-state inspection.
 
 \paragraph{Recent sparse-feature infrastructure.}
 Beyond the core SAE and dictionary-learning work cited in the main text, recent
-benchmarks and releases have made sparse-feature analysis more standardized and
+benchmarks and releases have standardized sparse-feature analysis and made it
 model-family specific. SAEBench evaluates sparse autoencoders for language-model
 interpretability, while Gemma Scope and Qwen-Scope release activation SAEs for
 Gemma and Qwen-family models
 \citep{karvonen2025saebench,lieberum2024gemmascope,deng2026qwenscope}. Recent
 weight-based SAE interpretation also studies how activation-SAE features
 interact with model weights and output-token effects
-\citep{liu2026weightbasedsae}. SRP borrows the emphasis on standardized
-sparse-feature evaluation and model-family-specific artifacts, but differs in
-fitted object and diagnostic focus. These works analyze activation features and
-their downstream roles; SRP fits the sparse dictionary directly to unembedding
-rows, making LM-head replacement, selected-score reconstruction, and
-explicit residual terms part of the readout decomposition. SRP therefore does
+\citep{liu2026weightbasedsae}. SRP shares the emphasis on standardized
+sparse-feature evaluation and model-family-specific artifacts but differs in
+fitted object and diagnostic focus. Those works analyze activation features
+and their downstream roles; SRP fits the sparse dictionary directly to
+unembedding rows, so LM-head replacement, selected-score reconstruction, and
+explicit residual terms become part of the readout decomposition. SRP does
 not evaluate activation-SAE feature quality or replace activation-feature
 infrastructure.

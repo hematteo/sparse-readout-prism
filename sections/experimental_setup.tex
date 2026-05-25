@@ -3,7 +3,7 @@
 
 \subsection{Research Questions}
 \label{subsec:evaluation-questions}
-The experiments first calibrate whether SRP accounts are usable
+Experiments first calibrate whether SRP accounts are usable
 (\Cref{subsec:metrics-and-baselines}); conditional on these checks, the
 analysis asks five questions:
 \begin{description}[leftmargin=!,labelwidth=2.7em]
@@ -34,12 +34,12 @@ Qualitative examples use one fixed low-error setting, Qwen3.5-2B
 and \(k\) is the TopK active-feature budget.
 
 \paragraph{Dictionary selection and held-out score checks.}
-We fit readout SAEs on final LM-head inputs and select them by held-out row
-reconstruction, replacement fidelity, and sparse code usage, then reserve
+We fit readout SAEs on final LM-head inputs, select them by held-out row
+reconstruction, replacement fidelity, and sparse code usage, and reserve
 held-out logit differences for downstream score-reconstruction checks.
 Replacement uses 10,000 neutral C4 continuations per model
 \citep{raffel2020exploring,dodge2021documenting}; score-reconstruction
-evaluations use preconstructed prompt/score sets with fixed linear
+evaluations use prebuilt prompt/score sets with fixed linear
 coefficients, split assignment, and tokenization filters. These splits keep
 dictionary selection separate from score-reconstruction evaluation.
 
@@ -49,8 +49,8 @@ Calibration uses three checks: basis, score, and baselines.
 \emph{Basis metrics.} Held-out row reconstruction and LM-head replacement on C4
 hidden states check whether the readout SAE preserves the readout it replaces.
 \emph{Score metrics.} Score reconstruction, sign preservation, and relative
-error check whether a selected logit, contrast, or margin is reconstructed well
-enough to read its feature bars. \emph{Baselines.} Comparisons with nearest-row
+error check whether a selected logit, contrast, or margin is reconstructed
+accurately enough to read its feature bars. \emph{Baselines.} Comparisons with nearest-row
 ridge, PCA, shuffled sparse codes, and random sparse patterns check whether
 learned token-row structure improves over dense low-rank structure, lexical
 neighborhoods, or sparse capacity alone. Sign flips, large relative error,
@@ -62,6 +62,6 @@ decomposes a selected score, not how the model generates. We read feature bars
 only when the selected score is reconstructed with small residual and, for
 signed contrasts, the reconstructed and exact scores agree in sign. Feature
 labels are descriptive summaries, while feature ids, signed contributions, and
-residuals are the measured objects; the only place we make any claim about
-generation behavior is the constrained-edit intervention in
+residuals are the measured objects; the only claim about generation behavior
+appears in the constrained-edit intervention in
 \Cref{subsec:constrained-readout-edits}.

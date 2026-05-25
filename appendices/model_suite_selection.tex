@@ -10,14 +10,13 @@ suite \citep{gemma4official,gemma4collection}, Ministral
 Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility} give the metric
 summary: they report the trained widths, native $k$ settings, rowEV, top1, KL,
-and usage statistics for each readout SAE setting. Here we motivate the model
-choices.
+and usage statistics for each readout SAE setting. This appendix motivates the
+model choices.
 
-Sparse Readout Prism factorizes the matrix used to score output tokens, so the
-model suite is organized around readout fidelity, scale, and portability. The
-chosen suite lets us compare model size and readout geometry while preserving
-enough budget for tokenizer, row-norm, special-token, and matched-control
-analyses.
+Sparse Readout Prism factorizes the output-token scoring matrix, so the model
+suite is organized around readout fidelity, scale, and portability. The suite
+spans model size and readout geometry while preserving enough budget for
+tokenizer, row-norm, special-token, and matched-control analyses.
 
 \subsection{Selection Rationale}
 \label{sec:app-model-suite-criteria}
@@ -29,7 +28,7 @@ Qwen3.5-0.8B and Qwen3.5-2B test the same recipe at smaller unembedding
 dimensions and cheaper rerun settings.
 
 The Gemma rows provide a second tied-readout family with a different tokenizer
-and final-logit softcap. They show the readout SAE recipe under
+and final-logit softcap. These rows exercise the readout SAE recipe under
 a distinct readout geometry; the softcap-correct readout evaluation is reported
 in Appendix~\ref{app:readout-factorizer-transfer-comparisons}.
 
@@ -89,16 +88,16 @@ Cross-family fidelity comparison. \\
 \end{tabularx}
 \end{table*}
 
-The qualitative feature analyses use one fixed low-error display setting so that
-examples share the same readout SAE and reporting convention. This is an
-evidence-driven display choice: the additional rows show how the same metrics
-behave under different readout geometries and post-training regimes.
+Qualitative feature analyses use a single low-error display setting so that
+examples share the same readout SAE and reporting convention. The choice is
+evidence-driven: the additional rows show how the same metrics vary with
+readout geometry and post-training regime.
 
 \subsection{Interpretation Details}
 \label{sec:app-model-suite-boundaries}
 
-The suite is an evidence-driven design for readout-factorization evaluation.
-We report token frequency, token length, special-token behavior, row norm, tied
+The suite is designed for readout-factorization evaluation.
+We report token frequency, length, special-token behavior, row norm, tied
 embedding status, softcap handling, and matched-score identity bias so
 single-token logit decompositions can be compared on the same footing.
 

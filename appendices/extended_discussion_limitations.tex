@@ -1,7 +1,7 @@
 \section{Discussion and Future Work}
 \label{app:extended-discussion-limitations}
 
-This appendix gives the longer version of the scope and future-work discussion.
+This appendix expands the scope and future-work discussion.
 It focuses on boundary cases that are only summarized in the main paper:
 selected-score scope, relation to activation SAEs, cross-family interpretation, DLA composition,
 and possible extensions.
@@ -36,8 +36,8 @@ reconstruction quality.
 \label{app:extended-discussion-activation-sae}
 
 \paragraph{Fitted object.}
-Sparse Readout Prism uses sparse autoencoder machinery, but the fitted object is
-different from activation-SAE work. Activation SAEs learn sparse codes for a
+Sparse Readout Prism uses sparse autoencoder machinery, but its fitted object
+differs from activation-SAE work. Activation SAEs learn sparse codes for a
 distribution of hidden states
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}. Sparse
 Readout Prism learns sparse codes for rows of the unembedding matrix \(\WU\).
@@ -49,9 +49,9 @@ The hidden state enters only after the readout SAE has been learned. A feature
 contributes to a selected score when two quantities align: the selected
 readout direction uses that SAE
 feature through its sparse row coefficients, and the current hidden state has a
-large dot product with the corresponding decoder direction. This is
-why the same token row can have different dominant feature contributions in
-different contexts: the row coefficients are fixed, while the projection terms
+large dot product with the corresponding decoder direction. Hence the same
+token row can have different dominant feature contributions across contexts:
+the row coefficients are fixed, while the projection terms
 \(h^\top d_i\) change with the hidden state.
 
 \paragraph{Label status.}
@@ -73,8 +73,8 @@ qualitative figures.
 \paragraph{Additional families.}
 The additional model-family rows report the same metric suite under
 different tokenizer, readout, and post-training conditions. They separate row
-reconstruction, LM-head replacement, and selected-score reconstruction, which is
-why the paper reports all three before interpreting feature contributions.
+reconstruction, LM-head replacement, and selected-score reconstruction; the
+paper reports all three before interpreting feature contributions.
 
 \subsection{Feature-Resolved DLA}
 \label{app:extended-discussion-prism-dla}
@@ -82,15 +82,14 @@ why the paper reports all three before interpreting feature contributions.
 \paragraph{Readout versus components.}
 Readout-side and component-side analyses answer different questions. The SRP
 decomposition asks which unembedding-side SAE terms score a chosen logit or contrast;
-component-level attribution asks which residual-stream components supplied
-projection onto the chosen score's readout direction in the realized forward
-pass.
+component-level attribution asks which residual-stream components project onto
+the chosen score's readout direction in the realized forward pass.
 
 \paragraph{Residual terms.}
-Combining these views gives additive component-by-feature terms. The analysis
-reports both the DLA additivity error for the selected readout score and
-the readout SAE reconstruction error left outside the displayed feature terms;
-causal circuit claims can then be pursued with interventions when needed.
+Combining the two views yields additive component-by-feature terms. The
+analysis reports both the DLA additivity error for the selected readout score
+and the readout SAE reconstruction error left outside the displayed feature
+terms; causal circuit claims require interventions.
 
 \subsection{Future Work}
 \label{app:extended-discussion-future-work}
@@ -98,16 +97,17 @@ causal circuit claims can then be pursued with interventions when needed.
 \paragraph{Extensions.}
 Natural extensions include controlled interventions on SAE decoder directions,
 cross-model feature-alignment analyses, distributional decompositions of local
-top-\(k\) frontiers, and broader model-family sweeps. They all depend on the same
+top-\(k\) frontiers, and broader model-family sweeps. All depend on the
 reliability condition used in the main text: interpret the feature terms only
 when the selected score has a small reported residual.
 
 \paragraph{Residual-stream census.}
-SRP can also measure what is readout-readable before a hidden state is reduced to
-one score. The projection vector \(p_i=h^\top d_i\) can be broad, while a chosen
-score \(q\) selects the terms \(\beta_i(q)p_i\). Future work could quantify
-projection mass used by the selected score, assigned to competitors, or active
-but unused by that score. This unused category is local to the selected score; it may support
-alternative tokens, later positions, or other computations. Comparing this split
-across layers, ambiguous prompts, and incorrect generations could test whether
-models carry broad task state beyond the immediate readout decision.
+SRP also measures what is readout-readable before a hidden state is reduced
+to a single score. The projection vector \(p_i=h^\top d_i\) can be broad,
+while a chosen score \(q\) selects the terms \(\beta_i(q)p_i\). Future work
+could quantify projection mass used by the selected score, assigned to
+competitors, or active but unused. The unused category is local to the
+selected score; it may support alternative tokens, later positions, or other
+computations. Comparing the split across layers, ambiguous prompts, and
+incorrect generations could test whether models carry broad task state beyond
+the immediate readout decision.

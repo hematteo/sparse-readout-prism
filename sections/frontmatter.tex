@@ -9,10 +9,11 @@ a token logit, logit difference, or contrast is selected---multiplies the
 coefficients by the projections to produce signed feature contributions plus
 an explicit residual in original logit coordinates.
 
-In high-fidelity Qwen settings, SRP preserves held-out contrast signs at
-\(0.949\)--\(0.958\) and keeps median relative reconstruction error below
-\(0.10\); on Qwen3.5-2B it cuts median error from \(0.260\) (best baseline) to
-\(0.081\). The same fixed basis then lets us compare score choices, prompt
-contexts, residual-stream components, and edits that move specified lexical
-scores at the readout, all within one decomposition.
+Across models, SRP preserves held-out contrast signs with at least \(0.91\)
+sign agreement. In the strongest Qwen3.5 settings, sign agreement is
+\(0.949\)--\(0.958\) with median relative reconstruction error below \(0.10\);
+on Qwen3.5-2B, SRP reduces median error from \(0.260\) for nearest-row ridge to
+\(0.081\). Under these checks, the fixed basis supports readout-level analyses
+of score choice, prompt context, residual-stream attribution, and constrained
+lexical-score edits.
 \end{abstract}

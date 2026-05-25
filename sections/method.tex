@@ -38,11 +38,11 @@ and \(r_t\) is the residual. Thus
     w_t=\mu+\sum_i z_{t,i}d_i+r_t .
 \]
 
-We fit TopK sparse autoencoders \citep{makhzani2013ksparse,gao2024scaling};
+We fit TopK sparse autoencoders~\citep{makhzani2013ksparse,gao2024scaling};
 TopK keeps a fixed active-feature budget \(k\), making row sparsity comparable
-across tokens. If training uses centering or row normalization, we map fitted
-codes, directions, and residuals back to raw readout coordinates before any
-score decomposition. Every displayed term then remains in original logit
+across tokens. When training uses centering or row normalization, fitted
+codes, directions, and residuals are mapped back to raw readout coordinates
+before any score decomposition. Every displayed term then remains in original logit
 units, with no hidden dense correction. Width \(D\), sparsity \(k\), and
 preprocessing details are given in
 appendices~\ref{app:readout-factorizer-sweeps}--%
@@ -128,7 +128,7 @@ the same fixed-row-combination form. For top-competitor margins we use
     w_u-\sum_{r\in\mathcal{R}}\pi_r w_r
 \]
 where \(u\), competitor set \(\mathcal{R}\), and weights \(\pi_r\ge0\) are
-fixed from the original LM-head ranking before SRP decomposition, with
+fixed by the original LM-head ranking prior to SRP decomposition, with
 \(\sum_{r\in\mathcal{R}}\pi_r=1\). \Cref{tab:method-special-cases} gives the
 corresponding sparse-feature coefficients.
 
@@ -197,7 +197,7 @@ The sparse account leaves residual
     h^\top\sum_{t\in\mathcal{V}}\alpha_t r_t .
 \end{aligned}
 \]
-Positive terms raise the chosen score and negative terms lower it. For signed
+Positive terms raise the selected score; negative terms lower it. For signed
 contrasts, positive values support the first side and negative values support
 the comparison side.
 
@@ -258,7 +258,7 @@ contrasts. We compute relative reconstruction error as
 \]
 The half-logit floor \(\delta\) keeps \(\rho\) bounded when
 \(|s_{\mathrm{exact}}|\) is near zero, so the metric is comparable across
-score magnitudes. We read feature bars only when \(s_{\mathrm{recon}}\) is
+score magnitudes. Feature bars are read only when \(s_{\mathrm{recon}}\) is
 close to \(s_{\mathrm{exact}}\); aggregate analyses use the threshold
 \(\rho<0.5\), and for signed contrasts the reconstructed and exact scores
 must also agree in sign before support and opposition are interpreted.

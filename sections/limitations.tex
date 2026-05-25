@@ -10,7 +10,7 @@ interpretation is trustworthy. Feature-resolved DLA is additive
 accounting over residual-stream components, and the readout edit is a
 constrained lexical-score test. Both nominate candidate directions; causal
 necessity, sufficiency, and generation-level effects require separate
-intervention studies.
+interventions.
 
 \paragraph{Fidelity and labels.}
 SRP separates the measured coordinate objects --- feature ids, signed terms,
@@ -23,14 +23,16 @@ checks are reported so that interpretation tracks the measured objects rather
 than the labels.
 
 \paragraph{Readout-specific caveats.}
-The selected-score interface supports token-level, group-contrast, and
-benchmark-derived readout decompositions while inheriting vocabulary-geometry
+The selected-score interface admits token-level, group-contrast, and
+benchmark-derived readout decompositions, and inherits vocabulary-geometry
 caveats: labels and groupings can reflect tokenizer geometry, token frequency,
 row norms, or surface-form artifacts
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
 Group contrasts reduce single-row dependence; benchmark-derived contrasts
-measure linear readout reconstruction, not task solving; and labels remain
+measure linear readout reconstruction, not task solving; labels remain
 summaries of row geometry rather than ground-truth semantics.
+Additional scope and future-work discussion appears in
+Appendix~\ref{app:extended-discussion-limitations}.
 
 \section*{Ethical Considerations}
 
@@ -42,9 +44,9 @@ which may contain offensive, private, copyrighted, or sensitive text
 readout reconstruction and make no social-validity claims about individual
 tokens, labels, or generated outputs.
 
-SRP makes lexical readout directions and row-level labels easier to inspect and,
-in the readout-edit stress test, moves specified lexical scores --- a dual-use
-property of auditing tools. Claims rest on measured coordinate objects rather
-than label semantics; the edit is reported with distribution shift and
+SRP makes lexical readout directions and row-level labels easier to inspect,
+and in the readout-edit stress test moves specified lexical scores --- a
+dual-use property of auditing tools. Claims rest on measured coordinate
+objects rather than on label semantics; the edit is reported with distribution shift and
 off-target probes. Safety-filter, moderation, and deployment-control claims
 require direct system-level evaluation, which we do not undertake here.

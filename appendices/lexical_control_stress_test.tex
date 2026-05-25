@@ -2,7 +2,7 @@
 \label{app:lexical-control-stress-test}
 
 This appendix reports a constrained readout-edit test for readout SAE decoder
-directions. The test asks whether directions associated with a fixed
+directions, asking whether directions associated with a fixed
 profanity-related candidate lexicon can move specified logit differences when edited at the
 readout, and how that effect behaves under held-out terms, dose sweeps,
 comparison rows, and off-target probes.
@@ -84,8 +84,8 @@ intervention scale is \(\alpha=16\). The primary candidate-constrained grid has
 norm-matched random feature edit), giving 7200 evaluated rows.
 
 \paragraph{Feature specificity.}
-The selected directions are lexically specific. In the
-Qwen3.5-2B run, 12 of the top 13 profanity-associated SAE features have
+The selected directions are lexically specific: in the Qwen3.5-2B run, 12 of
+the top 13 profanity-associated SAE features have
 specificity \(1.0\) against the 20 control terms, and the remaining feature has
 specificity \(0.988\). The token summaries partition recognizable lexical
 families, including f-word, sh-word, hell/damn, and insult-related directions.
@@ -128,14 +128,14 @@ Reference condition. \\
 \end{tabularx}
 \end{table*}
 
-Table~\ref{tab:lexical-control-primary-methods} gives the key intervention
+Table~\ref{tab:lexical-control-primary-methods} reports the key intervention
 comparison: the readout SAE direction edit matches the oracle token bias held-out flip rate
 while using only directions selected from discovery tokens, whereas the equally
 informed discovery token bias has zero held-out effect. The KL column records
 the distributional cost of each edit. Across the dose-response sweep, the
 discovery flip rate under the
 readout SAE direction edit increases monotonically from \(0.038\) to
-\(0.450\), and for scales at least 4 the held-out flip rate stays within about
+\(0.450\), and for scales at least 4 the held-out flip rate stays within
 \(0.04\) of the discovery flip rate.
 The result establishes a constrained logit-difference intervention pattern;
 open-generation behavior remains a separate evaluation layer beyond candidate
@@ -186,11 +186,11 @@ held-out effect because those token ids were not in its bias set. The Ministral
 row provides a discovery-side cross-family comparison because its tokenizer leaves
 too few held-out single-token terms for the held-out split.
 
-The takeaway is focused and positive. SAE decoder directions can move
+The takeaway is narrow but positive: SAE decoder directions can move
 constrained lexical logit differences when edited at the readout: the intended
 scores move under intervention, held-out templates and dose-response measurements
 provide supporting evidence, and the two Qwen-family rows show the same
 held-out lexical transfer pattern. The Ministral row is a discovery-side
 cross-family comparison because too few held-out terms pass the tokenizer filter.
-Off-target lexical probes map obvious regressions beyond the intended candidate
+Off-target lexical probes map regressions beyond the intended candidate
 scores.

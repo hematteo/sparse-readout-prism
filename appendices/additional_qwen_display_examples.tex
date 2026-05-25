@@ -1,10 +1,10 @@
 \section{Additional Qwen Displays and Feature Audits}
 \label{app:additional-qwen-display-examples}
 
-This appendix gives a focused set of Qwen-family companion analyses that support
-the main text without turning the appendix into an example gallery. It proceeds
-from additional margin examples to selected-score variants, fixed-token context
-shifts, projection profiles, logit-lens comparisons, and token-row audits.
+This appendix collects Qwen-family companion analyses that support the main
+text. It proceeds from additional margin examples to selected-score variants,
+fixed-token context shifts, projection profiles, logit-lens comparisons, and
+token-row audits.
 All figures use the same Qwen3.5-2B \(32\times\), native-\(k=256\) SAE trained
 on unembedding rows and the reconstruction error reporting conventions from
 Appendix~\ref{app:display-taxonomy}.
@@ -26,12 +26,11 @@ summaries for the feature ids.
     \centering
     \AppendixWideGraphic[height=0.82\textheight]{figures/proto_token_lens/qwen2b_32x_dickens_best_times_all_layer/qwen2b_32x_dickens_all_layer_lens.pdf}
     \caption{\textbf{All-layer Qwen3.5-2B logit-lens dense table.}
-    The prompt is \texttt{It was the best of times, it was the worst of times};
-    columns show the first eight tokens. The top panel reports the ordinary
-    logit-lens top-token prediction at each layer. The bottom panel lists the
-    top positive decomposition terms contributing to each cell's
-    vocabulary-mean top-token contrast under the same Qwen3.5-2B \(32\times\),
-    native-\(k=256\) readout SAE used throughout this appendix.}
+    Prompt: \texttt{It was the best of times, it was the worst of times};
+    columns are the first eight tokens. Top: ordinary logit-lens top-token
+    prediction at each layer. Bottom: top positive decomposition terms for
+    each cell's vocabulary-mean top-token contrast under the Qwen3.5-2B
+    \(32\times\), native-\(k=256\) readout SAE used throughout this appendix.}
     \label{fig:app-dickens-all-layer-proto-lens}
 \end{figure*}
 
@@ -62,7 +61,7 @@ features against trout/salmon features. The relative reconstruction errors are
 
 Figure~\ref{fig:qwen-general-readout-targets-basic} gives the single-state
 example summarized in the main text: raw-token, vocabulary-mean contrast, and
-pairwise logit-difference scores can produce different local score decompositions for the
+pairwise logit-difference scores yield different local score decompositions for the
 same hidden state.
 Figure~\ref{fig:app-qwen-general-readout-targets-extra} adds a group contrast
 and a top-competitor margin.
@@ -72,7 +71,7 @@ and a top-competitor margin.
     \AppendixWideGraphic{figures/proto_token_lens/qwen2b_general_readout_queries_jury_top5/qwen2b_general_readout_queries_1x3.pdf}
     \caption{\textbf{Same hidden state, different selected scores.}
     All panels use the same final hidden state from the prompt ``After reviewing
-    the evidence, the jury found the defendant''. They ask for the raw
+    the evidence, the jury found the defendant'', querying the raw
     \texttt{guilty} score, the
     \texttt{guilty}-versus-vocabulary-mean contrast, and the
     \texttt{guilty}-minus-\texttt{not} logit difference. Positive bars increase
@@ -84,10 +83,10 @@ and a top-competitor margin.
     \centering
     \AppendixWideGraphic{figures/proto_token_lens/qwen2b_general_readout_queries_jury_top5/qwen2b_general_readout_queries_1x2.pdf}
     \caption{\textbf{Additional Qwen examples of group contrasts and top-competitor margins.}
-    The left panel asks an abstention-group versus forced-color-group contrast;
-    the right panel asks how strongly the \texttt{guilty} winner beats its rank-5
-    competitor. Bars increase or reduce the chosen score according to their sign
-    and are labeled directly with feature ids and token summaries.}
+    Left: abstention-group versus forced-color-group contrast. Right: how
+    strongly the \texttt{guilty} winner beats its rank-5 competitor. Bars
+    increase or reduce the chosen score by sign; labels give feature ids and
+    token summaries.}
     \label{fig:app-qwen-general-readout-targets-extra}
 \end{figure*}
 
@@ -151,8 +150,8 @@ that the signed difference plot subtracts away.
     \centering
     \includegraphics[width=\columnwidth]{figures/proto_token_lens/qwen2b_32x_domain_features_main3/qwen2b_32x_polysemy_delta_ring_appendix.pdf}
     \caption{\textbf{Additional fixed-token context comparison for \texttt{ring}.}
-    The selected token is fixed and the jewelry context is compared with the
-    phone context, using the same signed-difference convention as
+    Selected token fixed; jewelry context compared with phone context, using
+    the same signed-difference convention as
     Figure~\ref{fig:same-token-polysemy}.}
     \label{fig:app-qwen2b-ring-context-delta}
 \end{figure}
@@ -162,12 +161,11 @@ that the signed difference plot subtracts away.
     \AppendixWideGraphic[height=0.24\textheight]{figures/proto_token_lens/qwen2b_32x_domain_features_main3/qwen2b_32x_polysemy_prompt_feature_row.pdf}
     \caption{\textbf{Prompt-support companion for the main fixed-token examples.}
     Each panel holds the target token fixed and compares positive SAE feature
-    contributions in the two prompt contexts. Bars show the
-    union of the four largest positive contributions from each context; teal is
-    the first context named in the panel title and orange is the second. Missing
-    bars indicate features outside that context's displayed top-four set. This
-    companion view highlights shared positive support that the signed main-text
-    difference plot subtracts away.}
+    contributions in two prompt contexts. Bars show the union of the four
+    largest positive contributions per context; teal: first context in the
+    panel title; orange: second. Missing bars: features outside that context's
+    top-four set. This view highlights shared positive support that the signed
+    main-text difference plot subtracts away.}
     \label{fig:app-qwen2b-domain-main-prompt}
 \end{figure*}
 
@@ -182,11 +180,11 @@ relative reconstruction error is \(0.05\).
     \centering
     \AppendixWideGraphic[height=0.42\textheight]{figures/proto_token_lens/qwen2b_32x_domain_polysemy_appendix_focus/qwen2b_32x_polysemy_delta_features.pdf}
     \caption{\textbf{Technical-domain fixed-token context comparisons.}
-    Positive bars are larger in the left context and negative bars are larger
-    in the right context. \texttt{graph} separates chart/diagram support from
+    Positive bars: larger in the left context; negative bars: larger in the
+    right. \texttt{graph} separates chart/diagram support from
     edge/vertex-like graph-structure support; \texttt{memory} separates human
     memory from computer-memory/RAM support; \texttt{virus} separates
-    biological-virus features from malware/antivirus features. \texttt{pipe}
+    biological-virus from malware/antivirus features. \texttt{pipe}
     shows a mixed technical/plumbing local score decomposition.}
     \label{fig:app-qwen2b-technical-domain-delta}
 \end{figure*}
@@ -195,10 +193,10 @@ relative reconstruction error is \(0.05\).
 \label{app:global-readout-feature-profiles}
 
 The examples above decompose selected token rows or contrasts. As a complementary
-view, we can rank readout features directly from the hidden state
+view, we rank readout features directly from the hidden state
 before choosing a token or logit difference. For a final readout state \(h\), we
 score each SAE decoder direction by \(h^\top d_i\). Vocabulary rows then label
-the selected directions by their highest-associated rows. These figures therefore
+the selected directions by their highest-associated rows. The resulting figures
 show score-independent profiles; score-specific figures provide the local score
 contributions.
 
@@ -234,11 +232,11 @@ Figure~\ref{fig:main-lens-prism-comparison} gives the main-text lens-versus-pris
 comparison. Table~\ref{tab:app-lens-comparison-examples} lists four additional
 Qwen3.5-2B examples where the ordinary logit lens gives a local A-vs-B
 logit difference and the SRP local score decomposition separates the competing feature terms
-behind that contrast. The prompt-injection case illustrates how SRP can
-decompose an undesirable local readout ranking: the ordinary lens favors the wrong
-action and the sparse terms reconstruct that contrast tightly.
-The companion feature tables list the displayed feature ids, token summary
-labels, exact scores, reconstructed scores, and reconstruction errors reported for these
+behind that contrast. The prompt-injection case shows SRP decomposing an undesirable local readout
+ranking: the ordinary lens favors the wrong action, and the sparse terms
+reconstruct that contrast tightly.
+The companion feature tables list the displayed feature ids, token-summary
+labels, exact and reconstructed scores, and reconstruction errors for these
 examples.
 
 \begin{table}[!tbp]
@@ -288,22 +286,22 @@ Contribution & Side & Token summary \\
 \end{tabular}
 \end{center}
 The lens reports the local readout ranking; SRP reports the signed feature
-terms behind it.
+terms behind that ranking.
 
 \subsection{Token-Row Audit for Main Case-Study Features}
 \label{app:main-case-study-feature-audit}
 
-Table~\ref{tab:app-qualitative-feature-label-audit} gives a conservative
-qualitative audit over the claim-bearing displayed labels in the Qwen feature
-figures. This is not a feature-validity score: labels that are selected-token
-heavy, generic, function-word dominated, punctuation-like, or letter/case
-directions are separated from coherent lexical labels rather than counted as
-labeling successes. The audit asks whether the displayed token-row summary is coherent
-enough to support the prose label used in the paper, and whether coherent labels
-point to the side indicated by the signed feature term. The measured
+Table~\ref{tab:app-qualitative-feature-label-audit} reports a conservative
+qualitative audit of the claim-bearing displayed labels in the Qwen feature
+figures. The audit is not a feature-validity score: labels that are
+selected-token-heavy, generic, function-word-dominated, punctuation-like, or
+letter/case directions are separated from coherent lexical labels rather than
+counted as labeling successes. The audit asks whether the displayed token-row
+summary supports the prose label used in the paper and whether coherent
+labels point to the side indicated by the signed feature term. The measured
 objects remain feature ids, signed contributions, and reconstruction residuals.
 The row-level source table, refined feature descriptions, and full top-20
-token-row audit are included with the figure artifacts.
+token-row audit accompany the figure artifacts.
 
 \begin{table*}[!tbp]
 \caption{\textbf{Qualitative feature-label audit for claim-bearing Qwen displays.}
@@ -333,8 +331,8 @@ Total & 99 & 67 & 18 & 14 & 67/67 & Conservative count over displayed, claim-bea
 
 Table~\ref{tab:app-main-case-study-feature-audit} summarizes every feature shown in
 the two main \texttt{bug} panels. For each sparse feature, we score centered and
-normalized unembedding rows with that feature's encoder row and list the highest
-scoring tokens. This supports the main-text interpretation:
+normalized unembedding rows with that feature's encoder row and list the
+highest-scoring tokens. The result supports the main-text interpretation:
 most large row-level contributors are coherent lexical families, while three
 displayed features are marked as low-level token-form directions.
 

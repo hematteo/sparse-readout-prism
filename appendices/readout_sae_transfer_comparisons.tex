@@ -9,7 +9,7 @@ smaller Qwen/Gemma suite and targeted cross-family or post-training rows.
 \subsection{Transfer to Smaller Models}
 \label{app:readout-factorizer-small-model-transfer}
 
-The fixed Qwen3.5-9B recipe was then transferred to four smaller models. The
+The fixed Qwen3.5-9B recipe transfers to four smaller models. The
 transfer tests both whether a fixed active budget reconstructs
 lower-dimensional unembedding rows more effectively, and whether the higher
 $k=256$ fidelity regime remains useful away from 9B. As above, native $k=128$
@@ -29,7 +29,7 @@ dictionary settings.
     \centering
     \ReadoutSAEGraphic[height=0.26\textheight]{appendix_k_small_model_pilot_grid.pdf}
     \caption{
-        Small-model screening grid. Each model was evaluated at 8$\times$,
+        Small-model screening grid. Each model evaluated at 8$\times$,
         16$\times$, and 32$\times$ under native $k=128$ and $k=256$; final
         claims use the native 20k rows in
         Table~\ref{tab:app-k-small-model-converged-ledger}.
@@ -123,9 +123,9 @@ cap-independent / argmax-invariant.
     \centering
     \ReadoutSAEGraphic[height=0.28\textheight]{appendix_k_cross_model_scaling.pdf}
     \caption{
-        Qwen scaling summary. Panel A reports the Qwen rows used for the
-        scaling claim; Panel B reports rare feature rate as a usage statistic.
-        Additional model-family rows are reported in the surrounding tables.
+        Qwen scaling summary. Panel A: Qwen rows used for the scaling claim.
+        Panel B: rare feature rate as a usage statistic. Additional
+        model-family rows appear in the surrounding tables.
     }
     \label{fig:app-k-cross-model-scaling}
 \end{figure}
@@ -139,11 +139,11 @@ Qwen3.5-0.8B 16$\times$, $k=128$; the selected high-fidelity
 small-model point is Qwen3.5-0.8B 32$\times$, $k=256$, with Qwen3.5-2B giving
 the same qualitative pattern. The scaling figure focuses on Qwen so that model
 size is varied within a single family; the surrounding tables evaluate the same
-recipe under additional readout geometries. Rare feature rate is reported as a
+recipe under additional readout geometries. Rare feature rate serves as a
 usage statistic: it stays low for
 the smaller Qwen 32$\times$, $k=256$ rows and rises to $0.292$ for the 9B
 32$\times$, $k=256$ capacity point.
-Qwen3.5-2B has slightly higher strict-budget top1, so the 0.8B selection is a
+Qwen3.5-2B has higher strict-budget top1, so the 0.8B selection is a
 joint reconstruction-and-fidelity dictionary setting with top1 as one component.
 
 \begin{table*}[!tbp]
@@ -181,7 +181,7 @@ Ministral-3-8B-Base is included as a cross-family 8B-scale comparison. It has th
 same hidden width $d_{\mathrm{model}}=4096$ as Qwen3.5-9B but an untied
 \texttt{lm\_head} and no post-readout softcap (readout-extraction
 reconstruction relative error $\approx 3{\times}10^{-6}$, an order of magnitude
-cleaner than the bf16 Qwen floor). The same transferred TopK recipe was used
+cleaner than the bf16 Qwen floor). The transferred TopK recipe applies
 at the matched widths.
 
 \begin{table*}[!tbp]
@@ -359,7 +359,7 @@ R1-Distill-Llama-8B (sft) & $0.424$ & $0.897$ & $1.787$ & $0.904$ & $0.139$ & $1
 }
 \end{table}
 
-Two effects are visible. First, the upper tail is heavier on the distilled
+Two effects appear. First, the upper tail is heavier on the distilled
 checkpoints: max/median is $1.5$--$1.6$ for the base-model rows and
 $1.7$--$2.0$ for the distilled rows, with R1-Distill-Llama-8B the most
 extreme. Second, the lower tail is compressed: minimum row norms rise
@@ -369,7 +369,7 @@ reasoning-distilled checkpoints than for the base-model rows. The coefficient of
 variation tracks this ($0.12$ on base models vs $0.14$--$0.16$ on distilled
 models).
 
-The row-centered-and-normalized SAE recipe therefore operates on a heavier-tailed
+The row-centered-and-normalized SAE recipe operates on a heavier-tailed
 norm distribution for the distilled rows, which is consistent with the
 observed pattern: row reconstruction (which is uniform in $L_2$) is preserved,
 while decision fidelity (which is exponential in the logit error and dominated

@@ -16,11 +16,11 @@ mismatch.
 \paragraph{Support selection.}
 On the Qwen3.5-9B $D=32768$, $k=128$ recipe, the trained encoder reaches rowEV
 $0.621$. Nonnegative least-squares \citep{lawson1974solving} on the encoder's
-own support reaches $0.625$, nonnegative OMP \citep{pati1993orthogonal} reaches
-$0.647$, and signed-OMP reaches $0.655$. The coefficient gap is therefore small
+own support reaches $0.625$, nonnegative OMP \citep{pati1993orthogonal}
+$0.647$, and signed-OMP $0.655$. The coefficient gap is therefore small
 (about $0.004$), while same-coefficient-class support-selection headroom is
-about $0.026$. Dense rank-128 reconstruction is $0.101$, far below the sparse
-dictionary, showing that the result goes beyond low-rank PCA structure
+about $0.026$. Dense rank-128 reconstruction reaches only $0.101$, far below the sparse
+dictionary, ruling out low-rank PCA structure
 \citep{jolliffe2002principal}.
 Figure~\ref{fig:app-k-omp-diagnostic} shows both the strict-budget recipe and
 the high-fidelity 32$\times$, $k=256$ run. The right-hand table labels the
@@ -69,9 +69,9 @@ about $5.9\times$ better by unexplained-variance reduction than the same-rank
 dense reference, since \((1-0.155)/(1-0.858)\approx5.9\).
 
 \paragraph{Small-model support-selection analysis.}
-The same analysis was run on the 16$\times$, $k=128$ small-model transfer 5k
-checkpoints to isolate where the remaining reconstruction gap lies when the
-learned dictionary is held fixed; the converged transfer metrics are reported in
+We repeat the analysis on the 16$\times$, $k=128$ small-model transfer 5k
+checkpoints to isolate the source of the remaining reconstruction gap with the
+learned dictionary fixed; the converged transfer metrics are reported in
 Appendix~\ref{app:readout-factorizer-small-model-transfer}. Across all four models, refitting
 coefficients on the encoder's own support gives a much smaller gain than
 changing the support, indicating that support selection is the dominant
@@ -88,14 +88,14 @@ higher rowEV than the fixed-$k=128$ recipe ($0.695>0.621$), while top1/KL favor
 the fixed-$k=128$ recipe ($0.721/0.469$ vs $0.846/0.296$). The $D=131072$
 truncation shows the same metric separation: rowEV/top1/KL are
 $0.816/0.738/0.425$. These truncated comparisons motivate the selection rule:
-use rowEV, top1, KL, reconstruction error metrics, and usage statistics jointly.
+use rowEV, top1, KL, reconstruction-error metrics, and usage statistics jointly.
 
 \ReadoutSAEFloatBarrier
 \subsection{Alternatives and Negative Controls}
 \label{app:readout-factorizer-controls}
 
 \paragraph{Alternative recipes and denominator controls.}
-The non-selected recipes are ruled out by concrete matched-comparison reasons.
+Matched comparisons rule out the non-selected recipes.
 At $D=32768$/5k, plain TopK exceeded the matryoshka variants in rowEV
 \citep{bussmann2025matryoshka} ($0.567$ vs.\ $0.559/0.554$) at lower cost, and
 the $D=16384$ fixed-$k=128$ cell trailed $D=32768$ by about $0.06$ rowEV.
@@ -116,21 +116,21 @@ Appendices~\ref{app:model-suite-selection}--\ref{app:robustness-controls}
 specify models, dictionary settings, seeds, row sampling, selection order,
 tokenization filters, score construction, and denominator controls. Dictionary
 selection uses row reconstruction, replacement fidelity, and sparse code usage;
-held-out logit differences are reserved for later checks. Remaining
-risks are computational cost, checkpoint/tokenizer versioning, and
+we reserve held-out logit differences for later checks. Remaining
+risks: computational cost, checkpoint/tokenizer versioning, and
 tokenizer-specific filtering for single-token scores. Local decompositions include
-explicit reconstruction errors, and qualitative interpretations are restricted
+explicit reconstruction errors, and we restrict qualitative interpretations
 to sufficiently reconstructed scores.
 
-The Qwen/Gemma readout SAEs were selected before downstream qualitative
-interpretation using row reconstruction, replacement-logit metrics, and sparse
-code usage statistics. The logit-difference contrast set was reserved for the
-later reconstruction checks, so selected-score reconstruction is evaluated after dictionary
-selection. Most reported dictionary settings use seed \(0\), with the
+We selected the Qwen/Gemma readout SAEs before downstream qualitative
+interpretation, using row reconstruction, replacement-logit metrics, and
+sparse code usage statistics. We reserved the logit-difference contrast set
+for the later reconstruction checks, so selected-score reconstruction is
+evaluated after dictionary selection. Most reported dictionary settings use seed \(0\), with the
 Qwen3.5-0.8B 32$\times$, $k=256$ three-seed window providing the
 seed-variation snapshot above.
-For Qwen3.5-9B, tokenizer-aligned text-token-only EV and frequency-stratified
-fidelity are replaced by tokenizer-free denominator controls: the tokenizer row
+For Qwen3.5-9B, tokenizer-free denominator controls replace tokenizer-aligned
+text-token-only EV and frequency-stratified fidelity: the tokenizer row
 count did not cleanly align with the $\WU$ rows, and no vocab-aligned unigram
 table was available. The tokenizer-free non-token-row audit therefore serves as
 the denominator-control result for that model. Gemma rowEV is measured on the

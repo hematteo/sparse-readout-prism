@@ -21,13 +21,13 @@ logit-difference direction.
 \end{figure}
 
 For debugging surprising predictions and auditing readout-level evidence, this
-single score is often too coarse. After a programming prompt, for example, a
-model may rank \texttt{bug} highly; a lens output shows that score, but not
-whether output-side structure associated with insects, software defects, or
-generic nouns supports it. The lens reports the scalar score, not a sparse
-readout-side account of that score. What the lens lacks is a sparse, reusable
-basis for the readout matrix itself, paired with checks that this basis
-preserves the original LM-head behavior.
+single score is too coarse. After a programming prompt, a model may rank
+\texttt{bug} highly; a lens output shows that score, but not whether
+output-side structure associated with insects, software defects, or generic
+nouns supports it. The lens reports the scalar score, not a readout-side
+account of it. The lens lacks a sparse, reusable basis for the readout matrix
+itself, paired with checks that this basis preserves the original LM-head
+behavior.
 
 Sparse Readout Prism (SRP) supplies this basis by factorizing the LM-head
 matrix directly: each token row is expressed as sparse coefficients over a
@@ -39,31 +39,31 @@ sparse-autoencoder and dictionary-learning machinery
 but trains on unembedding rows rather than hidden states.
 
 Before any score is selected, SRP projects a hidden state onto the readout
-feature directions, giving a score-independent view in readout-feature
-coordinates; the same factorization can reconstruct the full logit vector and
-replace the LM head, checking that the sparse basis preserves the original
+feature directions, yielding a score-independent view in readout-feature
+coordinates; the same factorization reconstructs the full logit vector and
+replaces the LM head, verifying that the sparse basis preserves the original
 readout. Once a score---a token logit, logit difference, group or
 vocabulary-mean contrast, or top-competitor margin---is selected, its
 per-feature coefficients multiply the hidden-state projections to give signed
 contributions that, with an optional offset and the residual, reconstruct the
 selected score in original logit units.
 
-The paper contributes:
+This paper makes four contributions:
 \begin{itemize}
-    \item \emph{Sparse readout factorization.} SRP factorizes the final
-    unembedding/LM head into sparse token-row codes over shared readout feature
-    directions, yielding a readout-specific sparse basis that can reconstruct or
-    replace the full readout.
-    \item \emph{Score-independent projections.} Projecting hidden states onto
-    the learned directions gives readout feature projection vectors before any
-    token, contrast, or margin is selected.
-    \item \emph{Local score decompositions.} For selected token logits, logit
-    differences, and fixed LM-head row combinations, SRP turns selected-direction
-    coefficients and hidden-state projections into signed feature terms plus
-    offset and residual terms in logit units.
-    \item \emph{Readout analyses under diagnostics.} Replacement fidelity, score
-    reconstruction, sign agreement, relative error, and baseline comparisons
-    identify regimes where the same basis supports analyses of score choice,
-    prompt context, residual-stream attribution, and constrained readout-side
-    edits.
+    \item \emph{Sparse readout factorization.} We introduce SRP, which
+    factorizes the final unembedding/LM head into sparse token-row codes over
+    shared readout feature directions. This factorization gives a
+    readout-specific sparse basis that reconstructs or replaces the full readout.
+    \item \emph{Score-independent projections.} We project hidden states onto
+    the learned directions to obtain readout feature projection vectors before
+    selecting any token, contrast, or margin.
+    \item \emph{Local score decompositions.} We decompose selected token logits,
+    logit differences, and fixed LM-head row combinations by multiplying
+    selected-direction coefficients with hidden-state projections, yielding
+    signed feature terms plus offset and residual terms in logit units.
+    \item \emph{Readout analyses under diagnostics.} We use replacement
+    fidelity, score reconstruction, sign agreement, relative error, and baseline
+    comparisons to identify regimes where the same basis supports analyses of
+    score choice, prompt context, residual-stream attribution, and constrained
+    readout-side edits.
 \end{itemize}

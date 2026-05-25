@@ -45,24 +45,24 @@ additivity terms are included separately.
 The main display uses the pairwise logit difference
 \(q=w_{\mathrm{verify}}-w_{\mathrm{assume}}\), for which
 \(\beta_i(q)=z_{\mathrm{verify},i}-z_{\mathrm{assume},i}\). The same identity
-also covers the vocabulary-mean contrast \(q=w_{\mathrm{verify}}-\bar{w}\), which
-asks how residual-stream components decompose one resolved token's readout
-above the vocabulary-mean row. The component view is additive decomposition over a
-realized forward pass and can be paired with separate interventions for circuit
-analysis \citep{geiger2023causalabstraction}.
+also covers the vocabulary-mean contrast \(q=w_{\mathrm{verify}}-\bar{w}\),
+which decomposes one resolved token's readout above the vocabulary-mean row
+across residual-stream components. The component view is an additive
+decomposition over a realized forward pass; separate interventions complement
+it for circuit analysis \citep{geiger2023causalabstraction}.
 
 \Cref{fig:qwen-prism-dla-verify-token-app} shows the vocabulary-mean contrast
-version. This is the same source-verification prompt, but the selected score is
-\(h^\top(w_{\mathrm{verify}}-\bar{w})\); the main figure uses the token-token
-logit difference.
+version. The prompt is the same source-verification prompt; the selected
+score is \(h^\top(w_{\mathrm{verify}}-\bar{w})\), whereas the main figure
+uses the token-token logit difference.
 
 \begin{figure*}[!tbp]
     \centering
     \AppendixWideGraphic[height=0.34\textheight]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_token/qwen2b_32x_prism_dla_verify_token_layer_readout.pdf}
     \caption{\textbf{Vocabulary-mean contrast component attribution.}
-    The plot decomposes the vocabulary-mean \texttt{verify} contrast
-    \(h^\top(w_{\mathrm{verify}}-\bar{w})\) for the source-verification prompt by
-    residual-stream component. Each row stacks readout terms grouped into
+    Vocabulary-mean \texttt{verify} contrast
+    \(h^\top(w_{\mathrm{verify}}-\bar{w})\) for the source-verification prompt,
+    decomposed by residual-stream component. Each row stacks readout terms grouped into
     verification/checking features, remaining sparse features, and the
     unembedding reconstruction error term; black points mark ordinary direct logit
     attribution for that residual-stream component. The vocabulary-mean contrast is
@@ -72,16 +72,16 @@ logit difference.
 \end{figure*}
 
 \Cref{fig:qwen-prism-dla-verify-assume-app} is the pairwise companion to the
-vocabulary-mean view above. It adds the \texttt{assume} side of the contrast, so
-verification/checking and assumption-family terms can be read on the same
+vocabulary-mean view above, adding the \texttt{assume} side of the contrast
+so that verification/checking and assumption-family terms appear on the same
 component axis.
 
 \begin{figure*}[!tbp]
     \centering
     \AppendixWideGraphic[height=0.34\textheight]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_layer_semantics.pdf}
     \caption{\textbf{Pairwise logit-difference DLA by SAE feature.}
-    The plot decomposes the \texttt{verify}-minus-\texttt{assume} logit difference for
-    the source-verification prompt by residual-stream component. Each row stacks sparse
+    \texttt{verify}-minus-\texttt{assume} logit difference for the
+    source-verification prompt, decomposed by residual-stream component. Each row stacks sparse
     readout terms grouped into verification/checking features, assumption
     features, remaining sparse features, and the unembedding reconstruction error term;
     black points mark ordinary direct logit attribution for that residual-stream
