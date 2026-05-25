@@ -115,9 +115,10 @@ use the full feature sum, while plots may truncate small bars for readability.
 \subsection{Scalar Readout Targets}
 \label{sec:problem-setup}
 
-A scalar readout target names the score and sign convention. We restrict targets
-to linear combinations of unembedding rows so the row factorization can decompose
-token logits, contrasts, group scores, and margins with an explicit residual.
+A scalar readout target specifies a score together with the sign convention used
+to interpret it. We take every target to be a linear combination of unembedding
+rows. Under this restriction, the same row factorization decomposes token logits,
+pairwise contrasts, group scores, and margins, always with an explicit residual.
 
 Formally, let \(\alpha\in\R^{|\mathcal{V}|}\) be a vector of vocabulary-row
 coefficients and define
