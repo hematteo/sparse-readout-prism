@@ -7,53 +7,54 @@ or through a learned lens
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
 A logit-lens probe asks: what vocabulary evidence does this hidden state expose?
 This view is useful, but each selected logit or contrast remains a dense dot
-product with an unembedding row or readout direction: it identifies high-scoring
-tokens without showing which shared directions support or oppose the score, or
-what residual remains. We introduce Sparse Readout Prism (SRP), a sparse feature decomposition for
-logit-lens readouts, built from a sparse factorization of the unembedding matrix. SRP factorizes the LM head into sparse
-token-row coefficients and shared decoder directions, or \emph{readout
-features}. Given a hidden state and scalar readout target, SRP decomposes the
-score into positive and negative feature terms plus a reconstruction residual;
-we call this a \emph{local score decomposition}.
+product with an unembedding row or readout direction. It identifies favored
+tokens without showing which shared readout directions support or oppose the
+score, or what residual remains after a sparse decomposition.
+
+We introduce Sparse Readout Prism (SRP), a sparse feature decomposition for
+logit-lens readouts. SRP applies sparse-autoencoder and dictionary-learning
+machinery to the LM head itself
+\citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling},
+yielding a sparse dictionary factorization of the final unembedding matrix.
+Vocabulary rows receive sparse token-row coefficients over shared SAE decoder
+directions. We call these directions \emph{readout features}: they are features
+of the final readout matrix rather than activation-SAE features of hidden states.
+For a hidden state, projection onto these directions gives
+\emph{readout feature projections} before any token, contrast, or margin is
+selected. A chosen linear function of unembedding rows is a \emph{scalar readout
+target}; it supplies target coefficients that turn the projections into
+\emph{signed feature contributions} plus explicit reconstruction residuals. We
+call the resulting target-conditioned object a \emph{local score decomposition}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.78\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_verify_assume/qwen2b_lens_prism_comparison_verify_assume.pdf}
     \caption{\textbf{From lens output to a local score decomposition.}
     SRP keeps the \texttt{verify}-minus-\texttt{assume} target fixed while
-    decomposing the score into signed sparse readout-feature terms and an explicit
+    decomposing the score into signed feature terms plus an explicit
     reconstruction residual.}
     \label{fig:main-lens-prism-comparison}
 \end{figure}
 
-SRP works on the readout side. A scalar readout target can be a token logit
-\(h^\top w_t\), pairwise logit difference \(h^\top(w_A-w_B)\), reference
-contrast, group contrast, or top-competitor margin. For a fixed hidden state and
-target, the terms are local and checkable against the exact score and residual.
-
-SRP applies sparse-autoencoder and dictionary-learning machinery to the LM head
-itself \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling},
-factorizing the final unembedding matrix into sparse token-row coefficients and
-shared readout directions,
-\[
-    \WU \approx \mathbf{1}\mu^\top + ZD_{\mathrm{feat}} .
-\]
-This defines a reusable readout-feature basis before any target is chosen.
-Projecting a hidden state \(h\) onto these decoder directions gives a readout
-feature projection vector over directions learned from unembedding rows. A
-scalar readout target then turns those projections into signed feature
-contributions plus a residual.
-
 \Cref{fig:main-lens-prism-comparison} illustrates this identity on a
-\texttt{verify}-minus-\texttt{assume} margin: SRP keeps the pairwise target fixed,
-assigns positive signed contributions to features labeled by
-verification/checking tokens, negative contributions to assumption-related
-features, and reports the residual.
+\texttt{verify}-minus-\texttt{assume} margin: SRP keeps the pairwise logit
+difference fixed, assigns positive signed feature contributions to readout
+features with labels summarizing verification/checking token rows, assigns
+negative signed feature contributions to readout features with labels summarizing
+assumption-related token rows, and reports the residual.
+
+SRP operates on scalar readout targets: token logits, pairwise logit differences,
+group contrasts, or top-competitor margins.
+For a fixed hidden state and target, the terms are local and checkable against
+the original score and residual. Diagnostics identify settings where the sparse
+terms preserve selected readout scores closely enough for local analysis. In the
+Qwen settings selected by these checks, SRP preserves held-out contrast signs at
+\(0.949\)--\(0.958\) with median relative reconstruction error below \(0.10\).
 
 The paper contributes:
 \begin{itemize}
-    \item a novel sparse dictionary factorization of the final unembedding / LM head
-    that defines a reusable readout-feature basis;
+    \item a sparse dictionary factorization of the final unembedding / LM head
+    that defines a sparse feature basis for the readout;
     \item a scalar readout-target formalism that turns token scores, token
     contrasts, group contrasts, and margins into signed feature contributions;
     \item fidelity diagnostics for LM-head replacement, target reconstruction,
@@ -61,10 +62,5 @@ The paper contributes:
     preserve the original readout score;
     \item analyses showing how target choice, prompt context, residual-stream
     components, and constrained readout-side edits interact with the same
-    readout-feature basis.
+    readout feature basis.
 \end{itemize}
-
-Diagnostics identify settings where the feature terms preserve selected readout
-scores closely enough for local analysis. In the Qwen settings selected by these
-checks, SRP preserves held-out contrast signs at \(0.949\)--\(0.958\) with median
-relative reconstruction error below \(0.10\).
