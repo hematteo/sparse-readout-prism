@@ -305,24 +305,27 @@ Appendix~\ref{app:feature-resolved-dla}.
 
 \FloatBarrier
 
-\subsection{Selected Readout Features Move Held-Out Lexical Scores}
+\subsection{Selected Readout Features Transfer to Evaluation Tokens}
 \label{sec:readout-feature-edits}
 
-Do directions selected from local bars transfer to held-out lexical readout
-scores? We treat this as a candidate readout-side intervention: the test edits
-specified logits along selected readout SAE decoder directions and measures
-lexical logit differences, not downstream generation behavior.
+Do directions selected from local bars also move lexical readouts for evaluation
+tokens not used during selection? We treat this as a candidate readout-side
+intervention: the test edits specified logits along selected readout SAE decoder
+directions and measures lexical logit differences, not downstream generation
+behavior.
 
 \paragraph{Constrained readout edit.}
 The test edits logits along ten Qwen3.5-2B decoder directions selected from five
-discovery terms, then measures specified lexical logit differences on discovery
-and held-out tokens.
+discovery terms, then measures specified lexical logit differences for both the
+discovery tokens and separate evaluation tokens.
 
 \begin{table}[H]
 \caption{\textbf{Constrained Qwen3.5-2B readout-side lexical edit.}
-All methods use intervention scale \(16\). \(\Delta p_{\mathrm{bad}}\) is a
-positive reduction in held-out profane-token probability; median KL is
-next-token distribution shift.}
+All methods use intervention scale \(16\). Discovery flip is measured on tokens
+used to select the directions; evaluation flip and \(\Delta p_{\mathrm{bad}}\)
+are measured on separate tokens not used during selection.
+\(\Delta p_{\mathrm{bad}}\) is a positive reduction in profane-token
+probability; median KL is next-token distribution shift.}
 \label{tab:main-readout-edit}
 \centering
 \scriptsize
@@ -330,8 +333,8 @@ next-token distribution shift.}
 \renewcommand{\arraystretch}{1.06}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
-Method & \makecell{Disc.\\flip} & \makecell{Held-out\\flip} &
-\makecell{Held-out\\\(\Delta p_{\mathrm{bad}}\)} &
+Method & \makecell{Disc.\\flip} & \makecell{Eval.\\flip} &
+\makecell{Eval.\\\(\Delta p_{\mathrm{bad}}\)} &
 \makecell{Median\\KL} \\
 \midrule
 Readout SAE directions (10) & \(0.450\) & \(0.359\) & \(0.398\) & \(0.679\) \\
@@ -344,12 +347,14 @@ No intervention & \(0.000\) & \(0.000\) & \(0.000\) & \(0.000\) \\
 \end{table}
 
 \Cref{tab:main-readout-edit} shows that readout SAE directions selected from
-discovery tokens move held-out lexical logit differences (flip rate \(0.359\)),
-matching the oracle held-out flip rate with larger distribution shift; a
-discovery-token-only bias has no held-out effect.
+discovery tokens also move lexical logit differences for evaluation tokens
+not used during selection (flip rate \(0.359\)), matching the oracle evaluation
+flip rate with larger distribution shift; a discovery-token-only bias has no
+effect on the evaluation tokens.
 Appendix~\ref{app:lexical-control-stress-test} repeats this on
-R1-Distill-Qwen-7B. These results show readout-score movement from discovered
-directions in a candidate-constrained test; downstream generation behavior is a
-separate evaluation layer.
+R1-Distill-Qwen-7B. These results show that directions discovered from one token
+set can move related lexical readout scores for a separate evaluation set in a
+candidate-constrained test; downstream generation behavior is a separate
+evaluation layer.
 
 \FloatBarrier
