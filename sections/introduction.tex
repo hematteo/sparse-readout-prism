@@ -11,6 +11,16 @@ dot product with an unembedding row or readout direction. This leaves a local
 gap: the score does not identify which shared readout-side directions support or
 oppose the target, or how much residual remains after a sparse account.
 
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.75\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_verify_assume/qwen2b_lens_prism_comparison_verify_assume.pdf}
+    \caption{\textbf{From lens output to a local score decomposition.}
+    The \texttt{verify}-minus-\texttt{assume} target is held fixed while the
+    learned basis and target coefficients decompose the score into signed
+    feature terms plus an explicit reconstruction residual.}
+    \label{fig:main-lens-prism-comparison}
+\end{figure}
+
 Sparse Readout Prism (SRP) addresses this gap by separating the basis from the
 target. It learns a sparse dictionary for final-unembedding rows: each row
 receives sparse token-row coefficients over shared directions plus a row
@@ -28,18 +38,8 @@ target supplies coefficients \(\beta_i\), the context supplies projections
 \(h^\top d_i\), and their product
 \(c_i=\beta_i h^\top d_i\) is a \emph{signed feature contribution}. Positive
 terms raise the chosen scalar target and negative terms lower it. Feature terms,
-shared offset when present, and residual form a local score decomposition in
-original logit units.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.78\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_verify_assume/qwen2b_lens_prism_comparison_verify_assume.pdf}
-    \caption{\textbf{From lens output to a local score decomposition.}
-    The \texttt{verify}-minus-\texttt{assume} target is held fixed while the SRP
-    basis and target coefficients decompose the score into signed feature terms
-    plus an explicit reconstruction residual.}
-    \label{fig:main-lens-prism-comparison}
-\end{figure}
+optional offset, and residual give a local score decomposition in original logit
+units.
 
 \Cref{fig:main-lens-prism-comparison} shows this identity for a fixed
 \texttt{verify}-minus-\texttt{assume} margin.
