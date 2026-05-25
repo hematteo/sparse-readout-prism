@@ -1,37 +1,38 @@
 \section{Related Work}
 
 \paragraph{Lens-style readout interfaces.}
-Lens-style methods inspect hidden states by mapping them to vocabulary
-distributions, future-token predictions, continuations, or descriptions
-\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
-SRP keeps this readout-facing interface but factorizes the model's own LM head
-behind it: a selected token logit or contrast remains a dot product with an
-unembedding row or row combination, and SRP decomposes that readout direction
-into sparse feature terms with residual checks.
+SRP keeps the lens-style readout interface but factorizes the model's own LM
+head behind it: a selected token logit or contrast remains a dot product with
+an unembedding row or row combination, and SRP decomposes that readout
+direction into sparse feature terms with residual checks. Prior lens methods
+map hidden states to vocabulary distributions, future-token predictions,
+continuations, or descriptions
+\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes},
+leaving the readout direction itself unfactorized.
 
 \paragraph{Output geometry and sparse row dictionaries.}
-Output embeddings have been studied as learned representations and
-prediction-shaping geometry
-\citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
-Token rows, weight tying, softmax rank constraints, and vocabulary segmentation
-affect final scores. Activation-SAE work learns dictionaries over hidden-state
-distributions and has established sparse-feature diagnostics
+SRP applies sparse-dictionary machinery to a different object than prior
+activation-SAE work: unembedding rows. Its sparse codes are token-row
+coefficients, its decoder directions are readout feature directions, and
+\(h^\top d_i\) is a hidden-state projection onto that readout basis, not an
+activation-SAE code. Output embeddings have been studied as learned
+representations and prediction-shaping geometry
+\citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe},
+where token rows, weight tying, softmax rank constraints, and vocabulary
+segmentation affect final scores; activation-SAE work has established
+sparse-feature dictionaries and diagnostics over hidden-state distributions
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,karvonen2025saebench,makelov2024principled}.
-SRP uses SAE machinery on a different object: unembedding rows. Its sparse
-codes are token-row coefficients, its decoder directions are readout feature
-directions, and \(h^\top d_i\) is a hidden-state projection onto that readout
-basis, not an activation-SAE code.
 
 \paragraph{Additive attribution and mechanisms.}
-Component attribution and logit-prism methods ask where logit evidence is
-written in the residual stream
-\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. The
-same literature uses standard selected readout objects, including token logits
-and logit-difference directions. SRP asks the complementary readout-side
-question: which sparse readout directions raise or lower a selected score.
-Because the selected-direction terms are linear in the hidden state, they
-compose with residual-stream attribution to yield feature-resolved DLA for a
-realized forward pass. This is additive accounting for readout scores, not
-intervention-tested mechanism discovery
+SRP asks the complementary readout-side question to component attribution:
+which sparse readout directions raise or lower a selected score. Because the
+selected-direction terms are linear in the hidden state, they compose with
+residual-stream attribution to yield feature-resolved DLA for a realized
+forward pass. Component attribution and logit-prism methods locate where logit
+evidence is written in the residual stream
+\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms} using standard
+readout objects such as token logits and logit-difference directions; this is
+additive accounting for readout scores, not intervention-tested mechanism
+discovery
 \citep{conmy2023acdc,geiger2023causalabstraction,dunefsky2024transcoders,ameisen2025circuittracing}.
 Broader positioning appears in Appendix~\ref{app:extended-related-work}.

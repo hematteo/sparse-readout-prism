@@ -3,10 +3,10 @@
 \paragraph{Scope of score decompositions.}
 The fixed SRP basis gives local score decompositions only after selecting a
 token logit, logit difference, or other fixed linear combination of LM-head
-rows. Features are learned from LM-head rows and hidden states enter through
-projections onto them, so the selected direction fixes signed support and
-opposition, while residuals govern whether
-term-level interpretation is trustworthy. Feature-resolved DLA is additive
+rows. Features are learned from LM-head rows; hidden states enter only through
+projections onto those feature directions, so the selected direction fixes
+signed support and opposition, while residuals govern whether term-level
+interpretation is trustworthy. Feature-resolved DLA is additive
 accounting over residual-stream components, and the readout edit is a
 constrained lexical-score test. Both nominate candidate directions; causal
 necessity, sufficiency, and generation-level effects require separate

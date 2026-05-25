@@ -5,7 +5,7 @@ Throughout, ``readout'' means the final unembedding or LM head
 \(\WU\in\R^{|\mathcal{V}|\times d}\). For hidden state \(h\in\R^d\), row \(t\)
 is \(w_t^\top\), and the full logit vector is \(\WU h\).
 
-Sparse Readout Prism (SRP) has three steps. First, it factorizes the final
+SRP has three steps. First, it factorizes the final
 unembedding into a sparse readout basis: token-row coefficients over shared
 readout feature directions, plus residuals. Second, it projects a hidden state
 onto those directions, giving a score-independent profile in readout-feature
@@ -19,9 +19,9 @@ contributions plus an explicit residual for that score.
 \label{sec:method-factorization}
 \label{sec:method-fitting-readout-sae}
 
-SRP learns a sparse dictionary for rows of \(\WU\). We call the SAE trained on
-unembedding rows the readout SAE; unlike an activation SAE, its sparse codes
-describe token rows rather than hidden states. Following sparse-autoencoder
+SRP learns a sparse dictionary for rows of \(\WU\). We call the sparse
+autoencoder (SAE) trained on unembedding rows the \emph{readout SAE}; unlike an
+activation SAE, its sparse codes describe token rows rather than hidden states. Following sparse-autoencoder
 practice
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, it
 approximates each unembedding row. In the raw readout coordinates used for all
@@ -132,12 +132,6 @@ fixed from the original LM-head ranking before SRP decomposition, with
 \(\sum_{r\in\mathcal{R}}\pi_r=1\). \Cref{tab:method-special-cases} gives the
 corresponding sparse-feature coefficients.
 
-\paragraph{Local score decomposition.}
-The local identity separates what is fixed by the selected readout score from
-what changes with context. Once \(h\) and the readout direction \(q_\alpha\) are
-fixed, it turns score-independent projections into score-conditioned signed
-terms. All decompositions use raw readout coordinates and include the residual.
-
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/schematic_tikz/readout_query_one_column.pdf}
@@ -165,6 +159,10 @@ reconstruction gives
     &\quad + h^\top \sum_{t\in\mathcal{V}} \alpha_t r_t .
 \end{aligned}
 \]
+The shared-offset term \(\left(\sum_t\alpha_t\right) h^\top\mu\) vanishes
+whenever the coefficients sum to zero, which covers logit differences,
+group and vocabulary-mean contrasts, and top-competitor margins
+(\Cref{sec:method-score-coefficients}).
 For readout feature \(i\), define its direction coefficient and signed feature
 contribution:
 \[
@@ -174,9 +172,10 @@ contribution:
 \]
 Here \(\beta_i(\alpha)\) is fixed by the selected direction and readout SAE,
 while \(p_i(h)\) varies with context; when \(q=q_\alpha\) is clear, we write
-\(\beta_i(q)\). A feature matters locally when both factors are large in
-magnitude. The profile coordinate alone is not support or opposition until a
-selected readout direction is fixed
+\(\beta_i(q)\). A feature matters locally only when both factors are large in
+magnitude---reiterating the point of
+\Cref{sec:method-feature-projections}, the projection coordinate alone is not
+support or opposition until a selected direction supplies its coefficient
 (Appendix~\ref{app:global-readout-feature-profiles}).
 
 For a selected score, let
@@ -244,10 +243,6 @@ Score or contrast & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
 \end{tabularx}
 \end{table}
 
-For zero-sum contrasts and margins, the shared offset cancels. This includes
-competitor margins because their weights satisfy
-\(\sum_{r\in\mathcal{R}}\pi_r=1\).
-
 \subsection{Residuals, Sign Checks, and Interpretation Rules}
 \label{sec:method-reading-local-accounts}
 
@@ -261,10 +256,12 @@ contrasts. We compute relative reconstruction error as
     \qquad
     \delta=0.5\ \text{logit}.
 \]
-We read feature bars only when \(s_{\mathrm{recon}}\) is close to
-\(s_{\mathrm{exact}}\) (small \(|\epsilon|\) or \(\rho\)); for signed contrasts,
-the reconstructed and exact scores must also agree in sign before support and
-opposition are interpreted.
+The half-logit floor \(\delta\) keeps \(\rho\) bounded when
+\(|s_{\mathrm{exact}}|\) is near zero, so the metric is comparable across
+score magnitudes. We read feature bars only when \(s_{\mathrm{recon}}\) is
+close to \(s_{\mathrm{exact}}\); aggregate analyses use the threshold
+\(\rho<0.5\), and for signed contrasts the reconstructed and exact scores
+must also agree in sign before support and opposition are interpreted.
 
 Figures may truncate small bars, but reconstructions use the full feature sum.
 Claims remain tied to feature ids, signed contributions, and residuals; labels
