@@ -16,8 +16,9 @@ adapts tuned-lens-style decoding to Indian languages
 \citep{panchal2026indictunedlens}. These methods keep the hidden-state
 inspection interface current by varying what is decoded, which representation is
 used, or where the interface is applied. SRP borrows the same readout-facing
-motivation, but differs in target: it keeps the model's own final LM head and
-factorizes the rows used to score selected scalar readout targets. It is not a
+motivation, but differs in object: it keeps the model's own final LM head and
+factorizes the rows used to score selected token logits, logit differences, and
+other fixed row-combination scores. It is not a
 replacement lens for future-token decoding, vision-language representations, or
 multilingual settings; these variants are complementary front ends to
 hidden-state inspection.
@@ -33,9 +34,9 @@ weight-based SAE interpretation also studies how activation-SAE features
 interact with model weights and output-token effects
 \citep{liu2026weightbasedsae}. SRP borrows the emphasis on standardized
 sparse-feature evaluation and model-family-specific artifacts, but differs in
-fitted object and diagnostic target. These works analyze activation features and
+fitted object and diagnostic focus. These works analyze activation features and
 their downstream roles; SRP fits the sparse dictionary directly to unembedding
-rows, making LM-head replacement, scalar readout-target reconstruction, and
+rows, making LM-head replacement, selected-score reconstruction, and
 explicit residual terms part of the readout decomposition. SRP therefore does
 not evaluate activation-SAE feature quality or replace activation-feature
 infrastructure.

@@ -3,8 +3,8 @@
 
 This appendix gives a focused set of Qwen-family companion analyses that support
 the main text without turning the appendix into an example gallery. It proceeds
-from additional margin examples to readout-target variants, fixed-token context
-shifts, profiles, logit-lens comparisons, and token-row audits.
+from additional margin examples to selected-score variants, fixed-token context
+shifts, projection profiles, logit-lens comparisons, and token-row audits.
 All figures use the same Qwen3.5-2B \(32\times\), native-\(k=256\) SAE trained
 on unembedding rows and the reconstruction error reporting conventions from
 Appendix~\ref{app:display-taxonomy}.
@@ -18,7 +18,7 @@ logit-lens display for the literature prompt
 columns cover the first eight prompt tokens. The top panel is the ordinary
 logit-lens top-token trajectory after applying the model's final normalization
 at each layer. The bottom panel lists the two largest positive decomposition
-terms supporting each cell's centered logit-lens top-token score.
+terms supporting each cell's vocabulary-mean top-token contrast.
 The feature labels are decoded from top Qwen unembedding rows as token-label
 summaries for the feature ids.
 
@@ -30,7 +30,7 @@ summaries for the feature ids.
     columns show the first eight tokens. The top panel reports the ordinary
     logit-lens top-token prediction at each layer. The bottom panel lists the
     top positive decomposition terms contributing to each cell's
-    centered top-token score under the same Qwen3.5-2B \(32\times\),
+    vocabulary-mean top-token contrast under the same Qwen3.5-2B \(32\times\),
     native-\(k=256\) readout SAE used throughout this appendix.}
     \label{fig:app-dickens-all-layer-proto-lens}
 \end{figure*}
@@ -57,25 +57,26 @@ features against trout/salmon features. The relative reconstruction errors are
     \label{fig:app-selected-readout-prism-extra-examples}
 \end{figure*}
 
-\subsection{Additional Readout Target Examples}
+\subsection{Additional Selected-Score Examples}
 \label{app:readout-target-family-display-example}
 
 Figure~\ref{fig:qwen-general-readout-targets-basic} gives the single-state
-example summarized in the main text: scalar, reference, and pairwise readout
-targets can produce different local score decompositions for the same hidden state.
+example summarized in the main text: raw-token, vocabulary-mean contrast, and
+pairwise logit-difference scores can produce different local score decompositions for the
+same hidden state.
 Figure~\ref{fig:app-qwen-general-readout-targets-extra} adds a group contrast
 and a top-competitor margin.
 
 \begin{figure*}[!tbp]
     \centering
     \AppendixWideGraphic{figures/proto_token_lens/qwen2b_general_readout_queries_jury_top5/qwen2b_general_readout_queries_1x3.pdf}
-    \caption{\textbf{Same hidden state, different readout targets.}
+    \caption{\textbf{Same hidden state, different selected scores.}
     All panels use the same final hidden state from the prompt ``After reviewing
     the evidence, the jury found the defendant''. They ask for the raw
     \texttt{guilty} score, the
-    \texttt{guilty}-versus-vocabulary-mean reference contrast, and the
+    \texttt{guilty}-versus-vocabulary-mean contrast, and the
     \texttt{guilty}-minus-\texttt{not} logit difference. Positive bars increase
-    the chosen scalar; negative bars reduce it.}
+    the chosen score; negative bars reduce it.}
     \label{fig:qwen-general-readout-targets-basic}
 \end{figure*}
 
@@ -85,16 +86,16 @@ and a top-competitor margin.
     \caption{\textbf{Additional Qwen examples of group contrasts and top-competitor margins.}
     The left panel asks an abstention-group versus forced-color-group contrast;
     the right panel asks how strongly the \texttt{guilty} winner beats its rank-5
-    competitor. Bars increase or reduce the chosen scalar according to their sign
+    competitor. Bars increase or reduce the chosen score according to their sign
     and are labeled directly with feature ids and token summaries.}
     \label{fig:app-qwen-general-readout-targets-extra}
 \end{figure*}
 
-\subsection{Benchmark-Format Readout Target Examples}
+\subsection{Benchmark-Format Readout Contrast Examples}
 \label{app:benchmark-derived-display-examples}
 
 Figure~\ref{fig:app-benchmark-task-group-examples} gives representative
-low-error QA decompositions for the benchmark-derived readout targets summarized in
+low-error QA decompositions for the benchmark-derived readout contrasts summarized in
 \Cref{tab:benchmark-derived-task-targets}.
 
 \begin{figure*}[!tbp]
@@ -169,7 +170,7 @@ view, we can rank readout features directly from the hidden state
 before choosing a token or logit difference. For a final readout state \(h\), we
 score each SAE decoder direction by \(h^\top d_i\). Vocabulary rows then label
 the selected directions by their highest-associated rows. These figures therefore
-show score-independent profiles; target-specific figures provide the local score
+show score-independent profiles; score-specific figures provide the local score
 contributions.
 
 \begin{figure*}[!tbp]
@@ -203,7 +204,7 @@ contributions.
 Figure~\ref{fig:main-lens-prism-comparison} gives the main-text lens-versus-prism
 comparison. Table~\ref{tab:app-lens-comparison-examples} lists four additional
 Qwen3.5-2B examples where the ordinary logit lens gives a local A-vs-B
-logit difference and the SRP local score decomposition exposes the competing feature terms
+logit difference and the SRP local score decomposition separates the competing feature terms
 behind that contrast. The prompt-injection case illustrates how SRP can
 decompose an undesirable local readout ranking: the ordinary lens favors the wrong
 action and the sparse terms reconstruct that contrast tightly.
@@ -222,7 +223,7 @@ reconstruction errors.}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{0.23\linewidth}>{\RaggedRight\arraybackslash}p{0.22\linewidth}rrrY@{}}
 \toprule
-Case & Target & exact & sparse & \(\rho\) & Note \\
+Case & Contrast & exact & sparse & \(\rho\) & Note \\
 \midrule
 Prompt injection & \texttt{summarize} -- \texttt{delete} & -4.000 & -4.123 & 0.031 & undesirable local readout ranking \\
 Ambiguous action & \texttt{ask} -- \texttt{run} & +4.125 & +4.571 & 0.108 & successful pairwise contrast \\
@@ -257,7 +258,7 @@ Contribution & Side & Token summary \\
 \bottomrule
 \end{tabular}
 \end{center}
-The lens reports the local readout ranking; SRP exposes the signed feature
+The lens reports the local readout ranking; SRP reports the signed feature
 terms behind it.
 
 \subsection{Token-Row Audit for Main Case-Study Features}
@@ -265,12 +266,12 @@ terms behind it.
 
 Table~\ref{tab:app-qualitative-feature-label-audit} gives a conservative
 qualitative audit over the claim-bearing displayed labels in the Qwen feature
-figures. This is not a feature-validity score: labels that are target-token
+figures. This is not a feature-validity score: labels that are selected-token
 heavy, generic, function-word dominated, punctuation-like, or letter/case
 directions are separated from coherent lexical labels rather than counted as
 labeling successes. The audit asks whether the displayed token-row summary is coherent
 enough to support the prose label used in the paper, and whether coherent labels
-point to the target side indicated by the signed feature term. The measured
+point to the side indicated by the signed feature term. The measured
 objects remain feature ids, signed contributions, and reconstruction residuals.
 The row-level source table, refined feature descriptions, and full top-20
 token-row audit are included with the figure artifacts.

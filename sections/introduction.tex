@@ -21,14 +21,15 @@ score as a single dot product.
     \centering
     \includegraphics[width=0.75\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_verify_assume/qwen2b_lens_prism_comparison_verify_assume.pdf}
     \caption{\textbf{From lens output to a local score decomposition.}
-    The \texttt{verify}-minus-\texttt{assume} target is held fixed while the
-    learned basis and target coefficients decompose the score into signed
-    feature terms plus an explicit reconstruction residual.}
+    The \texttt{verify}-minus-\texttt{assume} logit difference is held fixed
+    while the learned basis decomposes the score into signed feature terms plus
+    an explicit reconstruction residual.}
     \label{fig:main-lens-prism-comparison}
 \end{figure}
 
-Sparse Readout Prism (SRP) addresses this gap by separating the basis from the
-target. It learns a sparse dictionary for final-unembedding rows: each row
+Sparse Readout Prism (SRP) addresses this gap by separating the readout basis
+from the score being decomposed. It learns a sparse dictionary for
+final-unembedding rows: each row
 receives sparse token-row coefficients over shared directions plus a row
 reconstruction residual. We call the shared directions
 \emph{readout features}: features of LM-head rows, not activation-SAE features
@@ -37,20 +38,19 @@ of hidden states. SRP uses sparse-autoencoder and dictionary-learning machinery
 but trains on unembedding rows rather than hidden-state activations.
 
 After fitting, a hidden state enters through projections onto readout features.
-Target selection is separate: a \emph{scalar readout target} is a selected
-linear function of unembedding rows, such as a token logit, pairwise logit
-difference, group contrast, reference contrast, or top-competitor margin. The
-target supplies coefficients \(\beta_i\), the context supplies projections
-\(h^\top d_i\), and their product
-\(c_i=\beta_i h^\top d_i\) is a \emph{signed feature contribution}. Positive
-terms raise the chosen scalar target and negative terms lower it. Feature terms,
-optional offset, and residual give a local score decomposition in original logit
-units.
+A chosen score fixes a readout direction: standard cases include a token logit
+\(h^\top w_A\), a pairwise logit difference \(h^\top(w_A-w_B)\), a group or
+vocabulary-mean contrast, and a top-competitor margin. This selected direction
+supplies coefficients \(\beta_i\), the context supplies projections
+\(h^\top d_i\), and their product \(c_i=\beta_i h^\top d_i\) is a
+\emph{signed feature contribution}. Positive terms raise the chosen score and
+negative terms lower it. Feature terms, optional offset, and residual give a
+local score decomposition in original logit units.
 
 \Cref{fig:main-lens-prism-comparison} shows this identity for a fixed
 \texttt{verify}-minus-\texttt{assume} margin.
 
-We gate interpretation with LM-head replacement, target reconstruction, sign
+We gate interpretation with LM-head replacement, score reconstruction, sign
 agreement, relative error, and comparison against null and reference baselines.
 In the high-fidelity Qwen rows in
 \Cref{tab:readout-query-fidelity-summary}, the fixed basis preserves held-out
@@ -59,20 +59,21 @@ error below \(0.10\).
 
 This lets us ask readout-level questions a logit lens alone does not answer:
 how feature contributions change with prompt context, how residual-stream
-components contribute additively to a target, and which readout directions move
-candidate lexical scores without retraining. Claims remain tied to feature ids,
-signed terms, and residuals; feature labels are descriptive summaries of
-high-coefficient vocabulary rows.
+components contribute additively to a selected score, and which readout
+directions move candidate lexical scores without retraining. Claims remain tied
+to feature ids, signed terms, and residuals; feature labels are descriptive
+summaries of high-coefficient vocabulary rows.
 
 The paper contributes:
 \begin{itemize}
     \item a sparse dictionary factorization of the LM head into token-row
     coefficients and shared feature directions;
-    \item a scalar-target formalism that converts token logits, pairwise
-    differences, group contrasts, reference contrasts, and top-competitor
-    margins into signed feature contributions plus residuals;
-    \item a fidelity suite that gates interpretation of SRP decompositions;
-    \item analyses of target choice, prompt context, feature-resolved
-    residual-stream attribution, and candidate edit directions, each restricted
-    to cases with the relevant diagnostics reported.
+    \item a way to apply this fixed basis to standard readout scores--token
+    logits, logit differences, group contrasts, vocabulary-mean contrasts, and
+    top-competitor margins--yielding signed feature contributions plus
+    residuals;
+    \item diagnostics and baselines that identify when these decompositions
+    preserve the original readout scores;
+    \item validation-gated analyses of score choice, prompt context,
+    feature-resolved residual-stream attribution, and candidate edit directions.
 \end{itemize}

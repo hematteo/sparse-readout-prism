@@ -1,20 +1,20 @@
-\section{DLA by SAE Feature}
+\section{Feature-Resolved DLA}
 \label{app:feature-resolved-dla}
 
 \Cref{sec:feature-resolved-component-decomposition} uses Sparse Readout Prism
 terms inside ordinary direct-logit-attribution decomposition as an additive
 decomposition identity
 \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. This appendix
-states the identity. For a scalar readout target
+states the identity. For a selected readout direction
 \(q=\sum_t \alpha_t w_t\), let \(m_\alpha=\sum_t\alpha_t\) and
 \(r_q=\sum_t\alpha_t r_t\). Sparse Readout Prism gives
 \[
     q = m_\alpha\mu+\sum_i \beta_i(q)d_i + r_q ,
 \]
 where \(d_i\) is an SAE decoder direction and \(r_q\) is the readout
-reconstruction residual for the selected target. The displayed targets below
-are zero-sum centered or contrast targets, so \(m_\alpha=0\) and the offset
-term cancels; raw token-logit targets would retain it. At a hidden state \(h\),
+    reconstruction residual for the selected score. The displayed scores below
+    are zero-sum vocabulary-mean or token-token contrasts, so \(m_\alpha=0\) and
+    the offset term cancels; raw token logits would retain it. At a hidden state \(h\),
 \[
     h^\top q
     =
@@ -34,7 +34,7 @@ are
     R_c(q)&=h_c^\top r_q .
     \end{aligned}
 \]
-For the zero-sum targets used in the figures, \(O_c(q)=0\). We therefore report
+For the zero-sum contrasts used in the figures, \(O_c(q)=0\). We therefore report
 two separate gaps: the DLA additivity error between \(h^\top q\) and
 \(\sum_c h_c^\top q\), and the readout SAE residual \(h^\top r_q\) (or its
 componentized version \(\sum_c R_c(q)\) under the same DLA approximation).
@@ -45,34 +45,34 @@ additivity terms are included separately.
 The main display uses the pairwise logit difference
 \(q=w_{\mathrm{verify}}-w_{\mathrm{assume}}\), for which
 \(\beta_i(q)=z_{\mathrm{verify},i}-z_{\mathrm{assume},i}\). The same identity
-also covers a row-centered token readout \(q=w_{\mathrm{verify}}-\bar{w}\), which
+also covers the vocabulary-mean contrast \(q=w_{\mathrm{verify}}-\bar{w}\), which
 asks how residual-stream components decompose one resolved token's readout
 above the vocabulary-mean row. The component view is additive decomposition over a
 realized forward pass and can be paired with separate interventions for circuit
 analysis \citep{geiger2023causalabstraction}.
 
-\Cref{fig:qwen-prism-dla-verify-token-app} shows the row-centered token-readout
-version. This is the same source-verification prompt, but the target is
+\Cref{fig:qwen-prism-dla-verify-token-app} shows the vocabulary-mean contrast
+version. This is the same source-verification prompt, but the selected score is
 \(h^\top(w_{\mathrm{verify}}-\bar{w})\); the main figure uses the token-token
 logit difference.
 
 \begin{figure*}[!tbp]
     \centering
     \AppendixWideGraphic[height=0.34\textheight]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_token/qwen2b_32x_prism_dla_verify_token_layer_readout.pdf}
-    \caption{\textbf{Row-centered token-readout component attribution.}
-    The plot decomposes the row-centered \texttt{verify} readout
+    \caption{\textbf{Vocabulary-mean contrast component attribution.}
+    The plot decomposes the vocabulary-mean \texttt{verify} contrast
     \(h^\top(w_{\mathrm{verify}}-\bar{w})\) for the source-verification prompt by
     residual-stream component. Each row stacks readout terms grouped into
     verification/checking features, remaining sparse features, and the
     unembedding reconstruction error term; black points mark ordinary direct logit
-    attribution for that residual-stream component. The row-centered readout is
+    attribution for that residual-stream component. The vocabulary-mean contrast is
     \(+17.34\), the component DLA sum is \(+17.34\), and the sparse
     SAE feature sum is \(+17.43\), with relative reconstruction error \(0.005\).}
     \label{fig:qwen-prism-dla-verify-token-app}
 \end{figure*}
 
 \Cref{fig:qwen-prism-dla-verify-assume-app} is the pairwise companion to the
-row-centered view above. It adds the \texttt{assume} side of the contrast, so
+vocabulary-mean view above. It adds the \texttt{assume} side of the contrast, so
 verification/checking and assumption-family terms can be read on the same
 component axis.
 

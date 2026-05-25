@@ -283,19 +283,19 @@ across two distillation lineages makes post-training a plausible contributor; a
 matched base-vs.-distill ablation within one architecture would further isolate
 the effect.
 
-\paragraph{R1 contrastive readout-target fidelity.}
-We also ran the held-out contrastive readout-target fidelity check on the two
+\paragraph{R1 contrastive score reconstruction.}
+We also ran the held-out contrastive score-reconstruction check on the two
 R1-distilled checkpoints. Table~\ref{tab:app-k-r1-qfid} reports these results
 using the same bank version as the five-model run. Sign agreement remains close
 to the five-model baseline; the fraction below the residual threshold is
 comparable in the fidelity setting and lower under the stricter setting.
 
 \begin{table}[!tbp]
-\caption{Held-out contrastive readout-target fidelity metrics for the R1-distilled
+\caption{Held-out contrastive score-reconstruction metrics for the R1-distilled
 checkpoints under the same contrast-bank version as the five-model run.
 ``sign'' is contrastive sign agreement; ``median resid.'' is the median relative
 residual $|\Delta\text{margin}|/|\text{exact margin}|$; ``resid.\(<0.5\)''
-is the fraction of held-out readout targets with relative residual below $0.5$.}
+is the fraction of held-out contrasts with relative residual below $0.5$.}
 \label{tab:app-k-r1-qfid}
 \centering
 \scriptsize
@@ -375,6 +375,6 @@ observed pattern: row reconstruction (which is uniform in $L_2$) is preserved,
 while decision fidelity (which is exponential in the logit error and dominated
 by the heaviest rows) separates from rowEV. This characterizes a second-order
 property of these reasoning-distilled comparison rows and motivates norm-aware
-SAE recipes as a natural extension for those targets.
+SAE recipes as a natural extension for those settings.
 
 \ReadoutSAEFloatBarrier

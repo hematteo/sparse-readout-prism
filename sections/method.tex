@@ -1,26 +1,33 @@
 \section{Method: Sparse Readout Prism}
 \label{sec:method}
 
-SRP keeps the logit-lens interface fixed: a hidden state \(h\) is still read out
-through the LM head \(\WU\). We separate two objects. The \emph{readout SAE} is
-the dictionary mechanism: a standard TopK sparse autoencoder
-\citep{makhzani2013ksparse,gao2024scaling} fit to LM-head rows rather than
-hidden-state activations. \emph{Sparse Readout Prism} names the full protocol
-that combines this basis with a chosen linear target to produce local score
-accounts: projecting \(h\) onto the learned directions, applying target
-coefficients to form signed terms, and carrying the row reconstruction residual
-through to the final scalar score.
-
-\subsection{Sparse Factorization of the Readout}
-\label{sec:method-factorization}
+\subsection{Overview and Notation}
+\label{sec:method-overview-notation}
 
 Throughout, ``readout'' means the final unembedding or LM head
 \(\WU\in\R^{|\mathcal{V}|\times d}\). For hidden state \(h\in\R^d\), row \(t\)
 is \(w_t^\top\), and the full logit vector is \(\WU h\).
 
+Sparse Readout Prism (SRP) keeps this logit-lens interface fixed while
+separating the objects it combines. First, a \emph{readout SAE} factorizes
+LM-head rows into sparse token-row coefficients, shared readout feature
+directions, and row residuals. Second, a hidden state is projected onto those
+directions, producing readout feature projections before any score is selected.
+Third, a selected readout score--for example a token logit, logit difference,
+group contrast, or top-competitor margin--fixes a selected readout direction,
+which supplies direction coefficients and a sign convention. Finally,
+multiplying direction coefficients by hidden-state projections gives signed
+feature terms, with the row-reconstruction residual carried through to the
+selected score. We interpret displays only when the selected score is
+reconstructed with small residual and, for signed contrasts, preserved sign.
+
+\subsection{Sparse Factorization of the Readout}
+\label{sec:method-factorization}
+
 SRP first learns a sparse dictionary for rows of \(\WU\). We call the SAE trained
 on unembedding rows the readout SAE; unlike an activation SAE, its sparse codes
-describe token rows rather than hidden states. Following sparse-autoencoder practice
+describe token rows rather than hidden states. Following sparse-autoencoder
+practice
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, it
 approximates each unembedding row. In the raw readout coordinates used for all
 score decompositions, the fitted row and residual satisfy
@@ -31,41 +38,23 @@ score decompositions, the fitted row and residual satisfy
 \]
 where \(\mu\) is a shared offset, \(d_i\in\R^d\) is a readout feature direction
 (an SAE decoder direction), \(z_{t,i}\) is token row \(t\)'s sparse coefficient,
-and \(r_t\) is the residual.
-Thus
+and \(r_t\) is the residual. Thus
 \[
     w_t=\mu+\sum_i z_{t,i}d_i+r_t .
 \]
-Stacking fitted rows yields \(\widehat{\WU}\), and \(r_t\) supplies the
-residual term in later score decompositions;
-Appendix~\ref{app:score-decomposition} details centering and row normalization.
+Stacking fitted rows yields \(\widehat{\WU}\), and \(r_t\) supplies the residual
+term in later score decompositions; Appendix~\ref{app:score-decomposition}
+details centering and row normalization.
 
-We fit TopK sparse autoencoders \citep{makhzani2013ksparse,gao2024scaling} so
-row sparsity is comparable across tokens. Training uses preprocessed rows
-\[
-    x_t = \frac{w_t-\mu}{a_t},
-\]
-where \(a_t>0\), with \(a_t=1\) without row normalization. The encoder
-\(f_\theta\) maps \(x_t\) to a \(D\)-dimensional pre-code;
-\(\operatorname{TopK}_k\) keeps the \(k\) largest entries and decodes with
-directions \(\widetilde d_i\):
-\[
-    \widetilde z_t
-    =
-    \operatorname{TopK}_k(f_\theta(x_t)),
-    \qquad
-    \widehat{x}_t
-    =
-    \sum_{i=1}^{D}\widetilde z_{t,i}\widetilde d_i .
-\]
-The objective is row reconstruction in this preprocessed space,
-\[
-    \min_{\theta,\{\widetilde d_i\}}
-    \frac{1}{|\mathcal{V}|}
-    \sum_{t\in\mathcal{V}}
-    \left\|x_t-\widehat{x}_t\right\|_2^2 .
-\]
-After fitting, we convert back to raw readout space,
+\subsection{Fitting the Readout SAE}
+\label{sec:method-fitting-readout-sae}
+
+We fit TopK sparse autoencoders \citep{makhzani2013ksparse,gao2024scaling} to
+preprocessed rows \(x_t=(w_t-\mu)/a_t\), where \(a_t>0\) and \(a_t=1\) without
+row normalization. TopK keeps a fixed active-feature budget \(k\), making row
+sparsity comparable across tokens. Let \(\widetilde z_{t,i}\) and
+\(\widetilde d_i\) denote the sparse code entries and decoder directions learned
+in this preprocessed space. We convert them back to raw readout coordinates:
 \[
     z_{t,i}=a_t\widetilde z_{t,i},
     \qquad
@@ -83,7 +72,7 @@ appendices~\ref{app:readout-factorizer-sweeps}--%
 \label{sec:method-feature-projections}
 
 Once the readout feature directions \(d_i\) are fixed, a hidden state supplies
-target-independent projections onto them. Let \(Z\in
+score-independent projections onto them. Let \(Z\in
 \R^{|\mathcal{V}|\times D}\) collect the sparse row codes and let
 \(D_{\mathrm{feat}}\in\R^{D\times d}\) have rows \(d_i^\top\), with
 \(\mathbf{1}\) denoting the all-ones column vector. Then the reconstructed LM
@@ -108,20 +97,20 @@ For a hidden state \(h\), define
     \qquad
     p(h)=D_{\mathrm{feat}}h .
 \]
-The vector \(p(h)\) is the readout feature projection vector before target
-selection; support and opposition are defined only after a target supplies
-coefficients. Full readout replacement tests
-\(\widehat{\ell}(h)\), while local contributions below are target-conditioned.
-Quantitative reconstructions use the full feature sum, while plots may truncate
-small bars for readability.
+The vector \(p(h)\) is the readout feature projection vector before a score is
+selected; support and opposition are defined only after a readout direction
+supplies coefficients. Full readout replacement tests \(\widehat{\ell}(h)\),
+while local contributions below are score-conditioned.
 
-\subsection{Scalar Readout Targets}
+\subsection{Selecting Readout Scores}
 \label{sec:problem-setup}
 
-A scalar readout target is a linear combination of unembedding rows; it specifies
-the score SRP decomposes and which sign counts as support. Under this
-restriction, the same row factorization decomposes token logits, pairwise
-contrasts, group scores, and margins with an explicit residual.
+SRP applies the same readout basis to concrete readout objects: token logits,
+pairwise logit differences, group contrasts, vocabulary-mean contrasts, and
+top-competitor margins. We use \(q_\alpha\) for the selected readout direction
+fixed by one such object, and \(s_\alpha(h)=h^\top q_\alpha\) for the selected
+readout score. Within this selected-readout-score scope, the row residual gives
+an explicit score-reconstruction error.
 
 Formally, let \(\alpha\in\R^{|\mathcal{V}|}\) be a vector of vocabulary-row
 coefficients and define
@@ -130,7 +119,7 @@ coefficients and define
     \qquad
     s_\alpha(h)=h^\top q_\alpha .
 \]
-The token-logit target recovers the familiar logit-lens coordinate
+The token-logit case recovers the familiar logit-lens coordinate
 \[
     \ell_A(h)=h^\top w_A,
 \]
@@ -147,8 +136,8 @@ A pairwise logit difference,
     m_{A,B}(h)=h^\top(w_A-w_B),
 \]
 is positive when the readout favors token \(A\) over token \(B\); shared offsets
-cancel. For answer, action, or abstention
-targets represented by multiple token rows, we use group contrasts. For nonempty
+cancel. For answer, action, or abstention scores represented by multiple token
+rows, we use group contrasts. For nonempty
 \(\mathcal{A},\mathcal{B}\subseteq\mathcal{V}\), write
 \[
     \bar{w}_{\mathcal{A}}
@@ -161,9 +150,9 @@ The group contrast is
     =
     \bar{w}_{\mathcal{A}}-\bar{w}_{\mathcal{B}} .
 \]
-This keeps the target linear while reducing dependence on one tokenizer row; the
-vocabulary mean gives a reference contrast. When the relevant alternative is the
-model's local ranking, we use top-competitor margins
+This keeps the score linear while reducing dependence on one tokenizer row; the
+vocabulary mean defines a vocabulary-mean contrast. When the relevant
+alternative is the model's local ranking, we use top-competitor margins
 \(w_u-\sum_{r\in\mathcal{R}}\pi_r w_r\), with selected token \(u\), competitor
 set \(\mathcal{R}\) fixed from the original LM-head ranking before SRP
 decomposition, and fixed weights \(\pi_r\ge0\) with
@@ -172,25 +161,25 @@ decomposition, and fixed weights \(\pi_r\ge0\) with
 \subsection{Local Score Decomposition}
 \label{sec:method-local-score}
 
-The scalar \(s_\alpha(h)\) is the unit decomposed below. Once \(h\) and
-\(q_\alpha\) are fixed, the local identity turns target-independent projections
-into target-conditioned signed terms. All decompositions use raw readout
-coordinates and include the residual.
+The local identity separates what is fixed by the selected readout score from
+what changes with context. Once \(h\) and the readout direction \(q_\alpha\) are
+fixed, it turns score-independent projections into score-conditioned signed
+terms. All decompositions use raw readout coordinates and include the residual.
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/schematic_tikz/readout_query_one_column.pdf}
     \vspace{-0.8\baselineskip}
     \caption{\textbf{Local score decomposition schematic.}
-    A centered or contrast target is decomposed into readout features learned
+    A vocabulary-mean or other selected contrast is decomposed into readout features learned
     from unembedding rows. Positive/negative bars support the first/comparison
-    side; each signed term multiplies a target coefficient by \(h\)'s readout
+    side; each signed term multiplies a direction coefficient by \(h\)'s readout
     feature projection. Hatching marks reconstruction error; raw token logits
     also include a shared offset.}
     \label{fig:readout-query-schematic}
 \end{figure}
 
-Fix a hidden state \(h\) and any scalar readout target
+Fix a hidden state \(h\) and any selected readout direction
 \(q_\alpha=\sum_{t\in\mathcal{V}}\alpha_t w_t\). Substituting the SAE
 reconstruction gives
 \[
@@ -204,20 +193,64 @@ reconstruction gives
     &\quad + h^\top \sum_{t\in\mathcal{V}} \alpha_t r_t .
 \end{aligned}
 \]
-For readout feature \(i\), define its coefficient for the chosen target and its
-signed feature contribution as
+For readout feature \(i\), define its coefficient for the selected direction and
+its signed feature contribution as
 \[
     \beta_i(\alpha)=\sum_{t\in\mathcal{V}} \alpha_t z_{t,i},
     \qquad
     c_i(h,\alpha)=\beta_i(\alpha)\,p_i(h).
 \]
-Here \(\beta_i(\alpha)\) is fixed by the target and readout SAE, while
-\(p_i(h)=h^\top d_i\) varies with context; when \(q=q_\alpha\) is clear, we write
-\(\beta_i(q)\). Only their product is a local contribution. Positive terms raise
-the chosen scalar and negative terms lower it; the projection vector alone is
-target-independent (Appendix~\ref{app:global-readout-feature-profiles}).
+Here \(\beta_i(\alpha)\) is fixed by the selected direction and readout SAE,
+while \(p_i(h)=h^\top d_i\) varies with context; when \(q=q_\alpha\) is clear,
+we write \(\beta_i(q)\). Only their product is a local contribution. Positive
+terms raise the chosen score and negative terms lower it; the projection vector
+alone is score-independent
+(Appendix~\ref{app:global-readout-feature-profiles}).
 
-\subsection{Residual Diagnostics and Target Instantiations}
+\Cref{tab:method-special-cases} lists \(\beta_i(\alpha)\) for the score
+families. Write
+\(\bar{z}_{\mathcal{A},i}=|\mathcal{A}|^{-1}\sum_{a\in\mathcal{A}}z_{a,i}\)
+for the uniform average of feature \(i\)'s sparse coefficient over token group
+\(\mathcal{A}\). For top-competitor margins, write
+\(\bar{w}_{\pi,\mathcal{R}}=\sum_{r\in\mathcal{R}}\pi_r w_r\) and
+\(\bar{z}_{\pi,\mathcal{R},i}=\sum_{r\in\mathcal{R}}\pi_r z_{r,i}\).
+
+\begin{table}[tbp]
+\caption{\textbf{Coefficients for selected readout directions.}
+Rows instantiate the general direction \(q_\alpha\) and corresponding SAE feature
+coefficient \(\beta_i(\alpha)\). Barred quantities denote uniform token-set
+averages or competitor-weighted averages.}
+\label{tab:method-special-cases}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.14}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{0.34\linewidth}Z Z@{}}
+\toprule
+Score or contrast & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
+\midrule
+\textbf{Token score} & \(w_A\) & \(z_{A,i}\) \\
+\addlinespace[1pt]
+\textbf{Vocabulary-mean contrast} & \(w_A-\bar{w}_{\mathcal{V}}\) &
+\(z_{A,i}-\bar{z}_{\mathcal{V},i}\) \\
+\addlinespace[1pt]
+\textbf{Logit difference} & \(w_A-w_B\) & \(z_{A,i}-z_{B,i}\) \\
+\addlinespace[1pt]
+\textbf{Group contrast} &
+\(\bar{w}_{\mathcal{A}}-\bar{w}_{\mathcal{B}}\) &
+\(\bar{z}_{\mathcal{A},i}-\bar{z}_{\mathcal{B},i}\) \\
+\addlinespace[1pt]
+\textbf{Top-competitor margin} &
+\(w_u-\bar{w}_{\pi,\mathcal{R}}\) &
+\(z_{u,i}-\bar{z}_{\pi,\mathcal{R},i}\) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+For zero-sum contrasts and margins, the shared offset cancels; positive values
+support the first side and negative values support the comparison side.
+
+\subsection{Diagnostics and Display Conventions}
 \label{sec:method-residual-diagnostics}
 
 The residual term reports how much of the selected readout score remains outside
@@ -240,60 +273,18 @@ Aggregate summaries use relative reconstruction error
     \qquad
     \delta=0.5\ \text{logit}.
 \]
-The residual is the target-reconstruction diagnostic: small \(|\epsilon|\) or
+The residual is the score-reconstruction diagnostic: small \(|\epsilon|\) or
 \(\rho\) means the full feature sum, plus offset when present, reconstructs the
-chosen score, while large error marks incomplete sparse accounting. Figures
-report the original target score, feature sum, offset when present, and
-reconstruction error. Signed contrasts also require sign preservation.
+chosen score, while large error marks incomplete sparse accounting. Signed
+contrasts also require sign preservation. We interpret local score
+decompositions only with small residual or relative error and, for signed
+contrasts, preserved sign.
 
-\Cref{tab:method-special-cases} lists \(\beta_i(\alpha)\) for the target
-families. Write
-\(\bar{z}_{\mathcal{A},i}=|\mathcal{A}|^{-1}\sum_{a\in\mathcal{A}}z_{a,i}\)
-for the uniform average of feature \(i\)'s sparse coefficient over token group
-\(\mathcal{A}\). For top-competitor margins, write
-\(\bar{w}_{\pi,\mathcal{R}}=\sum_{r\in\mathcal{R}}\pi_r w_r\) and
-\(\bar{z}_{\pi,\mathcal{R},i}=\sum_{r\in\mathcal{R}}\pi_r z_{r,i}\).
-
-\begin{table}[tbp]
-\caption{\textbf{Scalar readout target coefficients.}
-Rows instantiate the general target \(q_\alpha\) and corresponding SAE feature
-coefficient \(\beta_i(\alpha)\). Barred quantities denote uniform token-set
-averages or competitor-weighted averages.}
-\label{tab:method-special-cases}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.14}
-\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{0.34\linewidth}Z Z@{}}
-\toprule
-Target & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
-\midrule
-\textbf{Token score} & \(w_A\) & \(z_{A,i}\) \\
-\addlinespace[1pt]
-\textbf{Reference contrast} & \(w_A-\bar{w}_{\mathcal{V}}\) &
-\(z_{A,i}-\bar{z}_{\mathcal{V},i}\) \\
-\addlinespace[1pt]
-\textbf{Logit difference} & \(w_A-w_B\) & \(z_{A,i}-z_{B,i}\) \\
-\addlinespace[1pt]
-\textbf{Group contrast} &
-\(\bar{w}_{\mathcal{A}}-\bar{w}_{\mathcal{B}}\) &
-\(\bar{z}_{\mathcal{A},i}-\bar{z}_{\mathcal{B},i}\) \\
-\addlinespace[1pt]
-\textbf{Top-competitor margin} &
-\(w_u-\bar{w}_{\pi,\mathcal{R}}\) &
-\(z_{u,i}-\bar{z}_{\pi,\mathcal{R},i}\) \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-For zero-sum contrasts and margins, the shared offset cancels; positive values
-support the first side and negative values support the comparison side. We
-interpret local score decompositions only with small residual or relative error
-and, for signed targets, preserved sign.
-
-Feature labels summarize high-coefficient vocabulary rows, but claims remain
-tied to feature id, signed contribution, and residual. Because unembedding rows
-reflect lexical, frequency, tokenizer, and row-geometry effects, labels are
-descriptive aids rather than ground-truth properties; appendix checks follow
-sparse-feature evaluation practice
-\citep{karvonen2025saebench,makelov2024principled}.
+Figures report the original score, feature sum, offset when present, and
+reconstruction error. Quantitative reconstructions use the full feature sum,
+while plots may truncate small bars for readability. Feature labels summarize
+high-coefficient vocabulary rows, but claims remain tied to feature id, signed
+contribution, and residual. Because unembedding rows reflect lexical, frequency,
+tokenizer, and row-geometry effects, labels are descriptive aids rather than
+ground-truth properties; appendix checks follow sparse-feature evaluation
+practice \citep{karvonen2025saebench,makelov2024principled}.

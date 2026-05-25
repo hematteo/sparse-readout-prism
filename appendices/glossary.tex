@@ -18,13 +18,13 @@ only where SRP uses a specialized readout version.
     state to token logits. Row \(t\) is \(w_t^\top\), so token \(t\)'s logit is
     \(h^\top w_t\).
 
-    \item[Scalar readout target]
-    A scalar linear function of the readout rows,
+    \item[Selected readout direction]
+    A fixed linear combination of LM-head rows,
     \(q_\alpha=\sum_t\alpha_t w_t\), scored as
     \(s_\alpha(h)=h^\top q_\alpha\).
 \end{description}
 
-\subsection{Common Readout Targets}
+\subsection{Common Readout Scores and Contrasts}
 
 \begin{description}[leftmargin=0.28\linewidth,style=nextline]
     \item[Token logit]
@@ -37,11 +37,11 @@ only where SRP uses a specialized readout version.
 
     \item[Pairwise logit difference]
     The contrast \(h^\top(w_A-w_B)\). Positive values favor \(A\); negative
-    values favor \(B\). This is the main signed readout target in our
+    values favor \(B\). This is the main signed readout score in our
     experiments.
 
-    \item[Reference contrast]
-    A contrast against a reference row, typically
+    \item[Vocabulary-mean contrast]
+    A contrast against the vocabulary-mean row,
     \(w_A-\bar{w}_{\mathcal{V}}\), where
     \(\bar{w}_{\mathcal{V}}=|\mathcal{V}|^{-1}\sum_t w_t\).
 
@@ -65,8 +65,8 @@ only where SRP uses a specialized readout version.
     for the readout and a reconstructed LM head.
 
     \item[Score decomposition]
-    The downstream use of the SRP basis with a hidden state and scalar readout
-    target to decompose a selected score into signed feature terms plus
+    The downstream use of the SRP basis with a hidden state and selected readout
+    direction to decompose a selected score into signed feature terms plus
     reconstruction error.
 
     \item[Readout SAE]
@@ -81,7 +81,7 @@ only where SRP uses a specialized readout version.
     The sparse code entry with which token row \(t\) uses SAE feature \(i\).
 
     \item[Shared offset, \(\mu\)]
-    The common readout offset used by the SAE. For zero sum targets such
+    The common readout offset used by the SAE. For zero sum contrasts such
     as logit differences and group contrasts, its contribution cancels.
 
     \item[Native \(k\)]
@@ -90,31 +90,31 @@ only where SRP uses a specialized readout version.
 
     \item[Projection profile]
     The ranked pattern of readout feature projections \(h^\top d_i\) before
-    choosing a scalar readout target.
+    choosing a score.
 \end{description}
 
 \subsection{Decomposition and Measures}
 
 \begin{description}[leftmargin=0.28\linewidth,style=nextline]
-    \item[Target coefficient, \(\beta_i(\alpha)\)]
-    The amount the chosen readout target uses SAE feature \(i\):
+    \item[Direction coefficient, \(\beta_i(\alpha)\)]
+    The amount the selected readout direction uses SAE feature \(i\):
     \(\beta_i(\alpha)=\sum_t\alpha_t z_{t,i}\).
 
     \item[Signed feature contribution, \(c_i(h,\alpha)\)]
     The signed term \(c_i(h,\alpha)=\beta_i(\alpha)h^\top d_i\). Positive terms
-    raise the chosen scalar; negative terms lower it.
+    raise the chosen score; negative terms lower it.
 
     \item[Score decomposition at a hidden state]
-    The decomposition obtained by combining a scalar readout target with the SRP
+    The decomposition obtained by combining a selected readout direction with the SRP
     readout basis at hidden state \(h\). It reports signed feature terms plus
-    reconstruction error for the chosen target.
+    reconstruction error for the chosen score.
 
     \item[Feature sum, \(s_{\mathrm{feat}}\)]
     The sum of all signed feature contributions, \(\sum_i c_i(h,\alpha)\), before
     adding offset or reconstruction error terms.
 
     \item[Reconstruction error, \(\epsilon\)]
-    The difference between the exact target score and the reconstructed score:
+    The difference between the exact selected score and the reconstructed score:
     \(s_{\mathrm{exact}}-s_{\mathrm{recon}}\).
 
     \item[Relative reconstruction error, \(\rho\)]
@@ -123,7 +123,7 @@ only where SRP uses a specialized readout version.
     Aggregate summaries use \(\delta=0.5\) logit.
 
     \item[Sign agreement / sign flip]
-    Whether a reconstructed signed target has the same sign as the exact target.
+    Whether a reconstructed signed contrast has the same sign as the exact contrast.
     Sign flips are reported separately because they reverse which side of a
     contrast the sparse reconstruction supports.
 
@@ -136,23 +136,23 @@ only where SRP uses a specialized readout version.
 \subsection{Evaluation Terms}
 
 \begin{description}[leftmargin=0.28\linewidth,style=nextline]
-    \item[Target set]
-    A fixed evaluation input: prompts, target tokens or token groups, linear
+    \item[Evaluation set]
+    A fixed evaluation input: prompts, tokens or token groups, linear
     coefficients, and tokenization filters fixed before model evaluation. The
     readout SAE is not trained on these prompts.
 
     \item[Evaluation item]
-    One evaluated readout target after tokenization filters. Prompt variants and
-    target variants can share a base case, so evaluation items are tracked
+    One evaluated score or contrast after tokenization filters. Prompt variants and
+    score variants can share a base case, so evaluation items are tracked
     separately from prompts.
 
     \item[Base case]
-    A cluster of variants derived from the same prompt/target template. Base
+    A cluster of variants derived from the same prompt/score template. Base
     cases are the bootstrap units for confidence intervals.
 
     \item[rowEV]
     Row-centered explained variance for reconstructed held-out unembedding
-    rows. It is a capacity metric paired with replacement and target fidelity
+    rows. It is a capacity metric paired with replacement and score-reconstruction
     metrics for model decision evidence.
 
     \item[Top-1 agreement / top-5 overlap]
@@ -192,15 +192,15 @@ only where SRP uses a specialized readout version.
 \begin{description}[leftmargin=0.28\linewidth,style=nextline]
     \item[Direct logit attribution, DLA]
     Component attribution that projects residual stream components onto the
-    readout direction for a selected target. We use DLA as additive attribution
+    readout direction for a selected score. We use DLA as additive attribution
     unless paired with interventions.
 
-    \item[DLA by SAE feature]
+    \item[Feature-resolved DLA]
     The combined view that splits DLA component contributions across the
     readout features for a realized forward pass.
 
     \item[Additivity error]
-    The gap between the exact target score and the sum of component attribution
+    The gap between the exact selected score and the sum of component attribution
     terms. It is reported separately from the readout SAE reconstruction error.
 
     \item[Token audit item]

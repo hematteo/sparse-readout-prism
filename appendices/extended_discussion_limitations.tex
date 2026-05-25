@@ -2,30 +2,30 @@
 \label{app:extended-discussion-limitations}
 
 This appendix gives the longer version of the scope and future-work discussion.
-It focuses on boundary cases that are only summarized in the main paper: target
-scope, relation to activation SAEs, cross-family interpretation, DLA composition,
+It focuses on boundary cases that are only summarized in the main paper:
+selected-score scope, relation to activation SAEs, cross-family interpretation, DLA composition,
 and possible extensions.
 
 \subsection{What Sparse Readout Prism Decomposes}
 \label{app:extended-discussion-query-scope}
 
-\paragraph{Readout target.}
-Each local score decomposition targets one scalar
+\paragraph{Selected readout score.}
+Each local score decomposition selects one scalar
 \(s_q(h)=h^\top q\). This may be a selected vocabulary logit, a specified
-pairwise logit difference, a group contrast, a reference contrast, or a
+pairwise logit difference, a group contrast, a vocabulary-mean contrast, or a
 top-competitor margin. The hidden state's readout feature projection vector
-\(\{h^\top d_i\}_i\) is available before selecting such a target; support for a
+\(\{h^\top d_i\}_i\) is available before selecting such a score; support for a
 particular token or contrast becomes defined only after that vector is combined
-with the target coefficients \(\beta_i(q)\). Distribution-wide decompositions
+with the direction coefficients \(\beta_i(q)\). Distribution-wide decompositions
 therefore require measuring reconstruction over the relevant vocabulary slice or
-target group. This distinction matters because a token can be supported above a
+token group. This distinction matters because a token can be supported above a
 reference while still losing to a named alternative or a group contrast, and a
 top-1 token can have only a small margin over top-ranked competitors. Reference
 contrasts, pairwise logit differences, group contrasts, and top-competitor
 margins therefore answer distinct readout questions.
 
 \paragraph{Local score decomposition.}
-The default claim is local and additive. For the chosen target, the displayed
+The default claim is local and additive. For the chosen score, the displayed
 terms express the exact readout score as SAE feature terms plus preprocessing
 and reconstruction error terms under the conventions in
 Appendix~\ref{app:score-decomposition}. Contribution terms are reported with those
@@ -46,7 +46,8 @@ rows, not hidden-state features discovered from model activations.
 
 \paragraph{Context dependence.}
 The hidden state enters only after the readout SAE has been learned. A feature
-contributes to a target when two quantities align: the target uses that SAE
+contributes to a selected score when two quantities align: the selected
+readout direction uses that SAE
 feature through its sparse row coefficients, and the current hidden state has a
 large dot product with the corresponding decoder direction. This is
 why the same token row can have different dominant feature contributions in
@@ -64,7 +65,7 @@ objects of analysis.
 
 \paragraph{Qwen evidence.}
 Across Qwen sizes, the selected dictionary settings preserve held-out signed
-readout targets and readout behavior on hidden states with reconstruction errors
+readout scores and readout-distribution behavior on hidden states with reconstruction errors
 small enough to support the reported local score decompositions. These rows provide
 the fixed display setting and Qwen-family companion analyses used for most
 qualitative figures.
@@ -72,10 +73,10 @@ qualitative figures.
 \paragraph{Additional families.}
 The additional model-family rows report the same metric suite under
 different tokenizer, readout, and post-training conditions. They separate row
-reconstruction, LM-head replacement, and target-level score fidelity, which is
+reconstruction, LM-head replacement, and selected-score reconstruction, which is
 why the paper reports all three before interpreting feature contributions.
 
-\subsection{DLA by SAE Feature}
+\subsection{Feature-Resolved DLA}
 \label{app:extended-discussion-prism-dla}
 
 \paragraph{Readout versus components.}
@@ -87,7 +88,7 @@ pass.
 
 \paragraph{Residual terms.}
 Combining these views gives additive component-by-feature terms. The analysis
-reports both the DLA additivity error for the linear readout target and
+reports both the DLA additivity error for the selected readout score and
 the readout SAE reconstruction error left outside the displayed feature terms;
 causal circuit claims can then be pursued with interventions when needed.
 
@@ -99,14 +100,14 @@ Natural extensions include controlled interventions on SAE decoder directions,
 cross-model feature-alignment analyses, distributional decompositions of local
 top-\(k\) frontiers, and broader model-family sweeps. They all depend on the same
 reliability condition used in the main text: interpret the feature terms only
-when the selected target has a small reported residual.
+when the selected score has a small reported residual.
 
 \paragraph{Residual-stream census.}
 SRP can also measure what is readout-readable before a hidden state is reduced to
 one score. The projection vector \(p_i=h^\top d_i\) can be broad, while a chosen
 score \(q\) selects the terms \(\beta_i(q)p_i\). Future work could quantify
-projection mass used by the selected target, assigned to competitors, or active
-but unused by that target. This unused category is target-local; it may support
+projection mass used by the selected score, assigned to competitors, or active
+but unused by that score. This unused category is local to the selected score; it may support
 alternative tokens, later positions, or other computations. Comparing this split
 across layers, ambiguous prompts, and incorrect generations could test whether
 models carry broad task state beyond the immediate readout decision.

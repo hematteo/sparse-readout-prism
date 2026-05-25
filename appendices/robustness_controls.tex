@@ -16,8 +16,8 @@ quantitative summaries below report their aggregate outcomes.
 \begin{table*}[!tbp]
 \caption{\textbf{Checks and controls supporting local score decompositions.}
 The checks verify that a displayed local score decomposition tracks the intended
-readout target and control for prompt, tokenization, and SAE artifacts. The
-evaluation setup specifies the token choices, target coefficients, split
+readout score and control for prompt, tokenization, and SAE artifacts. The
+evaluation setup specifies the token choices, readout-direction coefficients, split
 assignment, and tokenization rules used for the aggregate metrics.}
 \label{tab:app-robustness-control-ledger}
 \centering
@@ -37,13 +37,13 @@ reconstruction error, and \(\rho\). \\
 Swapped and matched contrasts &
 A/B swaps flip signs consistently, and matched negative-control contrasts
 underperform the intended contrast. &
-Target sets specify paired A/B contrasts and matched negative controls before
+Evaluation sets specify paired A/B contrasts and matched negative controls before
 aggregate evaluation. \\
 \addlinespace
 Template and context variants &
 Prompt rewordings and context variants are clustered before aggregation, so
 correlated variants contribute through their base case. &
-Rows are clustered by target or base-case id before aggregate evaluation. \\
+Rows are clustered by score or base-case id before aggregate evaluation. \\
 \addlinespace
 Token-level audits &
 Single-token claims can be brittle under token length, frequency, whitespace,
@@ -55,7 +55,7 @@ explicit group contrasts. \\
 Null and reference baselines &
 Learned token-to-feature support is compared against shuffled support, random
 support, dense PCA, and lexical nearest-row references. &
-Baselines use the same target set and the same reconstruction error and sign
+Baselines use the same score set and the same reconstruction error and sign
 metrics. \\
 \bottomrule
 \end{tabularx}
@@ -65,13 +65,13 @@ metrics. \\
 \label{app:robustness-key-quantitative}
 
 The key quantitative result is that the readout SAE evaluation separates broad
-readout replacement from target-level fidelity. On the all-row target set,
+readout replacement from selected-score reconstruction. On the all-row contrast set,
 aggregating both held-out halves, the Qwen3.5-0.8B/2B/9B settings give sign
 agreement \(0.940\)--\(0.951\), median \(\rho=0.091\)--\(0.107\), and
 \(\rho<0.5\) fractions \(0.790\)--\(0.818\). The main-text fidelity table
 reports the prespecified high-fidelity subset of this evaluation, which is why
 its Qwen sign and reconstruction error ranges are slightly tighter; it also
-reports Gemma target-fidelity rows and Ministral/R1 replacement rows under the
+reports Gemma score-reconstruction rows and Ministral/R1 replacement rows under the
 same metric conventions. The baseline/null table fixes Qwen3.5-2B and evaluates
 every method on its 1,348-row full logit-difference set. The C4 replacement
 evaluation is harder because many positions are local near-ties, but Qwen still
@@ -82,19 +82,19 @@ neutral C4 continuations per model
 \(|m_{\mathrm{exact}}|\ge2\), C4 top-1 agreement rises to \(0.97\)--\(1.00\)
 and top-1--top-2 ordering preservation to \(0.84\)--\(0.96\). Additional
 model-family rows use the same metric suite and separate row reconstruction,
-replacement fidelity, and target-level reconstruction. Null and reference
+replacement fidelity, and selected-score reconstruction. Null and reference
 baseline comparisons preserve the same ordering: shuffled and random support
 approach chance sign agreement, and dense PCA underperforms Sparse Readout Prism
 at comparable compactness. The baseline panel in
-Figure~\ref{fig:app-robustness-baseline-comparisons} reports the same target set
-and metrics as the Sparse Readout Prism row. Across the target-group and
+Figure~\ref{fig:app-robustness-baseline-comparisons} reports the same score set
+and metrics as the Sparse Readout Prism row. Across the score-group and
 baseline comparisons, tokenization filters, row-norm controls, frequency
 controls, KL, sign agreement, and relative reconstruction error are evaluated
 with the same definitions.
 
 \begin{table*}[!tbp]
-\caption{\textbf{Target groups at the main \(k=256\) setting.}
-Rows group targets by the question they ask at the \(k=256\) fidelity
+\caption{\textbf{Score and contrast groups at the main \(k=256\) setting.}
+Rows group scores by the question they ask at the \(k=256\) fidelity
 setting. Row counts aggregate evaluated model--case cells across the
 same five-model Qwen/Gemma suite as Table~\ref{tab:readout-query-fidelity-summary},
 after tokenization filters.}
@@ -105,10 +105,10 @@ after tokenization filters.}
 \renewcommand{\arraystretch}{1.05}
 \begin{tabularx}{0.96\textwidth}{@{}p{0.20\textwidth}Yrrrr@{}}
 \toprule
-Group & Target & cases & rows & sign agreement & median \(\rho\) \\
+Group & Score or contrast & cases & rows & sign agreement & median \(\rho\) \\
 \midrule
-Reference contrast & top1 vs vocab mean & 301 & 1505 & 1.000 & 0.021 \\
-Reference contrast & top1 vs row-norm distractor & 301 & 1505 & 1.000 & 0.049 \\
+Vocabulary-mean contrast & top1 vs vocabulary mean & 301 & 1505 & 1.000 & 0.021 \\
+Reference-row contrast & top1 vs row-norm distractor & 301 & 1505 & 1.000 & 0.049 \\
 \addlinespace
 Logit difference & source vs prior & 82 & 392 & 0.964 & 0.181 \\
 Logit difference & action/tool alternatives & 96 & 480 & 0.906 & 0.355 \\
@@ -127,7 +127,7 @@ Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
     \AppendixCompactGraphic[height=0.27\textheight]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_five_model_margin_reconstruction.pdf}
     \caption{\textbf{Exact versus reconstructed logit differences.}
     Binned exact margins are plotted against binned reconstructed margins for
-    the five-model held-out target set; the dashed line is perfect
+    the five-model held-out contrast set; the dashed line is perfect
     reconstruction. This global calibration plot supports the main-text
     reconstruction error and decision-flip summaries, but is separated from the main figure
     because the decision boundary is better captured by the margin-binned
@@ -138,9 +138,8 @@ Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
 \begin{figure}[!tbp]
     \centering
     \AppendixCompactGraphic[height=0.28\textheight]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_reliability_figure.pdf}
-    \caption{\textbf{Margin size controls the reliability of signed readout target
-    interpretation.}
-    The held-out target set shows tight aggregate reconstruction error behavior;
+    \caption{\textbf{Margin size controls signed-contrast reliability.}
+    The held-out contrast set shows tight aggregate reconstruction error behavior;
     sign agreement is lowest near zero exact margins. Raising the minimum
     \(|m_{\mathrm{exact}}|\) increases sign agreement while reducing retained
     coverage. Feature displays therefore report explicit reconstruction error and
@@ -165,9 +164,9 @@ Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
 \label{app:robustness-operating-regime}
 
 Operating-regime cases define when a compact local score decomposition is
-evidence-bearing. Qualitative interpretation uses cases where the target score is
+evidence-bearing. Qualitative interpretation uses cases where the selected score is
 larger than the reconstruction error, the reconstructed contrast preserves sign,
-the exact model readout supports the intended target, contribution mass is
+the exact model readout supports the intended side of the contrast, contribution mass is
 compact enough to summarize, and token-boundary, special-token, row-norm,
 frequency, or tokenization-collision effects do not dominate the contrast. The
 remaining cases are retained as quantitative records under the same reporting

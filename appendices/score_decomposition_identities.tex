@@ -39,16 +39,16 @@ so that
 The displayed local score decomposition contains only this shared offset, SAE feature
 terms, and the explicit residual term; no hidden dense base term is added.
 
-\subsection{Scalar Target Identity}
+\subsection{Selected-Score Identity}
 \label{app:score-decomposition-linear-query}
 
-A scalar readout target is a linear function of vocabulary rows,
+A selected readout direction is a linear function of vocabulary rows,
 \[
     q_\alpha = \sum_{t\in\mathcal{V}} \alpha_t w_t,
     \qquad
     s_\alpha(h)=h^\top q_\alpha .
 \]
-Define the target coefficient and SAE feature contribution as
+Define the direction coefficient and SAE feature contribution as
 \[
     \beta_i(\alpha)=\sum_t \alpha_t z_{t,i},
     \qquad
@@ -75,7 +75,7 @@ Substituting the raw-space row decomposition gives the exact grouped identity
 \end{aligned}
 \]
 For zero-sum contrasts, including pairwise logit differences, group contrasts,
-reference contrasts, and top-competitor margins, the offset term
+vocabulary-mean contrasts, and top-competitor margins, the offset term
 cancels.
 
 \subsection{Error, Sign, and Display Rules}
@@ -83,7 +83,8 @@ cancels.
 \label{app:display-taxonomy}
 \label{app:display-residual-decomposition}
 
-For a scalar readout target \(q_\alpha\), the exact and reconstructed scores are
+For a selected readout direction \(q_\alpha\), the exact and reconstructed
+scores are
 \[
 \begin{aligned}
     s_{\mathrm{exact}}
@@ -119,7 +120,7 @@ contrasts, side-specific feature support is evidence-bearing when
     =
     \operatorname{sign}(s_{\mathrm{recon}}).
 \]
-Each interpreted figure therefore states the selected target, exact score,
+Each interpreted figure therefore states the selected score, exact score,
 reconstructed score, reconstruction error, relative reconstruction error, and
 sign status for contrasts. If a plot displays only the largest bars, the
 reported feature sum and residual are still computed from the full active

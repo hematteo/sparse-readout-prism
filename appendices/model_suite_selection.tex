@@ -24,7 +24,7 @@ analyses.
 
 The Qwen3.5 rows provide a fixed qualitative display setting and Qwen-family
 companion analyses. Qwen3.5-9B is the capacity anchor: it is large enough to be a
-meaningful readout target while still supporting recipe and width sweeps.
+meaningful readout-factorization test while still supporting recipe and width sweeps.
 Qwen3.5-0.8B and Qwen3.5-2B test the same recipe at smaller unembedding
 dimensions and cheaper rerun settings.
 
@@ -99,7 +99,7 @@ behave under different readout geometries and post-training regimes.
 
 The suite is an evidence-driven design for readout-factorization evaluation.
 We report token frequency, token length, special-token behavior, row norm, tied
-embedding status, softcap handling, and matched-target identity bias so
+embedding status, softcap handling, and matched-score identity bias so
 single-token logit decompositions can be compared on the same footing.
 
 The evaluation makes three commitments. First, model-specific readout layers
@@ -108,5 +108,5 @@ training recipe, seed convention, dictionary settings, and evaluation settings
 are reported with the sweep records in
 Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility}.
-Third, primary reported claims are stated at the scalar-readout-target level,
+Third, primary reported claims are stated for selected readout scores,
 especially token logits and contrastive logit differences.

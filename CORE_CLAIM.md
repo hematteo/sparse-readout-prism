@@ -8,18 +8,22 @@ conclusion aligned around the same claim.
 
 Sparse Readout Prism (SRP) is a **sparse feature decomposition for logit lens
 readouts**, built from a sparse dictionary factorization of the final
-unembedding / LM head. Keep it distinct from the selected-target contribution:
-SRP supplies the target-independent readout basis, while selected scalar readout
-targets specify which linear score is decomposed and what sign convention is
-used. Together, they decompose selected readout scores into sparse feature terms,
-signed contributions for the chosen target, and explicit reconstruction
-residuals.
+unembedding / LM head. The main contribution is the readout-row basis and the
+readout-level analyses it enables. The learned basis can reconstruct or replace
+the full LM head, project hidden states into readout-feature coordinates,
+support local decompositions of selected readout scores, compose with
+residual-stream attribution, and suggest narrow readout-side edit directions.
+For local score decompositions, use standard readout objects first: token
+logits, logit differences, logit-difference directions, and fixed linear
+combinations of LM-head rows. The selected readout direction specifies which
+score is decomposed and what sign convention is used, yielding sparse signed
+feature terms plus an explicit reconstruction residual for that score.
 
 Use "better logit lens" as the front door, not the ceiling. The motivating
 interface is lens style decoding; the technical contribution is a sparse
-dictionary factorization of the final unembedding matrix that decomposes
-selected LM head scores into feature terms checkable against reconstruction
-error.
+dictionary factorization of the final unembedding matrix. That factorization
+turns the LM head into a reusable readout-feature basis whose uses are checked
+against reconstruction and replacement error.
 
 ## Literature Grounding
 
@@ -46,37 +50,55 @@ terms only as paper local specializations.
   direct logit attribution, and logit prism work (`elhage2021framework`,
   `wang2022ioi`, `nguyen2024logitprisms`). SRP composes with these methods but
   does not by itself establish causal mechanisms.
+- **Token logits, logit differences, and readout directions:** token logits,
+  logit differences, logit-difference directions, and projections onto
+  unembedding rows are standard in logit-lens, DLA, and circuit-analysis work.
+  Multi-token label mappings and group-like token sets also have adjacent
+  precedents in verbalizer and prompt-classification work. Do not frame
+  "scalar readout target" or "linear readout target" as standard terminology or
+  as a standalone novelty claim. SRP's role is narrower: it applies the learned
+  readout basis to selected token logits, logit differences, and fixed linear
+  combinations of LM-head rows.
 - **Paper local terms:** "readout feature", "readout feature projection",
-  "projection profile", "scalar readout target", and "local score
-  decomposition" are SRP terms. Define them on first use and tie each one to the
-  standard object it specializes.
+  "projection profile", "selected readout direction", "selected readout
+  score", and "local score decomposition" are SRP terms or paper-local
+  shorthand. Define them on first use and tie each one to the standard object it
+  specializes.
 
 ## Canonical Claim
 
-The paper has two separable contributions. SRP extends the logit lens view from
-vocabulary scores to a sparse feature basis for readout scores: it factorizes the
-final unembedding / LM head matrix, decomposing token rows into sparse SAE codes
-over shared decoder directions. This gives a reusable projection basis for final
-hidden states. The selected scalar readout-target interface then specifies
-linear functions of unembedding rows--such as logits, logit differences, and
-group contrasts--that produce signed feature contributions for the chosen target,
-with explicit reconstruction residuals and fidelity diagnostics.
+SRP learns a sparse basis for the final unembedding / LM head by decomposing
+token rows into sparse SAE codes over shared decoder directions. This yields a
+reusable readout-side basis for hidden states. Before any token, contrast, or
+other readout score is selected, the basis can reconstruct the full logit vector,
+replace the LM head, and provide score-independent readout feature projections.
+When a selected score fixes a readout direction--for example an unembedding row,
+a logit-difference direction, a group or vocabulary-mean contrast, or a fixed
+top-competitor margin--the same basis yields feature coefficients for that
+direction, signed readout-feature terms, and an explicit reconstruction residual
+for that score. The paper's evidence is that this factorized readout preserves the
+original LM-head behavior and selected scores in measured regimes,
+supporting the corresponding readout-level analyses when diagnostics pass.
 
 ## Paper Spine
 
 Lens style methods expose a hidden state through vocabulary logits, token
-preferences, or related summaries. This makes them useful probes, but each
-chosen logit or contrast is still a single dot product with an unembedding row
-or readout direction. SRP keeps the logit lens interface and factorizes the
-readout behind it: the unembedding matrix is decomposed into sparse token row
-codes and shared SAE decoder directions. Projecting a hidden state onto those
-directions gives readout feature projections before target selection. A separate
-selected scalar readout target then turns those projections into signed feature
-contributions for the chosen target. The paper shows that the factorized readout
-can replace the LM head in useful regimes; that selected scalar targets can be
-reconstructed across models and target families; and that, under these checks,
-the basis exposes target choice, context reweighting, DLA by SAE feature, and
-constrained readout side edits.
+preferences, or related summaries. This makes them useful inspection tools, but
+each chosen logit or contrast is still a single dot product with an unembedding
+row or logit-difference direction. SRP keeps the logit lens interface and
+factorizes the readout behind it: the unembedding matrix is decomposed into
+sparse token row codes and shared SAE decoder directions. Projecting a hidden
+state onto those directions gives readout feature projections before a token,
+contrast, or margin is selected. The same basis supports full readout
+reconstruction, score-independent projection profiles, local decompositions of
+selected scores, feature-resolved DLA, and constrained readout-side edits. For a
+local score decomposition, the selected readout direction turns projections into
+signed feature contributions for a chosen score. The paper shows that the
+factorized readout can replace the LM head in useful regimes; that selected
+logits, logit differences, and row-combination contrasts can be reconstructed
+across models and score families; and that, under these checks, the basis
+separates score choice, context reweighting, feature-resolved DLA, and
+constrained readout-side edits.
 
 ## Narrative Hierarchy
 
@@ -87,17 +109,23 @@ Use this hierarchy when writing high level prose:
    selected score as an unembedding row dot product.
 3. **Technical move:** SRP factorizes the unembedding matrix into sparse
    token row codes and shared SAE decoder directions.
-4. **Selected-target move:** hidden states are projected onto readout features,
-   and chosen scalar readout targets select weighted sums of those projections.
-5. **Auditability:** decompositions report signed feature terms plus
-   offset/residual terms, so displayed explanations can be checked against exact
-   readout scores.
-6. **Evidence:** LM head replacement fidelity, target reconstruction, sign
+4. **Basis uses:** the learned basis supports full readout reconstruction,
+   score-independent projection profiles, local decompositions of selected
+   logits and contrasts, feature-resolved DLA, and readout-side edit directions.
+5. **Selected-score use:** a token logit, logit difference, or other fixed
+   linear combination of LM-head rows selects weighted sums of readout feature
+   projections and defines support/opposition for one score.
+6. **Auditability:** full readout uses are checked by replacement and
+   reconstruction; local score decompositions report signed feature terms plus
+   offset/residual terms.
+7. **Evidence:** LM head replacement fidelity, score reconstruction, sign
    agreement, and baselines identify where the factorized readout is
    trustworthy.
 
 This lets the paper say "better logit lens" without sounding like it only
-contributes a new visualization of token pair examples.
+contributes a new visualization of token pair examples, while avoiding the
+overclaim that token logits, logit differences, or token/group comparisons are
+new by themselves.
 
 ## Technical Story
 
@@ -116,24 +144,34 @@ For a hidden state `h`, the factorization gives:
 W_U h \approx \mathbf{1}(\mu^\top h) + Z(D_{\mathrm{feat}}h)
 ```
 
+This reconstructed logit vector is already a use of SRP: it tests whether the
+factorized readout can stand in for the original LM head before any particular
+token, contrast, or margin is selected.
+
 The vector `D_{\mathrm{feat}}h` is the hidden state's **readout feature
-projection vector** before target selection: it says how strongly the hidden
-state projects onto each SAE decoder direction before any token, contrast, or
-scalar readout target has been selected. "Profile" can be used as informal
+projection vector** before score selection: it says how strongly the hidden
+state projects onto each SAE decoder direction before any token, contrast,
+margin, or other readout score has been selected. "Profile" can be used as informal
 shorthand for the ranked pattern of these projections, but the technical term
 should be "projection vector" or "readout feature projections."
+Projection vectors can be compared across prompts, layers, or residual-stream
+components without selecting a score. Support and opposition are defined only
+after a selected readout direction supplies coefficients.
 
-For a chosen scalar readout target `q`, SRP converts the projection vector into
-signed feature contributions at the current hidden state:
+For a local score decomposition, choose a standard readout object--a token
+logit, logit difference, or fixed linear combination of LM-head rows--and write
+its readout direction as `q`. This applies the learned readout basis to the
+selected score and converts the projection vector into signed feature
+contributions at the current hidden state:
 
 ```tex
 c_i(h, q) = \beta_i(q) \, h^\top d_i
 ```
 
-The target coefficient `\beta_i(q)` says how the target uses feature `i`.
-The hidden state projection `h^\top d_i` says how aligned that readout direction
-is with the current context. A feature contributes locally only through the
-product of both factors.
+The coefficient `\beta_i(q)` says how the selected readout direction uses
+feature `i`. The hidden-state projection `h^\top d_i` says how aligned the
+current context is with readout feature direction `d_i`. A feature contributes
+locally only through the product of both factors.
 
 ## Terminology
 
@@ -145,9 +183,10 @@ Use the following terms consistently:
 - `p_i(h)=h^\top d_i`: **readout feature projection**.
 - `p(h)=D_{\mathrm{feat}}h`: **readout feature projection vector** or
   **projection profile**.
-- `\beta_i(q)`: **target coefficient**.
-- `c_i(h,q)=\beta_i(q)p_i(h)`: **signed feature contribution** or **signed
-  readout feature contribution**.
+- `\beta_i(q)`: **direction coefficient** or **coefficient for the selected
+  readout direction**.
+- `c_i(h,q)=\beta_i(q)p_i(h)`: **signed feature contribution** or **feature
+  term for the selected score**.
 
 Avoid calling `p_i(h)=h^\top d_i` a feature activation in technical prose. In
 SAE literature, "feature activation" usually refers to the sparse encoder output
@@ -164,30 +203,38 @@ Use this order when explaining the paper:
 1. Lens style methods reveal what a hidden state reads out, but not what sparse
    readout features support the score.
 2. SRP factorizes the unembedding matrix.
-3. The factorization gives reusable readout feature projections.
-4. Hidden states can be projected onto those features as `D_{\mathrm{feat}}h`.
-5. Scalar readout targets turn the projection vector into target coefficients
-   and signed feature contributions.
-6. Score decompositions at a hidden state report signed feature terms and
+3. The factorization can reconstruct or replace the full LM head.
+4. The factorization gives reusable readout feature projections,
+   `D_{\mathrm{feat}}h`, before any score is selected.
+5. Projection profiles, feature-resolved DLA, and readout-side edit directions
+   can use the basis without making selected scores the central object.
+6. A selected readout direction--usually an unembedding row,
+   logit-difference direction, or explicit row-combination contrast--specifies
+   the score and turns projection vectors into feature coefficients and signed
+   feature contributions.
+7. Score decompositions at a hidden state report signed feature terms and
    residual/error terms.
-7. Experiments measure when LM head replacement and target reconstruction
+8. Experiments measure when LM head replacement and score reconstruction
    support interpreting those decompositions.
 
 This order matters. Starting with a logit lens example is useful; staying there
 too long makes SRP sound narrower than it is. Move quickly from the example to
 the readout factorization and sparse feature basis.
 
-## Target Scope
+## Selected Readout Score Scope
 
-SRP directly supports targets that can be represented as scalar linear
-functions of readout rows, especially linear combinations of unembedding rows:
+Do not present "scalar readout target" or "linear readout target" as standard
+mechanistic-interpretability terminology. Use the standard names whenever
+possible: token logits, logit differences, logit-difference directions,
+unembedding rows, and projections onto those directions. SRP can also decompose
+other explicitly defined scalar linear functions of readout rows:
 
 - raw token logits,
 - centered or reference logits,
 - pairwise logit differences,
 - group contrasts,
 - local competitor margins,
-- benchmark readout targets,
+- benchmark-derived readout contrasts,
 - other explicitly defined linear directions, if their coefficients and
   residual/error terms are reported.
 
@@ -199,14 +246,14 @@ chosen linear proxy, local linearization, or additional evaluation.
 
 Validation is essential, but it should not be the headline claim. The headline
 claim is the sparse feature decomposition enabled by the SRP factorization.
-Scalar readout targets are the interface for decomposing selected scores.
-Validation is the standard that determines when the resulting decompositions can
-be interpreted.
+Selected readout scores are the local-score interface, not the only way to use
+the SRP basis and not a standalone novelty claim. Validation is the standard
+that determines when each use of the basis can be interpreted.
 
 Use these diagnostics consistently:
 
 - LM head replacement fidelity,
-- target reconstruction error,
+- score reconstruction error,
 - sign agreement for signed targets,
 - null and reference baselines,
 - local residual/error terms on displayed decompositions.
@@ -214,10 +261,13 @@ Use these diagnostics consistently:
 Preferred stance:
 
 > SRP is a sparse feature decomposition for logit lens readouts, built from a
-> sparse factorization of the final unembedding / LM head. Scalar readout targets
-> turn the resulting readout feature projections into signed feature terms for
-> selected scores. The experiments identify regimes where those decompositions
-> preserve the original readout behavior and selected target scores.
+> sparse factorization of the final unembedding / LM head. The learned basis
+> supports full readout reconstruction, score-independent projection profiles,
+> and local decompositions of selected readout scores. For the last case, a
+> token logit, logit difference, or explicit row-combination contrast fixes a
+> readout direction, which turns readout feature projections into signed feature
+> terms. The experiments identify regimes where these uses preserve the original
+> readout distributions and selected scores.
 
 Avoid making the main spine "SRP explains scores and tells us when the
 decomposition is faithful." That wording undersells the readout factorization
@@ -225,16 +275,28 @@ and makes validation sound like a novelty rather than a normal requirement.
 
 ## Reviewer Facing Emphasis
 
-For ARR, the safest and strongest contribution is:
+For ARR, the safest and strongest contributions are:
 
-- a sparse feature decomposition for the logit lens interface;
-- a new object of analysis: SAE features of the unembedding/readout matrix;
-- a sparse feature basis for hidden states at the final readout;
-- a scalar readout target formalism for logits, contrasts, margins, and group
-  targets;
-- calibrated diagnostics showing where these decompositions can be interpreted;
-- demonstrations that the basis reveals target choice, context dependence,
-  feature competition, DLA composition, and narrow readout side control.
+- **Sparse readout factorization:** SRP factorizes the final unembedding / LM
+  head into sparse token-row codes over shared SAE decoder directions, yielding
+  a readout-specific sparse feature basis.
+- **Score-independent projections:** projecting hidden states onto the learned
+  decoder directions gives readout feature projections before any token,
+  contrast, or margin is selected.
+- **Local score decompositions:** selected token logits, logit differences, and
+  fixed LM-head row combinations decompose into signed feature terms plus
+  explicit residual/error terms.
+- **Compositional readout analyses:** the same basis supports full LM-head
+  reconstruction or replacement, feature-resolved DLA, and constrained
+  readout-side edits.
+- **Empirical demonstrations:** the experiments show that the basis separates
+  score choice, context dependence, feature competition, feature-resolved DLA,
+  and narrow readout-side lexical score movement in measured settings.
+
+Present validation as the evidence standard for these contributions, not as a
+separate contribution. Replacement fidelity, score reconstruction, sign
+agreement, null/reference baselines, and local residuals identify when the
+readout uses above can be interpreted.
 
 ## Language To Prefer
 
@@ -246,13 +308,21 @@ For ARR, the safest and strongest contribution is:
 - "sparse dictionary factorization of the unembedding / LM head"
 - "readout feature projection vector"
 - "readout feature projections"
-- "projection profile before target selection" when a higher level shorthand is
+- "projection profile before score selection" when a higher level shorthand is
   useful
-- "scalar readout target"
-- "linear function of unembedding rows"
-- "signed feature contribution for the chosen target"
+- "full readout reconstruction"
+- "score-independent projection profile"
+- "local score decomposition"
+- "token logit"
+- "logit difference"
+- "logit-difference direction"
+- "projection onto an unembedding row"
+- "fixed linear combination of LM-head rows"
+- "selected readout direction `q`"
+- "selected readout score `h^\top q`"
+- "signed feature contribution for the chosen score"
 - "signed feature terms plus residual/error terms"
-- "LM head replacement fidelity" and "target reconstruction"
+- "LM head replacement fidelity" and "score reconstruction"
 
 ## Language To Avoid
 
@@ -266,13 +336,18 @@ For ARR, the safest and strongest contribution is:
 - "SRP is only a better logit lens" or "SRP is just a logit lens visualization."
 - "Targets outside the readout" unless the target is explicitly defined as a
   linear readout direction or proxy compatible with the SRP decomposition.
-- "Query" as the formal term; prefer "scalar readout target" in technical prose
-  and use "query" only informally.
+- "Query" as the formal term; prefer the specific object, such as "token
+  logit", "logit difference", "group contrast", or "selected readout score".
+- "Scalar readout targets are a standalone contribution" or "SRP formalizes
+  token/group comparisons for the first time." Prefer saying that SRP applies a
+  sparse readout basis to standard logits, logit differences, and explicit
+  row-combination contrasts.
+- "Scalar readout targets are the interface for SRP" or other wording implying
+  every use of the learned basis requires a selected score.
 
 ## Short Slogans
 
-- A logit lens tells you the score; SRP supplies the basis, and selected targets
-  decompose it into sparse feature terms.
+- A logit lens tells you the score; SRP supplies a sparse basis for the readout.
 - A sparse feature decomposition for logit lens readouts.
 - Factor the unembedding; project hidden states through readout features.
 - From vocabulary readouts to reusable readout feature projections.

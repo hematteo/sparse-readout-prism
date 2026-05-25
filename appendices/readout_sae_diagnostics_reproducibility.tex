@@ -111,21 +111,21 @@ rows, and excluding non-token readout rows changed rowEV by $+0.0016$.
 \label{app:readout-factorizer-limitations}
 
 The main experiments report exact-versus-reconstructed scores, sign agreement,
-relative error, and null/reference baselines for interpreted targets.
+relative error, and null/reference baselines for interpreted scores.
 Appendices~\ref{app:model-suite-selection}--\ref{app:robustness-controls}
 specify models, dictionary settings, seeds, row sampling, selection order,
-tokenization filters, target construction, and denominator controls. Dictionary
+tokenization filters, score construction, and denominator controls. Dictionary
 selection uses row reconstruction, replacement fidelity, and sparse code usage;
-held-out logit-difference targets are reserved for later checks. Remaining
+held-out logit differences are reserved for later checks. Remaining
 risks are computational cost, checkpoint/tokenizer versioning, and
-tokenizer-specific filtering for single-token targets. Local decompositions include
+tokenizer-specific filtering for single-token scores. Local decompositions include
 explicit reconstruction errors, and qualitative interpretations are restricted
-to sufficiently reconstructed targets.
+to sufficiently reconstructed scores.
 
 The Qwen/Gemma readout SAEs were selected before downstream qualitative
 interpretation using row reconstruction, replacement-logit metrics, and sparse
-code usage statistics. The logit-difference target set was reserved for the
-later fidelity checks, so target reconstruction is evaluated after dictionary
+code usage statistics. The logit-difference contrast set was reserved for the
+later reconstruction checks, so selected-score reconstruction is evaluated after dictionary
 selection. Most reported dictionary settings use seed \(0\), with the
 Qwen3.5-0.8B 32$\times$, $k=256$ three-seed window providing the
 seed-variation snapshot above.
@@ -143,10 +143,10 @@ sweeps and the targeted Ministral/R1 comparison rows above; earlier Pythia-160M
 architecture and continuity sweeps \citep{biderman2023pythia} are
 design-history records.
 Exact replication depends on using the same model checkpoint revisions,
-tokenizers, final-normalization and softcap code paths, target filters, and
+tokenizers, final-normalization and softcap code paths, score filters, and
 single-token eligibility rules. For this reason, every interpreted local score
 decomposition reports the exact score, reconstructed score, reconstruction error, and,
-for signed targets, sign agreement.
+for signed contrasts, sign agreement.
 
 \paragraph{Training and evaluation recipe.}
 \begingroup
@@ -166,7 +166,7 @@ reported in Tables~\ref{tab:app-k-model-finalists},
 final readout after the relevant final normalization and, for Gemma, the
 model's monotone final-logit softcap for top1/KL evaluation. The reported
 metrics are rowEV, top-1 agreement, KL in bits, sparse code usage, and the
-readout target reconstruction error and sign agreement defined above.
+selected-score reconstruction error and sign agreement defined above.
 \endgroup
 
 \ReadoutSAEFloatBarrier

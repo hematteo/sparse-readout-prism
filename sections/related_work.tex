@@ -5,10 +5,11 @@ Lens-style methods inspect hidden states by mapping them to vocabulary
 distributions, future-token predictions, continuations, or descriptions
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}.
 They are the closest prior work in interface: they ask what a hidden state reads
-out. SRP keeps this interface but factorizes the final readout; selected scalar
-targets then decompose a fixed logit or contrast into sparse readout-feature
-terms plus residual. This does not replace learned or task-specific lenses; it
-gives residual-checked decompositions for scores from the model's final readout.
+out. SRP keeps this interface but factorizes the final readout; a selected token
+logit, logit difference, or explicit row-combination contrast is then decomposed
+into sparse readout-feature terms plus residual. This does not replace learned
+or task-specific lenses; it gives residual-checked decompositions for scores
+from the model's final readout.
 
 \paragraph{Output-embedding geometry.}
 SRP factorizes the final unembedding, or LM head. Output embeddings have been
@@ -16,9 +17,9 @@ studied as learned representations and prediction-shaping geometry
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
 Token rows, weight tying, softmax rank constraints, and vocabulary segmentation
 affect final scores. SRP uses this geometry as the object of a sparse row
-factorization; selected targets combine row coefficients to decompose linear
-readout scores at hidden states, without removing tokenizer or output-geometry
-caveats.
+factorization; selected readout directions combine row coefficients to
+decompose selected logits and contrasts at hidden states, without removing
+tokenizer or output-geometry caveats.
 
 \paragraph{Sparse dictionaries and activation SAEs.}
 Activation-SAE work learns dictionaries over hidden-state distributions and has
@@ -29,17 +30,17 @@ diagnostics, but changes the fitted object. The readout SAE is trained on
 unembedding rows: its sparse codes are token-row coefficients, its decoder
 directions are readout feature directions, and \(h^\top d_i\) is a readout
 feature projection rather than an activation-SAE code. Features become signed
-contributions only after a scalar readout target supplies coefficients, so the
-row factorization alone does not recover activation features or hidden-state
+contributions only after a selected readout direction supplies coefficients, so
+the row factorization alone does not recover activation features or hidden-state
 mechanisms.
 
 \paragraph{Logit attribution and logit prisms.}
 Component attribution and logit-prism methods ask where logit evidence is
 written in the residual stream
 \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. The
-selected-target layer asks a complementary readout-side question: which sparse
-directions in the selected readout direction support or oppose the score.
-Because target-conditioned terms are linear in the hidden state, they compose
+selected-score decomposition asks a complementary readout-side question: which
+sparse readout directions raise or lower the selected score. Because the
+selected-direction terms are linear in the hidden state, they compose
 with residual-stream attribution to yield feature-resolved DLA for a realized
 forward pass. This is additive accounting for readout scores, not
 identification of the upstream mechanism that produced a component

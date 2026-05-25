@@ -2,9 +2,10 @@
 
 \paragraph{Scope of score decompositions.}
 The fixed SRP basis gives local score decompositions only after selecting a
-linear scalar target at the final LM head. Features are learned from LM-head
-rows and hidden states enter through projections onto them, so the target
-fixes signed support and opposition, while residuals govern whether
+token logit, logit difference, or other fixed linear combination of LM-head
+rows. Features are learned from LM-head rows and hidden states enter through
+projections onto them, so the selected direction fixes signed support and
+opposition, while residuals govern whether
 term-level interpretation is trustworthy. Feature-resolved DLA is additive
 accounting over residual-stream components, and the readout edit is a
 constrained lexical-score test. Both nominate candidate directions; causal
@@ -22,14 +23,14 @@ checks are reported so that interpretation tracks the measured objects rather
 than the labels.
 
 \paragraph{Readout-specific caveats.}
-The selected-target interface supports token-level, group-contrast, and
+The selected-score interface supports token-level, group-contrast, and
 benchmark-derived readout decompositions while inheriting vocabulary-geometry
 caveats: labels and groupings can reflect tokenizer geometry, token frequency,
 row norms, or surface-form artifacts
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
-Group contrasts reduce single-row dependence; benchmark-derived targets measure
-linear readout reconstruction, not task solving; and labels remain summaries of
-row geometry rather than semantic ground truth.
+Group contrasts reduce single-row dependence; benchmark-derived contrasts
+measure linear readout reconstruction, not task solving; and labels remain
+summaries of row geometry rather than ground-truth semantics.
 
 \section*{Ethical Considerations}
 
@@ -41,8 +42,9 @@ C4 may contain offensive, private, copyrighted, or sensitive text
 readout reconstruction and make no social-validity claims about individual
 tokens, labels, or generated outputs.
 
-SRP makes lexical readout directions and row-level labels easier to inspect
-and, in the readout-edit stress test, move --- a dual-use property of auditing
+SRP makes lexical readout directions and row-level labels easier to inspect and,
+in the readout-edit stress test, moves specified lexical scores --- a dual-use
+property of auditing
 tools. SRP is constructed so that claims rest on measured coordinate objects
 (feature ids, signed contributions, residuals) rather than label semantics;
 the edit is reported with distribution shift and off-target probes.
