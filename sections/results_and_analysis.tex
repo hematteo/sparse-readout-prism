@@ -10,10 +10,8 @@ analyses are readout-level unless explicitly marked as interventions.
 \subsection{The Sparse Readout Factorization Identifies High-Fidelity Readout Regimes}
 
 \paragraph{Fidelity design.}
-\Cref{tab:readout-query-fidelity-summary} reports held-out row reconstruction,
-LM-head replacement, and logit-difference reconstruction across the model suite;
-metrics are top-token agreement, KL, sign preservation, and relative
-reconstruction error.
+\Cref{tab:readout-query-fidelity-summary} summarizes the held-out row,
+replacement, and logit-difference checks used to gate later displays.
 
 \begin{table}[t]
 \caption{\textbf{Readout replacement and target fidelity.}
@@ -57,12 +55,11 @@ R1-L-8B & 32/256 & 0.888 & 0.754 & 0.434 & 0.926 & 0.134 & 0.830 \\
 \paragraph{Result, interpretation, and boundary.}
 For the \(k=256\) settings used below,
 \(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\).
-Some settings best preserve top-1/KL; others keep contrast signs despite weaker
-full-readout replacement. Gemma keeps signs with larger target errors. Errors
-and flips concentrate near small exact margins
+Top-1/KL and contrast-sign fidelity can diverge; Gemma keeps signs with larger
+target errors. Errors and flips concentrate near small exact margins
 (\Cref{fig:readout-query-fidelity-result}), so case studies use signed contrasts
-with nontrivial margins and small residuals. RowEV alone is a capacity metric,
-not evidence that a local feature-bar display is interpretable.
+with nontrivial margins and small residuals. RowEV is a capacity metric, not a
+feature-bar validation.
 
 \begin{figure}[t]
     \centering
@@ -127,10 +124,9 @@ against fixed distractor rows.
 
 \Cref{tab:benchmark-derived-task-targets} shows lower error on answerable-QA,
 multi-hop-distractor, and legal-label rows than on SecurityEval, whose
-safe/unsafe-action contrast spans many lexical forms. Thus the selected-target
-interface supports benchmark-derived linear readout targets beyond curated token
-pairs. Low-error QA examples appear in
-Appendix~\ref{app:benchmark-derived-display-examples}.
+safe/unsafe-action contrast spans more heterogeneous lexical forms. These rows
+measure readout-target reconstruction, not task solving. Low-error QA examples
+appear in Appendix~\ref{app:benchmark-derived-display-examples}.
 
 \begin{table}[t]
 \caption{\textbf{Benchmark-derived readout-target fidelity.}
@@ -158,12 +154,6 @@ Q-2B & SecurityEval & 50 & 0.393 & 0.880 & 0.600 \\
 \end{tabular}
 \end{table}
 
-A low-error benchmark-derived row means the selected-target decomposition
-reconstructs the specified answer, label, abstention, or action contrast at the
-readout. The weaker SecurityEval row is consistent with this scope: safe/unsafe
-actions span more heterogeneous lexical forms than compact answer or label
-families.
-
 \subsection{Local Score Decompositions Expose Feature Competition Within Token Rankings}
 
 Sign-preserved, low-error local decompositions expose which readout features
@@ -182,9 +172,8 @@ rows. The panels have relative errors \(0.185\) and \(0.003\). Additional
 \cref{fig:app-selected-readout-prism-extra-examples,app:display-taxonomy,tab:app-main-case-study-feature-audit}.
 These sign-preserved, low-\(\rho\) examples show the same surface token drawing
 support from different row-labeled feature groups as target and context change.
-Appendix~\ref{app:main-case-study-feature-audit} audits displayed labels; below
-we use only coherent lexical summaries as label-based support. The next sections
-separate target and context effects.
+Below we use only audited coherent lexical summaries as label-based support. The
+next sections separate target and context effects.
 
 \begin{figure}[H]
     \centering
@@ -213,10 +202,9 @@ In the five-model Qwen/Gemma subset, 301 top-token-versus-vocabulary-mean cases
 give 1,505 model--case rows with median \(\rho=0.021\) and perfect sign
 agreement. Pairwise/group contrasts are harder: top-1 versus top-5 margins have
 median \(\rho=0.253\), while top-1 versus top-2 margins fall to \(0.824\) sign
-agreement. This pattern shows why each display must name its scalar readout
-target: reference contrasts are easy to reconstruct, while sharper competitor
-margins are the stress test. We interpret each display at its stated score and
-report local sign/error; full counts/examples are in
+agreement. Thus each display must name its scalar readout target: reference
+contrasts are easy to reconstruct, while sharper competitor margins are the
+stress test. Full counts and examples are in
 \Cref{tab:app-general-readout-query-families} and
 Appendix~\ref{app:readout-target-family-display-example}.
 Changing \(q\) changes \(\beta_i(q)\), so the same projection vector yields
@@ -261,9 +249,8 @@ compose SRP with residual-stream direct logit attribution (DLA)
 For \(q=w_A-w_B\), \(\beta_i(q)=z_{A,i}-z_{B,i}\); for
 \(q=w_A-\bar{w}_{\mathcal{V}}\),
 \(\beta_i(q)=z_{A,i}-\bar{z}_{\mathcal{V},i}\).
-This is component-by-feature attribution for a realized forward pass; causal
-necessity still requires interventions
-\citep{geiger2023causalabstraction}.
+This is component-by-feature attribution for a realized forward pass, not causal
+necessity without interventions \citep{geiger2023causalabstraction}.
 
 \begin{figure}[H]
     \centering
@@ -278,10 +265,8 @@ necessity still requires interventions
 \Cref{fig:qwen-prism-dla-verify-assume-main} decomposes a Qwen3.5-2B
 \texttt{verify}-minus-\texttt{assume} target. The exact margin is \(+4.31\), DLA
 sum \(+4.36\), and sparse feature sum \(+4.28\) (\(\rho=0.009\)), separating
-verification/checking support from assumption-family opposition. This supports
-additive component-by-feature accounting for this realized forward pass, not a
-claim that the displayed components are necessary causal mechanisms. A
-row-centered \texttt{verify} companion appears in
+verification/checking support from assumption-family opposition. A row-centered
+\texttt{verify} companion appears in
 Appendix~\ref{app:feature-resolved-dla}.
 
 \FloatBarrier
