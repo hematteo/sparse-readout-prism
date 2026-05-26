@@ -1,40 +1,52 @@
 \section*{Limitations}
 
-\paragraph{Scope of score decompositions.}
-The fixed SRP basis gives local score decompositions only after selecting a
-token logit, logit difference, or other fixed linear combination of LM-head
-rows. Features are learned from LM-head rows; hidden states enter only through
-projections onto those feature directions, so the selected direction fixes
-signed support and opposition, while residuals govern whether term-level
-interpretation is trustworthy. Feature-resolved DLA attributes the selected readout score additively to
-residual-stream components and to SRP features within those components; it
-nominates candidate directions but does not establish that any component is
-causally necessary. The readout-side edit is a constrained intervention on
-selected decoder directions in the final hidden state; it nominates candidate
-edit directions and reports the induced score shift and distributional
-side-effects, but does not establish causal sufficiency or downstream
-generation effects.
+\paragraph{Scope of claims.}
+Decompositions are local, non-causal, and tied to a single selected readout
+score --- a token logit, logit difference, group contrast, or other fixed
+linear combination of LM-head rows. Features are learned from LM-head rows;
+hidden states enter only through projections onto those feature directions,
+so the selected direction fixes signed support and opposition while residuals
+govern term-level interpretation. Feature-resolved DLA attributes the selected
+readout score additively to residual-stream components and to SRP features
+within those components, and the readout-side edit is a constrained
+intervention on selected decoder directions in the final hidden state. Both
+nominate candidate directions and report induced score shifts and
+distributional side-effects, but neither establishes causal necessity,
+sufficiency, or downstream generation effects.
+
+\paragraph{Training cost.}
+Logit lens and standard direct logit attribution require no fitting; SRP
+requires training a sparse autoencoder over the rows of \(\WU\). The fit is
+one-time per model and amortizes across downstream readout analyses, and
+because the target is a fixed \(|V|\)-row matrix rather than a hidden-state
+distribution, the cost is well below that of activation SAEs. Selected-score
+decompositions on new hidden states are forward-pass only.
+
+\paragraph{Hyperparameter dependence.}
+As in other sparse dictionary settings, the learned basis depends on
+dictionary size, sparsity \(k\), and recipe choices
+\citep{elhage2022superposition,karvonen2025saebench,makelov2024principled}.
+Operating points reported in the main text are selected from sweeps in
+Appendices~\ref{app:readout-factorizer-sweeps}
+and~\ref{app:readout-factorizer-qwen-sweeps}; we do not claim that the
+reported basis is unique.
 
 \paragraph{Fidelity and labels.}
 SRP separates the measured coordinate objects --- feature ids, signed terms,
-and residual errors --- from label summaries of high-scoring unembedding rows.
-As in other sparse dictionary settings, the learned basis can depend on recipe
-choices
-\citep{elhage2022superposition,karvonen2025saebench,makelov2024principled};
-reconstruction error, sign agreement, replacement fidelity, and stability
-checks are reported so that interpretation tracks the measured objects rather
-than the labels.
+and residual errors --- from label summaries of high-scoring unembedding
+rows. Reconstruction error, sign agreement, replacement fidelity, and
+stability checks are reported alongside contribution terms so that
+interpretation tracks the measured objects rather than the labels.
 
-\paragraph{Readout-specific caveats.}
-The selected-score interface admits token-level, group-contrast, and
-benchmark-derived readout decompositions, and inherits vocabulary-geometry
-caveats: labels and groupings can reflect tokenizer geometry, token frequency,
-row norms, or surface-form artifacts
+\paragraph{Vocabulary-geometry artifacts.}
+The selected-score interface inherits vocabulary-geometry caveats: labels
+and groupings can reflect tokenizer geometry, token frequency, row norms, or
+surface-form artifacts
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
 Group contrasts reduce single-row dependence; benchmark-derived contrasts
 measure linear readout reconstruction, not task solving; labels remain
-summaries of row geometry rather than ground-truth semantics.
-Additional scope and future-work discussion appears in
+summaries of row geometry rather than ground-truth semantics. Additional
+scope and future-work discussion appears in
 Appendix~\ref{app:extended-discussion-limitations}.
 
 \section*{Ethical Considerations}
