@@ -82,8 +82,22 @@ margins reconstruct more reliably than heterogeneous row combinations or
 small exact margins
 (\Cref{tab:benchmark-derived-readout-contrasts,tab:app-general-readout-score-families};
 Appendix~\ref{app:selected-readout-score-family-display-example}). The case
-studies that follow are drawn from this subset. RowEV remains a capacity
-metric, not validation of any per-feature term.
+studies that follow are drawn from this subset.
+
+Beyond hand-picked token pairs, we instantiate benchmark-derived readout
+contrasts as fixed LM-head row combinations: answer-vs-distractor,
+abstention-vs-entity, label, and safe-vs-unsafe contrasts drawn from
+SQuAD2, HotpotQA, ContractNLI, LegalBench, and SecurityEval
+\citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}.
+These rows test readout-contrast reconstruction, not task accuracy. Across
+300 such contrasts, Qwen3.5-2B reaches median \(\rho=0.129\), sign agreement
+\(0.943\), and sign-preserved low-error coverage \(0.840\); Qwen3.5-0.8B
+reaches \(0.180\), \(0.983\), and \(0.933\). Per-family results span perfect
+low-error coverage on ContractNLI labels to weaker SecurityEval safe/action
+contrasts: broader row combinations remain reconstructable but heterogeneous
+(\Cref{tab:benchmark-derived-readout-contrasts}).
+
+RowEV remains a capacity metric, not validation of any per-feature term.
 
 \begin{figure}[t]
     \centering
