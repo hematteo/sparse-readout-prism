@@ -2,32 +2,27 @@
 \label{sec:method}
 
 For hidden state \(h\in\R^d\), the dense LM head produces logit vector
-\(\ell(h)=\WU h\); we write its SRP-reconstructed counterpart as
-\(\widehat{\ell}(h)\), defined below. SRP has three stages: factorize the LM
-head into a sparse readout basis (\S\ref{sec:method-factorization}), project
-hidden states onto the resulting directions
-(\S\ref{sec:method-feature-projections}), and decompose a selected readout
-score into per-feature contributions plus residual
-(\S\ref{sec:method-local-score}). Supported score families are listed in
-\S\ref{sec:method-score-coefficients}.
+\(\ell(h)=\WU h\). SRP has three stages: factorize the LM head into a sparse
+readout basis (\S\ref{sec:method-factorization}), project hidden states onto
+the resulting directions (\S\ref{sec:method-feature-projections}), and define
+selected readout scores whose decomposition splits into per-feature
+contributions plus residual (\S\ref{sec:method-local-score}). The projection
+step is score-agnostic; the local decomposition is score-conditioned.
 
 \subsection{Factorizing the LM Head into Sparse Readout Features}
 \label{sec:method-factorization}
 
 SRP fits a sparse dictionary to the rows of \(\WU\). Following
 sparse-autoencoder practice~\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling},
-the fitted row and residual satisfy
+each row decomposes as
 \[
-    \widehat{w}_t = \mu + \sum_{i=1}^{D} z_{t,i} d_i,
+    w_t = \widehat{w}_t + r_t,
     \qquad
-    r_t = w_t-\widehat{w}_t,
+    \widehat{w}_t = \mu + \sum_{i=1}^{D} z_{t,i} d_i,
 \]
 where \(\mu\) is a shared offset, \(d_i\in\R^d\) is a readout feature direction
 (an SAE decoder direction), \(z_{t,i}\) is token row \(t\)'s sparse coefficient,
-and \(r_t\) is the residual. Thus
-\[
-    w_t=\mu+\sum_i z_{t,i}d_i+r_t .
-\]
+\(\widehat{w}_t\) is the fitted row, and \(r_t\) is the residual.
 We call this dictionary a \emph{readout SAE}, in contrast to activation SAEs
 trained on per-layer hidden-state activations: a readout SAE's codes describe
 how each vocabulary row decomposes into shared directions, not how each hidden
@@ -45,7 +40,7 @@ Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility} and
 \ref{app:score-decomposition}.
 
-\subsection{Reconstructing the Readout and Projecting Hidden States}
+\subsection{Readout Reconstruction and Feature Projections}
 \label{sec:method-feature-projections}
 
 Once the readout feature directions \(d_i\) are fixed, any hidden state can be
@@ -75,25 +70,14 @@ projection vector
     \qquad
     p(h)=D_{\mathrm{feat}}h .
 \]
-The vector \(p(h)\) is the readout feature projection vector: it records how
-strongly \(h\) aligns with each readout feature direction before choosing a
-specific score.
-
-\emph{A projection \(p_i(h)\) is a coordinate, not a contribution.} It
-acquires a sign---supporting or opposing the selected side---only once a
-selected readout score supplies the coefficient \(\beta_i\) that multiplies
-it. The full-readout replacement test \(\widehat{\ell}(h)\) is therefore
-score-agnostic, while the local score decomposition derived below is
-score-conditioned.
+The coordinate \(p_i(h)\) records the alignment of \(h\) with readout feature
+\(i\) before any score selects which features matter.
 
 \subsection{Decomposing Selected Readout Scores}
 \label{sec:method-local-score}
 
-For local decompositions, SRP applies to selected readout scores that are fixed
-linear combinations of LM-head rows, giving an exact sparse-plus-residual
-identity for the score families considered here. Let
-\(\alpha\in\R^{|\mathcal{V}|}\) be
-vocabulary-row coefficients and define
+A selected readout score is a fixed linear combination of LM-head rows. Let
+\(\alpha\in\R^{|\mathcal{V}|}\) be vocabulary-row coefficients and define
 \[
     q_\alpha = \sum_{t\in\mathcal{V}} \alpha_t w_t,
     \qquad
@@ -122,12 +106,9 @@ groups, write
     =
     \frac{1}{|\mathcal{A}|}\sum_{a\in\mathcal{A}}w_a .
 \]
-Group contrasts, vocabulary-mean contrasts, and top-competitor margins use the
-same fixed-row-combination form. For top-competitor margins, the target row,
-competitor set, and nonnegative weights summing to one are fixed by the
-original LM-head ranking before SRP is applied.
-\Cref{tab:method-special-cases} lists the corresponding sparse-feature
-coefficients.
+Top-competitor margins fix the target row, competitor set, and nonnegative
+weights summing to one from the original LM-head ranking before SRP is
+applied.
 
 \begin{figure}[t]
     \centering
@@ -146,23 +127,25 @@ coefficients.
 
 Fix a hidden state \(h\) and any selected readout direction
 \(q_\alpha=\sum_{t\in\mathcal{V}}\alpha_t w_t\). Substituting the SAE
-reconstruction gives
+reconstruction row-by-row and exchanging the sums gives
 \[
 \begin{aligned}
     s_\alpha(h)
-    &= h^\top q_\alpha \\
+    &= h^\top q_\alpha
+     = \sum_{t\in\mathcal{V}} \alpha_t \, h^\top w_t \\
+    &= \sum_{t\in\mathcal{V}} \alpha_t \, h^\top
+       \!\left(\mu + \sum_{i=1}^{D} z_{t,i} d_i + r_t\right) \\
     &=
-    \left(\sum_{t\in\mathcal{V}} \alpha_t\right) h^\top\mu \\
-    &\quad + \sum_{i=1}^{D}
+    \left(\sum_{t\in\mathcal{V}} \alpha_t\right) h^\top\mu
+    + \sum_{i=1}^{D}
         \left(\sum_{t\in\mathcal{V}} \alpha_t z_{t,i}\right) h^\top d_i \\
     &\quad + h^\top \sum_{t\in\mathcal{V}} \alpha_t r_t .
 \end{aligned}
 \]
 The shared-offset term \(\left(\sum_t\alpha_t\right) h^\top\mu\) cancels out
 whenever the coefficients sum to zero, which covers logit differences,
-group and vocabulary-mean contrasts, and top-competitor margins
-(\Cref{sec:method-score-coefficients}); for these contrasts the entire
-decomposition lives in feature contributions plus residual.
+group and vocabulary-mean contrasts, and top-competitor margins; for these
+contrasts the entire decomposition lives in feature contributions plus residual.
 For readout feature \(i\), define its direction coefficient and signed feature
 contribution:
 \[
@@ -175,44 +158,33 @@ while \(p_i(h)\) varies with context; when \(q=q_\alpha\) is clear, we write
 \(\beta_i(q)\). A feature has a large local contribution only when both factors
 are large in magnitude (Appendix~\ref{app:global-readout-feature-profiles}).
 
-For a selected readout score, let
+We label the components:
 \[
 \begin{aligned}
-    s_{\mu}&=\left(\sum_t\alpha_t\right)h^\top\mu,\\
-    s_{\mathrm{feat}}&=\sum_i c_i(h,\alpha),\\
-    s_{\mathrm{recon}}&=s_{\mu}+s_{\mathrm{feat}} .
-\end{aligned}
-\]
-The remaining reconstruction error is
-\[
-\begin{aligned}
-    s_{\mathrm{exact}}&=s_\alpha(h),\\
-    \epsilon
-    &=
-    s_{\mathrm{exact}}-s_{\mathrm{recon}}\\
-    &=
-    h^\top\sum_{t\in\mathcal{V}}\alpha_t r_t .
+    s_{\mu}            &= \left(\sum_t\alpha_t\right)h^\top\mu, \\
+    s_{\mathrm{feat}}  &= \sum_i c_i(h,\alpha), \\
+    s_{\mathrm{recon}} &= s_{\mu}+s_{\mathrm{feat}}, \\
+    s_{\mathrm{exact}} &= s_\alpha(h), \\
+    \epsilon           &= s_{\mathrm{exact}}-s_{\mathrm{recon}}
+                        = h^\top\sum_{t\in\mathcal{V}}\alpha_t r_t .
 \end{aligned}
 \]
 Positive terms raise the selected readout score; negative terms lower it. For
 signed contrasts, positive values support the first side and negative values
 support the comparison side.
 
-\subsection{Score Families and Coefficients}
-\label{sec:method-score-coefficients}
-
-The decomposition above applies unchanged to several selected readout score families;
-each one only changes which linear combination of LM-head rows enters
-\(q_\alpha\). \Cref{tab:method-special-cases} lists the resulting
-\(\beta_i(\alpha)\) for these choices. Barred \(w\) and \(z\) denote uniform
-token-set averages; for top-competitor margins,
-\(\bar{w}_{\pi,\mathcal{R}}=\sum_r\pi_r w_r\) and
-\(\bar{z}_{\pi,\mathcal{R},i}=\sum_r\pi_r z_{r,i}\).
+\Cref{tab:method-special-cases} instantiates \(q_\alpha\) and
+\(\beta_i(\alpha)\) for the score families used in our analyses.
 
 \begin{table}[t]
 \caption{\textbf{Selected scores and their sparse-feature coefficients.}
 Rows instantiate the selected readout direction \(q_\alpha\) and corresponding
-direction coefficient \(\beta_i(\alpha)\).}
+direction coefficient \(\beta_i(\alpha)\). Barred \(w\) and \(z\) denote
+uniform token-set averages; for top-competitor margins,
+\(\bar{w}_{\pi,\mathcal{R}}=\sum_r\pi_r w_r\) and
+\(\bar{z}_{\pi,\mathcal{R},i}=\sum_r\pi_r z_{r,i}\), where \(\pi_r\) are the
+nonnegative competitor weights summing to one over the competitor set
+\(\mathcal{R}\).}
 \label{tab:method-special-cases}
 \centering
 \footnotesize
@@ -243,8 +215,8 @@ Selected score family & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
 \subsection{Residuals, Sign Checks, and Interpretation Rules}
 \label{sec:method-reading-local-accounts}
 
-Every local score decomposition is paired with a reconstruction check. A
-displayed account reports exact and reconstructed scores, feature sum, offset when
+We pair every local decomposition with a reconstruction check. A displayed
+account reports exact and reconstructed scores, feature sum, offset when
 present, residual, relative reconstruction error, and sign status for signed
 contrasts. We compute relative reconstruction error as
 \[
@@ -258,9 +230,9 @@ The half-logit floor \(\delta\) keeps \(\rho\) bounded when
 score magnitudes. We use \(\rho<0.5\) as the reading threshold. Feature bars
 are interpreted only when reconstructed and exact scores agree within this
 bound; for signed contrasts, they must also share sign before support and
-opposition are read off.
+opposition are read off. Figures may truncate small bars for legibility;
+reconstructions and the residual always use the full feature sum.
 
-Figures may truncate small bars, but reconstructions use the full feature sum.
 Claims remain tied to feature ids, signed contributions, and residuals; labels
 summarize high-coefficient vocabulary rows, following sparse-feature evaluation
 practice

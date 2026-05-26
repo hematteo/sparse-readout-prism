@@ -6,20 +6,29 @@ Transformer language models map a final hidden state \(h\in\R^d\) to next-token 
     \centering
     \includegraphics[width=0.75\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_verify_assume/qwen2b_lens_prism_comparison_verify_assume.pdf}
     \caption{\textbf{From lens output to a local score decomposition.}
-    Qwen3.5-2B. \textbf{A.} Logit-lens scores \texttt{verify} (\(17.5\)) vs
-    \texttt{assume} (\(13.2\)), margin (logit difference) \(+4.31\).
-    \textbf{B.} SRP decomposition of that margin in logit units; positive bars support \texttt{verify},
+    Qwen3.5-2B, source-verification prompt. The selected pairwise logit
+    difference compares the candidate next-token strings \texttt{verify} and
+    \texttt{assume}. \textbf{A.} Logit-lens scores \texttt{verify} (\(17.5\)) vs
+    \texttt{assume} (\(13.2\)), margin \(+4.31\).
+    \textbf{B.} Sparse Readout Prism decomposition of that margin in logit units; positive bars support \texttt{verify},
     negative support \texttt{assume}. Feature sum \(+4.26\), residual \(+0.05\).}
     \label{fig:main-lens-prism-comparison}
 \end{figure}
 
+Consider one hidden state from a source-verification prompt: does the readout
+favor the source-checking token \texttt{verify} over the assumption token
+\texttt{assume}? The ordinary logit lens reports the signed margin
+(Figure~\ref{fig:main-lens-prism-comparison}A) but is silent on its
+composition---which readout directions support it, which oppose it, and how
+much remains unexplained by any shared basis. This gap is generic to lens
+scores: they summarize what the model predicts at each layer, not which
+directions in the head produce the prediction.
+
 The decompositions most commonly paired with lens-style readouts act on the hidden-state side. Direct logit attribution (DLA) decomposes \(h=\sum_c h_c\) into contributions from earlier residual-stream components---the embedding, attention heads, and MLP layers---and reads off each component's contribution to a chosen logit~\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. Sparse autoencoders (SAEs) and related dictionary-learning methods learn overcomplete bases that reconstruct each input from a few active coordinates~\citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}; applied to hidden activations, they yield sparse coordinates for \(h\). Neither decomposes the readout direction \(q\) itself.
 
-Because token logits and logit differences are linear in LM-head rows---\(h^\top(w_A - w_B) = h^\top w_A - h^\top w_B\)---a readout-side, per-feature account in logit units requires a sparse decomposition of the LM-head rows themselves; decomposing \(h\) alone cannot produce row-side coordinates. A lens can therefore report that a state favors \texttt{verify} over \texttt{assume} (Figure~\ref{fig:main-lens-prism-comparison}A), but not which shared readout-side directions support that margin, which oppose it, or how much error a sparse account would incur. Thus DLA and activation SAEs decompose or localize \(h\), whereas SRP must decompose \(q\): a readout-side basis separates the selected direction, the context-dependent hidden-state projection, and the reconstruction residual.
+Token logits and logit differences are linear in LM-head rows: \(h^\top(w_A - w_B) = h^\top w_A - h^\top w_B\). A per-feature account in logit units therefore requires decomposing the rows themselves; decomposing \(h\) alone cannot produce row-side coordinates.
 
-Sparse Readout Prism (SRP) supplies this missing readout-side basis by applying dictionary learning directly to LM-head rows rather than to hidden activations: each token row is expressed as sparse coefficients over a shared overcomplete basis of directions, plus a residual. We call the shared directions \emph{readout features}---features of LM-head rows, in contrast to SAE features trained on hidden-state activations.
-
-Before any token, contrast, or margin is fixed, SRP projects a hidden state onto each readout feature direction, yielding coordinates \(p_i(h)=h^\top d_i\) that are reusable across downstream score choices. The same factorization reconstructs the full logit vector and can replace the LM head outright, providing a direct check that the sparse basis preserves the original readout. Once a \emph{readout score} is selected---a token logit \(h^\top w_t\), a pairwise logit difference \(h^\top(w_A-w_B)\), or another fixed LM-head row combination---the row-side coefficients combine with these hidden-state projections to yield signed per-feature contributions in original logit units (Figure~\ref{fig:main-lens-prism-comparison}B), each checkable against the original head. In short, SRP decomposes the readout side of lens scores.
+Sparse Readout Prism (SRP) applies dictionary learning directly to LM-head rows: each row is written as sparse coefficients over a shared overcomplete basis, plus a residual. We call the shared directions \emph{readout features}---features of LM-head rows, in contrast to SAE features trained on hidden-state activations. Once a \emph{readout score} is fixed---a token logit \(h^\top w_t\), a pairwise logit difference \(h^\top(w_A-w_B)\), or another LM-head row combination---the row-side coefficients combine with hidden-state projections \(p_i(h)=h^\top d_i\) to give signed per-feature contributions in original logit units (Figure~\ref{fig:main-lens-prism-comparison}B); contributions, offset, and residual sum to the original logit score.
 
 This paper makes three contributions:
 \begin{itemize}
@@ -34,9 +43,21 @@ This paper makes three contributions:
     contributions plus offset and residual, all in original logit units.
 \end{itemize}
 
-Across the eight-model suite, SRP preserves contrast sign on at least \(91\%\)
-of held-out logit differences. On Qwen3.5-2B, it improves held-out
-score-reconstruction error over nearest-row ridge, matched-rank PCA, and
-shuffle/random sparse baselines. Across models, these diagnostics identify a
-sign-preserved, low-error subset (\(\rho<0.5\)) where we report local feature
-readings with explicit residuals.
+\Cref{sec:results} establishes that the factorization is faithful
+enough to read from. Across eight models, SRP reconstructs unembedding
+rows with explained variance \(0.83\)--\(0.89\) after row centering. It
+tracks the dense LM head on six of eight readouts and preserves
+contrast sign on at least \(91\%\) of held-out logit differences; on
+Qwen3.5-2B it outperforms nearest-row ridge, matched-rank PCA, and
+shuffle/random sparse baselines. These checks define a sign-preserved,
+low-error subset (relative reconstruction error \(\rho<0.5\))---the
+reading rule for the rest of the paper.
+
+\Cref{sec:readout-analyses} applies SRP within that subset. Each
+token preference reported by a lens becomes a sparse account in
+logit units with an explicit residual. Polysemous logit differences
+expose competing features; prompt context reweights a fixed
+token-row decomposition; direct logit attribution composes with the
+basis to give component-by-feature terms. Decoder directions
+selected from a small discovery set drive constrained lexical edits
+that transfer to held-out tokens.

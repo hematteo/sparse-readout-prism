@@ -1,14 +1,15 @@
 \section{Evaluation Setup}
 \label{sec:experimental-setup}
 
-We evaluate SRP in two stages. First, calibration tests whether the learned
-readout basis preserves the LM head and reconstructs selected readout scores
-well enough to support local feature readings. Second, conditional on these
-checks, the analyses ask what SRP adds beyond logit-lens scores: how score
-choice, token preference, prompt context, residual-stream attribution, and
-constrained readout-side edits appear in the readout-feature basis. All
-claims remain readout-level; the constrained-edit stress test additionally
-intervenes on the final hidden state and reports distribution-shift diagnostics
+We evaluate SRP in two stages. First, calibration asks whether the learned
+readout basis is faithful enough to support local feature readings, by
+testing LM-head preservation and reconstruction of selected readout scores.
+Second, given these checks pass, the analyses ask what SRP adds beyond
+logit-lens scores: how the basis responds to varied inputs (score choice,
+token preference, prompt context), and how it supports attribution and
+constrained readout-side edits. All claims are readout-level, except the
+constrained-edit stress test, which additionally intervenes on the final
+hidden state and reports distribution-shift diagnostics
 (\Cref{subsec:constrained-readout-edits}).
 
 \paragraph{Models and held-out sets.}
@@ -18,16 +19,15 @@ and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1};
 identifiers and selection details are in
 Appendix~\ref{app:model-suite-selection}. We fit one readout SAE per model to
 the rows of its final LM head. Replacement fidelity uses 10,000 held-out C4 continuations per model
-\citep{raffel2020exploring,dodge2021documenting}; score reconstruction uses
-fixed prompt/score sets with prespecified coefficients, split assignments, and
-tokenization filters.
+\citep{raffel2020exploring,dodge2021documenting}, and score reconstruction
+uses fixed prompt/score sets.
 
 \paragraph{Calibration metrics and baselines.}
-Calibration reports three checks. \emph{Basis} metrics test held-out row
-reconstruction and LM-head replacement on C4 hidden states. \emph{Score}
-metrics test sign preservation and relative error for selected logits,
-contrasts, and margins. \emph{Baselines} compare SRP with nearest-row ridge,
-matched-rank PCA, shuffled sparse codes, and random sparse patterns. We interpret
-feature bars only for sign-preserved, low-error accounts; feature labels are
-descriptive aids, while feature ids, signed contributions, and residuals are
-the measured objects.
+Calibration covers basis quality, score quality, and baseline comparisons.
+\emph{Basis} metrics test held-out row reconstruction and LM-head replacement
+on C4 hidden states. \emph{Score} metrics test sign preservation and relative
+error for selected logits, contrasts, and margins. \emph{Baselines} include
+nearest-row ridge, matched-rank PCA, shuffled sparse codes, and random sparse
+patterns. We interpret feature bars only for sign-preserved, low-error
+accounts. Feature labels are descriptive aids; feature ids, signed
+contributions, and residuals are the measured objects.
