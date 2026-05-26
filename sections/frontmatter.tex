@@ -1,24 +1,24 @@
 \begin{abstract}
 Logit-lens-style methods inspect hidden states by projecting them through the
 LM head and reading vocabulary logits, rankings, or logit differences. After a
-token or contrast is selected, the inspected quantity remains a single dense
-dot product with an LM-head row or row combination, concealing which readout
+token or contrast is selected, the inspected quantity is still a dense
+dot product with an LM-head row or row combination, hiding which readout
 directions support the score, which oppose it, and what remains unexplained.
 We introduce Sparse Readout Prism (SRP), a sparse feature decomposition of
 logit-lens readouts.
 SRP factorizes the LM head into shared \emph{readout features} and sparse
-coefficients for output-token rows. It projects hidden states onto this shared
+output-token row coefficients. It projects hidden states onto this
 basis once; for any selected token logit, logit difference, or fixed row
-combination, it decomposes the score into signed feature contributions in
+combination, SRP decomposes the score into signed feature contributions in
 original logit units plus an explicit residual.
 
-The same fixed basis composes with residual-stream attribution and supplies
-candidate directions for constrained edits to selected readout scores. Across
-an eight-model suite, SRP preserves held-out contrast signs on at least
-\(91\%\) of logit differences; on Qwen3.5-2B it improves on nearest-row ridge,
-matched-rank PCA, and shuffled/random sparse-code controls in both median
+The same basis composes with residual-stream attribution and supplies
+candidate directions for constrained readout-side edits. Across eight models,
+SRP preserves held-out contrast signs on at least \(91\%\) of logit differences.
+In the matched baseline comparison, it improves over nearest-row ridge,
+matched-rank PCA, and shuffled/random sparse-code controls in median
 reconstruction error and sign-preserved low-error coverage. With explicit
-reconstruction diagnostics, SRP makes lens-style readouts auditable, letting
-researchers compare token preferences, component attributions, and readout-side
-edits in a shared sparse basis rather than as isolated dense scores.
+reconstruction diagnostics,
+SRP lets researchers compare token preferences, component attributions, and
+readout-side edits in a shared sparse basis.
 \end{abstract}

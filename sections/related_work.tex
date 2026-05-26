@@ -21,10 +21,7 @@ lens score \(h^\top q\): activation-SAEs learn overcomplete bases for \(h\)
 standardized diagnostics
 \citep{karvonen2025saebench,makelov2024principled}. SRP applies the same
 machinery to the complementary factor \(q\), fitting it directly to LM-head
-rows. The closest concurrent work, parameter-trajectory crosscoding, studies
-unembedding dynamics across training checkpoints
-\citep{anonymous2026learningreadout}; SRP factorizes the LM head of a
-trained model, producing an inference-time basis for local score
+rows. It therefore produces an inference-time basis for local score
 decompositions, feature-resolved DLA, and readout-side edits.
 
 \paragraph{Additive attribution and mechanisms.}

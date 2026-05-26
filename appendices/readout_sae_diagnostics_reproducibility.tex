@@ -122,6 +122,26 @@ tokenizer-specific filtering for single-token scores. Local decompositions inclu
 explicit reconstruction errors, and we restrict qualitative interpretations
 to sufficiently reconstructed scores.
 
+\paragraph{Planned artifacts.}
+The planned artifact bundle has four components.
+First, the code artifact will include the readout-SAE training scripts,
+hidden-state capture and evaluation scripts, baseline implementations, and
+figure/table reproduction scripts. Second, the dictionary artifact will include
+the reported readout-SAE checkpoints when permitted by upstream model licenses:
+decoder directions, sparse row codes, shared offsets, preprocessing metadata,
+configuration files, seeds, and model checkpoint revision identifiers. For any
+checkpoint that cannot be redistributed directly, we will provide the exact
+recipe needed to regenerate it from the public model weights. Third, the prompt
+artifact will include the prompt templates and filled prompts used for selected
+score reconstruction, qualitative displays, feature-resolved DLA examples, and
+the constrained lexical-edit probes. Fourth, the score-set artifact will include
+token ids or token groups, row-combination coefficients \(\alpha\),
+split/base-case identifiers, tokenization filters, bootstrap clusters, and the
+exact score-family metadata needed to recompute the reported sign and
+reconstruction metrics. We will not redistribute original model checkpoints or
+raw C4 text; C4-based evaluations are reproduced from public dataset/model
+identifiers and the artifact sampling, filtering, and scoring code.
+
 We selected the Qwen/Gemma readout SAEs before downstream qualitative
 interpretation, using row reconstruction, replacement-logit metrics, and
 sparse code usage statistics. We reserved the logit-difference contrast set

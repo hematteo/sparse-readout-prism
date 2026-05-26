@@ -122,8 +122,8 @@ Random sparse pattern & 1.141 & 0.407 & 0.069 \\
 \end{tabular}
 \end{table}
 
-On the full Qwen3.5-2B logit-difference set, SRP attains lower median error
-and a larger sign-preserved low-error subset than nearest-row ridge
+For the full logit-difference set used in this baseline comparison, SRP attains
+lower median error and a larger sign-preserved low-error subset than nearest-row ridge
 \citep{hoerl1970ridge}, PCA \citep{jolliffe2002principal}, shuffled sparse
 codes, and random sparse patterns (\Cref{tab:main-baseline-null-comparison}).
 Each baseline tests a different alternative explanation: ridge isolates
@@ -138,9 +138,12 @@ Full details are in Appendix~\ref{app:robustness-key-quantitative}.
 \section{Readout Analyses}
 \label{sec:readout-analyses}
 
-Working within the calibrated subset of \Cref{sec:results}, we report five
-readout-level analyses on Qwen3.5-2B, with replications on R1-Distill-Qwen-7B
-in the appendix. All five describe what the fixed SRP basis records on
+Working within the calibrated subset of \Cref{sec:results}, we use
+Qwen3.5-2B as the main analysis setting and report selected
+R1-Distill-Qwen-7B replications in the appendix. The cross-model results above
+support fidelity claims across the evaluated readouts; the analyses below show
+how the fixed SRP basis is used for local readout interpretation in this
+Qwen3.5-2B setting. All analyses describe what the fixed SRP basis records on
 realized forward passes; behavioral and causal claims require separate tests.
 
 \begin{description}[leftmargin=!,labelwidth=2.7em]

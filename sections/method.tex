@@ -129,14 +129,14 @@ reconstruction row-by-row and exchanging the sums gives
 \begin{aligned}
     s_\alpha(h)
     &= h^\top q_\alpha
-     = \sum_{t\in\mathcal{V}} \alpha_t \, h^\top w_t \\
-    &= \sum_{t\in\mathcal{V}} \alpha_t \, h^\top
+     = \sum_t \alpha_t \, h^\top w_t \\
+    &= \sum_t \alpha_t \, h^\top
        \!\left(\mu + \sum_{i=1}^{D} z_{t,i} d_i + r_t\right) \\
     &=
-    \left(\sum_{t\in\mathcal{V}} \alpha_t\right) h^\top\mu
+    \left(\sum_t \alpha_t\right) h^\top\mu
     + \sum_{i=1}^{D}
-        \left(\sum_{t\in\mathcal{V}} \alpha_t z_{t,i}\right) h^\top d_i \\
-    &\quad + h^\top \sum_{t\in\mathcal{V}} \alpha_t r_t .
+        \left(\sum_t \alpha_t z_{t,i}\right) h^\top d_i \\
+    &\quad + h^\top \sum_t \alpha_t r_t .
 \end{aligned}
 \]
 The shared-offset term \(\left(\sum_t\alpha_t\right) h^\top\mu\) vanishes
