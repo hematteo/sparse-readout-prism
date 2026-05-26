@@ -5,12 +5,12 @@
 We first test whether the factorized readout preserves the dense LM head and
 selected readout scores. Across the evaluated models, SRP preserves contrast
 signs, and most contrasts satisfy the low-error threshold; errors and flips
-concentrate near small exact margins. We therefore interpret feature
-decompositions only when the reconstructed and exact scores agree in sign and
-satisfy \(\rho<0.5\) (defined in
-\Cref{sec:method-reading-local-accounts}); \Cref{sec:readout-analyses} works
-through score choice, token preferences, context shifts, attribution, and
-edits within this subset.
+concentrate near small exact margins. We use this calibration as the reading
+rule for the rest of the section: feature decompositions are interpreted only
+when reconstructed and exact signed scores agree and satisfy \(\rho<0.5\)
+(defined in \Cref{sec:method-reading-local-accounts}). \Cref{sec:readout-analyses}
+then works through score choice, token preferences, context shifts,
+attribution, and edits within that calibrated subset.
 
 \paragraph{Dense-Readout Preservation}\label{subsec:readout-replacement-fidelity}
 \begin{table}[t]
@@ -77,11 +77,10 @@ factorization. Sign agreement is at least \(0.91\) across the suite, and most
 contrasts fall in the sign-preserved, low-error subset (\(\rho<0.5\), with
 \(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\)).
 Errors and flips concentrate near small exact margins
-(\Cref{fig:readout-score-fidelity-result}). We therefore restrict local
-decompositions to the sign-preserved low-error subset; small-margin scores
-enter only the aggregate statistics. Within this subset, reference-style
-contrasts and separated margins reconstruct more reliably than heterogeneous
-row combinations or near ties
+(\Cref{fig:readout-score-fidelity-result}). This score-level evidence defines
+the calibrated subset used below; small-margin scores enter only the aggregate
+statistics. Within this subset, reference-style contrasts and separated
+margins reconstruct more reliably than heterogeneous row combinations or near ties
 (\Cref{tab:benchmark-derived-readout-contrasts,tab:app-general-readout-score-families};
 Appendix~\ref{app:selected-readout-score-family-display-example}). The case
 studies that follow are drawn from this subset. RowEV remains a capacity
@@ -140,6 +139,19 @@ Full tails are in Appendix~\ref{app:robustness-key-quantitative}.
 \section{Readout Analyses}
 \label{sec:readout-analyses}
 
+The analyses address five questions:
+\begin{description}[leftmargin=!,labelwidth=2.7em]
+    \item[RQ1:] Can SRP turn a logit-lens preference into a residual-checked
+    sparse readout account?
+    \item[RQ2:] Which readout features support or oppose token-vs-token
+    preferences?
+    \item[RQ3:] How does prompt context reweight fixed token-row features?
+    \item[RQ4:] Do SRP feature terms compose with residual-stream component
+    attribution?
+    \item[RQ5:] Can selected readout-feature directions support constrained
+    lexical edits on held-out tokens?
+\end{description}
+
 \paragraph{Lens Preferences Become Sparse Readout Accounts [RQ1]}\label{subsec:lens-to-sparse-account}
 Lens-style readouts identify a favored token or contrast but leave it as a
 dense LM-head dot product. In \Cref{fig:main-lens-prism-comparison}, SRP holds
@@ -163,8 +175,9 @@ insect context,
 error-token rows; in software, positives shift toward defect, crash, and debug
 rows. Relative reconstruction errors are \(0.185\) and \(0.003\). Additional
 \texttt{bark}/\texttt{bass} cases, plotting conventions, and label audits
-appear in
-\cref{fig:app-selected-readout-prism-extra-examples,app:display-taxonomy,tab:app-main-case-study-feature-audit}.
+appear in Figure~\ref{fig:app-selected-readout-prism-extra-examples};
+Appendix~\ref{app:display-taxonomy} defines plotting conventions, and
+Table~\ref{tab:app-main-case-study-feature-audit} reports the label audit.
 The same surface token draws support from different row-labeled feature groups
 as the selected readout score and context change.
 
@@ -189,15 +202,21 @@ ground-truth features.
 \paragraph{Context Reweights Fixed Token-Row Features [RQ3]}\label{subsec:context-reweighting}
 Fixing the selected token isolates context effects: the token-row coefficients
 \(\beta_i\) remain fixed while the hidden-state projections \(h^\top d_i\)
-vary. In \Cref{fig:same-token-polysemy}, prompt context reweights
+vary. Thus RQ3 asks whether a single token row supplies fixed row-side
+coefficients that different prompts reweight through \(p_i(h)\), rather than
+whether different token rows carry different sparse codes. For a token logit,
+the signed term is \(c_i(h,t)=z_{t,i}h^\top d_i\): \(z_{t,i}\) fixes how token
+\(t\)'s row uses feature \(i\), while \(h^\top d_i\) measures whether the
+current context projects onto that feature direction. In
+\Cref{fig:same-token-polysemy}, prompt context reweights
 \texttt{bug}, \texttt{ring}, and \texttt{bridge} toward features whose row
 labels match the setting; each token score (after subtracting the shared
 offset \(h^\top\mu\)) has \(\rho<0.05\). \texttt{bug} shifts from
 mosquito/bee to defect/crash/debug
 labels; \texttt{bridge} shifts from river/crossing to networking labels. These
-cases separate the context-independent component of a local account, carried
-by the token-row coefficients, from the context-dependent component, carried
-by hidden-state projections onto the readout feature directions. Additional
+cases show that context can change which parts of a fixed token-row
+decomposition dominate the local score, while leaving the row-side coefficients
+unchanged. Additional
 views are in Appendix~\ref{app:additional-qwen-display-examples}.
 
 \begin{figure}[t]

@@ -1,29 +1,23 @@
 \begin{abstract}
-Lens-style methods are often used to interpret what hidden states favor in
-vocabulary space, but each inspected token logit or contrast remains a single
-dense score against an LM-head row or row combination. This limits such
-interpretations: the score does not identify which readout-side directions
-support it, which oppose it, or how much reconstruction error a sparse account
-would leave. Direct logit attribution and activation SAEs decompose the
-hidden-state side of this score; they do not decompose the readout direction
-being scored. Sparse Readout Prism (SRP) fills this gap by fitting a sparse
-dictionary directly to LM-head rows. Each token row becomes a sparse combination
-of shared \emph{readout features} plus a residual, and hidden states project
-onto the same feature directions. For a selected readout score---a token logit,
-logit difference, or other fixed LM-head row combination---SRP returns signed
-per-feature contributions in original logit units with an explicit residual.
+Logit-lens-style methods interpret hidden states by projecting them through the
+LM head and inspecting vocabulary logits, token rankings, or logit differences.
+After a token or contrast is selected, however, the inspected quantity is still
+a single dense dot product with an LM-head row or linear combination of rows.
+This score does not show which LM-head directions support it, oppose it, or
+remain in the reconstruction residual. We introduce Sparse Readout Prism (SRP),
+a sparse feature decomposition for logit-lens readouts. SRP factorizes the LM
+head into shared \emph{readout features} and sparse coefficients for
+output-token rows. This factorization first projects each hidden state onto the
+shared readout-feature basis; for any selected token logit, logit difference, or
+fixed LM-head row combination, it then decomposes the score into signed feature
+contributions in original logit units plus an explicit residual.
 
-Across an eight-model suite, SRP reconstructs unembedding rows with
-row-centered explained variance \(0.83\)--\(0.89\), matches held-out dense-head
-top-1 predictions at \(\geq 0.75\) on six models, and preserves held-out
-contrast signs on at least \(91\%\) of logit differences; \(69\%\)--\(89\%\)
-of contrasts are also sign-preserved with relative reconstruction error below
-0.5. On Qwen3.5-2B, SRP attains lower held-out score-reconstruction error than
-nearest-row ridge, matched-rank PCA, and shuffled/random sparse-code controls,
-supporting learned sparse row-code structure rather than lexical proximity,
-dense low-rank geometry, or sparse capacity alone. We report local feature
-readings only for sign-preserved, low-error cases, where the fixed basis
-supports readout-level analyses of score choice, prompt context,
-feature-resolved residual-stream attribution, and constrained readout-side
-edits.
+This fixed basis lets SRP compute hidden-state feature projections once and
+reuse them across different logits or contrasts. SRP also composes with
+residual-stream attribution and identifies candidate feature directions for
+constrained edits to selected readout scores. Across an eight-model suite, SRP
+preserves held-out contrast signs on at least \(91\%\) of logit differences,
+and on Qwen3.5-2B outperforms nearest-row ridge, matched-rank PCA, and
+shuffled/random sparse-code controls. We interpret feature-level decompositions
+only when reconstruction preserves the contrast sign and has low error.
 \end{abstract}
