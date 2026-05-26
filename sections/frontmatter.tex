@@ -1,26 +1,22 @@
 \begin{abstract}
-Lens-style methods inspect a hidden state \(h\) by reading it through the LM
-head, but once a token or contrast is selected the inspected quantity is still
-a single dense dot product \(h^\top q\) with an LM-head row or row combination.
-Direct logit attribution decomposes \(h\) and activation SAEs give it sparse
-coordinates, but neither decomposes the readout direction \(q\). Sparse Readout
-Prism (SRP) fits a sparse dictionary directly to the rows of the LM head: each
-token row is approximated as a sparse combination of a small shared set of
-\emph{readout features} plus a residual, and a hidden state is projected onto
-the same directions. For a selected readout score---a token logit
-\(h^\top w_t\), logit difference \(h^\top(w_A-w_B)\), or other fixed LM-head
-row combination---SRP returns signed per-feature contributions in original
-logit units together with an explicit residual.
+Lens-style methods inspect a hidden state \(h\) through the LM head, but the
+inspected quantity is still a dense dot product \(h^\top q\) with an LM-head
+row or row combination. Direct logit attribution and activation SAEs sparsify
+\(h\); neither sparsifies \(q\). Sparse Readout Prism (SRP) fits a sparse
+dictionary directly to the rows of the LM head: each token row becomes a
+sparse combination of shared \emph{readout features} plus a residual, and
+hidden states project onto the same directions. For a selected readout
+score---a token logit \(h^\top w_t\), logit difference \(h^\top(w_A-w_B)\), or
+other fixed LM-head row combination---SRP returns signed per-feature
+contributions in original logit units with an explicit residual.
 
 Across Qwen, Gemma, Ministral, and distilled Qwen and Llama models, SRP
-preserves held-out contrast signs and identifies the low-residual regime in
-which local decompositions are reliable. On Qwen3.5-2B, SRP attains lower
-held-out score-reconstruction error than nearest-row ridge, dense PCA, and
-null sparse controls---evidence that the gains reflect learned sparse row-code
-structure, not lexical proximity, dense low-rank geometry, or sparse capacity
-alone. Five calibration checks---replacement fidelity, score reconstruction,
-sign agreement, relative error, and baseline comparisons---gate when local
-feature bars are read; within that regime, the fixed basis supports
-readout-level analyses of score choice, prompt context, residual-stream
-attribution, and constrained lexical-score edits.
+preserves held-out contrast signs and, on Qwen3.5-2B, attains lower held-out
+score-reconstruction error than nearest-row ridge, dense PCA, and null sparse
+controls---evidence that the gains reflect learned sparse row-code structure,
+not lexical proximity, dense low-rank geometry, or sparse capacity alone.
+Calibration checks identify the regime where local feature bars are reliable;
+within it, the fixed basis supports readout-level analyses of score choice,
+prompt context, residual-stream attribution, and constrained lexical-score
+edits.
 \end{abstract}

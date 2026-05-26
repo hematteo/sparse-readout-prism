@@ -2,14 +2,14 @@
 \label{sec:results}
 \label{subsec:calibration}
 
-The results proceed in two stages. We first calibrate when SRP accounts are
-faithful enough to interpret: the factorized readout must preserve LM-head
-behavior, reconstruct selected readout scores with low error and preserved sign, beat
-generic baselines, and admit score-family regimes where local readings hold.
-Under those gates, \Cref{sec:readout-analyses} uses sign-preserved,
-low-residual cases to analyze score choice, token preferences, context shifts,
-attribution, and edits. Aggregate low-error counts use the threshold
-\(\rho<0.5\) defined in \Cref{sec:method-reading-local-accounts}.
+We first test whether the factorized readout preserves the dense LM head and
+selected readout scores. Across the evaluated models, SRP preserves contrast
+signs and yields low reconstruction error except near small exact margins. We
+therefore interpret feature decompositions only when the reconstructed and
+exact scores agree in sign and satisfy \(\rho<0.5\) (defined in
+\Cref{sec:method-reading-local-accounts}); \Cref{sec:readout-analyses} works
+through score choice, token preferences, context shifts, attribution, and
+edits within this subset.
 
 \paragraph{Dense-Readout Preservation}\label{subsec:readout-replacement-fidelity}
 \begin{table}[t]
@@ -20,10 +20,12 @@ cfg: width multiplier / TopK budget. rowEV (row-centered explained variance):
 fraction of variance in row-centered unembedding rows captured by the SAE
 reconstruction. top1: fraction of held-out hidden states where SRP and the
 dense LM head agree on the argmax token. KL: median KL divergence between
-dense and SRP-reconstructed next-token distributions. Sign: fraction of contrasts where the SRP-reconstructed margin shares sign with the exact margin. Replacement uses
-held-out hidden states; score metrics use the main held-out logit-difference
-subset. Higher is better for rowEV, top1, Sign, \(\rho<0.5\); lower for KL,
-median \(\rho\). Full names: Appendix~\ref{app:model-suite-selection}.}
+dense and SRP-reconstructed next-token distributions. Sign: fraction of
+contrasts where the SRP-reconstructed margin shares sign with the exact
+margin. Replacement uses held-out hidden states; score metrics use the main
+held-out logit-difference subset. Higher is better for rowEV, top1, Sign, and
+\(\rho<0.5\); lower is better for KL and median \(\rho\). Full names:
+Appendix~\ref{app:model-suite-selection}.}
 \label{tab:readout-score-fidelity-summary}
 \centering
 \scriptsize
@@ -59,7 +61,7 @@ The sparse factorization preserves unembedding rows across the suite (rowEV
 \(0.83\)--\(0.89\)) and tracks the dense readout on six of eight models (top-1
 agreement \(\geq 0.75\) and KL \(\leq 0.5\);
 \Cref{tab:readout-score-fidelity-summary}). Two exceptions stand out.
-Gemma-E2B fails outright at the decision level (top-1 \(0.333\), KL \(6.37\))
+Gemma-E2B fails at the decision level (top-1 \(0.333\), KL \(6.37\))
 despite a respectable rowEV of \(0.83\): row reconstruction alone does not
 certify argmax behavior. The reasoning-distilled readouts add a second failure
 mode: high rowEV can still mis-rank the argmax when a few unembedding rows
@@ -74,8 +76,15 @@ factorization. Sign agreement is at least \(0.91\) across the suite, and most
 contrasts fall in the sign-preserved, low-error subset (\(\rho<0.5\), with
 \(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\)).
 Errors and flips concentrate near small exact margins
-(\Cref{fig:readout-score-fidelity-result}). Calibration therefore splits the score set in two: a sign-preserved low-error subset, where local readings are admitted, and a small-margin failure regime, where we report only aggregate statistics. Within the admitted regime, reference-style contrasts and separated margins reconstruct more reliably than heterogeneous row combinations or near ties (\Cref{tab:benchmark-derived-readout-contrasts,tab:app-general-readout-score-families}; Appendix~\ref{app:selected-readout-score-family-display-example}). Case studies come from the former.
-RowEV is a capacity metric, not validation of any feature bar.
+(\Cref{fig:readout-score-fidelity-result}). We therefore restrict local
+decompositions to the sign-preserved low-error subset; small-margin scores
+enter only the aggregate statistics. Within this subset, reference-style
+contrasts and separated margins reconstruct more reliably than heterogeneous
+row combinations or near ties
+(\Cref{tab:benchmark-derived-readout-contrasts,tab:app-general-readout-score-families};
+Appendix~\ref{app:selected-readout-score-family-display-example}). The case
+studies that follow are drawn from this subset. RowEV remains a capacity
+metric, not validation of any local feature bar.
 
 \begin{figure}[t]
     \centering
@@ -118,25 +127,37 @@ On the full Qwen3.5-2B logit-difference set, SRP attains lower median error
 and a larger sign-preserved low-error subset than nearest-row ridge
 \citep{hoerl1970ridge}, PCA \citep{jolliffe2002principal}, shuffled sparse
 codes, and random sparse patterns (\Cref{tab:main-baseline-null-comparison}).
-Each baseline rules out a different alternative explanation: ridge isolates
+Each baseline tests a different alternative explanation: ridge isolates
 lexical proximity between scored tokens; PCA at matched rank isolates dense
 low-rank geometry; shuffling sparse codes preserves the sparsity pattern but
 breaks the learned row--code assignment; random sparse patterns hold sparse
 capacity constant. The gap therefore supports learned sparse row-code structure
-for these reconstructions specifically, not semantic validity for every label.
+for these reconstructions specifically; it does not validate every label as
+semantic.
 Full tails are in Appendix~\ref{app:robustness-key-quantitative}.
 
 \section{Readout Analyses}
 \label{sec:readout-analyses}
 
 \paragraph{Lens Preferences Become Sparse Readout Accounts [RQ1]}\label{subsec:lens-to-sparse-account}
-Lens-style readouts identify a favored token or contrast but leave it as a dense LM-head dot product. In \Cref{fig:main-lens-prism-comparison}, SRP holds the \texttt{verify}-minus-\texttt{assume} score fixed and decomposes it into signed readout terms plus an explicit residual: positive and negative terms support or oppose the selected side, yielding a residual-checked sparse account in logit units rather than an atomic scalar. The object is still a readout-level account; behavioral or causal claims require separate tests.
+Lens-style readouts identify a favored token or contrast but leave it as a
+dense LM-head dot product. In \Cref{fig:main-lens-prism-comparison}, SRP holds
+the \texttt{verify}-minus-\texttt{assume} score fixed and decomposes it into
+signed readout terms plus an explicit residual. Positive and negative terms
+support or oppose the selected side, giving a residual-checked sparse account
+in logit units rather than a single dense score. The object remains a
+readout-level account; behavioral or causal claims require separate tests.
 
-\paragraph{Logit Differences Expose Competing Features [RQ3]}\label{subsec:feature-competition}
-Selected-direction coefficients \(\beta_i(q)\) turn projections into signed contributions, so the same feature may support a token, oppose it, or drop out after mean subtraction as the selected score \(q\) changes. Sign-preserved, low-error local decompositions then identify the readout features that raise or lower token-vs-token scores within a ranking. Using the fixed SRP
+\paragraph{Logit Differences Expose Competing Features [RQ2]}\label{subsec:feature-competition}
+Selected-direction coefficients \(\beta_i(q)\) turn projections into signed
+contributions. As the selected score \(q\) changes, the same feature may support
+a token, oppose it, or drop out after mean subtraction. Sign-preserved,
+low-error local decompositions then identify the readout features that raise or
+lower token-vs-token scores within a ranking. Using the fixed SRP
 basis, we decompose low-error Qwen3.5-2B logit differences over polysemous
 tokens---surface tokens such as \texttt{bug} or \texttt{bark} whose intended
-sense depends on context (\Cref{fig:selected-readout-prism-examples}). In an insect context,
+sense depends on context (\Cref{fig:selected-readout-prism-examples}). In an
+insect context,
 \texttt{bug} draws positive mosquito-, bee-, and beetle-labeled terms against
 error-token rows; in software, positives shift toward defect, crash, and debug
 rows. Relative reconstruction errors are \(0.185\) and \(0.003\). Additional
@@ -164,12 +185,14 @@ ground-truth features.
     \label{fig:selected-readout-prism-examples}
 \end{figure}
 
-\paragraph{Context Reweights Fixed Token-Row Features [RQ4]}\label{subsec:context-reweighting}
+\paragraph{Context Reweights Fixed Token-Row Features [RQ3]}\label{subsec:context-reweighting}
 Fixing the selected token isolates context effects: the token-row coefficients
 \(\beta_i\) remain fixed while the hidden-state projections \(h^\top d_i\)
 vary. In \Cref{fig:same-token-polysemy}, prompt context reweights
 \texttt{bug}, \texttt{ring}, and \texttt{bridge} toward features whose row
-labels match the setting; each token score (after subtracting the shared offset $h^\top\mu$) has \(\rho<0.05\). \texttt{bug} shifts from mosquito/bee to defect/crash/debug
+labels match the setting; each token score (after subtracting the shared
+offset \(h^\top\mu\)) has \(\rho<0.05\). \texttt{bug} shifts from
+mosquito/bee to defect/crash/debug
 labels; \texttt{bridge} shifts from river/crossing to networking labels. These
 cases separate the context-independent component of a local account, carried
 by the token-row coefficients, from the context-dependent component, carried
@@ -189,7 +212,7 @@ views are in Appendix~\ref{app:additional-qwen-display-examples}.
     \label{fig:same-token-polysemy}
 \end{figure}
 
-\paragraph{Readout Features Compose with Component Attribution [RQ5]}\label{sec:feature-resolved-component-decomposition}\label{subsec:feature-resolved-component-attribution}
+\paragraph{Readout Features Compose with Component Attribution [RQ4]}\label{sec:feature-resolved-component-decomposition}\label{subsec:feature-resolved-component-attribution}
 Signed readout terms are linear in the final hidden state, so additive
 residual-stream decompositions pass through the fixed SRP basis. We compose
 SRP with direct logit attribution (DLA), which writes the final hidden state
@@ -201,39 +224,38 @@ component adds to a chosen logit
 \[
     M_{c,i}(q)=\beta_i(q)\,h_c^\top d_i .
 \]
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.86\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_semantic_table.pdf}
+    \caption{\textbf{Feature-resolved component attribution.}
+    Qwen3.5-2B \texttt{verify}-\texttt{assume} margin. Rows are embedding and
+    per-layer post-norm contributions; columns group verify/check features,
+    assume features, remaining sparse terms, the LM-head residual, and ordinary
+    DLA. Red supports \texttt{verify}; blue supports \texttt{assume}.}
+    \label{fig:qwen-prism-dla-verify-assume-main}
+\end{figure}
+
 Rather than a single scalar margin contribution per component, this yields
 component-by-readout-feature terms for the selected readout score.
 This is component-by-feature accounting for a realized forward pass, not causal
 necessity without interventions \citep{geiger2023causalabstraction}.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.86\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_semantic_table.pdf}
-    \caption{\textbf{Feature-resolved component attribution for a
-    \texttt{verify}-\texttt{assume} margin.}
-    Qwen3.5-2B (\(D=65536\), \(k=256\)). Per-component contributions to
-    \(h^\top(w_{\mathrm{verify}}-w_{\mathrm{assume}})\) in logit units; red
-    supports \texttt{verify}, blue supports \texttt{assume}. Rows: embedding
-    plus per-layer post-norm contributions. Columns 1--3: SRP feature terms
-    grouped as verify/check, assume, remaining sparse; column 4: LM-head
-    residual \(h_c^\top r_q\); column 5: per-component DLA \(h_c^\top q\)
-    for comparison.}
-    \label{fig:qwen-prism-dla-verify-assume-main}
-\end{figure}
-
 \Cref{fig:qwen-prism-dla-verify-assume-main} decomposes a Qwen3.5-2B
 \texttt{verify}-minus-\texttt{assume} logit difference. The exact margin is
 \(+4.31\), the DLA sum \(+4.36\) (component additivity error \(+0.05\)), and
 the sparse feature sum \(+4.28\) (\(\rho=0.009\)), separating
-verification/checking support from assumption-family opposition. A row-centered companion appears in
+verification/checking support from assumption-family opposition. A row-centered
+companion appears in
 Appendix~\ref{app:feature-resolved-dla}.
 
 \FloatBarrier
 
-\paragraph{Readout Features Support Constrained Lexical Edits [RQ6]}\label{subsec:constrained-readout-edits}
+\paragraph{Readout Features Support Constrained Lexical Edits [RQ5]}\label{subsec:constrained-readout-edits}
 The learned decoder directions also serve as candidate edit directions at
 the readout: subtracting a fixed multiple of a decoder direction from the
-final hidden state lowers the logits of tokens that load on that direction.
+final hidden state lowers the logits of tokens that load positively on that
+direction.
 We test this in a constrained lexical-score setting. Five discovery terms
 select ten Qwen3.5-2B decoder directions; the edit is then applied to a
 disjoint set of evaluation tokens that were not used during selection. A
@@ -280,8 +302,8 @@ tokens; a discovery-token-only bias does not transfer at all (eval flip
 the evaluation labels at intervention time and so achieves the same flips at
 median KL \(0.004\), while SRP pays median KL \(0.679\) for acting through a
 shared basis rather than a token-specific penalty. Transfer to held-out tokens
-from a fixed basis is the gain; broader distributional shift is its price. The
-R1-Distill-Qwen-7B replication appears in
+from a fixed basis is the gain; broader distributional shift is the
+corresponding cost. The R1-Distill-Qwen-7B replication appears in
 Appendix~\ref{app:lexical-control-stress-test}.
 
 \FloatBarrier

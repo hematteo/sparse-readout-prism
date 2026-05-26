@@ -8,19 +8,20 @@ a single hidden state predicts later tokens \citep{pal2023future}, and
 Patchscopes elicits continuations or descriptions by patching representations
 into prompted contexts \citep{ghandeharioun2024patchscopes}. These methods
 vary how the hidden state is read out; SRP keeps the readout interface and
-decomposes the selected direction itself into sparse readout features.
+decomposes the selected LM-head direction into sparse readout features.
 
 \paragraph{Output geometry and sparse row dictionaries.}
 Output-embedding work studies how weight tying
 \citep{press2017outputembedding,inan2017tying}, softmax rank
 \citep{yang2018softmaxbottleneck}, and tokenizer segmentation
-\citep{bostrom2020bpe} shape the rows being scored against. Activation-SAE work
+\citep{bostrom2020bpe} shape the output rows used for vocabulary scoring.
+Activation-SAE work
 establishes sparse dictionaries over hidden-state distributions
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, with
 standardized diagnostics \citep{karvonen2025saebench,makelov2024principled};
 that line sparsifies the hidden-state factor \(h\) of a lens score
 \(h^\top q\). SRP applies the same sparse-dictionary machinery to the readout
-factor \(q\), fitting it directly to LM-head rows. Concurrent anonymous work
+factor \(q\), fitting it directly to LM-head rows. Concurrent work
 studies unembedding dynamics across training checkpoints via
 parameter-trajectory crosscoding \citep{anonymous2026learningreadout}; SRP
 instead factorizes the LM head of a trained model, yielding a basis usable at

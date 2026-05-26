@@ -1,17 +1,17 @@
 \section{Conclusion}
 
 Sparse Readout Prism decomposes the readout side of lens scores. Fitting a
-sparse dictionary to LM-head rows yields a basis that separates three factors
-any score collapses into a single scalar: the row-side coefficients on shared
-readout directions, the hidden-state projections supplied by context, and the
-reconstruction residual---all in original logit units. Five calibration checks
+sparse dictionary to LM-head rows exposes three factors behind each selected
+score: row-side coefficients on shared readout directions, hidden-state
+projections supplied by context, and the reconstruction residual---all in
+original logit units. Five calibration checks
 (replacement fidelity, score reconstruction, sign agreement, relative error,
-baseline comparisons) decide when the factorized readout is accurate enough to
+baseline comparisons) identify when the factorized readout is accurate enough to
 interpret; outside that regime, feature labels alone are not evidence.
 
 Within this validated regime, the fixed SRP basis supports readout-level
 comparisons across score choices, prompt contexts, residual-stream components,
-and constrained lexical edits. These analyses show how a single lens score can be
-separated into row-side coefficients, context-dependent projections, and explicit
-residual error, without turning feature labels into evidence outside the
-calibrated regime.
+and constrained readout-side lexical edits. These analyses show how a single
+lens score can be separated into row-side coefficients, context-dependent
+projections, and explicit residual error, without turning feature labels into
+evidence outside the calibrated regime.

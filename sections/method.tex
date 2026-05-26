@@ -39,7 +39,7 @@ rest, fixing the active-feature budget so row sparsity is comparable across
 tokens. When training uses centering or row normalization, we invert those
 transformations after fitting so that \(\widehat{w}_t\), \(d_i\), \(z_{t,i}\),
 and \(r_t\) live in the same raw row space as \(w_t\). Every displayed term then
-remains in original logit units, with no hidden dense correction. Full width,
+remains in original logit units, with no hidden dense correction. Dictionary width,
 sparsity, preprocessing, and score-decomposition details are in
 Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility} and
@@ -108,8 +108,8 @@ coordinate
 \]
 where \(\alpha_A=1\) and all other coefficients are zero.
 
-Contrasts often reduce sensitivity to shared output-embedding and tokenizer row
-structure
+We use contrasts to factor out score components shared across compared rows,
+including output-embedding and tokenizer row structure
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe};
 for two tokens \(A,B\in\mathcal{V}\), a pairwise logit difference
 \[
@@ -172,8 +172,8 @@ contribution:
 \]
 Here \(\beta_i(\alpha)\) is fixed by the selected direction and readout SAE,
 while \(p_i(h)\) varies with context; when \(q=q_\alpha\) is clear, we write
-\(\beta_i(q)\). A feature matters locally only when both factors are large in
-magnitude (Appendix~\ref{app:global-readout-feature-profiles}).
+\(\beta_i(q)\). A feature has a large local contribution only when both factors
+are large in magnitude (Appendix~\ref{app:global-readout-feature-profiles}).
 
 For a selected readout score, let
 \[
@@ -183,7 +183,7 @@ For a selected readout score, let
     s_{\mathrm{recon}}&=s_{\mu}+s_{\mathrm{feat}} .
 \end{aligned}
 \]
-The sparse account leaves residual
+The remaining reconstruction error is
 \[
 \begin{aligned}
     s_{\mathrm{exact}}&=s_\alpha(h),\\
@@ -255,10 +255,10 @@ contrasts. We compute relative reconstruction error as
 \]
 The half-logit floor \(\delta\) keeps \(\rho\) bounded when
 \(|s_{\mathrm{exact}}|\) is near zero, so the metric is comparable across
-score magnitudes. We use \(\rho<0.5\) as the reading threshold: feature bars
+score magnitudes. We use \(\rho<0.5\) as the reading threshold. Feature bars
 are interpreted only when reconstructed and exact scores agree within this
-relative-error bound, and for signed contrasts the two scores must also share
-sign before support and opposition are read off.
+bound; for signed contrasts, they must also share sign before support and
+opposition are read off.
 
 Figures may truncate small bars, but reconstructions use the full feature sum.
 Claims remain tied to feature ids, signed contributions, and residuals; labels
