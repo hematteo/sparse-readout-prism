@@ -14,9 +14,8 @@ original logit units plus an explicit residual.
 The same fixed basis composes with residual-stream attribution and supplies
 candidate directions for constrained edits to selected readout scores. Across
 an eight-model suite, SRP preserves held-out contrast signs on at least
-\(91\%\) of logit differences, and on Qwen3.5-2B outperforms nearest-row ridge,
-matched-rank PCA, and shuffled/random sparse-code controls. With explicit
-reconstruction diagnostics, SRP makes lens-style readouts auditable, letting
-researchers compare token preferences, component attributions, and readout-side
+\(91\%\) of logit differences and outperforms baselines like nearest-row ridge,
+PCA at matched rank, and shuffled/random sparse-code controls. SRP makes lens-style readouts auditable, letting
+researchers compare token differences, component attributions, and readout-side
 edits in a shared sparse basis rather than as isolated dense scores.
 \end{abstract}
