@@ -1,37 +1,22 @@
 \section{Method: Sparse Readout Prism}
 \label{sec:method}
 
-Throughout, ``readout'' means the final unembedding or LM head
-\(\WU\in\R^{|\mathcal{V}|\times d}\). For hidden state \(h\in\R^d\), row \(t\)
-is \(w_t^\top\), and the full logit vector is \(\ell(h)=\WU h\); its
-SRP-reconstructed counterpart is \(\widehat{\ell}(h)\), introduced below.
-
-SRP has three steps. First, it factorizes the final
-unembedding into a sparse readout basis: token-row coefficients over shared
-readout feature directions, plus residuals. Second, for a hidden state, it
-computes coordinates \(p_i(h)=h^\top d_i\) along those directions. These
-coordinates do not depend on which token logit, contrast, or other readout
-score will later be inspected; the same basis can also reconstruct or replace
-the full LM head. Third, after the analyst or evaluation selects a token logit,
-contrast, or margin, SRP multiplies that score's row-side coefficients by the
-hidden-state projections to obtain signed feature contributions plus an explicit
-residual.
-We define the supported score families below.
+For hidden state \(h\in\R^d\), the dense LM head produces logit vector
+\(\ell(h)=\WU h\); we write its SRP-reconstructed counterpart as
+\(\widehat{\ell}(h)\), defined below. SRP has three stages: factorize the LM
+head into a sparse readout basis (\S\ref{sec:method-factorization}), project
+hidden states onto the resulting directions
+(\S\ref{sec:method-feature-projections}), and decompose a selected readout
+score into per-feature contributions plus residual
+(\S\ref{sec:method-local-score}). Supported score families are listed in
+\S\ref{sec:method-score-coefficients}.
 
 \subsection{Factorizing the LM Head into Sparse Readout Features}
 \label{sec:method-factorization}
-\label{sec:method-fitting-readout-sae}
 
-SRP learns a sparse dictionary for rows of \(\WU\). We call the SAE trained on unembedding rows the \emph{readout SAE}. The more
-common variant, an activation SAE, is trained on per-layer hidden-state
-activations collected from forward passes, so its codes describe hidden
-states. A readout SAE instead takes the static rows of the LM head as
-its training data, so its codes describe how each vocabulary row decomposes
-into shared directions. Following sparse-autoencoder
-practice
-\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, the
-readout SAE approximates each unembedding row. In the raw readout coordinates used for all
-score decompositions, the fitted row and residual satisfy
+SRP fits a sparse dictionary to the rows of \(\WU\). Following
+sparse-autoencoder practice~\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling},
+the fitted row and residual satisfy
 \[
     \widehat{w}_t = \mu + \sum_{i=1}^{D} z_{t,i} d_i,
     \qquad
@@ -43,6 +28,10 @@ and \(r_t\) is the residual. Thus
 \[
     w_t=\mu+\sum_i z_{t,i}d_i+r_t .
 \]
+We call this dictionary a \emph{readout SAE}, in contrast to activation SAEs
+trained on per-layer hidden-state activations: a readout SAE's codes describe
+how each vocabulary row decomposes into shared directions, not how each hidden
+state does.
 
 We fit TopK sparse autoencoders~\citep{makhzani2013ksparse,gao2024scaling}: the
 encoder retains only the \(k\) largest pre-activations per row and zeros the
@@ -50,9 +39,8 @@ rest, fixing the active-feature budget so row sparsity is comparable across
 tokens. When training uses centering or row normalization, we invert those
 transformations after fitting so that \(\widehat{w}_t\), \(d_i\), \(z_{t,i}\),
 and \(r_t\) live in the same raw row space as \(w_t\). Every displayed term then
-remains in original logit units, with no hidden dense correction. Qualitative
-case studies use Qwen3.5-2B with \(D=32d_{\mathrm{model}}\) and \(k=256\);
-full width, sparsity, and preprocessing sweeps are in
+remains in original logit units, with no hidden dense correction. Full width,
+sparsity, preprocessing, and score-decomposition details are in
 Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility} and
 \ref{app:score-decomposition}.
@@ -99,8 +87,6 @@ score-agnostic, while the local score decomposition derived below is
 score-conditioned.
 
 \subsection{Decomposing Selected Readout Scores}
-\label{sec:method-selected-readout-scores}
-\label{sec:problem-setup}
 \label{sec:method-local-score}
 
 For local decompositions, SRP applies to selected readout scores that are fixed
@@ -136,15 +122,12 @@ groups, write
     =
     \frac{1}{|\mathcal{A}|}\sum_{a\in\mathcal{A}}w_a .
 \]
-Group contrasts, vocabulary-mean contrasts, and local-ranking alternatives use
-the same fixed-row-combination form. For top-competitor margins we use
-\[
-    w_u-\sum_{r\in\mathcal{R}}\pi_r w_r
-\]
-where \(u\), competitor set \(\mathcal{R}\), and weights \(\pi_r\ge0\) are
-fixed by the original LM-head ranking prior to SRP decomposition, with
-\(\sum_{r\in\mathcal{R}}\pi_r=1\). \Cref{tab:method-special-cases} gives the
-corresponding sparse-feature coefficients.
+Group contrasts, vocabulary-mean contrasts, and top-competitor margins use the
+same fixed-row-combination form. For top-competitor margins, the target row,
+competitor set, and nonnegative weights summing to one are fixed by the
+original LM-head ranking before SRP is applied.
+\Cref{tab:method-special-cases} lists the corresponding sparse-feature
+coefficients.
 
 \begin{figure}[t]
     \centering
@@ -178,7 +161,8 @@ reconstruction gives
 The shared-offset term \(\left(\sum_t\alpha_t\right) h^\top\mu\) cancels out
 whenever the coefficients sum to zero, which covers logit differences,
 group and vocabulary-mean contrasts, and top-competitor margins
-(\Cref{sec:method-score-coefficients}); for these contrasts the entire decomposition lives in feature contributions plus residual.
+(\Cref{sec:method-score-coefficients}); for these contrasts the entire
+decomposition lives in feature contributions plus residual.
 For readout feature \(i\), define its direction coefficient and signed feature
 contribution:
 \[
@@ -189,10 +173,7 @@ contribution:
 Here \(\beta_i(\alpha)\) is fixed by the selected direction and readout SAE,
 while \(p_i(h)\) varies with context; when \(q=q_\alpha\) is clear, we write
 \(\beta_i(q)\). A feature matters locally only when both factors are large in
-magnitude---reiterating the point of
-\Cref{sec:method-feature-projections}, the projection coordinate alone is not
-support or opposition until a selected direction supplies its coefficient
-(Appendix~\ref{app:global-readout-feature-profiles}).
+magnitude (Appendix~\ref{app:global-readout-feature-profiles}).
 
 For a selected readout score, let
 \[
@@ -274,11 +255,10 @@ contrasts. We compute relative reconstruction error as
 \]
 The half-logit floor \(\delta\) keeps \(\rho\) bounded when
 \(|s_{\mathrm{exact}}|\) is near zero, so the metric is comparable across
-score magnitudes. Feature bars are read only when \(s_{\mathrm{recon}}\) is
-close to \(s_{\mathrm{exact}}\). We treat \(\rho<0.5\) as the operating
-threshold: feature bars are interpreted only when the reconstructed and exact
-scores agree within this relative-error bound, and for signed contrasts the
-two scores must also share sign before support and opposition are read off.
+score magnitudes. We use \(\rho<0.5\) as the reading threshold: feature bars
+are interpreted only when reconstructed and exact scores agree within this
+relative-error bound, and for signed contrasts the two scores must also share
+sign before support and opposition are read off.
 
 Figures may truncate small bars, but reconstructions use the full feature sum.
 Claims remain tied to feature ids, signed contributions, and residuals; labels

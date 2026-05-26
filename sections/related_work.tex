@@ -31,10 +31,9 @@ readout-side edits.
 Direct logit attribution decomposes residual-stream components against token
 logits or logit-difference directions
 \citep{elhage2021framework,wang2022ioi}, and logit-prism methods extend this
-across transformer components \citep{nguyen2024logitprisms}. These methods
-decompose the hidden-state factor \(h\); SRP additionally decomposes the
-readout factor \(q\) into sparse readout features, yielding feature-resolved
-DLA on a realized forward pass. The combined account remains additive;
+across transformer components \citep{nguyen2024logitprisms}. SRP composes the
+row-side basis with DLA, yielding feature-resolved attributions on a realized
+forward pass. The combined account remains additive;
 intervention methods \citep{conmy2023acdc}, causal abstraction
 \citep{geiger2023causalabstraction}, and transcoder or attribution-graph
 approaches \citep{dunefsky2024transcoders,ameisen2025circuittracing} address

@@ -9,15 +9,9 @@ reconstruction residual---all in original logit units. Five calibration checks
 baseline comparisons) decide when the factorized readout is accurate enough to
 interpret; outside that regime, feature labels alone are not evidence.
 
-Within the regime, the fixed basis supports readout-level comparisons across
-score choices, prompt contexts, residual-stream components, and candidate
-lexical edits. The same template extends to other linear readouts (reward-model
-heads, classifier heads, retrieval projections); to depth-resolved lenses
-(tuned lens, logit prism) that apply the readout at every layer, locating where
-a feature becomes readout-accessible; to activation-level interventions on
-decoder directions that probe causal sufficiency and necessity; to
-cross-checkpoint comparisons of basis stability through pretraining and
-fine-tuning; and to surveys of how each hidden state distributes projection
-mass between the selected score, its competitors, and active-but-unused
-directions. In each case the same gates decide when feature labels count as
-evidence.
+Within this validated regime, the fixed SRP basis supports readout-level
+comparisons across score choices, prompt contexts, residual-stream components,
+and constrained lexical edits. These analyses show how a single lens score can be
+separated into row-side coefficients, context-dependent projections, and explicit
+residual error, without turning feature labels into evidence outside the
+calibrated regime.

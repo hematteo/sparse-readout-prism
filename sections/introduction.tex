@@ -1,14 +1,12 @@
 \section{Introduction}
 
-Transformer language models map a final hidden state \(h\in\R^d\) to next-token logits through an unembedding matrix \(\WU\in\R^{|\mathcal{V}|\times d}\), the \emph{LM head}; row \(w_t\) is the learned direction whose dot product with \(h\) scores token \(t\). Lens-style methods~\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes} reuse this map on intermediate hidden states, exposing vocabulary logits, token rankings, distributions, or related summaries. But once a token or contrast is selected, the inspected object is still a single dense dot product \(h^\top q\), where \(q\) is an LM-head row or row combination. We call this final map the \emph{readout}.
+Transformer language models map a final hidden state \(h\in\R^d\) to next-token logits through an unembedding matrix \(\WU\in\R^{|\mathcal{V}|\times d}\), the \emph{LM head}; row \(w_t\) is the learned direction whose dot product with \(h\) scores token \(t\). Lens-style methods~\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes} reuse this map on intermediate hidden states, exposing vocabulary logits, token rankings, or distributions. Yet once a token or contrast is selected, the inspected object remains a single dense dot product \(h^\top q\), where \(q\) is an LM-head row or row combination. We call this final map the \emph{readout}.
 
-This leaves the readout side of lens analysis opaque. Direct logit attribution (DLA) writes \(h=\sum_c h_c\) as a sum of contributions from earlier residual-stream components---the embedding, attention heads, and MLP layers---and reads off each component's contribution to a chosen logit~\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. Sparse autoencoders (SAEs) and dictionary-learning methods learn overcomplete bases in which each input is reconstructed from a few active coordinates~\citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}; applied to hidden activations, they introduce sparse coordinates for \(h\). Neither decomposes the selected readout direction \(q\) itself. Token logits and logit differences are linear in LM-head rows: \(h^\top(w_A - w_B) = h^\top w_A - h^\top w_B\). Any additive, per-feature account in logit units must therefore come from a sparse decomposition of those rows---decomposing \(h\) alone cannot produce row-side coordinates. A lens can report that a state favors \texttt{verify} over \texttt{assume} (Figure~\ref{fig:main-lens-prism-comparison}A), but not which shared readout-side directions support that margin, which oppose it, or how much error a sparse account would incur.
+Existing decompositions all act on the hidden-state side. Direct logit attribution (DLA) decomposes \(h=\sum_c h_c\) into contributions from earlier residual-stream components---the embedding, attention heads, and MLP layers---and reads off each component's contribution to a chosen logit~\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. Sparse autoencoders (SAEs) and related dictionary-learning methods learn overcomplete bases that reconstruct each input from a few active coordinates~\citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}; applied to hidden activations, they yield sparse coordinates for \(h\). Neither decomposes the readout direction \(q\) itself. Because token logits and logit differences are linear in LM-head rows---\(h^\top(w_A - w_B) = h^\top w_A - h^\top w_B\)---any additive, per-feature account in logit units must come from a sparse decomposition of those rows; decomposing \(h\) alone cannot produce row-side coordinates. A lens can therefore report that a state favors \texttt{verify} over \texttt{assume} (Figure~\ref{fig:main-lens-prism-comparison}A), but not which shared readout-side directions support that margin, which oppose it, or how much error a sparse account would incur. Thus DLA and activation SAEs decompose or localize \(h\), whereas SRP must decompose \(q\): a readout-side basis separates the selected direction, the context-dependent hidden-state projection, and the reconstruction residual.
 
-For logit-lens and final-readout claims, the LM head is the coordinate system in which claims are stated; it is the object that turns hidden-state geometry into token scores. Decomposing \(h\) reports where a signal came from in the residual stream; decomposing \(q\) reports what readout-side features the signal is scored against. A fixed sparse basis for the head therefore separates three factors that any lens score collapses into a single scalar: the selected readout direction, the hidden-state projection induced by context, and the reconstruction residual.
+Sparse Readout Prism (SRP) supplies this missing readout-side basis by applying dictionary learning directly to LM-head rows rather than to hidden activations: each token row is expressed as sparse coefficients over a shared overcomplete basis of directions, plus a residual. We call the shared directions \emph{readout features}---features of LM-head rows, in contrast to SAE features trained on hidden-state activations.
 
-Sparse Readout Prism (SRP) supplies this missing readout-side basis by factorizing the LM head directly: each token row is expressed as sparse coefficients over a shared overcomplete basis of directions plus a residual. We call the shared directions \emph{readout features}---features of LM-head rows, in contrast to SAE features trained on hidden-state activations. SRP applies dictionary-learning machinery to unembedding rows rather than hidden-state activations.
-
-Before any token, contrast, or margin is fixed, SRP projects a hidden state onto each readout feature direction, yielding coordinates \(p_i(h)=h^\top d_i\) that are reusable across downstream score choices. The same factorization reconstructs the full logit vector and replaces the LM head, checking whether the sparse basis preserves the original readout. Once a \emph{readout score} is selected---a token logit \(h^\top w_t\), a pairwise logit difference \(h^\top(w_A-w_B)\), or another fixed LM-head row combination---the corresponding row-side coefficients turn these hidden-state projections into signed per-feature contributions in original logit units (Figure~\ref{fig:main-lens-prism-comparison}B), all checkable against the original head. In short, SRP decomposes the readout side of lens scores.
+Before any token, contrast, or margin is fixed, SRP projects a hidden state onto each readout feature direction, yielding coordinates \(p_i(h)=h^\top d_i\) that are reusable across downstream score choices. The same factorization reconstructs the full logit vector and can replace the LM head outright, providing a direct check that the sparse basis preserves the original readout. Once a \emph{readout score} is selected---a token logit \(h^\top w_t\), a pairwise logit difference \(h^\top(w_A-w_B)\), or another fixed LM-head row combination---the row-side coefficients combine with these hidden-state projections to yield signed per-feature contributions in original logit units (Figure~\ref{fig:main-lens-prism-comparison}B), each checkable against the original head. In short, SRP decomposes the readout side of lens scores.
 
 \begin{figure}[H]
     \centering
@@ -21,23 +19,15 @@ Before any token, contrast, or margin is fixed, SRP projects a hidden state onto
     \label{fig:main-lens-prism-comparison}
 \end{figure}
 
-This paper makes four contributions:
+This paper makes three contributions:
 \begin{itemize}
-    \item \emph{A sparse factorization of the LM head.} SRP turns the readout
-    from an atomic map into a reusable sparse basis, fitting a shared
-    overcomplete set of directions directly to the rows of the unembedding
-    matrix so that the full head can be reconstructed---or replaced---from
-    sparse codes.
-    \item \emph{Score-agnostic feature projections.} Before any token, contrast,
-    or margin is chosen, we project a hidden state onto each learned direction,
-    obtaining coordinates that are reusable across downstream score choices.
-    \item \emph{Local score decompositions in logit units.} For any selected
-    token logit, logit difference, or fixed LM-head row combination, SRP returns
-    signed per-feature contributions---the row-side coefficient times the
-    hidden-state projection---together with offset and residual terms, all in
-    original logit units.
-    \item \emph{Validation-gated readout analyses.} We define five calibration
-    checks---replacement fidelity, score reconstruction, sign agreement,
-    relative error, and baseline comparisons---and admit local readings only in
-    the regime where they pass.
+    \item \emph{A sparse factorization of the LM head.} We fit a shared
+    overcomplete dictionary directly to unembedding rows; the full head can be
+    reconstructed or replaced from the resulting sparse codes.
+    \item \emph{Score-agnostic feature projections.} Each learned direction
+    yields a per-feature projection of any hidden state, reusable across
+    downstream score choices.
+    \item \emph{Local score decompositions in logit units.} For any token logit,
+    logit difference, or fixed row combination, SRP returns signed per-feature
+    contributions plus offset and residual, all in original logit units.
 \end{itemize}

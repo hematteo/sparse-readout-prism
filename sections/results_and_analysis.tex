@@ -58,10 +58,15 @@ R1-L-8B & 32/256 & 0.888 & 0.754 & 0.434 & 0.926 & 0.134 & 0.830 \\
 The sparse factorization preserves unembedding rows across the suite (rowEV
 \(0.83\)--\(0.89\)) and tracks the dense readout on six of eight models (top-1
 agreement \(\geq 0.75\) and KL \(\leq 0.5\);
-\Cref{tab:readout-score-fidelity-summary}). Two exceptions stand out. Gemma-E2B fails at
-the decision level (top-1 \(0.333\), KL \(6.37\)), and the reasoning-distilled readouts show that high rowEV can still mis-rank the argmax when a few unembedding rows carry very large residual norms: those rows then dominate the softmax even though row variance overall is well captured (Appendix~\ref{app:readout-norm-tails}). Row
-reconstruction alone therefore does not certify a sparse account, and we
-report replacement fidelity before reading local decompositions.
+\Cref{tab:readout-score-fidelity-summary}). Two exceptions stand out.
+Gemma-E2B fails outright at the decision level (top-1 \(0.333\), KL \(6.37\))
+despite a respectable rowEV of \(0.83\): row reconstruction alone does not
+certify argmax behavior. The reasoning-distilled readouts add a second failure
+mode: high rowEV can still mis-rank the argmax when a few unembedding rows
+carry very large residual norms, since those rows then dominate the softmax
+even though row variance overall is well captured
+(Appendix~\ref{app:readout-norm-tails}). Both cases motivate reporting
+replacement fidelity before any local decomposition.
 
 \paragraph{Selected-Score Reconstruction}\label{subsec:selected-score-reconstruction}
 The logit-difference columns test whether selected readout scores survive the
@@ -69,7 +74,7 @@ factorization. Sign agreement is at least \(0.91\) across the suite, and most
 contrasts fall in the sign-preserved, low-error subset (\(\rho<0.5\), with
 \(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\)).
 Errors and flips concentrate near small exact margins
-(\Cref{fig:readout-score-fidelity-result}). Calibration therefore splits the score set in two: a sign-preserved low-error subset, where local readings are admitted, and a small-margin failure regime, where we report only aggregate statistics. Case studies come from the former.
+(\Cref{fig:readout-score-fidelity-result}). Calibration therefore splits the score set in two: a sign-preserved low-error subset, where local readings are admitted, and a small-margin failure regime, where we report only aggregate statistics. Within the admitted regime, reference-style contrasts and separated margins reconstruct more reliably than heterogeneous row combinations or near ties (\Cref{tab:benchmark-derived-readout-contrasts,tab:app-general-readout-score-families}; Appendix~\ref{app:selected-readout-score-family-display-example}). Case studies come from the former.
 RowEV is a capacity metric, not validation of any feature bar.
 
 \begin{figure}[t]
@@ -113,48 +118,22 @@ On the full Qwen3.5-2B logit-difference set, SRP attains lower median error
 and a larger sign-preserved low-error subset than nearest-row ridge
 \citep{hoerl1970ridge}, PCA \citep{jolliffe2002principal}, shuffled sparse
 codes, and random sparse patterns (\Cref{tab:main-baseline-null-comparison}).
-The gap supports learned sparse row-code structure for these reconstructions,
-not semantic validity for every label. Full tails are in
-Appendix~\ref{app:robustness-key-quantitative}.
-
-\paragraph{Reliable Regimes for Local Interpretation}\label{subsec:operating-regimes}
-With the basis fixed, reference-style contrasts and separated margins reconstruct
-more reliably than heterogeneous row combinations or near ties
-(\Cref{tab:benchmark-derived-readout-contrasts,tab:app-general-readout-score-families};
-Appendix~\ref{app:selected-readout-score-family-display-example}). Later displays stay
-in that regime and are read only when sign is preserved and residual is small.
+Each baseline rules out a different alternative explanation: ridge isolates
+lexical proximity between scored tokens; PCA at matched rank isolates dense
+low-rank geometry; shuffling sparse codes preserves the sparsity pattern but
+breaks the learned row--code assignment; random sparse patterns hold sparse
+capacity constant. The gap therefore supports learned sparse row-code structure
+for these reconstructions specifically, not semantic validity for every label.
+Full tails are in Appendix~\ref{app:robustness-key-quantitative}.
 
 \section{Readout Analyses}
 \label{sec:readout-analyses}
 
-Analyses below stay in the sign-preserved, low-residual regime established in
-\Cref{sec:results}.
-
 \paragraph{Lens Preferences Become Sparse Readout Accounts [RQ1]}\label{subsec:lens-to-sparse-account}
-Lens-style readouts identify a favored token or contrast but leave it as a dense
-LM-head dot product. RQ1 asks whether anything is gained by going further: starting from the lens-selected score, can SRP expose structure that the scalar hides? In \Cref{fig:main-lens-prism-comparison}, SRP holds the
-\texttt{verify}-minus-\texttt{assume} score fixed and decomposes that same
-preference into signed readout terms plus an explicit residual. The object
-becomes a residual-checked sparse account in logit units rather than an
-atomic lens score: positive and negative terms support or oppose the selected
-side. This is
-still a readout-level account; behavioral or causal claims require separate
-tests.
-
-\paragraph{Score Choice Sets Support and Opposition [RQ2]}\label{subsec:score-choice}
-A large projection onto a readout feature is neither intrinsically favorable
-nor unfavorable: its sign depends on whether the selected readout score uses that
-feature more on the positive side or the comparison side. Selected-direction
-coefficients turn projections into signed contributions, so a feature may
-support a raw logit, drop out after mean subtraction, or become negative when
-the comparison token uses it more. Each display therefore names its selected
-readout score: changing \(q\) changes \(\beta_i(q)\), and the same projection vector
-can yield different support and opposition terms.
-\Cref{subsec:calibration} bounds which choices of \(q\) admit such comparisons.
+Lens-style readouts identify a favored token or contrast but leave it as a dense LM-head dot product. In \Cref{fig:main-lens-prism-comparison}, SRP holds the \texttt{verify}-minus-\texttt{assume} score fixed and decomposes it into signed readout terms plus an explicit residual: positive and negative terms support or oppose the selected side, yielding a residual-checked sparse account in logit units rather than an atomic scalar. The object is still a readout-level account; behavioral or causal claims require separate tests.
 
 \paragraph{Logit Differences Expose Competing Features [RQ3]}\label{subsec:feature-competition}
-Sign-preserved, low-error local decompositions identify the readout features
-that raise or lower token-vs-token scores within a ranking. Using the fixed SRP
+Selected-direction coefficients \(\beta_i(q)\) turn projections into signed contributions, so the same feature may support a token, oppose it, or drop out after mean subtraction as the selected score \(q\) changes. Sign-preserved, low-error local decompositions then identify the readout features that raise or lower token-vs-token scores within a ranking. Using the fixed SRP
 basis, we decompose low-error Qwen3.5-2B logit differences over polysemous
 tokens---surface tokens such as \texttt{bug} or \texttt{bark} whose intended
 sense depends on context (\Cref{fig:selected-readout-prism-examples}). In an insect context,
@@ -171,8 +150,8 @@ We audit displayed labels separately from the measured feature ids and signed
 terms (Appendix~\ref{app:main-case-study-feature-audit}). Across 99
 claim-bearing displayed labels, 67 are coherent lexical labels, 18 are
 ambiguous, and 14 are token-form labels; all 67 coherent labels point to the
-signed side claimed in the prose. We therefore use labels as readability
-summaries, not as ground-truth semantic features.
+signed side claimed in the prose. Labels remain readability summaries, not
+ground-truth features.
 
 \begin{figure}[t]
     \centering
@@ -251,7 +230,7 @@ Appendix~\ref{app:feature-resolved-dla}.
 
 \FloatBarrier
 
-\paragraph{Readout Features Support Constrained Lexical Edits [RQ5]}\label{subsec:constrained-readout-edits}
+\paragraph{Readout Features Support Constrained Lexical Edits [RQ6]}\label{subsec:constrained-readout-edits}
 The learned decoder directions also serve as candidate edit directions at
 the readout: subtracting a fixed multiple of a decoder direction from the
 final hidden state lowers the logits of tokens that load on that direction.
@@ -294,12 +273,15 @@ No intervention & \(0.000\) & \(0.000\) & \(0.000\) & \(0.000\) \\
 \end{table}
 
 \Cref{tab:main-readout-edit} shows that readout SAE directions selected from
-discovery tokens transfer to evaluation tokens (flip rate \(0.359\)),
-matching the oracle's eval flip rate even though selection used only the
-discovery tokens; a discovery-token-only bias does not transfer (eval flip
-\(0.000\)). The oracle achieves comparable flips with smaller distribution
-shift (median KL \(0.004\) vs \(0.679\)): SRP achieves transfer to held-out
-tokens from the fixed basis at the cost of larger off-target distribution shift. The R1-Distill-Qwen-7B replication appears in
+discovery tokens transfer to evaluation tokens (flip rate \(0.359\)), matching
+the oracle's eval flip rate even though selection never saw the evaluation
+tokens; a discovery-token-only bias does not transfer at all (eval flip
+\(0.000\)). The trade-off is off-target distribution shift: the oracle uses
+the evaluation labels at intervention time and so achieves the same flips at
+median KL \(0.004\), while SRP pays median KL \(0.679\) for acting through a
+shared basis rather than a token-specific penalty. Transfer to held-out tokens
+from a fixed basis is the gain; broader distributional shift is its price. The
+R1-Distill-Qwen-7B replication appears in
 Appendix~\ref{app:lexical-control-stress-test}.
 
 \FloatBarrier
