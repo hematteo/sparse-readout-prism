@@ -1,16 +1,10 @@
 \section*{Limitations}
 
 \paragraph{Scope of claims.}
-Decompositions are local, non-causal, and tied to a single selected readout
-score --- a token logit, logit difference, group contrast, or other fixed
-linear combination of LM-head rows. Features are learned from LM-head rows;
-hidden states enter only through projections onto those feature directions,
-so the selected direction fixes signed support and opposition while residuals
-govern term-level interpretation. Feature-resolved DLA attributes the selected
-readout score additively to residual-stream components and to SRP features
-within those components, and the readout-side edit is a constrained
-intervention on selected decoder directions in the final hidden state. Both
-nominate candidate directions and report induced score shifts and
+Decompositions are local and tied to a single selected readout score
+(a token logit, logit difference, group contrast, or other fixed linear
+combination of LM-head rows). Feature-resolved DLA and the readout-side
+edit nominate candidate directions and report induced score shifts and
 distributional side-effects, but neither establishes causal necessity,
 sufficiency, or downstream generation effects.
 

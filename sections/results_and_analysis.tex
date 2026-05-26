@@ -70,9 +70,10 @@ replacement fidelity before any local decomposition.
 
 \paragraph{Selected-Score Reconstruction}\label{subsec:selected-score-reconstruction}
 The logit-difference columns test whether selected readout scores survive the
-factorization. Sign agreement is at least \(0.91\) across the suite, and most
-contrasts fall in the sign-preserved, low-error subset (\(\rho<0.5\), with
-\(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\)).
+factorization. Sign agreement is at least \(0.91\) across the suite, and the
+sign-preserved, low-error subset (\(\rho<0.5\), with
+\(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\))
+covers \(0.69\)--\(0.89\) of contrasts per model.
 Errors and flips concentrate near small exact margins
 (\Cref{fig:readout-score-fidelity-result}). This score-level evidence defines
 the calibrated subset used below; small-margin scores enter only the aggregate
@@ -130,8 +131,8 @@ lexical proximity between scored tokens; PCA at matched rank isolates dense
 low-rank geometry; shuffling sparse codes preserves the sparsity pattern but
 breaks the learned row--code assignment; random sparse patterns hold sparse
 capacity constant. The gap therefore supports learned sparse row-code structure
-for these reconstructions specifically; it does not establish that every
-label is semantically meaningful.
+in SRP's reconstructions; it does not establish that every label is
+semantically meaningful.
 Full details are in Appendix~\ref{app:robustness-key-quantitative}.
 
 \section{Readout Analyses}
@@ -143,15 +144,15 @@ in the appendix. All five describe what the fixed SRP basis records on
 realized forward passes; behavioral and causal claims require separate tests.
 
 \begin{description}[leftmargin=!,labelwidth=2.7em]
-    \item[RQ1:] Can SRP rewrite a logit-lens score as a short sum of
-    signed feature contributions plus an explicit residual?
-    \item[RQ2:] Can SRP identify which features push for each side of a
-    token-vs-token contrast?
-    \item[RQ3:] Does prompt context reweight features attached to a fixed
-    token row?
+    \item[RQ1:] Does an SRP decomposition reveal which features drive a
+    logit-lens score on a single contrast?
+    \item[RQ2:] Do the features SRP places on each side of a
+    token-vs-token contrast correspond to interpretable lexical groups?
+    \item[RQ3:] Does prompt context reweight the features contributing to
+    a fixed token's logit?
     \item[RQ4:] Do SRP feature terms compose with residual-stream component
     attribution?
-    \item[RQ5:] Do selected readout-feature directions support constrained
+    \item[RQ5:] Do the learned decoder directions support constrained
     lexical edits on held-out tokens?
 \end{description}
 
@@ -164,8 +165,8 @@ support or oppose the chosen side, replacing the single dense score with a
 signed, sparse account in logit units.
 
 \paragraph{Logit Differences Expose Competing Features [RQ2]}\label{subsec:feature-competition}
-Beyond a single contrast, the same machinery identifies which readout
-features push for each side of any token-vs-token contrast. As the score
+Beyond a single contrast, the signed features SRP places on each side of a
+token-vs-token contrast typically cohere as lexical groups. As the score
 \(q\) changes, a given feature may support a token, oppose it, or drop out
 after mean subtraction, and the decomposition reads off this competition
 directly from the signed terms. Using the fixed SRP basis, we decompose

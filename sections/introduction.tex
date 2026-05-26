@@ -1,6 +1,6 @@
 \section{Introduction}
 
-Transformer language models map a final hidden state \(h\in\R^d\) to next-token logits through an unembedding matrix \(\WU\in\R^{|\mathcal{V}|\times d}\)---the \emph{LM head}, or \emph{readout}; row \(w_t\) is the learned direction whose dot product with \(h\) scores token \(t\). Lens-style methods~\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes} reuse this map on intermediate hidden states, exposing vocabulary logits, token rankings, or distributions. Yet once a token or contrast is selected, the inspected object remains a single dense dot product \(h^\top q\), where \(q\) is an LM-head row or row combination.
+Transformer language models map a final hidden state \(h\in\R^d\) to next-token logits through an unembedding matrix \(\WU\in\R^{|\mathcal{V}|\times d}\)---the \emph{LM head}, or \emph{readout}. Row \(w_t\) is the learned direction whose dot product with \(h\) scores token \(t\). Lens-style methods~\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes} reuse this map on intermediate hidden states, exposing vocabulary logits, token rankings, or distributions. Yet once a token or contrast is selected, the inspected object remains a single dense dot product \(h^\top q\), where \(q\) is an LM-head row or row combination.
 
 \begin{figure}[t]
     \centering
