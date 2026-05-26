@@ -21,3 +21,14 @@ drive constrained lexical edits that transfer to held-out tokens.
 
 Readout-side decomposition is complementary to hidden-state decomposition;
 together they close the additive loop on lens scores.
+
+\paragraph{Future work.}
+Future work can extend SRP from the final LM head to the effective linear
+readouts used by tuned lenses, logit-prism variants, and future-token lenses,
+so lens methods can be compared by sparse signed feature terms as well as
+decoded tokens. The same basis also supports a layerwise census of
+readout-feature projections before score selection: when features become
+readout-readable, which residual components supply them, and when they become
+specific to a token, contrast, or competitor set. SRP-nominated terms then give
+targets for causal patching, ablation, and generation-level evaluation, which
+remain separate tests beyond the additive readout decomposition.
