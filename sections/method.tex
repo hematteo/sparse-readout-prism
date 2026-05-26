@@ -29,12 +29,12 @@ how each vocabulary row decomposes into shared directions, not how each hidden
 state does.
 
 We fit TopK sparse autoencoders~\citep{makhzani2013ksparse,gao2024scaling}: the
-encoder retains only the \(k\) largest pre-activations per row and zeros the
-rest, fixing the active-feature budget so row sparsity is comparable across
-tokens. When training uses centering or row normalization, we invert those
-transformations after fitting so that \(\widehat{w}_t\), \(d_i\), \(z_{t,i}\),
-and \(r_t\) live in the same raw row space as \(w_t\). Every displayed term then
-remains in original logit units, with no hidden dense correction. Dictionary width,
+encoder retains only the \(k\) largest pre-activations per row, fixing row
+sparsity at \(k\) so it is comparable across tokens. When we center or
+row-normalize during training, we invert those transformations after fitting
+so that \(\widehat{w}_t\), \(d_i\), \(z_{t,i}\), and \(r_t\) lie in the same
+raw row space as \(w_t\). Every displayed term then remains in original logit
+units, with no hidden dense correction. Dictionary width,
 sparsity, preprocessing, and score-decomposition details are in
 Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility} and
@@ -71,7 +71,7 @@ projection vector
     p(h)=D_{\mathrm{feat}}h .
 \]
 The coordinate \(p_i(h)\) records the alignment of \(h\) with readout feature
-\(i\) before any score selects which features matter.
+\(i\); it does not depend on which score later weights that feature.
 
 \subsection{Decomposing Selected Readout Scores}
 \label{sec:method-local-score}
@@ -84,18 +84,17 @@ A selected readout score is a fixed linear combination of LM-head rows. Let
     s_\alpha(h)=h^\top q_\alpha .
 \]
 We call \(q_\alpha\) the selected readout direction and \(s_\alpha(h)\) the
-selected readout score. For vocabulary token \(A\in\mathcal{V}\), a token logit
-recovers the familiar logit-lens
-coordinate
+selected readout score. Setting \(\alpha_A=1\) and all other coefficients to
+zero recovers the familiar logit-lens coordinate
 \[
-    \ell_A(h)=h^\top w_A,
+    \ell_A(h)=h^\top w_A
 \]
-where \(\alpha_A=1\) and all other coefficients are zero.
+for vocabulary token \(A\in\mathcal{V}\).
 
-We use contrasts to factor out score components shared across compared rows,
-including output-embedding and tokenizer row structure
+Contrasts cancel score components shared across the compared rows, including
+output-embedding and tokenizer-row structure
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe};
-for two tokens \(A,B\in\mathcal{V}\), a pairwise logit difference
+for two tokens \(A,B\in\mathcal{V}\), the pairwise logit difference
 \[
     m_{A,B}(h)=h^\top(w_A-w_B),
 \]
@@ -106,9 +105,9 @@ groups, write
     =
     \frac{1}{|\mathcal{A}|}\sum_{a\in\mathcal{A}}w_a .
 \]
-Top-competitor margins fix the target row, competitor set, and nonnegative
-weights summing to one from the original LM-head ranking before SRP is
-applied.
+For top-competitor margins, the target row, competitor set, and nonnegative
+weights (summing to one) are taken from the original LM-head ranking computed
+before SRP is applied.
 
 \begin{figure}[t]
     \centering
@@ -142,10 +141,10 @@ reconstruction row-by-row and exchanging the sums gives
     &\quad + h^\top \sum_{t\in\mathcal{V}} \alpha_t r_t .
 \end{aligned}
 \]
-The shared-offset term \(\left(\sum_t\alpha_t\right) h^\top\mu\) cancels out
-whenever the coefficients sum to zero, which covers logit differences,
-group and vocabulary-mean contrasts, and top-competitor margins; for these
-contrasts the entire decomposition lives in feature contributions plus residual.
+The shared-offset term \(\left(\sum_t\alpha_t\right) h^\top\mu\) vanishes
+whenever the coefficients sum to zero, which covers logit differences, group
+and vocabulary-mean contrasts, and top-competitor margins; for these scores,
+the decomposition reduces to feature contributions plus residual.
 For readout feature \(i\), define its direction coefficient and signed feature
 contribution:
 \[
@@ -153,10 +152,10 @@ contribution:
     \qquad
     c_i(h,\alpha)=\beta_i(\alpha)\,p_i(h).
 \]
-Here \(\beta_i(\alpha)\) is fixed by the selected direction and readout SAE,
-while \(p_i(h)\) varies with context; when \(q=q_\alpha\) is clear, we write
-\(\beta_i(q)\). A feature has a large local contribution only when both factors
-are large in magnitude (Appendix~\ref{app:global-readout-feature-profiles}).
+Here \(\beta_i(\alpha)\) is fixed by the selected direction and the readout
+SAE, while \(p_i(h)\) varies with context; when \(q=q_\alpha\) is clear, we
+write \(\beta_i(q)\). A feature contributes locally only when both factors are
+large in magnitude (Appendix~\ref{app:global-readout-feature-profiles}).
 
 We label the components:
 \[
@@ -227,11 +226,11 @@ contrasts. We compute relative reconstruction error as
 \]
 The half-logit floor \(\delta\) keeps \(\rho\) bounded when
 \(|s_{\mathrm{exact}}|\) is near zero, so the metric is comparable across
-score magnitudes. We use \(\rho<0.5\) as the reading threshold. Feature bars
-are interpreted only when reconstructed and exact scores agree within this
-bound; for signed contrasts, they must also share sign before support and
-opposition are read off. Figures may truncate small bars for legibility;
-reconstructions and the residual always use the full feature sum.
+score magnitudes. We use \(\rho<0.5\) as the reading threshold. We interpret
+feature bars only when reconstructed and exact scores agree within this bound;
+for signed contrasts, the two must also share sign before we read off support
+and opposition. Figures may truncate small bars for legibility; reconstructions
+and the residual always use the full feature sum.
 
 Claims remain tied to feature ids, signed contributions, and residuals; labels
 summarize high-coefficient vocabulary rows, following sparse-feature evaluation

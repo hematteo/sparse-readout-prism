@@ -4,13 +4,14 @@
 
 We first test whether the factorized readout preserves the dense LM head and
 selected readout scores. Across the evaluated models, SRP preserves contrast
-signs, and most contrasts satisfy the low-error threshold; errors and flips
-concentrate near small exact margins. We use this calibration as the reading
-rule for the rest of the section: feature decompositions are interpreted only
-when reconstructed and exact signed scores agree and satisfy \(\rho<0.5\)
-(defined in \Cref{sec:method-reading-local-accounts}). \Cref{sec:readout-analyses}
-then works through score choice, token preferences, context shifts,
-attribution, and edits within that calibrated subset.
+signs and most contrasts satisfy the low-error threshold, with errors and
+flips concentrated near small exact margins. We use this calibration as the
+reading rule for the rest of the section: feature decompositions are
+interpreted only when reconstructed and exact signed scores agree and satisfy
+\(\rho<0.5\) (defined in \Cref{sec:method-reading-local-accounts}).
+\Cref{sec:readout-analyses} then works through score choice, token
+preferences, context shifts, attribution, and edits within that calibrated
+subset.
 
 \paragraph{Dense-Readout Preservation}\label{subsec:readout-replacement-fidelity}
 \begin{table}[t]
@@ -61,14 +62,10 @@ R1-L-8B & 32/256 & 0.888 & 0.754 & 0.434 & 0.926 & 0.134 & 0.830 \\
 The sparse factorization preserves unembedding rows across the suite (rowEV
 \(0.83\)--\(0.89\)) and tracks the dense readout on six of eight models (top-1
 agreement \(\geq 0.75\) and KL \(\leq 0.5\);
-\Cref{tab:readout-score-fidelity-summary}). Two exceptions stand out.
-Gemma-E2B fails at the decision level (top-1 \(0.333\), KL \(6.37\))
-despite a respectable rowEV of \(0.83\): row reconstruction alone does not
-certify argmax behavior. The reasoning-distilled readouts add a second failure
-mode: high rowEV can still mis-rank the argmax when a few unembedding rows
-carry very large residual norms, since those rows then dominate the softmax
-even though row variance overall is well captured
-(Appendix~\ref{app:readout-norm-tails}). Both cases motivate reporting
+\Cref{tab:readout-score-fidelity-summary}). The two deviations show that high
+rowEV does not guarantee argmax behavior: row reconstruction can be accurate
+in aggregate while a few unembedding rows with large residual norms dominate
+the softmax (Appendix~\ref{app:readout-norm-tails}). This argues for reporting
 replacement fidelity before any local decomposition.
 
 \paragraph{Selected-Score Reconstruction}\label{subsec:selected-score-reconstruction}
@@ -80,11 +77,12 @@ Errors and flips concentrate near small exact margins
 (\Cref{fig:readout-score-fidelity-result}). This score-level evidence defines
 the calibrated subset used below; small-margin scores enter only the aggregate
 statistics. Within this subset, reference-style contrasts and separated
-margins reconstruct more reliably than heterogeneous row combinations or near ties
+margins reconstruct more reliably than heterogeneous row combinations or
+small exact margins
 (\Cref{tab:benchmark-derived-readout-contrasts,tab:app-general-readout-score-families};
 Appendix~\ref{app:selected-readout-score-family-display-example}). The case
 studies that follow are drawn from this subset. RowEV remains a capacity
-metric, not validation of any local feature bar.
+metric, not validation of any per-feature term.
 
 \begin{figure}[t]
     \centering
@@ -132,8 +130,8 @@ lexical proximity between scored tokens; PCA at matched rank isolates dense
 low-rank geometry; shuffling sparse codes preserves the sparsity pattern but
 breaks the learned row--code assignment; random sparse patterns hold sparse
 capacity constant. The gap therefore supports learned sparse row-code structure
-for these reconstructions specifically; it does not validate every label as
-semantic.
+for these reconstructions specifically; it does not establish that every
+label is semantically meaningful.
 Full details are in Appendix~\ref{app:robustness-key-quantitative}.
 
 \section{Readout Analyses}
@@ -158,7 +156,7 @@ dense LM-head dot product. In \Cref{fig:main-lens-prism-comparison}, SRP holds
 the \texttt{verify}-minus-\texttt{assume} score fixed and decomposes it into
 signed readout terms plus an explicit residual. Positive and negative terms
 support or oppose the selected side, giving a residual-checked sparse account
-in logit units rather than a single dense score. The object remains a
+in logit units rather than a single dense score. The result is a
 readout-level account; behavioral or causal claims require separate tests.
 
 \paragraph{Logit Differences Expose Competing Features [RQ2]}\label{subsec:feature-competition}
@@ -171,21 +169,22 @@ basis, we decompose low-error Qwen3.5-2B logit differences over polysemous
 tokens---surface tokens such as \texttt{bug} or \texttt{bark} whose intended
 sense depends on context (\Cref{fig:selected-readout-prism-examples}). In an
 insect context,
-\texttt{bug} draws positive mosquito-, bee-, and beetle-labeled terms against
-error-token rows; in software, positives shift toward defect, crash, and debug
+\texttt{bug} draws positive contributions from mosquito-, bee-, and
+beetle-labeled terms and negative contributions from error-token rows; in a
+software context, positive contributions shift to defect, crash, and debug
 rows. Relative reconstruction errors are \(0.185\) and \(0.003\). Additional
 \texttt{bark}/\texttt{bass} cases, plotting conventions, and label audits
 appear in Figure~\ref{fig:app-selected-readout-prism-extra-examples};
 Appendix~\ref{app:display-taxonomy} defines plotting conventions, and
 Table~\ref{tab:app-main-case-study-feature-audit} reports the label audit.
-The same surface token draws support from different row-labeled feature groups
+The same surface token recruits different row-labeled feature groups
 as the selected readout score and context change.
 
 We audit displayed labels separately from the measured feature ids and signed
 terms (Appendix~\ref{app:main-case-study-feature-audit}). Across 99
 claim-bearing displayed labels, 67 are coherent lexical labels, 18 are
 ambiguous, and 14 are token-form labels; all 67 coherent labels point to the
-signed side claimed in the prose. Labels remain readability summaries, not
+signed side reported in the text. Labels remain readability summaries, not
 ground-truth features.
 
 \begin{figure}[t]
@@ -202,9 +201,9 @@ ground-truth features.
 \paragraph{Context Reweights Fixed Token-Row Features [RQ3]}\label{subsec:context-reweighting}
 Fixing the selected token isolates context effects: the token-row coefficients
 \(\beta_i\) remain fixed while the hidden-state projections \(h^\top d_i\)
-vary. Thus RQ3 asks whether a single token row supplies fixed row-side
-coefficients that different prompts reweight through \(p_i(h)\), rather than
-whether different token rows carry different sparse codes. For a token logit,
+vary. RQ3 therefore asks whether a single token row supplies fixed row-side
+coefficients that different prompts reweight through \(p_i(h)\). It does not
+ask whether different token rows carry different sparse codes. For a token logit,
 the signed term is \(c_i(h,t)=z_{t,i}h^\top d_i\): \(z_{t,i}\) fixes how token
 \(t\)'s row uses feature \(i\), while \(h^\top d_i\) measures whether the
 current context projects onto that feature direction. In
@@ -311,12 +310,12 @@ No intervention & \(0.000\) & \(0.000\) & \(0.000\) & \(0.000\) \\
 
 \Cref{tab:main-readout-edit} shows that readout SAE directions selected from
 discovery tokens transfer to evaluation tokens (flip rate \(0.359\)), matching
-the oracle's eval flip rate even though selection never saw the evaluation
-tokens; a discovery-token-only bias does not transfer at all (eval flip
-\(0.000\)). The trade-off is off-target distribution shift: the oracle uses
-the evaluation labels at intervention time and so achieves the same flips at
-median KL \(0.004\), while SRP pays median KL \(0.679\) for acting through a
-shared basis rather than a token-specific penalty. Transfer to held-out tokens
+the oracle's eval flip rate even though the evaluation tokens were not used
+during selection; a discovery-token-only bias does not transfer at all (eval
+flip \(0.000\)). The trade-off is off-target distribution shift: the oracle
+uses the evaluation labels at intervention time and so achieves the same
+flips at median KL \(0.004\), while SRP incurs median KL \(0.679\) for acting
+through a shared basis rather than a token-specific penalty. Transfer to held-out tokens
 from a fixed basis is the gain; broader distributional shift is the
 corresponding cost. The R1-Distill-Qwen-7B replication appears in
 Appendix~\ref{app:lexical-control-stress-test}.
