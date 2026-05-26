@@ -2,7 +2,7 @@
 
 Transformer language models map a final hidden state \(h\in\R^d\) to next-token logits through an unembedding matrix \(\WU\in\R^{|\mathcal{V}|\times d}\), the \emph{LM head}; row \(w_t\) is the learned direction whose dot product with \(h\) scores token \(t\). Lens-style methods~\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes} reuse this map on intermediate hidden states, exposing vocabulary logits, token rankings, or distributions. Yet once a token or contrast is selected, the inspected object remains a single dense dot product \(h^\top q\), where \(q\) is an LM-head row or row combination. We call this final map the \emph{readout}.
 
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
     \includegraphics[width=0.75\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_verify_assume/qwen2b_lens_prism_comparison_verify_assume.pdf}
     \caption{\textbf{From lens output to a local score decomposition.}
