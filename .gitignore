@@ -12,7 +12,11 @@ submission_*.pdf
 *.fls
 *.log
 *.out
-*.synctex.gz
+*.synctex*
+
+# ACL pubcheck outputs
+/errors-main*.json
+/errors-main-page-*.png
 
 # Local build products
 /main.pdf
