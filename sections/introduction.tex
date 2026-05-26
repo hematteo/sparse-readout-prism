@@ -30,7 +30,24 @@ Token logits and logit differences are linear in LM-head rows: \(h^\top(w_A - w_
 
 Sparse Readout Prism (SRP) applies dictionary learning directly to LM-head rows: each row is written as sparse coefficients over a shared overcomplete basis, plus a residual. We call the shared directions \emph{readout features}---features of LM-head rows, in contrast to SAE features trained on hidden-state activations. Once a \emph{readout score} is fixed---a token logit \(h^\top w_t\), a pairwise logit difference \(h^\top(w_A-w_B)\), or another LM-head row combination---the row-side coefficients combine with hidden-state projections \(p_i(h)=h^\top d_i\) to give signed per-feature contributions in original logit units (Figure~\ref{fig:main-lens-prism-comparison}B). Contributions, offset, and residual sum to the original score.
 
-This paper makes three contributions:
+We demonstrate SRP in two different sets of evaluations. First, we establishes that the factorization is faithful
+enough to read from (\Cref{sec:results}). Across eight models, SRP reconstructs unembedding
+rows with explained variance \(0.83\)--\(0.89\) after row centering. It
+tracks the dense LM head on six of eight readouts and preserves
+contrast sign on at least \(91\%\) of held-out logit differences; on
+Qwen3.5-2B it outperforms baseline methods such as nearest-row ridge, matched-rank PCA, and
+shuffle/random sparse baselines. %These checks define a sign-preserved, low-error subset (relative reconstruction error \(\rho<0.5\))---the reading rule for the rest of the paper.
+
+In addition, we applies SRP within that subset (\Cref{sec:readout-analyses}). Each
+token preference reported by a lens becomes a sparse account in
+logit units with an explicit residual. Polysemous logit differences
+expose competing features; prompt context reweights a fixed
+token-row decomposition; direct logit attribution composes with the
+basis to give component-by-feature terms. Decoder directions
+selected from a small discovery set drive constrained lexical edits
+that transfer to held-out tokens.
+
+In summary, this paper makes three contributions:
 \begin{itemize}
     \item \emph{A sparse factorization of the LM head.} We fit a shared
     overcomplete dictionary directly to unembedding rows; the full head can be
@@ -42,22 +59,3 @@ This paper makes three contributions:
     logit difference, or fixed row combination, SRP returns signed per-feature
     contributions plus offset and residual, all in original logit units.
 \end{itemize}
-
-\Cref{sec:results} establishes that the factorization is faithful
-enough to read from. Across eight models, SRP reconstructs unembedding
-rows with explained variance \(0.83\)--\(0.89\) after row centering. It
-tracks the dense LM head on six of eight readouts and preserves
-contrast sign on at least \(91\%\) of held-out logit differences; on
-Qwen3.5-2B it outperforms nearest-row ridge, matched-rank PCA, and
-shuffle/random sparse baselines. These checks define a sign-preserved,
-low-error subset (relative reconstruction error \(\rho<0.5\))---the
-reading rule for the rest of the paper.
-
-\Cref{sec:readout-analyses} applies SRP within that subset. Each
-token preference reported by a lens becomes a sparse account in
-logit units with an explicit residual. Polysemous logit differences
-expose competing features; prompt context reweights a fixed
-token-row decomposition; direct logit attribution composes with the
-basis to give component-by-feature terms. Decoder directions
-selected from a small discovery set drive constrained lexical edits
-that transfer to held-out tokens.
