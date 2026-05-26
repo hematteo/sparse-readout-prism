@@ -71,7 +71,7 @@ SRP learns a sparse basis for the final unembedding / LM head by decomposing
 token rows into sparse SAE codes over shared decoder directions. This yields a
 reusable readout-side basis for hidden states. Before any token, contrast, or
 other readout score is selected, the basis can reconstruct the full logit vector,
-replace the LM head, and provide score-independent readout feature projections.
+replace the LM head, and provide readout feature projections for hidden states.
 When a selected score fixes a readout direction--for example an unembedding row,
 a logit-difference direction, a group or vocabulary-mean contrast, or a fixed
 top-competitor margin--the same basis yields feature coefficients for that
@@ -90,8 +90,9 @@ factorizes the readout behind it: the unembedding matrix is decomposed into
 sparse token row codes and shared SAE decoder directions. Projecting a hidden
 state onto those directions gives readout feature projections before a token,
 contrast, or margin is selected. The same basis supports full readout
-reconstruction, score-independent projection profiles, local decompositions of
-selected scores, feature-resolved DLA, and constrained readout-side edits. For a
+reconstruction, readout feature projection vectors before score selection,
+local decompositions of selected scores, feature-resolved DLA, and
+constrained readout-side edits. For a
 local score decomposition, the selected readout direction turns projections into
 signed feature contributions for a chosen score. The paper shows that the
 factorized readout can replace the LM head in useful regimes; that selected
@@ -110,8 +111,9 @@ Use this hierarchy when writing high level prose:
 3. **Technical move:** SRP factorizes the unembedding matrix into sparse
    token row codes and shared SAE decoder directions.
 4. **Basis uses:** the learned basis supports full readout reconstruction,
-   score-independent projection profiles, local decompositions of selected
-   logits and contrasts, feature-resolved DLA, and readout-side edit directions.
+   readout feature projection vectors before score selection, local
+   decompositions of selected logits and contrasts, feature-resolved DLA, and
+   readout-side edit directions.
 5. **Selected-score use:** a token logit, logit difference, or other fixed
    linear combination of LM-head rows selects weighted sums of readout feature
    projections and defines support/opposition for one score.
@@ -262,8 +264,9 @@ Preferred stance:
 
 > SRP is a sparse feature decomposition for logit lens readouts, built from a
 > sparse factorization of the final unembedding / LM head. The learned basis
-> supports full readout reconstruction, score-independent projection profiles,
-> and local decompositions of selected readout scores. For the last case, a
+> supports full readout reconstruction, readout feature projection vectors
+> before score selection, and local decompositions of selected readout scores.
+> For the last case, a
 > token logit, logit difference, or explicit row-combination contrast fixes a
 > readout direction, which turns readout feature projections into signed feature
 > terms. The experiments identify regimes where these uses preserve the original
@@ -280,8 +283,8 @@ For ARR, the safest and strongest contributions are:
 - **Sparse readout factorization:** SRP factorizes the final unembedding / LM
   head into sparse token-row codes over shared SAE decoder directions, yielding
   a readout-specific sparse feature basis.
-- **Score-independent projections:** projecting hidden states onto the learned
-  decoder directions gives readout feature projections before any token,
+- **Feature projections before score selection:** projecting hidden states onto
+  the learned decoder directions gives readout feature projections before any token,
   contrast, or margin is selected.
 - **Local score decompositions:** selected token logits, logit differences, and
   fixed LM-head row combinations decompose into signed feature terms plus
@@ -311,7 +314,7 @@ readout uses above can be interpreted.
 - "projection profile before score selection" when a higher level shorthand is
   useful
 - "full readout reconstruction"
-- "score-independent projection profile"
+- "readout feature projection vector before score selection"
 - "local score decomposition"
 - "token logit"
 - "logit difference"

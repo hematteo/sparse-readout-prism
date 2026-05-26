@@ -1,21 +1,23 @@
 \section{Conclusion}
 
-Sparse Readout Prism separates what is fixed by a sparse readout basis from
-what is chosen by the score and what is supplied by context. Replacement
-fidelity, score reconstruction, sign agreement, and baseline comparisons decide
-when the factorized readout is accurate enough to interpret. Under those gates,
-SRP supports readout-level comparisons across score choices, contexts,
-residual-stream components, and candidate lexical edits; outside them, feature
-labels alone are not evidence.
+Sparse Readout Prism decomposes the readout side of lens scores. Fitting a
+sparse dictionary to LM-head rows yields a basis that separates three factors
+any score collapses into a single scalar: the row-side coefficients on shared
+readout directions, the hidden-state projections supplied by context, and the
+reconstruction residual---all in original logit units. Five calibration checks
+(replacement fidelity, score reconstruction, sign agreement, relative error,
+baseline comparisons) decide when the factorized readout is accurate enough to
+interpret; outside that regime, feature labels alone are not evidence.
 
-SRP also decomposes a selected lens score into coordinate terms that support
-or oppose it, together with the residual left by the approximation. The same
-template extends to other linear readouts --- reward-model heads, classifier
-heads, retrieval projections; to tuned-lens and logit-prism readouts across
-depth, locating where in the residual stream a feature becomes
-readout-accessible; to activation-level interventions on decoder directions
-that probe causal sufficiency and necessity; to cross-checkpoint comparisons
-of basis stability through pretraining and fine-tuning; and to a
-residual-stream census that splits projection mass between the selected
-score, competitors, and directions active but locally unused. In each case
-the same gates decide when feature labels count as evidence.
+Within the regime, the fixed basis supports readout-level comparisons across
+score choices, prompt contexts, residual-stream components, and candidate
+lexical edits. The same template extends to other linear readouts (reward-model
+heads, classifier heads, retrieval projections); to depth-resolved lenses
+(tuned lens, logit prism) that apply the readout at every layer, locating where
+a feature becomes readout-accessible; to activation-level interventions on
+decoder directions that probe causal sufficiency and necessity; to
+cross-checkpoint comparisons of basis stability through pretraining and
+fine-tuning; and to surveys of how each hidden state distributes projection
+mass between the selected score, its competitors, and active-but-unused
+directions. In each case the same gates decide when feature labels count as
+evidence.

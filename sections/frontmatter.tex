@@ -1,19 +1,26 @@
 \begin{abstract}
-Lens-style methods report which vocabulary tokens a hidden state favors, but
-each token logit or contrast remains a single dense dot product with the LM
-head; the readout directions that raise or lower that score, and the error a
-sparse account would incur, stay hidden. Sparse Readout Prism (SRP)
-factorizes LM-head rows into sparse token-row coefficients over shared
-readout directions, projects a hidden state onto those directions, and---once
-a token logit, logit difference, or contrast is selected---multiplies the
-coefficients by the projections to produce signed feature contributions plus
-an explicit residual in original logit coordinates.
+Lens-style methods inspect a hidden state \(h\) by reading it through the LM
+head, but once a token or contrast is selected the inspected quantity is still
+a single dense dot product \(h^\top q\) with an LM-head row or row combination.
+Direct logit attribution decomposes \(h\) and activation SAEs give it sparse
+coordinates, but neither decomposes the readout direction \(q\). Sparse Readout
+Prism (SRP) fits a sparse dictionary directly to the rows of the LM head: each
+token row is approximated as a sparse combination of a small shared set of
+\emph{readout features} plus a residual, and a hidden state is projected onto
+the same directions. For a selected readout score---a token logit
+\(h^\top w_t\), logit difference \(h^\top(w_A-w_B)\), or other fixed LM-head
+row combination---SRP returns signed per-feature contributions in original
+logit units together with an explicit residual.
 
-Across models, SRP preserves held-out contrast signs with at least \(0.91\)
-sign agreement. In the strongest Qwen3.5 settings, sign agreement is
-\(0.949\)--\(0.958\) with median relative reconstruction error below \(0.10\);
-on Qwen3.5-2B, SRP reduces median error from \(0.260\) for nearest-row ridge to
-\(0.081\). Under these checks, the fixed basis supports readout-level analyses
-of score choice, prompt context, residual-stream attribution, and constrained
-lexical-score edits.
+Across Qwen, Gemma, Ministral, and distilled Qwen and Llama models, SRP
+preserves held-out contrast signs and identifies the low-residual regime in
+which local decompositions are reliable. On Qwen3.5-2B, SRP attains lower
+held-out score-reconstruction error than nearest-row ridge, dense PCA, and
+null sparse controls---evidence that the gains reflect learned sparse row-code
+structure, not lexical proximity, dense low-rank geometry, or sparse capacity
+alone. Five calibration checks---replacement fidelity, score reconstruction,
+sign agreement, relative error, and baseline comparisons---gate when local
+feature bars are read; within that regime, the fixed basis supports
+readout-level analyses of score choice, prompt context, residual-stream
+attribution, and constrained lexical-score edits.
 \end{abstract}

@@ -1,11 +1,11 @@
 # Reviewer-Facing Clarity Pass
 
-Source of truth checked: `/Users/m/Desktop/Sparse_Readout_Prism/CORE_CLAIM.md` and `/Users/m/Desktop/Sparse_Readout_Prism/glossary_and_terminology.md`.
+Source of truth checked: `CORE_CLAIM.md` and `glossary_and_terminology.md`.
 
 Paper source was not modified. The revised text below is intended as paste-ready replacement text for the indicated local passages.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/frontmatter.tex`, Abstract.
+`sections/frontmatter.tex`, Abstract.
 
 ## Purpose
 State the core contribution, the method, the evidence, and the claim boundary in the first reviewer-facing passage.
@@ -52,7 +52,7 @@ edits change the signed terms.
 - "Representative high-fidelity settings" is evidence-sensitive but supported by the reported regime framing.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/introduction.tex`, first two Introduction paragraphs.
+`sections/introduction.tex`, first two Introduction paragraphs.
 
 ## Purpose
 Orient reviewers to the standard logit-lens interface, define the gap, and state the local problem SRP solves.
@@ -97,7 +97,7 @@ whose fidelity can be checked for the target at hand.
 - "Feature-level accounting" is readable but should remain tied to readout features, as this passage does.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/introduction.tex`, Contribution list.
+`sections/introduction.tex`, Contribution list.
 
 ## Purpose
 Tell reviewers exactly what the paper contributes and where those contributions stop.
@@ -134,7 +134,7 @@ The paper contributes:
 ## Flags
 - No overclaim found.
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/method.tex`, Method overview paragraph.
+`sections/method.tex`, Method overview paragraph.
 
 ## Purpose
 Preview the method as a sequence of learned objects, computed quantities, chosen targets, and diagnostics.
@@ -169,7 +169,7 @@ decomposed through the row factorization of \(\WU\).
 - No overclaim found.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/experimental_setup.tex`, "Claim-to-test map".
+`sections/experimental_setup.tex`, "Claim-to-test map".
 
 ## Purpose
 Make the experiments section a contract between claims, evidence, controls, and failure modes.
@@ -206,7 +206,7 @@ demonstrations, not independent evidence of generation-level behavior.
 - This passage adds explicit failure-mode language not present in the original. It does not change results, but it asks the paper to be comfortable treating baseline parity and large residuals as interpretation failures.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/results_and_analysis.tex`, Results opening.
+`sections/results_and_analysis.tex`, Results opening.
 
 ## Purpose
 Frame the Results section as a cumulative argument rather than a list of analyses.
@@ -237,7 +237,7 @@ stated otherwise, aggregate low-error counts use \(\rho<0.5\).
 - No overclaim found.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/results_and_analysis.tex`, Subsection "The Sparse Readout Factorization Identifies High-Fidelity Readout Regimes".
+`sections/results_and_analysis.tex`, Subsection "The Sparse Readout Factorization Identifies High-Fidelity Readout Regimes".
 
 ## Purpose
 Ask when the factorized readout is accurate enough to support local interpretation.
@@ -280,7 +280,7 @@ not evidence that a local feature-bar display is interpretable.
 - Existing labels and filenames contain "query" (`readout-query`), but those are LaTeX/file identifiers rather than formal prose. Do not rename unless you also update all refs and files.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/results_and_analysis.tex`, Subsection "Learned Token-Row Sparse Structure Improves Target Reconstruction".
+`sections/results_and_analysis.tex`, Subsection "Learned Token-Row Sparse Structure Improves Target Reconstruction".
 
 ## Purpose
 Test whether reconstruction gains come from learned sparse row structure rather than capacity or simple geometry.
@@ -320,7 +320,7 @@ Appendix~\ref{app:robustness-key-quantitative}.
 - Avoid "semantic" without qualification. The revised caveat uses it only to deny overinterpretation.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/results_and_analysis.tex`, Subsection "Scalar Readout Targets Extend Beyond Token Pairs".
+`sections/results_and_analysis.tex`, Subsection "Scalar Readout Targets Extend Beyond Token Pairs".
 
 ## Purpose
 Show that the scalar readout-target formalism extends to dataset-derived linear contrasts without implying task accuracy.
@@ -366,7 +366,7 @@ coverage requires separate evaluation.
 - The table label `benchmark-derived-task-targets` contains "task"; acceptable as an internal label, but prose should continue to say "benchmark-derived readout target".
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/results_and_analysis.tex`, Subsection "Local Score Decompositions Expose Feature Competition Within Token Rankings".
+`sections/results_and_analysis.tex`, Subsection "Local Score Decompositions Expose Feature Competition Within Token Rankings".
 
 ## Purpose
 Interpret qualitative local decompositions only after residual and label caveats are stated.
@@ -412,7 +412,7 @@ effects; aggregate frequencies are in the appendix.
 - Original phrase "semantic evidence" is claim-sensitive. Prefer the revised wording unless the paper adds an explicit semantic-label validation protocol.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/results_and_analysis.tex`, Subsection "Target Choice Selects Signed Terms from Shared Readout Feature Projections".
+`sections/results_and_analysis.tex`, Subsection "Target Choice Selects Signed Terms from Shared Readout Feature Projections".
 
 ## Purpose
 Show that support/opposition is target-conditioned, not a property of the projection vector alone.
@@ -460,7 +460,7 @@ changes the prompt, isolating \(h^\top d_i\).
 - `tab:app-general-readout-query-families` contains "query" only as a label. Keep prose aligned on "target".
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/results_and_analysis.tex`, Subsection "Context Reweights Fixed Token-Row Coefficients".
+`sections/results_and_analysis.tex`, Subsection "Context Reweights Fixed Token-Row Coefficients".
 
 ## Purpose
 Show that context changes hidden-state projections while token-row coefficients stay fixed.
@@ -498,7 +498,7 @@ Additional views are in Appendix~\ref{app:additional-qwen-display-examples}.
 - No overclaim found.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/results_and_analysis.tex`, Subsection "Readout Feature Terms Compose with Direct Logit Attribution".
+`sections/results_and_analysis.tex`, Subsection "Readout Feature Terms Compose with Direct Logit Attribution".
 
 ## Purpose
 Position feature-resolved DLA as additive component attribution, not causal circuit discovery.
@@ -546,7 +546,7 @@ Appendix~\ref{app:feature-resolved-dla}.
 - No overclaim found after revision. Current text already contains the needed causal caveat.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/results_and_analysis.tex`, Subsection "Selected Readout Features Move Held-Out Lexical Scores".
+`sections/results_and_analysis.tex`, Subsection "Selected Readout Features Move Held-Out Lexical Scores".
 
 ## Purpose
 Show the readout edit as a candidate-constrained score-level intervention with explicit limits.
@@ -588,7 +588,7 @@ separate evaluation layer.
 - Avoid "steering" or "control" in this section unless paired with "constrained", "readout-side", and score-level metrics.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/related_work.tex`, Related Work.
+`sections/related_work.tex`, Related Work.
 
 ## Purpose
 Position SRP against lenses, output-embedding geometry, sparse dictionaries, attribution, and circuits without overstating novelty or causality.
@@ -655,7 +655,7 @@ appears in Appendix~\ref{app:extended-related-work}.
 - No unsupported priority claim found. The section avoids "first", "novel", and "state-of-the-art".
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/conclusion.tex`, Conclusion.
+`sections/conclusion.tex`, Conclusion.
 
 ## Purpose
 Restate the contribution, evidence standard, and boundaries without expanding the claims.
@@ -701,7 +701,7 @@ terms.
 - No overclaim found after adding "linear" and "candidate".
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/limitations.tex`, Limitations.
+`sections/limitations.tex`, Limitations.
 
 ## Purpose
 Make the validity conditions, label caveats, readout-specific caveats, and edit boundary easy for reviewers to find.
@@ -753,7 +753,7 @@ effects require targeted interventions.
 - The limitations are already well aligned with the core claim. No unsupported claim found.
 
 ## Location
-`/Users/m/Desktop/Sparse_Readout_Prism/sections/limitations.tex`, Ethical Considerations.
+`sections/limitations.tex`, Ethical Considerations.
 
 ## Purpose
 Keep dual-use and deployment-scope language bounded to readout-level inspection and stress testing.

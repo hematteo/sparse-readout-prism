@@ -18,10 +18,10 @@ only where SRP uses a specialized readout version.
     state to token logits. Row \(t\) is \(w_t^\top\), so token \(t\)'s logit is
     \(h^\top w_t\).
 
-    \item[Selected readout direction]
+    \item[Selected readout direction and selected readout score]
     A fixed linear combination of LM-head rows,
-    \(q_\alpha=\sum_t\alpha_t w_t\), scored as
-    \(s_\alpha(h)=h^\top q_\alpha\).
+    \(q_\alpha=\sum_t\alpha_t w_t\), and the scalar readout value it defines at
+    hidden state \(h\), \(s_\alpha(h)=h^\top q_\alpha\).
 \end{description}
 
 \subsection{Common Readout Scores and Contrasts}
@@ -66,7 +66,7 @@ only where SRP uses a specialized readout version.
 
     \item[Score decomposition]
     The downstream use of the SRP basis with a hidden state and selected readout
-    direction to decompose a selected score into signed feature terms plus
+    direction to decompose a selected readout score into signed feature terms plus
     reconstruction error.
 
     \item[Readout SAE]
@@ -90,7 +90,7 @@ only where SRP uses a specialized readout version.
 
     \item[Projection profile]
     The ranked pattern of readout feature projections \(h^\top d_i\) before
-    choosing a score.
+    selecting a readout score.
 \end{description}
 
 \subsection{Decomposition and Measures}
@@ -102,19 +102,19 @@ only where SRP uses a specialized readout version.
 
     \item[Signed feature contribution, \(c_i(h,\alpha)\)]
     The signed term \(c_i(h,\alpha)=\beta_i(\alpha)h^\top d_i\). Positive terms
-    raise the chosen score; negative terms lower it.
+    raise the selected readout score; negative terms lower it.
 
     \item[Score decomposition at a hidden state]
     The decomposition obtained by combining a selected readout direction with the SRP
     readout basis at hidden state \(h\). It reports signed feature terms plus
-    reconstruction error for the chosen score.
+    reconstruction error for the selected readout score.
 
     \item[Feature sum, \(s_{\mathrm{feat}}\)]
     The sum of all signed feature contributions, \(\sum_i c_i(h,\alpha)\), before
     adding offset or reconstruction error terms.
 
     \item[Reconstruction error, \(\epsilon\)]
-    The difference between the exact selected score and the reconstructed score:
+    The difference between the exact selected readout score and the reconstructed score:
     \(s_{\mathrm{exact}}-s_{\mathrm{recon}}\).
 
     \item[Relative reconstruction error, \(\rho\)]
@@ -192,7 +192,7 @@ only where SRP uses a specialized readout version.
 \begin{description}[leftmargin=0.28\linewidth,style=nextline]
     \item[Direct logit attribution, DLA]
     Component attribution that projects residual stream components onto the
-    readout direction for a selected score. We use DLA as additive attribution
+    readout direction for a selected readout score. We use DLA as additive attribution
     unless paired with interventions.
 
     \item[Feature-resolved DLA]
@@ -200,7 +200,7 @@ only where SRP uses a specialized readout version.
     readout features for a realized forward pass.
 
     \item[Additivity error]
-    The gap between the exact selected score and the sum of component attribution
+    The gap between the exact selected readout score and the sum of component attribution
     terms. It is reported separately from the readout SAE reconstruction error.
 
     \item[Token audit item]

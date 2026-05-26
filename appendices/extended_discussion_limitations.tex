@@ -7,7 +7,7 @@ selected-score scope, relation to activation SAEs, cross-family interpretation, 
 and possible extensions.
 
 \subsection{What Sparse Readout Prism Decomposes}
-\label{app:extended-discussion-query-scope}
+\label{app:extended-discussion-score-scope}
 
 \paragraph{Selected readout score.}
 Each local score decomposition selects one scalar
@@ -22,11 +22,11 @@ token group. This distinction matters because a token can be supported above a
 reference while still losing to a named alternative or a group contrast, and a
 top-1 token can have only a small margin over top-ranked competitors. Reference
 contrasts, pairwise logit differences, group contrasts, and top-competitor
-margins therefore answer distinct readout questions.
+margins therefore define distinct selected readout scores.
 
 \paragraph{Local score decomposition.}
-The default claim is local and additive. For the chosen score, the displayed
-terms express the exact readout score as SAE feature terms plus preprocessing
+The default claim is local and additive. For the selected readout score, the displayed
+terms express the exact score as SAE feature terms plus preprocessing
 and reconstruction error terms under the conventions in
 Appendix~\ref{app:score-decomposition}. Contribution terms are reported with those
 error terms, so the local score decomposition is interpreted only together with its
@@ -46,7 +46,7 @@ rows, not hidden-state features discovered from model activations.
 
 \paragraph{Context dependence.}
 The hidden state enters only after the readout SAE has been learned. A feature
-contributes to a selected score when two quantities align: the selected
+contributes to a selected readout score when two quantities align: the selected
 readout direction uses that SAE
 feature through its sparse row coefficients, and the current hidden state has a
 large dot product with the corresponding decoder direction. Hence the same
@@ -81,9 +81,9 @@ paper reports all three before interpreting feature contributions.
 
 \paragraph{Readout versus components.}
 Readout-side and component-side analyses answer different questions. The SRP
-decomposition asks which unembedding-side SAE terms score a chosen logit or contrast;
+decomposition asks which unembedding-side SAE terms score a selected logit or contrast;
 component-level attribution asks which residual-stream components project onto
-the chosen score's readout direction in the realized forward pass.
+the selected readout direction in the realized forward pass.
 
 \paragraph{Residual terms.}
 Combining the two views yields additive component-by-feature terms. The
@@ -99,15 +99,15 @@ Natural extensions include controlled interventions on SAE decoder directions,
 cross-model feature-alignment analyses, distributional decompositions of local
 top-\(k\) frontiers, and broader model-family sweeps. All depend on the
 reliability condition used in the main text: interpret the feature terms only
-when the selected score has a small reported residual.
+when the selected readout score has a small reported residual.
 
 \paragraph{Residual-stream census.}
 SRP also measures what is readout-readable before a hidden state is reduced
 to a single score. The projection vector \(p_i=h^\top d_i\) can be broad,
-while a chosen score \(q\) selects the terms \(\beta_i(q)p_i\). Future work
-could quantify projection mass used by the selected score, assigned to
+while the selected readout direction \(q\) selects the terms \(\beta_i(q)p_i\).
+Future work could quantify projection mass used by the selected readout score, assigned to
 competitors, or active but unused. The unused category is local to the
-selected score; it may support alternative tokens, later positions, or other
+selected readout score; it may support alternative tokens, later positions, or other
 computations. Comparing the split across layers, ambiguous prompts, and
 incorrect generations could test whether models carry broad task state beyond
 the immediate readout decision.

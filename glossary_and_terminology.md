@@ -64,7 +64,7 @@ These are the highest-value cleanup substitutions to run before submission.
 | Term | Category | Definition in this paper | Preferred usage | Avoid / Do not use | Literature grounding | First-use guidance |
 |---|---|---|---|---|---|---|
 | readout feature projection, `p_i(h)=h^T d_i` | Paper-specific term | The projection of hidden state `h` onto readout feature direction `d_i`. | Use for hidden-state coordinates induced by the readout SAE. | Do not call it a feature activation in technical prose. | Paper-specific use of standard projection onto SAE decoder directions. | Introduction and Method. Define before direction coefficients. |
-| readout feature projection vector, `p(h)=D_feat h` | Paper-specific term | The vector of all readout feature projections before any token, contrast, margin, or other score is selected. | Use to distinguish score-independent hidden-state projections from score-specific signed contributions. | Avoid "activation vector" or "evidence vector". | Paper-specific but mathematically direct. | Method feature-projection subsection. No citation needed beyond SAE. |
+| readout feature projection vector, `p(h)=D_feat h` | Paper-specific term | The vector of all readout feature projections before any token, contrast, margin, or other score is selected. | Use to distinguish hidden-state projections computed before score selection from score-specific signed contributions. | Avoid "activation vector" or "evidence vector". | Paper-specific but mathematically direct. | Method feature-projection subsection. No citation needed beyond SAE. |
 | projection profile | Needs clarification | Informal shorthand for the ranked pattern of readout feature projections before score selection. | Use only after "readout feature projection vector" is defined. | Do not use as the formal mathematical term. Avoid "profile activation". | Paper-local shorthand. | If used, introduce in appendix/display text only. No citation needed. |
 | selected readout direction, `q_alpha` | Paper-local shorthand built from standard objects | A fixed vector in hidden-state space, usually an unembedding row, logit-difference direction, or explicit linear combination of LM-head rows: `q_alpha=sum_t alpha_t w_t`. | Use only after naming the concrete object, e.g. token logit, logit difference, group contrast, or top-competitor margin. | Do not present "selected readout direction", "linear readout target", or "scalar readout target" as a standard literature term; do not use it for nonlinear quantities. | Local umbrella for standard token logits, logit differences, and DLA-style readout directions. | Method, after token logits and logit differences have been introduced. |
 | selected readout score, `s_alpha(h)=h^T q_alpha` | Descriptive mathematical phrase | The scalar projection of hidden state `h` onto a selected readout direction. | Use when the generalized equation needs a single scalar name. Prefer the concrete term when possible: token logit, logit difference, group contrast, or margin. | Do not call probabilities, losses, task accuracy, or generated behavior readout scores unless a linear proxy is explicitly defined. | Descriptive extension of standard logit/contrast scoring. | Method local score decomposition. |
@@ -121,7 +121,7 @@ These are the highest-value cleanup substitutions to run before submission.
 
 ### Sparse Readout Prism (SRP)
 
-- **Definition:** SRP is the paper's score-independent method: a sparse factorization of the final unembedding / LM head that supplies readout features and token-row coefficients. Selected readout scores--token logits, logit differences, or explicit row-combination contrasts--then use this basis to produce signed feature terms plus explicit residuals.
+- **Definition:** SRP is the paper's reusable readout-basis method: a sparse factorization of the final unembedding / LM head that supplies readout features and token-row coefficients. Selected readout scores--token logits, logit differences, or explicit row-combination contrasts--then use this basis to produce signed feature terms plus explicit residuals.
 - **Why this term is needed:** The paper needs a name for the factorization and projection basis, while keeping score selection explicit as a downstream use.
 - **Closest standard term(s):** logit lens, sparse dictionary factorization, sparse autoencoder, direct logit attribution.
 - **How it differs from those terms:** SRP is not just a lens decoder, not a generic SAE, and not component attribution. It factorizes the output readout itself; selected logits and contrasts use that factorization to produce score-local signed terms.
@@ -166,11 +166,11 @@ These are the highest-value cleanup substitutions to run before submission.
 ### readout feature projection vector
 
 - **Definition:** The vector `p(h)=D_feat h` collecting all readout feature projections for a hidden state before score selection.
-- **Why this term is needed:** It names the score-independent hidden-state view produced by the SRP basis.
+- **Why this term is needed:** It names the hidden-state view produced by the SRP basis before any score is selected.
 - **Closest standard term(s):** feature vector; representation; activation vector.
 - **How it differs from those terms:** It is induced by the readout SAE decoder directions and becomes evidence for a score only after the selected readout direction supplies coefficients.
 - **Where to introduce it:** Method subsection "Readout Reconstruction and Feature Projections".
-- **Suggested first-use sentence:** "The vector `p(h)=D_feat h` is the **readout feature projection vector**, a score-independent set of projections that becomes token- or contrast-specific only after choosing a token logit, logit difference, or other selected readout direction."
+- **Suggested first-use sentence:** "The vector `p(h)=D_feat h` is the **readout feature projection vector**: it records how strongly `h` aligns with each readout feature direction before choosing a token logit, logit difference, or other selected readout direction."
 - **Acceptable shorthand after first use:** projection vector; projection profile for ranked/display contexts only.
 - **Risks / reviewer concerns:** Avoid implying all large projections matter for the selected score.
 
@@ -394,7 +394,7 @@ These are the highest-value cleanup substitutions to run before submission.
 
 > For a hidden state `h`, the **readout feature projection** `p_i(h)=h^T d_i` is its coordinate along readout feature `i` before any token, contrast, or margin has been selected.
 
-> The vector `p(h)=D_feat h` is the **readout feature projection vector**, a score-independent set of projections that becomes evidence for a score only after a selected readout direction supplies feature coefficients.
+> The vector `p(h)=D_feat h` is the **readout feature projection vector**: it records how strongly `h` aligns with each readout feature direction before choosing a score, and becomes evidence for that score only after a selected readout direction supplies feature coefficients.
 
 > Following logit-attribution work, token logits and logit differences can be written as projections onto unembedding rows or logit-difference directions; we use `q_alpha` for any such selected readout direction and `s_alpha(h)=h^T q_alpha` for its selected readout score.
 

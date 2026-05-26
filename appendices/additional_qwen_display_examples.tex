@@ -56,27 +56,27 @@ features against trout/salmon features. The relative reconstruction errors are
     \label{fig:app-selected-readout-prism-extra-examples}
 \end{figure*}
 
-\subsection{Additional Selected-Score Examples}
-\label{app:readout-target-family-display-example}
+\subsection{Additional Selected Readout Score Examples}
+\label{app:selected-readout-score-family-display-example}
 
-Figure~\ref{fig:qwen-general-readout-targets-basic} gives the single-state
+Figure~\ref{fig:qwen-general-readout-scores-basic} gives the single-state
 example summarized in the main text: raw-token, vocabulary-mean contrast, and
 pairwise logit-difference scores yield different local score decompositions for the
 same hidden state.
-Figure~\ref{fig:app-qwen-general-readout-targets-extra} adds a group contrast
+Figure~\ref{fig:app-qwen-general-readout-scores-extra} adds a group contrast
 and a top-competitor margin.
 
 \begin{figure*}[!tbp]
     \centering
     \AppendixWideGraphic{figures/proto_token_lens/qwen2b_general_readout_queries_jury_top5/qwen2b_general_readout_queries_1x3.pdf}
-    \caption{\textbf{Same hidden state, different selected scores.}
+    \caption{\textbf{Same hidden state, different selected readout scores.}
     All panels use the same final hidden state from the prompt ``After reviewing
-    the evidence, the jury found the defendant'', querying the raw
+    the evidence, the jury found the defendant'', selecting the raw
     \texttt{guilty} score, the
     \texttt{guilty}-versus-vocabulary-mean contrast, and the
     \texttt{guilty}-minus-\texttt{not} logit difference. Positive bars increase
-    the chosen score; negative bars reduce it.}
-    \label{fig:qwen-general-readout-targets-basic}
+    the selected readout score; negative bars reduce it.}
+    \label{fig:qwen-general-readout-scores-basic}
 \end{figure*}
 
 \begin{figure*}[!tbp]
@@ -85,15 +85,15 @@ and a top-competitor margin.
     \caption{\textbf{Additional Qwen examples of group contrasts and top-competitor margins.}
     Left: abstention-group versus forced-color-group contrast. Right: how
     strongly the \texttt{guilty} winner beats its rank-5 competitor. Bars
-    increase or reduce the chosen score by sign; labels give feature ids and
+    increase or reduce the selected readout score by sign; labels give feature ids and
     token summaries.}
-    \label{fig:app-qwen-general-readout-targets-extra}
+    \label{fig:app-qwen-general-readout-scores-extra}
 \end{figure*}
 
 \subsection{Benchmark-Format Readout Contrast Examples}
 \label{app:benchmark-derived-display-examples}
 
-\Cref{tab:benchmark-derived-task-targets} reports reconstruction for
+\Cref{tab:benchmark-derived-readout-contrasts} reports reconstruction for
 benchmark-derived answer, abstention, label, and safe/action contrasts
 instantiated as fixed LM-head row combinations
 \citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}.
@@ -105,7 +105,7 @@ QA examples appear in Figure~\ref{fig:app-benchmark-task-group-examples}.
 Rows evaluate answer-vs-distractor, abstention-vs-entity, label, or
 safe-vs-unsafe readout contrasts. Last column: sign agreement with \(\rho<0.5\).
 All aggregate rows use 300 contrasts; family rows break down Qwen3.5-2B.}
-\label{tab:benchmark-derived-task-targets}
+\label{tab:benchmark-derived-readout-contrasts}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3.0pt}
@@ -160,7 +160,7 @@ that the signed difference plot subtracts away.
     \centering
     \AppendixWideGraphic[height=0.24\textheight]{figures/proto_token_lens/qwen2b_32x_domain_features_main3/qwen2b_32x_polysemy_prompt_feature_row.pdf}
     \caption{\textbf{Prompt-support companion for the main fixed-token examples.}
-    Each panel holds the target token fixed and compares positive SAE feature
+    Each panel holds the selected token fixed and compares positive SAE feature
     contributions in two prompt contexts. Bars show the union of the four
     largest positive contributions per context; teal: first context in the
     panel title; orange: second. Missing bars: features outside that context's
@@ -173,7 +173,7 @@ Figure~\ref{fig:app-qwen2b-technical-domain-delta} adds one technical-domain
 context comparison. The most clearly separated panels are \texttt{graph},
 \texttt{memory}, and \texttt{virus}; \texttt{pipe} illustrates a mixed
 Unix/plumbing case.
-Across the four panels, the maximum target rank is \(17\) and the maximum
+Across the four panels, the maximum selected-token rank is \(17\) and the maximum
 relative reconstruction error is \(0.05\).
 
 \begin{figure*}[!tbp]
@@ -197,8 +197,8 @@ view, we rank readout features directly from the hidden state
 before choosing a token or logit difference. For a final readout state \(h\), we
 score each SAE decoder direction by \(h^\top d_i\). Vocabulary rows then label
 the selected directions by their highest-associated rows. The resulting figures
-show score-independent profiles; score-specific figures provide the local score
-contributions.
+therefore show hidden-state projections before score selection; score-specific
+figures provide the local score contributions.
 
 \begin{figure*}[!tbp]
     \centering
@@ -322,7 +322,7 @@ Additional \texttt{bark}/\texttt{bass} margins & 12 & 7 & 2 & 3 & 7/7 & Figure~\
 Fixed-token context panels & 12 & 9 & 3 & 0 & 9/9 & Figure~\ref{fig:same-token-polysemy}. \\
 Technical context stress & 32 & 24 & 7 & 1 & 24/24 & Figure~\ref{fig:app-qwen2b-technical-domain-delta}. \\
 \texttt{verify}/\texttt{assume} DLA & 8 & 7 & 1 & 0 & 7/7 & Feature-family heatmap behind Figures~\ref{fig:qwen-prism-dla-verify-assume-main} and~\ref{fig:qwen-prism-dla-verify-assume-app}. \\
-General readout examples & 24 & 12 & 5 & 7 & 12/12 & Figures~\ref{fig:qwen-general-readout-targets-basic} and~\ref{fig:app-qwen-general-readout-targets-extra}. \\
+General readout examples & 24 & 12 & 5 & 7 & 12/12 & Figures~\ref{fig:qwen-general-readout-scores-basic} and~\ref{fig:app-qwen-general-readout-scores-extra}. \\
 \midrule
 Total & 99 & 67 & 18 & 14 & 67/67 & Conservative count over displayed, claim-bearing labels. \\
 \bottomrule

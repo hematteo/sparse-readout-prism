@@ -1,0 +1,22 @@
+.claude/ export-ignore
+notes/ export-ignore
+AGENTS.md export-ignore
+CLAUDE.md export-ignore
+CORE_CLAIM.md export-ignore
+glossary_and_terminology.md export-ignore
+
+*.aux export-ignore
+*.bbl export-ignore
+*.blg export-ignore
+*.fdb_latexmk export-ignore
+*.fls export-ignore
+*.log export-ignore
+*.out export-ignore
+*.synctex.gz export-ignore
+.DS_Store export-ignore
+main.pdf export-ignore
+
+figures/proto_token_lens/qualitative_feature_label_audit_*.csv export-ignore
+figures/proto_token_lens/qualitative_feature_label_audit_*.json export-ignore
+figures/proto_token_lens/qualitative_feature_label_audit_*.md export-ignore
+figures/proto_token_lens/qwen2b_32x_section43_polysemy_margin_curated_examples/*selected_paper_examples_with_tokens.* export-ignore

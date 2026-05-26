@@ -6,11 +6,14 @@ token logit, logit difference, or other fixed linear combination of LM-head
 rows. Features are learned from LM-head rows; hidden states enter only through
 projections onto those feature directions, so the selected direction fixes
 signed support and opposition, while residuals govern whether term-level
-interpretation is trustworthy. Feature-resolved DLA is additive
-accounting over residual-stream components, and the readout edit is a
-constrained lexical-score test. Both nominate candidate directions; causal
-necessity, sufficiency, and generation-level effects require separate
-interventions.
+interpretation is trustworthy. Feature-resolved DLA attributes the selected readout score additively to
+residual-stream components and to SRP features within those components; it
+nominates candidate directions but does not establish that any component is
+causally necessary. The readout-side edit is a constrained intervention on
+selected decoder directions in the final hidden state; it nominates candidate
+edit directions and reports the induced score shift and distributional
+side-effects, but does not establish causal sufficiency or downstream
+generation effects.
 
 \paragraph{Fidelity and labels.}
 SRP separates the measured coordinate objects --- feature ids, signed terms,
@@ -42,7 +45,11 @@ checkpoints and held-out text-derived hidden states, including C4 continuations,
 which may contain offensive, private, copyrighted, or sensitive text
 \citep{raffel2020exploring,dodge2021documenting}. We use C4 only to measure
 readout reconstruction and make no social-validity claims about individual
-tokens, labels, or generated outputs.
+tokens, labels, or generated outputs. We use public model checkpoints and
+C4-derived hidden states under the licenses or terms published with their
+release pages and model or data cards. We do not redistribute the original
+checkpoints or raw C4 text; any released SRP artifacts will include
+artifact-specific license and usage notes.
 
 SRP makes lexical readout directions and row-level labels easier to inspect,
 and in the readout-edit stress test moves specified lexical scores --- a

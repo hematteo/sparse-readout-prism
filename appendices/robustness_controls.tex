@@ -94,18 +94,18 @@ comparisons.
 
 \begin{table*}[!tbp]
 \caption{\textbf{Score and contrast groups at the main \(k=256\) setting.}
-Rows group scores by the question they ask at the \(k=256\) fidelity
+Rows group selected readout score families at the \(k=256\) fidelity
 setting. Row counts aggregate evaluated model--case cells across the
-same five-model Qwen/Gemma suite as Table~\ref{tab:readout-query-fidelity-summary},
+same five-model Qwen/Gemma suite as Table~\ref{tab:readout-score-fidelity-summary},
 after tokenization filters.}
-\label{tab:app-general-readout-query-families}
+\label{tab:app-general-readout-score-families}
 \centering
 \small
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.05}
 \begin{tabularx}{0.96\textwidth}{@{}p{0.20\textwidth}Yrrrr@{}}
 \toprule
-Group & Score or contrast & cases & rows & sign agreement & median \(\rho\) \\
+Group & Selected score & cases & rows & sign agreement & median \(\rho\) \\
 \midrule
 Vocabulary-mean contrast & top1 vs vocabulary mean & 301 & 1505 & 1.000 & 0.021 \\
 Reference-row contrast & top1 vs row-norm distractor & 301 & 1505 & 1.000 & 0.049 \\
@@ -131,7 +131,7 @@ Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
     calibration companion to the main-text reconstruction error and
     decision-flip summaries; the decision boundary is better captured by
     margin-binned views.}
-    \label{fig:app-readout-query-margin-reconstruction}
+    \label{fig:app-readout-score-margin-reconstruction}
 \end{figure}
 
 \begin{figure}[!tbp]
@@ -163,7 +163,7 @@ Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
 \label{app:robustness-operating-regime}
 
 Operating-regime cases define when a compact local score decomposition is
-evidence-bearing. Qualitative interpretation uses cases where the selected score is
+evidence-bearing. Qualitative interpretation uses cases where the selected readout score is
 larger than the reconstruction error, the reconstructed contrast preserves sign,
 the exact model readout supports the intended side of the contrast, contribution mass is
 compact enough to summarize, and token-boundary, special-token, row-norm,

@@ -6,22 +6,25 @@ Experiments first calibrate whether SRP accounts are usable
 (calibration checks below); conditional on these checks, the analysis asks five
 questions:
 \begin{description}[leftmargin=!,labelwidth=2.7em]
-    \item[RQ1:] What does SRP add to an ordinary logit-lens preference?
-    \item[RQ2:] How does the chosen readout question change the sparse account?
+    \item[RQ1:] What does SRP add to an ordinary logit-lens preference? That
+    is, does splitting the scalar lens score into per-feature terms expose
+    structure that the scalar alone hides?
+    \item[RQ2:] How does the selected readout score change the sparse account?
     \item[RQ3:] Which readout features carry each side of token-vs-token
     preferences?
     \item[RQ4:] How does prompt context reweight readout-feature projections for
-    a fixed token row?
-    \item[RQ5:] Can the same readout-feature terms compose with residual-stream
-    attribution and constrained readout-side edits?
+    a fixed token row? That is, how do the hidden-state projections $h^\top
+    d_i$ shift across prompts while the token-row coefficients stay fixed?
+    \item[RQ5:] Do the same readout-feature terms compose with two downstream methods? \emph{(a)} Does residual-stream attribution---which writes the final hidden state as a sum of per-component contributions from the embedding, attention heads, and MLP layers---yield per-component, per-feature accounting when paired with SRP? \emph{(b)} Do constrained interventions on selected decoder directions, fit on a discovery set of tokens, transfer to held-out tokens?
 \end{description}
 
-\paragraph{Models, Readout SAEs, and Held-Out Targets}\label{subsec:models-and-targets}
+\paragraph{Models, Readout SAEs, and Held-Out Score Sets}\label{subsec:models-and-targets}
 \emph{Model suite.}
 The suite covers Qwen3.5 \citep{qwen35collection}, Gemma-4
 \citep{gemma4official,gemma4collection}, Ministral \citep{liu2026ministral3},
-and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1},
-spanning tokenizer family, output geometry, scale, and post-training recipe.
+and reasoning-distilled Qwen/Llama readouts (Qwen and Llama base checkpoints distilled on DeepSeek-R1 traces)
+\citep{deepseekai2025deepseekr1}, spanning different tokenizers, LM-head row
+distributions, parameter counts, and post-training recipes.
 Model identifiers and details are in
 Appendix~\ref{app:model-suite-selection}.
 
@@ -34,28 +37,28 @@ and \(k\) is the TopK active-feature budget.
 We fit readout SAEs on final LM-head inputs, select them by held-out row
 reconstruction, replacement fidelity, and sparse code usage, and reserve
 held-out logit differences for downstream score-reconstruction checks.
-Replacement uses 10,000 neutral C4 continuations per model
+Replacement uses 10,000 neutral text continuations from C4, the Colossal
+Clean Crawled Corpus, per model
 \citep{raffel2020exploring,dodge2021documenting}; score-reconstruction
 evaluations use prebuilt prompt/score sets with fixed linear
 coefficients, split assignment, and tokenization filters. These splits keep
 dictionary selection separate from score-reconstruction evaluation.
 
 \paragraph{Metrics, Baselines, and Operating Regimes}\label{subsec:metrics-and-baselines}
-Calibration uses three checks: basis, score, and baselines.
+Calibration uses three families of checks, mirrored in the paragraph structure of \Cref{sec:results}: \emph{basis} (does the factorization preserve the LM head?), \emph{score} (does a selected logit, contrast, or margin survive the factorization?), and \emph{baselines} (does the learned sparse structure beat null and reference controls?).
 \emph{Basis metrics.} Held-out row reconstruction and LM-head replacement on C4
 hidden states check whether the readout SAE preserves the readout it replaces.
 \emph{Score metrics.} Score reconstruction, sign preservation, and relative
 error check whether a selected logit, contrast, or margin is reconstructed
-accurately enough to read its feature bars. \emph{Baselines.} Comparisons with nearest-row
-ridge, PCA, shuffled sparse codes, and random sparse patterns check whether
+accurately enough to read its per-feature contribution bars. \emph{Baselines.} Comparisons with nearest-row ridge (a dense low-rank reconstruction from nearest token rows in \(\WU\)), PCA (principal components at matched rank), shuffled sparse codes (permute the row--code assignment across tokens, breaking learned row--code structure while preserving sparsity), and random sparse patterns (Gaussian directions with random TopK supports, matching only the sparse capacity) check whether
 learned token-row structure improves over dense low-rank structure, lexical
 neighborhoods, or sparse capacity alone. Sign flips, large relative error,
 weak replacement fidelity, or parity with baselines mark failure modes.
 
 \emph{Scope and interpretation rule.}
 All downstream analyses are readout-level: they describe how the LM head
-decomposes a selected score, not how the model generates. We read feature bars
-only when the selected score is reconstructed with small residual and, for
+decomposes a selected readout score, not how the model generates. We read feature bars
+only when the selected readout score is reconstructed with small residual and, for
 signed contrasts, the reconstructed and exact scores agree in sign. Feature
 labels are descriptive summaries, while feature ids, signed contributions, and
 residuals are the measured objects; the only claim about generation behavior
