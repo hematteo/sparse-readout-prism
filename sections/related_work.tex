@@ -14,29 +14,29 @@ decomposes the selected LM-head direction into sparse readout features.
 Output-embedding work studies how weight tying
 \citep{press2017outputembedding,inan2017tying}, softmax rank
 \citep{yang2018softmaxbottleneck}, and tokenizer segmentation
-\citep{bostrom2020bpe} shape the output rows used for vocabulary scoring.
-Activation-SAE work
-establishes sparse dictionaries over hidden-state distributions
+\citep{bostrom2020bpe} shape the rows used for vocabulary scoring. A
+parallel sparse-dictionary line targets the hidden-state factor \(h\) of a
+lens score \(h^\top q\): activation-SAEs learn overcomplete bases for \(h\)
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, with
-standardized diagnostics \citep{karvonen2025saebench,makelov2024principled};
-that line sparsifies the hidden-state factor \(h\) of a lens score
-\(h^\top q\). SRP applies the same sparse-dictionary machinery to the readout
-factor \(q\), fitting it directly to LM-head rows. Concurrent work
-studies unembedding dynamics across training checkpoints via
-parameter-trajectory crosscoding \citep{anonymous2026learningreadout}; SRP
-instead factorizes the LM head of a trained model, yielding a basis usable at
-inference for local score decompositions, feature-resolved DLA, and
-readout-side edits.
+standardized diagnostics
+\citep{karvonen2025saebench,makelov2024principled}. SRP applies the same
+machinery to the complementary factor \(q\), fitting it directly to LM-head
+rows. The closest concurrent work, parameter-trajectory crosscoding, studies
+unembedding dynamics across training checkpoints
+\citep{anonymous2026learningreadout}; SRP factorizes the LM head of a
+trained model, producing an inference-time basis for local score
+decompositions, feature-resolved DLA, and readout-side edits.
 
 \paragraph{Additive attribution and mechanisms.}
-Direct logit attribution decomposes residual-stream components against token
-logits or logit-difference directions
+Direct logit attribution splits a token logit or logit-difference direction
+into contributions from residual-stream components
 \citep{elhage2021framework,wang2022ioi}, and logit-prism methods extend this
-across transformer components \citep{nguyen2024logitprisms}. SRP composes the
-row-side basis with DLA, yielding feature-resolved attributions on a realized
-forward pass. The combined account remains additive;
-intervention methods \citep{conmy2023acdc}, causal abstraction
-\citep{geiger2023causalabstraction}, and transcoder or attribution-graph
-approaches \citep{dunefsky2024transcoders,ameisen2025circuittracing} address
-circuit- and mechanism-level questions that SRP does not. Broader positioning
-appears in Appendix~\ref{app:extended-related-work}.
+across transformer components \citep{nguyen2024logitprisms}. Composing the
+row-side basis with DLA yields feature-resolved attributions on a realized
+forward pass, which prior lens-style methods do not provide. The combined
+view remains additive: interventions \citep{conmy2023acdc}, causal
+abstraction \citep{geiger2023causalabstraction}, and transcoder or
+attribution-graph approaches
+\citep{dunefsky2024transcoders,ameisen2025circuittracing} address circuit-
+and mechanism-level questions outside its scope. Broader positioning appears
+in Appendix~\ref{app:extended-related-work}.

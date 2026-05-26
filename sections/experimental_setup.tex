@@ -1,35 +1,33 @@
 \section{Evaluation Setup}
 \label{sec:experimental-setup}
 
-We evaluate SRP in two stages. \emph{Calibration} tests whether the learned
-readout basis is faithful enough to support local feature readings,
-measuring LM-head preservation and reconstruction of selected readout
-scores. \emph{Analyses}, run only after calibration passes, ask what SRP
-adds beyond logit-lens scores: how the basis responds to varied inputs
-(score choice, token preference, prompt context), and how it supports
-attribution and constrained readout-side edits. All claims are
-readout-level. The one exception is the constrained-edit experiment
-(\Cref{subsec:constrained-readout-edits}), which intervenes on the final
-hidden state and reports distribution-shift diagnostics.
+We evaluate SRP in two stages. \emph{Calibration} tests whether the
+learned readout basis is faithful enough to support local feature
+readings. \emph{Analyses}, run only after calibration passes, ask what
+SRP adds beyond logit-lens scores: how the basis responds to varied
+inputs (score choice, token preference, prompt context), and how it
+supports attribution and constrained readout-side edits. All claims are
+readout-level, with one exception: the constrained-edit experiment
+(\Cref{subsec:constrained-readout-edits}) intervenes on the final hidden
+state and reports distribution-shift diagnostics.
 
 \paragraph{Models and held-out sets.}
-The suite spans Qwen3.5 \citep{qwen35collection}, Gemma-4
-\citep{gemma4official,gemma4collection}, Ministral \citep{liu2026ministral3},
+The suite spans Qwen3.5~\citep{qwen35collection}, Gemma-4
+\citep{gemma4official,gemma4collection}, Ministral~\citep{liu2026ministral3},
 and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1};
 identifiers and selection criteria appear in
-Appendix~\ref{app:model-suite-selection}. We fit one readout SAE per model
-to the rows of its final LM head. Replacement fidelity is measured on
-10,000 held-out C4 continuations per model
-\citep{raffel2020exploring,dodge2021documenting}; score reconstruction is
-evaluated on a fixed set of prompts and scores.
+Appendix~\ref{app:model-suite-selection}. We fit one readout SAE per
+model to the rows of its final LM head and evaluate it on 10{,}000
+held-out C4 continuations per model
+\citep{raffel2020exploring,dodge2021documenting} together with a fixed
+prompt-and-score set.
 
 \paragraph{Calibration metrics and baselines.}
 Calibration has three components. \emph{Basis} metrics measure held-out
-row reconstruction and LM-head replacement on C4 hidden states.
-\emph{Score} metrics measure sign preservation and relative error for
-selected logits, contrasts, and margins. \emph{Baselines} are
-nearest-row ridge, matched-rank PCA, shuffled sparse codes, and random
-sparse patterns. We interpret feature contributions only for
-sign-preserved, low-error accounts; feature labels serve as descriptive
-aids, while the measured objects are feature ids, signed contributions,
-and residuals.
+row reconstruction and LM-head replacement. \emph{Score} metrics measure
+sign preservation and relative error for selected logits, contrasts, and
+margins. \emph{Baselines} are nearest-row ridge, matched-rank PCA,
+shuffled sparse codes, and random sparse patterns. We interpret feature
+contributions only for sign-preserved, low-error accounts; feature
+labels serve as descriptive aids, while the measured objects are feature
+ids, signed contributions, and residuals.

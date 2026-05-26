@@ -137,16 +137,21 @@ Full details are in Appendix~\ref{app:robustness-key-quantitative}.
 \section{Readout Analyses}
 \label{sec:readout-analyses}
 
-The analyses address five questions:
+Working within the calibrated subset of \Cref{sec:results}, we report five
+readout-level analyses on Qwen3.5-2B, with replications on R1-Distill-Qwen-7B
+in the appendix. All five describe what the fixed SRP basis records on
+realized forward passes; behavioral and causal claims require separate tests.
+
 \begin{description}[leftmargin=!,labelwidth=2.7em]
-    \item[RQ1:] Can SRP turn a logit-lens preference into a residual-checked
-    sparse readout account?
-    \item[RQ2:] Which readout features support or oppose token-vs-token
-    preferences?
-    \item[RQ3:] How does prompt context reweight fixed token-row features?
+    \item[RQ1:] Can SRP rewrite a logit-lens score as a short sum of
+    signed feature contributions plus an explicit residual?
+    \item[RQ2:] Can SRP identify which features push for each side of a
+    token-vs-token contrast?
+    \item[RQ3:] Does prompt context reweight features attached to a fixed
+    token row?
     \item[RQ4:] Do SRP feature terms compose with residual-stream component
     attribution?
-    \item[RQ5:] Can selected readout-feature directions support constrained
+    \item[RQ5:] Do selected readout-feature directions support constrained
     lexical edits on held-out tokens?
 \end{description}
 
@@ -155,37 +160,34 @@ Lens-style readouts identify a favored token or contrast but leave it as a
 dense LM-head dot product. In \Cref{fig:main-lens-prism-comparison}, SRP holds
 the \texttt{verify}-minus-\texttt{assume} score fixed and decomposes it into
 signed readout terms plus an explicit residual. Positive and negative terms
-support or oppose the selected side, giving a residual-checked sparse account
-in logit units rather than a single dense score. The result is a
-readout-level account; behavioral or causal claims require separate tests.
+support or oppose the chosen side, replacing the single dense score with a
+signed, sparse account in logit units.
 
 \paragraph{Logit Differences Expose Competing Features [RQ2]}\label{subsec:feature-competition}
-Selected-direction coefficients \(\beta_i(q)\) turn projections into signed
-contributions. As the selected score \(q\) changes, the same feature may support
-a token, oppose it, or drop out after mean subtraction. Sign-preserved,
-low-error local decompositions then identify the readout features that raise or
-lower token-vs-token scores within a ranking. Using the fixed SRP
-basis, we decompose low-error Qwen3.5-2B logit differences over polysemous
-tokens---surface tokens such as \texttt{bug} or \texttt{bark} whose intended
-sense depends on context (\Cref{fig:selected-readout-prism-examples}). In an
-insect context,
+Beyond a single contrast, the same machinery identifies which readout
+features push for each side of any token-vs-token contrast. As the score
+\(q\) changes, a given feature may support a token, oppose it, or drop out
+after mean subtraction, and the decomposition reads off this competition
+directly from the signed terms. Using the fixed SRP basis, we decompose
+Qwen3.5-2B logit differences over polysemous surface tokens such as
+\texttt{bug} or \texttt{bark}, whose intended sense depends on context
+(\Cref{fig:selected-readout-prism-examples}). In an insect context,
 \texttt{bug} draws positive contributions from mosquito-, bee-, and
-beetle-labeled terms and negative contributions from error-token rows; in a
-software context, positive contributions shift to defect, crash, and debug
-rows. Relative reconstruction errors are \(0.185\) and \(0.003\). Additional
-\texttt{bark}/\texttt{bass} cases, plotting conventions, and label audits
-appear in Figure~\ref{fig:app-selected-readout-prism-extra-examples};
-Appendix~\ref{app:display-taxonomy} defines plotting conventions, and
-Table~\ref{tab:app-main-case-study-feature-audit} reports the label audit.
-The same surface token recruits different row-labeled feature groups
-as the selected readout score and context change.
+beetle-labeled rows and negative contributions from error-token rows
+(\(\rho=0.185\)); in a software context, positive contributions shift to
+defect, crash, and debug rows (\(\rho=0.003\)). The same surface token
+recruits different row-labeled feature groups as score and context change.
+Additional \texttt{bark}/\texttt{bass} cases are in
+Figure~\ref{fig:app-selected-readout-prism-extra-examples}; plotting
+conventions and the label audit are in
+Appendix~\ref{app:display-taxonomy} and
+Table~\ref{tab:app-main-case-study-feature-audit}.
 
-We audit displayed labels separately from the measured feature ids and signed
-terms (Appendix~\ref{app:main-case-study-feature-audit}). Across 99
-claim-bearing displayed labels, 67 are coherent lexical labels, 18 are
-ambiguous, and 14 are token-form labels; all 67 coherent labels point to the
-signed side reported in the text. Labels remain readability summaries, not
-ground-truth features.
+Because labels are readability summaries, not ground-truth features, we
+audit them separately from the measured feature ids and signed terms
+(Appendix~\ref{app:main-case-study-feature-audit}). Of 99 claim-bearing
+labels, 67 are coherent lexical, 18 ambiguous, and 14 token-form; all 67
+coherent labels point to the signed side reported in the text.
 
 \begin{figure}[t]
     \centering
@@ -199,24 +201,17 @@ ground-truth features.
 \end{figure}
 
 \paragraph{Context Reweights Fixed Token-Row Features [RQ3]}\label{subsec:context-reweighting}
-Fixing the selected token isolates context effects: the token-row coefficients
-\(\beta_i\) remain fixed while the hidden-state projections \(h^\top d_i\)
-vary. RQ3 therefore asks whether a single token row supplies fixed row-side
-coefficients that different prompts reweight through \(p_i(h)\). It does not
-ask whether different token rows carry different sparse codes. For a token logit,
-the signed term is \(c_i(h,t)=z_{t,i}h^\top d_i\): \(z_{t,i}\) fixes how token
-\(t\)'s row uses feature \(i\), while \(h^\top d_i\) measures whether the
-current context projects onto that feature direction. In
-\Cref{fig:same-token-polysemy}, prompt context reweights
-\texttt{bug}, \texttt{ring}, and \texttt{bridge} toward features whose row
-labels match the setting; each token score (after subtracting the shared
-offset \(h^\top\mu\)) has \(\rho<0.05\). \texttt{bug} shifts from
-mosquito/bee to defect/crash/debug
-labels; \texttt{bridge} shifts from river/crossing to networking labels. These
-cases show that context can change which parts of a fixed token-row
-decomposition dominate the local score, while leaving the row-side coefficients
-unchanged. Additional
-views are in Appendix~\ref{app:additional-qwen-display-examples}.
+Holding the token fixed isolates context effects: the row-side coefficients
+\(z_{t,i}\) are frozen by the token, and only the projections \(p_i(h)\) vary
+across prompts (\Cref{sec:method-local-score}). In
+\Cref{fig:same-token-polysemy}, prompt context reweights \texttt{bug},
+\texttt{ring}, and \texttt{bridge} toward features whose row labels match the
+setting; each token score (after subtracting the shared offset
+\(h^\top\mu\)) has \(\rho<0.05\). \texttt{bug} shifts from mosquito/bee to
+defect/crash/debug labels; \texttt{bridge} shifts from river/crossing to
+networking labels. Context redistributes mass across a fixed token-row
+decomposition without changing its row-side coefficients. Additional views
+are in Appendix~\ref{app:additional-qwen-display-examples}.
 
 \begin{figure}[t]
     \centering
@@ -232,11 +227,11 @@ views are in Appendix~\ref{app:additional-qwen-display-examples}.
 \end{figure}
 
 \paragraph{Readout Features Compose with Component Attribution [RQ4]}\label{sec:feature-resolved-component-decomposition}\label{subsec:feature-resolved-component-attribution}
-Because signed readout terms are linear in \(h\), direct logit attribution
-(DLA) passes through the fixed SRP basis. DLA decomposes \(h\) into embedding,
+Signed readout terms are linear in \(h\), so direct logit attribution (DLA)
+composes with the fixed SRP basis. DLA decomposes \(h\) into embedding,
 attention-head, and MLP-layer contributions and reads each component's logit
-contribution \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}.
-If \(h\approx\sum_c h_c\), then each feature term for selected direction \(q\)
+contribution \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms};
+under \(h\approx\sum_c h_c\), each feature term for direction \(q\)
 decomposes as \(M_{c,i}(q)=\beta_i(q)\,h_c^\top d_i\).
 
 \begin{figure}[H]
@@ -250,36 +245,33 @@ decomposes as \(M_{c,i}(q)=\beta_i(q)\,h_c^\top d_i\).
     \label{fig:qwen-prism-dla-verify-assume-main}
 \end{figure}
 
-Rather than a single scalar margin contribution per component, this yields
-component-by-readout-feature terms for the selected readout score.
-This is component-by-feature accounting for a realized forward pass, not causal
-necessity without interventions \citep{geiger2023causalabstraction}.
+Each component thus yields a feature-resolved breakdown of the score rather
+than a single scalar margin contribution---a correlational decomposition of
+a realized forward pass; causal claims require interventions
+\citep{geiger2023causalabstraction}.
 
-\Cref{fig:qwen-prism-dla-verify-assume-main} decomposes a Qwen3.5-2B
-\texttt{verify}-minus-\texttt{assume} logit difference. The exact margin is
-\(+4.31\), the DLA sum \(+4.36\) (component additivity error \(+0.05\)), and
-the sparse feature sum \(+4.28\) (\(\rho=0.009\)), separating
-verification/checking support from assumption-family opposition. A row-centered
-companion appears in
-Appendix~\ref{app:feature-resolved-dla}.
+\Cref{fig:qwen-prism-dla-verify-assume-main} applies this to a Qwen3.5-2B
+\texttt{verify}-minus-\texttt{assume} logit difference, separating
+verification/checking support from assumption-family opposition. The exact
+margin is \(+4.31\); DLA sums to \(+4.36\) (component additivity error
+\(+0.05\)) and the sparse feature sum to \(+4.28\) (\(\rho=0.009\)). A
+row-centered companion appears in Appendix~\ref{app:feature-resolved-dla}.
 
 \FloatBarrier
 
 \paragraph{Readout Features Support Constrained Lexical Edits [RQ5]}\label{subsec:constrained-readout-edits}
-The learned decoder directions also serve as candidate edit directions at
-the readout: subtracting a fixed multiple of a decoder direction from the
-final hidden state lowers the logits of tokens that load positively on that
-direction.
-We test this in a constrained lexical-score setting. Five discovery terms
-select ten Qwen3.5-2B decoder directions; the edit is then applied to a
-disjoint set of evaluation tokens that were not used during selection. A
-``flip'' counts when the top-1 next token moves away from the target word
-under the edit. Two logit-bias baselines bracket the SAE-direction edit:
-the \emph{discovery token bias} subtracts a fixed logit penalty from the
-five discovery tokens only, so by construction it cannot transfer beyond
-them, while the \emph{oracle token bias} applies the same penalty directly
-to the held-out evaluation tokens, an upper bound that uses the evaluation
-labels at intervention time.
+The learned decoder directions also serve as edit directions: subtracting a
+fixed multiple of a decoder direction from the final hidden state lowers the
+logits of tokens that load positively on that direction. We test this in a
+constrained lexical-score setting. Five discovery terms select ten
+Qwen3.5-2B decoder directions; the edit is then applied to a disjoint set
+of evaluation tokens. A ``flip'' counts when the top-1 next token moves
+away from the target word under the edit. Two logit-bias baselines bracket
+the SAE-direction edit. The \emph{discovery token bias} subtracts a fixed
+logit penalty from the five discovery tokens only and so by construction
+cannot transfer beyond them. The \emph{oracle token bias} applies the same
+penalty directly to the held-out evaluation tokens---an upper bound that
+uses the evaluation labels at intervention time.
 
 \begin{table}[H]
 \caption{\textbf{Constrained Qwen3.5-2B readout-side lexical edit.}
@@ -309,15 +301,15 @@ No intervention & \(0.000\) & \(0.000\) & \(0.000\) & \(0.000\) \\
 \end{table}
 
 \Cref{tab:main-readout-edit} shows that readout SAE directions selected from
-discovery tokens transfer to evaluation tokens (flip rate \(0.359\)), matching
-the oracle's eval flip rate even though the evaluation tokens were not used
-during selection; a discovery-token-only bias does not transfer at all (eval
-flip \(0.000\)). The trade-off is off-target distribution shift: the oracle
-uses the evaluation labels at intervention time and so achieves the same
-flips at median KL \(0.004\), while SRP incurs median KL \(0.679\) for acting
-through a shared basis rather than a token-specific penalty. Transfer to held-out tokens
-from a fixed basis is the gain; broader distributional shift is the
-corresponding cost. The R1-Distill-Qwen-7B replication appears in
-Appendix~\ref{app:lexical-control-stress-test}.
+discovery tokens transfer to evaluation tokens (flip rate \(0.359\)),
+matching the oracle's evaluation flip rate even though the evaluation tokens
+were never seen during selection; a discovery-token-only bias does not
+transfer at all (eval flip \(0.000\)). The trade-off is off-target
+distribution shift: the oracle achieves the same flips at median KL
+\(0.004\) because it uses the evaluation labels at intervention time, while
+SRP incurs median KL \(0.679\) because it acts through a shared basis rather
+than a token-specific penalty. Transfer from a fixed basis is the gain;
+broader distributional shift is the cost. The R1-Distill-Qwen-7B
+replication is in Appendix~\ref{app:lexical-control-stress-test}.
 
 \FloatBarrier

@@ -23,18 +23,17 @@ each row decomposes as
 where \(\mu\) is a shared offset, \(d_i\in\R^d\) is a readout feature direction
 (an SAE decoder direction), \(z_{t,i}\) is token row \(t\)'s sparse coefficient,
 \(\widehat{w}_t\) is the fitted row, and \(r_t\) is the residual.
-We call this dictionary a \emph{readout SAE}, in contrast to activation SAEs
-trained on per-layer hidden-state activations: a readout SAE's codes describe
-how each vocabulary row decomposes into shared directions, not how each hidden
-state does.
+We call this dictionary a \emph{readout SAE}: its codes describe how each
+vocabulary row decomposes into shared directions, not how each hidden state
+does, as in activation SAEs.
 
 We fit TopK sparse autoencoders~\citep{makhzani2013ksparse,gao2024scaling}: the
 encoder retains only the \(k\) largest pre-activations per row, fixing row
 sparsity at \(k\) so it is comparable across tokens. When we center or
 row-normalize during training, we invert those transformations after fitting
 so that \(\widehat{w}_t\), \(d_i\), \(z_{t,i}\), and \(r_t\) lie in the same
-raw row space as \(w_t\). Every displayed term then remains in original logit
-units, with no hidden dense correction. Dictionary width,
+raw row space as \(w_t\), in original logit units, with no hidden dense
+correction. Dictionary width,
 sparsity, preprocessing, and score-decomposition details are in
 Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility} and
@@ -71,21 +70,21 @@ projection vector
     p(h)=D_{\mathrm{feat}}h .
 \]
 The coordinate \(p_i(h)\) records the alignment of \(h\) with readout feature
-\(i\); it does not depend on which score later weights that feature.
+\(i\).
 
 \subsection{Decomposing Selected Readout Scores}
 \label{sec:method-local-score}
 
 A selected readout score is a fixed linear combination of LM-head rows. Let
-\(\alpha\in\R^{|\mathcal{V}|}\) be vocabulary-row coefficients and define
+\(\alpha\in\R^{|\mathcal{V}|}\) be vocabulary-row coefficients and define the
+selected readout direction and score
 \[
     q_\alpha = \sum_{t\in\mathcal{V}} \alpha_t w_t,
     \qquad
     s_\alpha(h)=h^\top q_\alpha .
 \]
-We call \(q_\alpha\) the selected readout direction and \(s_\alpha(h)\) the
-selected readout score. Setting \(\alpha_A=1\) and all other coefficients to
-zero recovers the familiar logit-lens coordinate
+Setting \(\alpha_A=1\) and all other coefficients to zero recovers the
+familiar logit-lens coordinate
 \[
     \ell_A(h)=h^\top w_A
 \]
@@ -168,10 +167,6 @@ We label the components:
                         = h^\top\sum_{t\in\mathcal{V}}\alpha_t r_t .
 \end{aligned}
 \]
-Positive terms raise the selected readout score; negative terms lower it. For
-signed contrasts, positive values support the first side and negative values
-support the comparison side.
-
 \Cref{tab:method-special-cases} instantiates \(q_\alpha\) and
 \(\beta_i(\alpha)\) for the score families used in our analyses.
 
@@ -211,28 +206,19 @@ Selected score family & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
 \end{tabularx}
 \end{table}
 
-\subsection{Residuals, Sign Checks, and Interpretation Rules}
+\paragraph{Reading rule.}
 \label{sec:method-reading-local-accounts}
-
-We pair every local decomposition with a reconstruction check. A displayed
-account reports exact and reconstructed scores, feature sum, offset when
-present, residual, relative reconstruction error, and sign status for signed
-contrasts. We compute relative reconstruction error as
+We interpret local feature terms only after a reconstruction check. For each
+selected score, we report exact and reconstructed scores, feature sum, offset
+when present, residual, and relative reconstruction error
 \[
     \rho(h,\alpha)=
-    \frac{|\epsilon|}{|s_{\mathrm{exact}}|+\delta},
-    \qquad
-    \delta=0.5\ \text{logit}.
+    \frac{|s_{\mathrm{exact}}-s_{\mathrm{recon}}|}
+         {|s_{\mathrm{exact}}|+0.5}.
 \]
-The half-logit floor \(\delta\) keeps \(\rho\) bounded when
-\(|s_{\mathrm{exact}}|\) is near zero, so the metric is comparable across
-score magnitudes. We use \(\rho<0.5\) as the reading threshold. We interpret
-feature bars only when reconstructed and exact scores agree within this bound;
-for signed contrasts, the two must also share sign before we read off support
-and opposition. Figures may truncate small bars for legibility; reconstructions
-and the residual always use the full feature sum.
-
-Claims remain tied to feature ids, signed contributions, and residuals; labels
-summarize high-coefficient vocabulary rows, following sparse-feature evaluation
-practice
+Feature bars are interpreted only when \(\rho<0.5\); for signed contrasts,
+\(s_{\mathrm{exact}}\) and \(s_{\mathrm{recon}}\) must also share sign before
+we read support or opposition. Displayed bars may be truncated, but feature
+sums and residuals always use the full decomposition. Claims remain tied to
+feature ids, signed contributions, and residuals rather than labels alone
 \citep{karvonen2025saebench,makelov2024principled}.
