@@ -1,12 +1,13 @@
-\section{Evidence for Reliable Sparse Readout Accounts}
+\section{Calibrating Sparse Readout Accounts}
 \label{sec:results}
 \label{subsec:calibration}
 
 We first test whether the factorized readout preserves the dense LM head and
 selected readout scores. Across the evaluated models, SRP preserves contrast
-signs and yields low reconstruction error except near small exact margins. We
-therefore interpret feature decompositions only when the reconstructed and
-exact scores agree in sign and satisfy \(\rho<0.5\) (defined in
+signs, and most contrasts satisfy the low-error threshold; errors and flips
+concentrate near small exact margins. We therefore interpret feature
+decompositions only when the reconstructed and exact scores agree in sign and
+satisfy \(\rho<0.5\) (defined in
 \Cref{sec:method-reading-local-accounts}); \Cref{sec:readout-analyses} works
 through score choice, token preferences, context shifts, attribution, and
 edits within this subset.
@@ -213,26 +214,21 @@ views are in Appendix~\ref{app:additional-qwen-display-examples}.
 \end{figure}
 
 \paragraph{Readout Features Compose with Component Attribution [RQ4]}\label{sec:feature-resolved-component-decomposition}\label{subsec:feature-resolved-component-attribution}
-Signed readout terms are linear in the final hidden state, so additive
-residual-stream decompositions pass through the fixed SRP basis. We compose
-SRP with direct logit attribution (DLA), which writes the final hidden state
-as a sum of contributions from earlier residual-stream components---the
-embedding, attention heads, and MLP layers---and reads off how much each
-component adds to a chosen logit
-\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}: if
-\(h\approx\sum_c h_c\), a feature term for selected direction \(q\) splits into
-\[
-    M_{c,i}(q)=\beta_i(q)\,h_c^\top d_i .
-\]
+Because signed readout terms are linear in \(h\), direct logit attribution
+(DLA) passes through the fixed SRP basis. DLA decomposes \(h\) into embedding,
+attention-head, and MLP-layer contributions and reads each component's logit
+contribution \citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}.
+If \(h\approx\sum_c h_c\), then each feature term for selected direction \(q\)
+decomposes as \(M_{c,i}(q)=\beta_i(q)\,h_c^\top d_i\).
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.86\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_semantic_table.pdf}
+    \includegraphics[width=0.74\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_semantic_table.pdf}
     \caption{\textbf{Feature-resolved component attribution.}
     Qwen3.5-2B \texttt{verify}-\texttt{assume} margin. Rows are embedding and
-    per-layer post-norm contributions; columns group verify/check features,
-    assume features, remaining sparse terms, the LM-head residual, and ordinary
-    DLA. Red supports \texttt{verify}; blue supports \texttt{assume}.}
+    per-layer post-norm contributions; columns group verify/check, assume,
+    other sparse, LM-head residual, and ordinary DLA terms. Red supports
+    \texttt{verify}; blue supports \texttt{assume}.}
     \label{fig:qwen-prism-dla-verify-assume-main}
 \end{figure}
 
