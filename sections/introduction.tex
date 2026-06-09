@@ -4,12 +4,12 @@ Transformer language models map a final hidden state \(h\in\R^d\) to next-token 
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.8\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_bug_insect/qwen2b_lens_prism_comparison_bug_insect.pdf}
+    \includegraphics[width=\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_bug_insect/qwen2b_lens_prism_comparison_bug_insect.pdf}
     \caption{\textbf{From lens output to a local score decomposition.}
     Qwen3.5-2B, software-context prompt (``The programmer reproduced the
     crash and filed a''), comparing the continuation \texttt{bug} against
-    \texttt{insect}. \textbf{A.} Ordinary logit-lens margin, \texttt{bug}
-    over \texttt{insect}, \(+20.37\). \textbf{B.} Sparse Readout Prism
+    \texttt{insect}. \textbf{Top:} ordinary logit-lens margin, \texttt{bug}
+    over \texttt{insect}, \(+20.37\). \textbf{Bottom:} Sparse Readout Prism
     decomposition of that margin in logit units; the leading terms are
     software-defect features (defect, crash, debug, bug, issue, fix), all
     supporting \texttt{bug}, with no insect-sense feature among the leading
@@ -22,20 +22,20 @@ Transformer language models map a final hidden state \(h\in\R^d\) to next-token 
 Consider one hidden state from a software-context prompt: does the readout
 favor the continuation \texttt{bug} over \texttt{insect}? The ordinary
 logit lens reports the signed margin
-(Figure~\ref{fig:main-lens-prism-comparison}A) and stops there. For a
+(Figure~\ref{fig:main-lens-prism-comparison}, top) and stops there. For a
 polysemous token the stop is costly: every sense of \texttt{bug} shares one
 unembedding row, so the lens reports which token the context prefers but
 not which readout directions carry that preference, nor how the hidden
 state reweights them as the context changes. SRP asks that second question:
 how the margin is composed on the readout side, which readout directions
 support it, which oppose it, and how much remains unexplained by the shared
-basis (Figure~\ref{fig:main-lens-prism-comparison}B).
+basis (Figure~\ref{fig:main-lens-prism-comparison}, bottom).
 
 Decompositions commonly paired with lens-style readouts act on the hidden-state side. Direct logit attribution (DLA) decomposes \(h=\sum_c h_c\) into contributions from earlier residual-stream components---the embedding, attention heads, and MLP layers---and reads off each component's contribution to a chosen logit~\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. Sparse autoencoders (SAEs) and related dictionary-learning methods learn overcomplete bases that reconstruct each input from a few active coordinates~\citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}; applied to hidden activations, they yield sparse coordinates for \(h\). SRP takes the complementary object: the readout direction \(q\).
 
 Token logits and logit differences are linear in LM-head rows: \(h^\top(w_A - w_B) = h^\top w_A - h^\top w_B\). A per-feature account in logit units therefore starts by decomposing the rows themselves.
 
-Sparse Readout Prism (SRP) applies dictionary learning directly to LM-head rows: each row is written as sparse coefficients over a shared overcomplete basis, plus a residual. We call the shared directions \emph{readout features}---features of LM-head rows, in contrast to SAE features trained on hidden-state activations. Once a \emph{readout score} is fixed---a token logit \(h^\top w_t\), a pairwise logit difference \(h^\top(w_A-w_B)\), or another LM-head row combination---the row-side coefficients combine with hidden-state projections \(p_i(h)=h^\top d_i\) to give signed per-feature contributions in original logit units (Figure~\ref{fig:main-lens-prism-comparison}B). Contributions, offset, and residual sum to the original score.
+Sparse Readout Prism (SRP) applies dictionary learning directly to LM-head rows: each row is written as sparse coefficients over a shared overcomplete basis, plus a residual. We call the shared directions \emph{readout features}---features of LM-head rows, in contrast to SAE features trained on hidden-state activations. Once a \emph{readout score} is fixed---a token logit \(h^\top w_t\), a pairwise logit difference \(h^\top(w_A-w_B)\), or another LM-head row combination---the row-side coefficients combine with hidden-state projections \(p_i(h)=h^\top d_i\) to give signed per-feature contributions in original logit units (Figure~\ref{fig:main-lens-prism-comparison}, bottom). Contributions, offset, and residual sum to the original score.
 
 We demonstrate SRP in two sets of evaluations, under one reading
 discipline: the claim object is a selected readout score on a realized
@@ -44,9 +44,9 @@ First, \Cref{sec:results} calibrates the factorization for term-level
 readout analysis. Across eight models, SRP reconstructs unembedding rows
 with explained variance \(0.83\)--\(0.89\) after row centering. It tracks
 the dense LM head on six of eight readouts and preserves contrast sign on
-at least \(91\%\) of held-out logit differences; on the matched baseline
-comparison it outperforms methods such as nearest-row ridge, matched-rank
-PCA, and shuffle/random sparse baselines. Because fidelity varies by score
+at least \(91\%\) of held-out logit differences; on the matched Qwen3.5-2B
+baseline comparison it outperforms methods such as nearest-row ridge,
+matched-rank PCA, and shuffle/random sparse baselines. Because fidelity varies by score
 family, the calibration also fixes the regime (sign agreement with
 relative residual \(\rho<0.5\)) in which the later analyses read feature
 terms.
@@ -57,15 +57,18 @@ account in logit units with an explicit residual. Polysemous logit differences
 expose competing features; prompt context reweights a fixed token-row
 decomposition; direct logit attribution composes with the basis to give
 component-by-feature terms. Decoder directions selected from a small discovery
-set drive constrained lexical edits that transfer to held-out tokens. The
+set drive constrained lexical edits that transfer to held-out tokens, at a
+measured distribution-shift cost. The
 analyses also mark where the reading stops: residual-dominated,
-sign-flipped, and diffuse scores bound what the feature terms license.
+sign-flipped, and diffuse scores (contribution mass spread over many small
+terms) bound what the feature terms license.
 
 In summary, this paper makes three contributions:
 \begin{itemize}
     \item \emph{A sparse factorization of the LM head.} We fit a shared
     overcomplete dictionary directly to unembedding rows; the full head can be
-    reconstructed or replaced from the resulting sparse codes.
+    reconstructed and, on most evaluated models, replaced from the resulting
+    sparse codes.
     \item \emph{Score-agnostic feature projections.} Each learned direction
     yields a per-feature projection of any hidden state, reusable across
     downstream score choices.

@@ -37,12 +37,14 @@ summaries for the feature ids.
 \subsection{Additional Logit-Difference Case Studies}
 \label{app:additional-margin-case-studies}
 
-Figure~\ref{fig:app-selected-readout-prism-extra-examples} gives the two
-polysemous-token logit-difference examples omitted from the main text. In the tree
+Figure~\ref{fig:app-selected-readout-prism-extra-examples} gives standalone
+displays of the \texttt{bark} and \texttt{bass} logit differences shown as
+panels of the main-text
+Figure~\ref{fig:selected-readout-prism-examples}. In the tree
 context, \texttt{bark} draws on bark/wood SAE features against dog/cat
 features; in the music context, \texttt{bass} draws on music/percussion-related
-features against trout/salmon features. The relative reconstruction errors are
-\(0.126\) and \(0.097\).
+features against trout/salmon features. The relative reconstruction errors
+match the main-text values, \(0.126\) and \(0.097\).
 
 \begin{figure*}[!tbp]
     \centering
@@ -303,7 +305,10 @@ indicated by the signed feature term; panel-level claims rest on that
 subset. The measured objects are feature ids, signed contributions, and
 reconstruction residuals.
 The row-level source table, refined feature descriptions, and full top-20
-token-row audit accompany the figure artifacts.
+token-row audit accompany the figure artifacts; the shipped artifact records
+the earlier three-way coherent/ambiguous/token-form classification, which
+the binary scheme above refines by folding ambiguous labels into the
+coherent count and adding the on-target test.
 
 \begin{table*}[!tbp]
 \caption{\textbf{Qualitative feature-label audit for claim-bearing Qwen displays.}
@@ -341,7 +346,10 @@ surface artifacts. By the stricter on-target test, 66 of the 85 coherent
 families are on-target, all side-consistent, with no case where an
 on-target label opposed the side claimed in the prose. The remaining 19
 coherent families are off-target: clean families that name an off-panel
-sense or that are dominated by the panel's own target token. Panel-level
+sense or that are dominated by the panel's own target token. In the
+general-readout set, the six off-target coherent families are the
+positive-affect family, two \texttt{gu}/\texttt{Gu} fragment families, two
+blue-surface families, and an effects family. Panel-level
 claims in the main text draw on the on-target subset.
 
 Table~\ref{tab:app-main-case-study-feature-audit} summarizes every feature shown in
@@ -353,7 +361,7 @@ displayed features are marked as low-level token-form directions.
 
 \begin{table*}[!tbp]
 \caption{\textbf{Top associated unembedding rows for the main case-study features.}
-Rows cover all unique features displayed in Figure~\ref{fig:selected-readout-prism-examples}.
+Rows cover all unique features displayed in the two \texttt{bug} panels of Figure~\ref{fig:selected-readout-prism-examples}.
 Leading-space token variants are shown without the leading space; non-Latin
 synonyms are summarized.}
 \label{tab:app-main-case-study-feature-audit}

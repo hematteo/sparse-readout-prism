@@ -70,8 +70,7 @@ replacement fidelity before any local decomposition.
 \paragraph{Selected-Score Reconstruction}\label{subsec:selected-score-reconstruction}
 The logit-difference columns test whether selected readout scores survive the
 factorization. Sign agreement is at least \(0.91\) across the suite, and the
-sign-preserved, low-error subset (\(\rho<0.5\), with
-\(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\))
+sign-preserved, low-error subset (\(\rho<0.5\))
 covers \(0.69\)--\(0.89\) of contrasts per model.
 Errors and flips concentrate near small exact margins
 (\Cref{fig:readout-score-fidelity-result}). This score-level evidence supplies
@@ -97,8 +96,8 @@ low-error coverage on ContractNLI labels to weaker SecurityEval safe/action
 contrasts: broader row combinations remain reconstructable but heterogeneous
 (\Cref{tab:benchmark-derived-readout-contrasts}).
 
-RowEV is therefore reported as a capacity metric; term-level interpretation
-comes from score-level residual and sign checks.
+Across these checks, rowEV functions as a capacity metric; term-level
+interpretation comes from score-level residual and sign checks.
 
 \begin{figure}[t]
     \centering
@@ -171,9 +170,10 @@ interpreted.
 \begin{table*}[!tbp]
 \caption{\textbf{Score and contrast groups at the main \(k=256\) setting.}
 Rows group selected readout score families at the \(k=256\) fidelity
-setting. Row counts aggregate evaluated model--case cells across the
-same five-model Qwen/Gemma suite as Table~\ref{tab:readout-score-fidelity-summary},
-after tokenization filters.}
+setting. Row counts aggregate evaluated model--case cells across the five
+Qwen/Gemma models of Table~\ref{tab:readout-score-fidelity-summary}
+(excluding Ministral and the R1-distilled readouts), after tokenization
+filters.}
 \label{tab:app-general-readout-score-families}
 \centering
 \small
@@ -237,7 +237,8 @@ after mean subtraction, and the decomposition reads off this competition
 directly from the signed terms. The opening figure showed the
 software-context \texttt{bug}-vs-\texttt{insect} decomposition;
 \Cref{fig:selected-readout-prism-examples} sets it beside its
-insect-context counterpart (\texttt{bug}-vs-\texttt{error}) and two
+insect-context counterpart, where the competitor becomes the
+software-sense anchor (\texttt{bug}-vs-\texttt{error}), and two
 further polysemous-token differences (\texttt{bark}-vs-\texttt{dog},
 \texttt{bass}-vs-\texttt{trout}), where a faithful account must reassign
 signed terms across senses. In the insect context, \texttt{bug} draws
@@ -272,8 +273,10 @@ claimed side. Panel-level claims use only that on-target subset.
     \texttt{bark}-vs-\texttt{dog} in a tree context, and
     \texttt{bass}-vs-\texttt{trout} in a music context. Small bars are
     suppressed for readability. All four panels satisfy the residual
-    threshold \(\rho<0.5\) and preserve the sign of the logit difference;
-    see \cref{tab:app-main-case-study-feature-audit}.}
+    threshold \(\rho<0.5\) and preserve the sign of the logit difference
+    (display rules in Appendix~\ref{app:display-taxonomy});
+    \cref{tab:app-main-case-study-feature-audit} lists the
+    \texttt{bug}-panel feature rows.}
     \label{fig:selected-readout-prism-examples}
 \end{figure*}
 
@@ -291,6 +294,8 @@ decomposition without changing its row-side coefficients. Additional views
 are in Appendix~\ref{app:additional-qwen-display-examples}.
 
 \paragraph{Where Term-Level Reading Stops}\label{subsec:interpretation-boundary}
+Before composing feature terms with component attribution (RQ4) and editing
+along fitted directions (RQ5), we state where term-level reading stops.
 A faithful decomposition is a local reading of the readout side: a
 different factorizer or active budget could split the same contribution
 across other features, so the fidelity checks license the reading only for
@@ -325,7 +330,9 @@ decomposes as \(M_{c,i}(q)=\beta_i(q)\,h_c^\top d_i\).
     \centering
     \includegraphics[width=0.74\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_semantic_table.pdf}
     \caption{\textbf{Feature-resolved component attribution.}
-    Qwen3.5-2B \texttt{verify}-\texttt{assume} margin. Rows are embedding and
+    Qwen3.5-2B \texttt{verify}-\texttt{assume} margin on the
+    source-verification prompt (``The source has not been checked yet. The
+    appropriate next action is to''). Rows are embedding and
     per-layer post-norm contributions; columns group verify/check, assume,
     other sparse, LM-head residual, and ordinary DLA terms. Red supports
     \texttt{verify}; blue supports \texttt{assume}.}
@@ -338,10 +345,11 @@ extending the scalar DLA contribution into SRP coordinates.
 \Cref{fig:qwen-prism-dla-verify-assume-main} applies this to a Qwen3.5-2B
 source-verification prompt, asking whether the readout favors the
 source-checking token \texttt{verify} over the assumption token
-\texttt{assume}; the feature-resolved view separates verification/checking
-support from assumption-family opposition. The exact
+\texttt{assume}, a resolved single-sense contrast whose interest lies in
+which components carry it; the feature-resolved view separates
+verification/checking support from assumption-family opposition. The exact
 margin is \(+4.31\); DLA sums to \(+4.36\) (component additivity error
-\(+0.05\)) and the sparse feature sum to \(+4.28\) (\(\rho=0.009\)). A
+\(+0.05\)) and the sparse-feature sum is \(+4.28\) (\(\rho=0.009\)). A
 row-centered companion appears in Appendix~\ref{app:feature-resolved-dla}.
 
 \paragraph{Readout Features Support Constrained Lexical Edits [RQ5]}\label{subsec:constrained-readout-edits}
