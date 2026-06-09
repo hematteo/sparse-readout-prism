@@ -86,7 +86,7 @@ studies that follow are drawn from this subset.
 Beyond hand-picked token pairs, we instantiate benchmark-derived readout
 contrasts as fixed LM-head row combinations: answer-vs-distractor,
 abstention-vs-entity, label, and safe-vs-unsafe contrasts drawn from
-SQuAD2, HotpotQA, ContractNLI, LegalBench, and SecurityEval
+SQuAD2, HotpotQA, LegalBench (ContractNLI), and SecurityEval
 \citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}.
 We use these rows as readout-contrast reconstruction tests rather than
 task-accuracy measurements. Across
@@ -150,6 +150,54 @@ in SRP's reconstructions; label interpretation is handled by the separate audit
 below.
 Full details are in Appendix~\ref{app:robustness-key-quantitative}.
 
+\paragraph{Fidelity Varies by Score Family}\label{subsec:score-family-fidelity}
+The factorization reconstructs some score families more faithfully than
+others. \Cref{tab:app-general-readout-score-families} reports sign
+agreement and median relative residual by family at the \(k=256\)
+comparison point. Reconstruction difficulty tracks how close the
+competitor sits to the selected token: vocabulary-mean and reference-row
+contrasts are easiest, with perfect sign agreement and median
+\(\rho\le0.049\), and broad top-competitor margins stay nearly as
+faithful (\(\rho=0.120\) and \(0.253\) for a sampled or top-5
+competitor). Difficulty rises as the competitor nears a tie, where the
+current-vs-stale and top1-vs-top2 margins reach \(\rho=0.525\) and
+\(0.551\), both above the \(\rho<0.5\) interpretation gate, so their
+feature terms are read only where the residual and sign checks pass.
+Because reconstruction difficulty depends on which family is selected,
+SRP keeps the choice of readout direction explicit and reports the
+residual and sign behavior that determine when feature terms can be
+interpreted.
+
+\begin{table*}[!tbp]
+\caption{\textbf{Score and contrast groups at the main \(k=256\) setting.}
+Rows group selected readout score families at the \(k=256\) fidelity
+setting. Row counts aggregate evaluated model--case cells across the
+same five-model Qwen/Gemma suite as Table~\ref{tab:readout-score-fidelity-summary},
+after tokenization filters.}
+\label{tab:app-general-readout-score-families}
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{0.96\textwidth}{@{}p{0.20\textwidth}Yrrrr@{}}
+\toprule
+Group & Selected score & cases & rows & sign agreement & median \(\rho\) \\
+\midrule
+Vocabulary-mean contrast & top1 vs vocabulary mean & 301 & 1505 & 1.000 & 0.021 \\
+Reference-row contrast & top1 vs row-norm distractor & 301 & 1505 & 1.000 & 0.049 \\
+\addlinespace
+Logit difference & source vs prior & 82 & 392 & 0.964 & 0.181 \\
+Logit difference & action/tool alternatives & 96 & 480 & 0.906 & 0.355 \\
+Group contrast & abstention family & 84 & 420 & 0.888 & 0.241 \\
+Logit difference & current vs stale & 92 & 460 & 0.861 & 0.525 \\
+\addlinespace
+Top competitor & top1 vs sampled competitor & 301 & 1505 & 0.993 & 0.120 \\
+Top competitor & top1 vs top5 competitor & 301 & 1505 & 0.940 & 0.253 \\
+Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
 \section{Readout Analyses}
 \label{sec:readout-analyses}
 
@@ -176,7 +224,7 @@ readout-side analyses over realized forward passes.
 \paragraph{Lens Preferences Become Sparse Readout Accounts [RQ1]}\label{subsec:lens-to-sparse-account}
 Lens-style readouts identify a favored token or contrast but leave it as a
 dense LM-head dot product. In \Cref{fig:main-lens-prism-comparison}, SRP holds
-the \texttt{verify}-minus-\texttt{assume} score fixed and decomposes it into
+the \texttt{bug}-minus-\texttt{insect} score fixed and decomposes it into
 signed readout terms plus an explicit residual. Positive and negative terms
 support or oppose the chosen side, replacing the single dense score with a
 signed, sparse account in logit units.
@@ -186,18 +234,21 @@ Beyond a single contrast, the signed features SRP places on each side of a
 token-vs-token contrast typically cohere as lexical groups. As the score
 \(q\) changes, a given feature may support a token, oppose it, or drop out
 after mean subtraction, and the decomposition reads off this competition
-directly from the signed terms. Using the fixed SRP basis, we decompose
-Qwen3.5-2B logit differences over polysemous surface tokens such as
-\texttt{bug} or \texttt{bark}, whose intended sense depends on context
-(\Cref{fig:selected-readout-prism-examples}). In an insect context,
-\texttt{bug} draws positive contributions from mosquito-, bee-, and
-beetle-labeled rows and negative contributions from error-token rows
-(\(\rho=0.185\)); in a software context, positive contributions shift to
-defect, crash, and debug rows (\(\rho=0.003\)). The same surface token
-recruits different row-labeled feature groups as score and context change.
-Additional \texttt{bark}/\texttt{bass} cases are in
-Figure~\ref{fig:app-selected-readout-prism-extra-examples}; plotting
-conventions and the label audit are in
+directly from the signed terms. The opening figure showed the
+software-context \texttt{bug}-vs-\texttt{insect} decomposition;
+\Cref{fig:selected-readout-prism-examples} sets it beside its
+insect-context counterpart (\texttt{bug}-vs-\texttt{error}) and two
+further polysemous-token differences (\texttt{bark}-vs-\texttt{dog},
+\texttt{bass}-vs-\texttt{trout}), where a faithful account must reassign
+signed terms across senses. In the insect context, \texttt{bug} draws
+positive contributions from mosquito-, bee-, and beetle-labeled rows and
+negative contributions from error-token rows (\(\rho=0.185\)); in the
+software context, positive contributions shift to defect, crash, and
+debug rows (\(\rho=0.003\)). The \texttt{bark} and \texttt{bass} cases
+show the same reassignment (\(\rho=0.126\) and \(0.097\)); the four
+residuals are reported because they bound the interpretation. The same
+surface token recruits different row-labeled feature groups as score and
+context change. Plotting conventions and the label audit are in
 Appendix~\ref{app:display-taxonomy} and
 Table~\ref{tab:app-main-case-study-feature-audit}.
 
@@ -207,16 +258,22 @@ separately from the measured feature ids and signed terms
 67 are coherent lexical, 18 ambiguous, and 14 token-form; all 67 coherent labels
 point to the signed side reported in the text.
 
-\begin{figure}[t]
+\begin{figure*}[t]
     \centering
-    \includegraphics[width=0.86\columnwidth]{figures/proto_token_lens/qwen2b_32x_section43_polysemy_margin_curated_examples/qwen2b_32x_margin_examples_main2_onecol_with_tokens.pdf}
+    \includegraphics[width=0.92\textwidth]{figures/proto_token_lens/qwen2b_selected_four_panel/wu_prism_qwen2b_selected_paper_examples_with_tokens.pdf}
     \caption{\textbf{Sparse Readout Prism case studies.}
-    Positive bars support the contrast's primary token; negative bars support
-    its comparison. Relative errors are \(0.185\) and \(0.003\). Both panels
-    use the selected Qwen3.5-2B unembedding-row SAE (\(D=65536\), \(k=256\));
+    Four selected Qwen3.5-2B (\(D=65536\), \(k=256\)) pairwise logit
+    differences. Positive terms support the first token in each contrast;
+    negative terms support the competitor. The examples are
+    \texttt{bug}-vs-\texttt{error} in an insect context,
+    \texttt{bug}-vs-\texttt{insect} in a software context,
+    \texttt{bark}-vs-\texttt{dog} in a tree context, and
+    \texttt{bass}-vs-\texttt{trout} in a music context. Small bars are
+    suppressed for readability. All four panels satisfy the residual
+    threshold \(\rho<0.5\) and preserve the sign of the logit difference;
     see \cref{tab:app-main-case-study-feature-audit}.}
     \label{fig:selected-readout-prism-examples}
-\end{figure}
+\end{figure*}
 
 \paragraph{Context Reweights Fixed Token-Row Features [RQ3]}\label{subsec:context-reweighting}
 Holding the token fixed isolates context effects: the row-side coefficients
@@ -230,6 +287,16 @@ defect/crash/debug labels; \texttt{bridge} shifts from river/crossing to
 networking labels. Context redistributes mass across a fixed token-row
 decomposition without changing its row-side coefficients. Additional views
 are in Appendix~\ref{app:additional-qwen-display-examples}.
+
+\paragraph{Where Term-Level Reading Stops}\label{subsec:interpretation-boundary}
+A faithful decomposition is a local reading of the readout side: a
+different factorizer or active budget could split the same contribution
+across other features, so the fidelity checks license the reading only for
+this factorizer and active budget. The error, sign, and display rules of
+Appendix~\ref{app:display-taxonomy} set out what can still be read when a
+check fails, chiefly for residual-dominated, sign-flipped, and diffuse
+scores. These conditions bind most often at the lower-fidelity Gemma and
+R1-distilled rows of \Cref{tab:readout-score-fidelity-summary}.
 
 \begin{figure}[t]
     \centering
@@ -267,8 +334,10 @@ Each component thus yields a feature-resolved breakdown of the realized score,
 extending the scalar DLA contribution into SRP coordinates.
 
 \Cref{fig:qwen-prism-dla-verify-assume-main} applies this to a Qwen3.5-2B
-\texttt{verify}-minus-\texttt{assume} logit difference, separating
-verification/checking support from assumption-family opposition. The exact
+source-verification prompt, asking whether the readout favors the
+source-checking token \texttt{verify} over the assumption token
+\texttt{assume}; the feature-resolved view separates verification/checking
+support from assumption-family opposition. The exact
 margin is \(+4.31\); DLA sums to \(+4.36\) (component additivity error
 \(+0.05\)) and the sparse feature sum to \(+4.28\) (\(\rho=0.009\)). A
 row-centered companion appears in Appendix~\ref{app:feature-resolved-dla}.
@@ -276,8 +345,8 @@ row-centered companion appears in Appendix~\ref{app:feature-resolved-dla}.
 \paragraph{Readout Features Support Constrained Lexical Edits [RQ5]}\label{subsec:constrained-readout-edits}
 The learned decoder directions also serve as edit directions: subtracting a
 fixed multiple of a decoder direction from the final hidden state lowers the
-logits of tokens that load positively on that direction. We test this in a
-constrained lexical-score setting. Five discovery terms select ten
+logits of tokens that load positively on that direction. We test this as a
+readout-side stress test in a constrained lexical-score setting. Five discovery terms select ten
 Qwen3.5-2B decoder directions; the edit is then applied to a disjoint set
 of evaluation tokens. A ``flip'' counts when the top-1 next token moves
 away from the target word under the edit. Two logit-bias baselines bracket

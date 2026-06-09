@@ -92,36 +92,6 @@ controls, frequency controls, KL, sign agreement, and relative reconstruction
 error use the same definitions across the score-group and baseline
 comparisons.
 
-\begin{table*}[!tbp]
-\caption{\textbf{Score and contrast groups at the main \(k=256\) setting.}
-Rows group selected readout score families at the \(k=256\) fidelity
-setting. Row counts aggregate evaluated model--case cells across the
-same five-model Qwen/Gemma suite as Table~\ref{tab:readout-score-fidelity-summary},
-after tokenization filters.}
-\label{tab:app-general-readout-score-families}
-\centering
-\small
-\setlength{\tabcolsep}{5pt}
-\renewcommand{\arraystretch}{1.05}
-\begin{tabularx}{0.96\textwidth}{@{}p{0.20\textwidth}Yrrrr@{}}
-\toprule
-Group & Selected score & cases & rows & sign agreement & median \(\rho\) \\
-\midrule
-Vocabulary-mean contrast & top1 vs vocabulary mean & 301 & 1505 & 1.000 & 0.021 \\
-Reference-row contrast & top1 vs row-norm distractor & 301 & 1505 & 1.000 & 0.049 \\
-\addlinespace
-Logit difference & source vs prior & 82 & 392 & 0.964 & 0.181 \\
-Logit difference & action/tool alternatives & 96 & 480 & 0.906 & 0.355 \\
-Group contrast & abstention family & 84 & 420 & 0.888 & 0.241 \\
-Logit difference & current vs stale & 92 & 460 & 0.861 & 0.525 \\
-\addlinespace
-Top competitor & top1 vs sampled competitor & 301 & 1505 & 0.993 & 0.120 \\
-Top competitor & top1 vs top5 competitor & 301 & 1505 & 0.940 & 0.253 \\
-Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
-\bottomrule
-\end{tabularx}
-\end{table*}
-
 \begin{figure}[!tbp]
     \centering
     \AppendixCompactGraphic[height=0.27\textheight]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_five_model_margin_reconstruction.pdf}

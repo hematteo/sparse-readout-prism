@@ -16,8 +16,9 @@ candidate directions for constrained readout-side edits. Across eight models,
 SRP preserves held-out contrast signs on at least \(91\%\) of logit differences.
 In the matched baseline comparison, it improves over nearest-row ridge,
 matched-rank PCA, and shuffled/random sparse-code controls in median
-reconstruction error and sign-preserved low-error coverage. With explicit
-reconstruction diagnostics,
+reconstruction error and sign-preserved low-error coverage. Fidelity varies
+by score family and falls as a contrast approaches a near-tie, so the
+reported diagnostics gate which feature terms are read. Within that regime,
 SRP lets researchers compare token preferences, component attributions, and
 readout-side edits in a shared sparse basis.
 \end{abstract}
