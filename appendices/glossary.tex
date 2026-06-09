@@ -69,8 +69,10 @@ only where SRP uses a specialized readout version.
     direction to decompose a selected readout score into signed feature terms plus
     reconstruction error.
 
-    \item[Readout SAE]
-    The sparse autoencoder trained on unembedding rows. It reconstructs a row as
+    \item[Readout factorizer / readout SAE]
+    The fitted sparse dictionary over unembedding rows; \emph{readout SAE}
+    names the same object when its training objective (a sparse autoencoder)
+    matters. It reconstructs a row as
     \(\widehat{w}_t=\mu+\sum_i z_{t,i}d_i\).
 
     \item[SAE feature / decoder direction, \(d_i\)]
