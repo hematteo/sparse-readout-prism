@@ -179,8 +179,10 @@ use the seed-window mean when making seed-robust statements about that tail.
 
 Ministral-3-8B-Base is included as a cross-family 8B-scale comparison. It has the
 same hidden width $d_{\mathrm{model}}=4096$ as Qwen3.5-9B but an untied
-\texttt{lm\_head} and no post-readout softcap (readout-extraction
-reconstruction relative error $\approx 3{\times}10^{-6}$, an order of magnitude
+\texttt{lm\_head} and no post-readout softcap; the factorized readout object
+is \texttt{language\_model.lm\_head.weight} with shape
+$131{,}072\times4096$ (readout-extraction
+reconstruction relative error $\approx 3.2{\times}10^{-6}$, an order of magnitude
 cleaner than the bf16 Qwen floor). The transferred TopK recipe applies
 at the matched widths.
 

@@ -294,40 +294,55 @@ terms behind that ranking.
 Table~\ref{tab:app-qualitative-feature-label-audit} reports a conservative
 qualitative audit of the claim-bearing displayed labels in the Qwen feature
 figures. The audit classifies label readability rather than feature validity:
-labels that are selected-token-heavy, generic, function-word-dominated,
-punctuation-like, or letter/case directions are separated from coherent lexical
-labels. The audit asks whether the displayed token-row summary supports the
-prose label used in the paper and whether coherent labels point to the side
-indicated by the signed feature term. The measured objects are feature ids,
-signed contributions, and reconstruction residuals.
+coherent labels name a clean semantic lexical family read off the top-20
+token rows, while token-form labels are surface artifacts (letter casing,
+leading-space and sub-word surface forms, punctuation-like rows) that carry
+no semantic family. A stricter on-target test then asks whether a coherent
+family also matches the sense named in its panel and points to the side
+indicated by the signed feature term; panel-level claims rest on that
+subset. The measured objects are feature ids, signed contributions, and
+reconstruction residuals.
 The row-level source table, refined feature descriptions, and full top-20
 token-row audit accompany the figure artifacts.
 
 \begin{table*}[!tbp]
 \caption{\textbf{Qualitative feature-label audit for claim-bearing Qwen displays.}
-Rows count displayed feature labels, not all dictionary features. Coherent lexical
-labels are counted when the displayed top-row summary supports the named family;
-ambiguous and token-form labels are reported separately.}
+Rows count displayed feature labels, not all dictionary features. Coherent
+labels are clean semantic lexical families read off the top-20 token rows;
+token-form labels are surface artifacts (letter casing, leading-space and
+sub-word surface forms, punctuation-like rows) that carry no semantic family.
+The on-target column is a stricter subset of the coherent count: coherent
+families whose sense matches the named family used in that panel and whose
+signed contribution points to the claimed side.}
 \label{tab:app-qualitative-feature-label-audit}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabularx}{\textwidth}{@{}lrrrrrY@{}}
+\begin{tabularx}{\textwidth}{@{}lrrrrY@{}}
 \toprule
-Feature set & Labels & Coherent & Ambig. & Token-form & Target-consistent & Scope \\
+Feature set & Labels & Coherent & Token-form & On-target & Scope \\
 \midrule
-Main \texttt{bug} panels & 11 & 8 & 0 & 3 & 8/8 & Figure~\ref{fig:selected-readout-prism-examples}; detailed rows in Table~\ref{tab:app-main-case-study-feature-audit}. \\
-Additional \texttt{bark}/\texttt{bass} margins & 12 & 7 & 2 & 3 & 7/7 & Figure~\ref{fig:app-selected-readout-prism-extra-examples}. \\
-Fixed-token context panels & 12 & 9 & 3 & 0 & 9/9 & Figure~\ref{fig:same-token-polysemy}. \\
-Technical context stress & 32 & 24 & 7 & 1 & 24/24 & Figure~\ref{fig:app-qwen2b-technical-domain-delta}. \\
-\texttt{verify}/\texttt{assume} DLA & 8 & 7 & 1 & 0 & 7/7 & Feature-family heatmap behind Figures~\ref{fig:qwen-prism-dla-verify-assume-main} and~\ref{fig:qwen-prism-dla-verify-assume-app}. \\
-General readout examples & 24 & 12 & 5 & 7 & 12/12 & Figures~\ref{fig:qwen-general-readout-scores-basic} and~\ref{fig:app-qwen-general-readout-scores-extra}. \\
+Main \texttt{bug} panels & 11 & 8 & 3 & 8 & Figure~\ref{fig:selected-readout-prism-examples}; detailed rows in Table~\ref{tab:app-main-case-study-feature-audit}. \\
+\texttt{bark}/\texttt{bass} margins & 12 & 9 & 3 & 7 & Figures~\ref{fig:selected-readout-prism-examples} and~\ref{fig:app-selected-readout-prism-extra-examples}. \\
+Fixed-token context panels & 12 & 12 & 0 & 9 & Figure~\ref{fig:same-token-polysemy}. \\
+Technical context stress & 32 & 31 & 1 & 24 & Figure~\ref{fig:app-qwen2b-technical-domain-delta}. \\
+\texttt{verify}/\texttt{assume} DLA & 8 & 8 & 0 & 7 & Feature-family heatmap behind Figures~\ref{fig:qwen-prism-dla-verify-assume-main} and~\ref{fig:qwen-prism-dla-verify-assume-app}. \\
+General readout examples & 24 & 17 & 7 & 11 & Figures~\ref{fig:qwen-general-readout-scores-basic} and~\ref{fig:app-qwen-general-readout-scores-extra}. \\
 \midrule
-Total & 99 & 67 & 18 & 14 & 67/67 & Conservative count over displayed, claim-bearing labels. \\
+Total & 99 & 85 & 14 & 66 & Conservative count over displayed, claim-bearing labels. \\
 \bottomrule
 \end{tabularx}
 \end{table*}
+
+Across the displayed panels, 85 of 99 claim-bearing labels name a coherent
+lexical family at top-20 token depth; the remaining 14 are token-form
+surface artifacts. By the stricter on-target test, 66 of the 85 coherent
+families are on-target, all side-consistent, with no case where an
+on-target label opposed the side claimed in the prose. The remaining 19
+coherent families are off-target: clean families that name an off-panel
+sense or that are dominated by the panel's own target token. Panel-level
+claims in the main text draw on the on-target subset.
 
 Table~\ref{tab:app-main-case-study-feature-audit} summarizes every feature shown in
 the two main \texttt{bug} panels. For each sparse feature, we score centered and

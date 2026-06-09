@@ -18,7 +18,7 @@ attribution, and edits.
 Q/G/Min/R1-Q/R1-L \(=\) Qwen3.5 / Gemma-4 / Ministral-3 /
 R1-Distill-Qwen / R1-Distill-Llama (suffix is parameter count).
 cfg: width multiplier / TopK budget. rowEV (row-centered explained variance):
-fraction of variance in row-centered unembedding rows captured by the SAE
+fraction of variance in row-centered unembedding rows captured by the sparse
 reconstruction. top1: fraction of held-out hidden states where SRP and the
 dense LM head agree on the argmax token. KL: median KL divergence between
 dense and SRP-reconstructed next-token distributions. Sign: fraction of
@@ -104,7 +104,7 @@ comes from score-level residual and sign checks.
     \centering
     \includegraphics[width=\columnwidth]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_five_model_margin_fidelity.pdf}
     \caption{\textbf{Held-out logit-difference fidelity.}
-    Per-bin reconstruction across five readout SAEs vs exact-margin
+    Per-bin reconstruction across five readout factorizers vs exact-margin
     magnitude \(|m_{\mathrm{exact}}|\). \textbf{A.} Median relative error
     \(|m_{\mathrm{exact}}-m_{\mathrm{recon}}|/|m_{\mathrm{exact}}|\) (log).
     \textbf{B.} Decision-flip rate. Solid: Qwen3.5-0.8B/2B/9B; dashed:
@@ -254,9 +254,11 @@ Table~\ref{tab:app-main-case-study-feature-audit}.
 
 We treat feature labels as readability summaries of top rows and audit them
 separately from the measured feature ids and signed terms
-(Appendix~\ref{app:main-case-study-feature-audit}). Of 99 claim-bearing labels,
-67 are coherent lexical, 18 ambiguous, and 14 token-form; all 67 coherent labels
-point to the signed side reported in the text.
+(Appendix~\ref{app:main-case-study-feature-audit}). Of 99 claim-bearing
+labels, 85 name a coherent lexical family and 14 are token-form surface
+artifacts; 66 of the 85 coherent families are on-target, with the sense
+matching the panel's named family and the signed term pointing to the
+claimed side. Panel-level claims use only that on-target subset.
 
 \begin{figure*}[t]
     \centering
@@ -350,7 +352,7 @@ readout-side stress test in a constrained lexical-score setting. Five discovery 
 Qwen3.5-2B decoder directions; the edit is then applied to a disjoint set
 of evaluation tokens. A ``flip'' counts when the top-1 next token moves
 away from the target word under the edit. Two logit-bias baselines bracket
-the SAE-direction edit. The \emph{discovery token bias} subtracts a fixed
+the readout-feature direction edit. The \emph{discovery token bias} subtracts a fixed
 logit penalty from the five discovery tokens only and so by construction
 cannot transfer beyond them. The \emph{oracle token bias} applies the same
 penalty directly to the held-out evaluation tokens---an upper bound that
@@ -374,7 +376,7 @@ Method & \makecell{Disc.\\flip} & \makecell{Eval.\\flip} &
 \makecell{Eval.\\\(\Delta p_{\mathrm{bad}}\)} &
 \makecell{Median\\KL} \\
 \midrule
-Readout SAE directions (10) & \(0.450\) & \(0.359\) & \(0.398\) & \(0.679\) \\
+Sparse readout feature directions (10) & \(0.450\) & \(0.359\) & \(0.398\) & \(0.679\) \\
 Discovery token bias & \(0.450\) & \(0.000\) & \(0.000\) & \(0.001\) \\
 Oracle token bias & \(0.450\) & \(0.359\) & \(0.404\) & \(0.004\) \\
 Random features & \(0.013\) & \(0.156\) & \(0.078\) & \(1.363\) \\
@@ -383,8 +385,8 @@ No intervention & \(0.000\) & \(0.000\) & \(0.000\) & \(0.000\) \\
 \end{tabular}
 \end{table}
 
-\Cref{tab:main-readout-edit} shows that readout SAE directions selected from
-discovery tokens transfer to evaluation tokens (flip rate \(0.359\)),
+\Cref{tab:main-readout-edit} shows that sparse readout feature directions
+selected from discovery tokens transfer to evaluation tokens (flip rate \(0.359\)),
 matching the oracle's evaluation flip rate even though the evaluation tokens
 were never seen during selection; a discovery-token-only bias does not
 transfer at all (eval flip \(0.000\)). The comparison separates transfer from

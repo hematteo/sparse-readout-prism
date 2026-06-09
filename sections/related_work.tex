@@ -12,17 +12,24 @@ decomposes the selected LM-head direction into sparse readout features.
 
 \paragraph{Output geometry and sparse row dictionaries.}
 Output-embedding work studies how weight tying
-\citep{press2017outputembedding,inan2017tying}, softmax rank
-\citep{yang2018softmaxbottleneck}, and tokenizer segmentation
-\citep{bostrom2020bpe} shape the rows used for vocabulary scoring. A
+\citep{press2017outputembedding,inan2017tying,lopardo2026weighttying},
+softmax rank and next-token target geometry
+\citep{yang2018softmaxbottleneck,zhao2024implicit}, and tokenizer
+segmentation \citep{bostrom2020bpe} shape the rows used for vocabulary
+scoring. A
 parallel sparse-dictionary line targets the hidden-state factor \(h\) of a
 lens score \(h^\top q\): activation-SAEs learn overcomplete bases for \(h\)
-\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, with
-standardized diagnostics
-\citep{karvonen2025saebench,makelov2024principled}. SRP applies the same
+\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,templeton2024scaling},
+with standardized diagnostics
+\citep{karvonen2025saebench,makelov2024principled} and known caveats about
+unit canonicity \citep{leask2025canonical}. SRP applies the same
 machinery to the complementary factor \(q\), fitting it directly to LM-head
-rows. It therefore produces an inference-time basis for local score
-decompositions, feature-resolved DLA, and readout-side edits.
+rows. Parameter-space decompositions share the weight-side target
+\citep{braun2025parameter,gao2025weightsparse}; SRP keeps the trained model
+fixed and factorizes only its readout rows, so the dictionary remains tied
+to the lens-score interface. It therefore produces an inference-time basis
+for local score decompositions, feature-resolved DLA, and readout-side
+edits.
 
 \paragraph{Additive attribution and mechanisms.}
 Direct logit attribution splits a token logit or logit-difference direction

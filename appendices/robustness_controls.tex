@@ -64,15 +64,19 @@ metrics. \\
 \subsection{Key Quantitative Results}
 \label{app:robustness-key-quantitative}
 
-The readout SAE evaluation separates broad readout replacement from
-selected-score reconstruction. On the all-row contrast set,
-aggregating both held-out halves, the Qwen3.5-0.8B/2B/9B settings give sign
-agreement \(0.940\)--\(0.951\), median \(\rho=0.091\)--\(0.107\), and
-\(\rho<0.5\) fractions \(0.790\)--\(0.818\). The main-text fidelity table
-reports the prespecified high-fidelity subset of this evaluation, which is why
-its Qwen sign and reconstruction error ranges are tighter; it also
-reports Gemma score-reconstruction rows and Ministral/R1 replacement rows under the
-same metric conventions. The baseline/null table fixes Qwen3.5-2B and evaluates
+Selected-score fidelity is the central quantitative check: across the
+eight \(32\times\), \(k=256\) readout factorizers, the sparse
+reconstruction preserves contrast sign for \(0.914\)--\(0.958\) of
+selected readout scores, with median \(\rho=0.068\)--\(0.269\)
+(Table~\ref{tab:readout-score-fidelity-summary}). The broader all-row
+contrast set supplies a supporting diagnostic: aggregating both held-out
+halves, the Qwen3.5-0.8B/2B/9B settings give sign agreement
+\(0.940\)--\(0.951\), median \(\rho=0.091\)--\(0.107\), and \(\rho<0.5\)
+fractions \(0.790\)--\(0.818\). The main-text fidelity table reports the
+prespecified high-fidelity subset of this evaluation, which is why its
+Qwen sign and reconstruction error ranges are tighter; it also reports
+Gemma score-reconstruction rows and Ministral/R1 replacement rows under
+the same metric conventions. The baseline/null table fixes Qwen3.5-2B and evaluates
 every method on its 1,348-row full logit-difference set. Many C4 positions are
 local near-ties, which lowers headline numbers; Qwen still reaches
 \(0.822\)--\(0.838\) top-1 agreement and \(0.634\)--\(0.667\)

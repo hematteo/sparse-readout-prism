@@ -17,7 +17,25 @@ to hidden-state inspection, orthogonal to SRP's readout-row factorization.
 Model-family-specific activation-SAE releases include Gemma Scope and
 Qwen-Scope \citep{lieberum2024gemmascope,deng2026qwenscope}, and recent
 weight-based SAE interpretation studies how activation-SAE features interact
-with model weights and output-token effects \citep{liu2026weightbasedsae}. SRP
+with model weights and output-token effects \citep{liu2026weightbasedsae}.
+Crosscoders extend dictionary learning across layers, models, or training
+time within a shared feature space \citep{lindsey2024crosscoders}, with
+crosscoder-specific sparsity artifacts documented in chat-model diffing
+\citep{minder2025sparsity}. SRP
 shares the model-family-specific emphasis but fits its sparse dictionary
 directly to unembedding rows rather than hidden-state activations, and does
 not evaluate or replace activation-feature infrastructure.
+
+\paragraph{Output-space geometry and confounds.}
+The linear-representation view treats token distinctions as directions or
+contrasts in vocabulary space \citep{park2024linear}, and
+vocabulary-embedding directions can steer generation \citep{han2024word};
+SRP's readout-side edits act in the same space at per-feature granularity.
+Degeneration and frequency analyses show that mean directions, row norms,
+and token frequencies can move token scores independently of the property
+under test \citep{gao2019representation,zhang2020revisiting,chung2025exploiting};
+anisotropy varies with training and data \citep{machina2024anisotropy}, and
+output-embedding centering targets the shared mean direction during
+pretraining \citep{stollenwerk2026output}. These effects motivate the
+row-norm and frequency controls of
+Appendix~\ref{app:robustness-controls}.

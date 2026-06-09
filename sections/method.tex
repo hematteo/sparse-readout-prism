@@ -23,7 +23,8 @@ each row decomposes as
 where \(\mu\) is a shared offset, \(d_i\in\R^d\) is a readout feature direction
 (an SAE decoder direction), \(z_{t,i}\) is token row \(t\)'s sparse coefficient,
 \(\widehat{w}_t\) is the fitted row, and \(r_t\) is the residual.
-We call this dictionary a \emph{readout SAE}: its codes describe how each
+We call this dictionary a \emph{readout factorizer}, or a \emph{readout
+SAE} when its training objective matters: its codes describe how each
 vocabulary row decomposes into shared directions, not how each hidden state
 does, as in activation SAEs.
 
