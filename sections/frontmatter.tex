@@ -1,11 +1,10 @@
 \begin{abstract}
 Logit-lens-style methods inspect hidden states by projecting them through the
 LM head and reading vocabulary logits, rankings, or logit differences. After a
-token or contrast is selected, the inspected quantity is still a dense
-dot product with an LM-head row or row combination, hiding which readout
-directions support the score, which oppose it, and what remains unexplained.
-We introduce Sparse Readout Prism (SRP), a sparse feature decomposition of
-logit-lens readouts.
+token or contrast is selected, the inspected quantity is a dense dot product
+with an LM-head row or row combination. We introduce Sparse Readout Prism
+(SRP), a sparse feature decomposition that expands that score into supporting
+and opposing readout directions plus an explicit residual.
 SRP factorizes the LM head into shared \emph{readout features} and sparse
 output-token row coefficients. It projects hidden states onto this
 basis once; for any selected token logit, logit difference, or fixed row

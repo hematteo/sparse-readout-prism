@@ -11,9 +11,9 @@ original score in logit units.
 
 Across eight models, SRP reconstructs centered LM-head rows at explained
 variance \(0.83\)--\(0.89\), tracks the dense LM head on six of eight readouts,
-and preserves contrast sign on at least \(91\%\) of held-out logit differences,
-defining a low-error regime (\(\rho<0.5\)) in which term-level reading is
-calibrated. Inside that regime, SRP turns each lens score into a sparse
+and preserves contrast sign on at least \(91\%\) of held-out logit differences.
+These diagnostics define a low-error regime (\(\rho<0.5\)) for term-level
+reading. Inside that regime, SRP turns each lens score into a sparse
 account with an explicit residual: polysemous logit differences expose
 competing readout features, prompt context reweights a fixed token-row
 decomposition, and decoder directions selected from a small discovery set
@@ -30,5 +30,5 @@ decoded tokens. The same basis also supports a layerwise census of
 readout-feature projections before score selection: when features become
 readout-readable, which residual components supply them, and when they become
 specific to a token, contrast, or competitor set. SRP-nominated terms then give
-targets for causal patching, ablation, and generation-level evaluation, which
-remain separate tests beyond the additive readout decomposition.
+targets for causal patching, ablation, and generation-level evaluation, the
+next tests for moving beyond additive readout decomposition.

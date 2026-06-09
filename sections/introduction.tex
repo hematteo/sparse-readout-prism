@@ -1,6 +1,6 @@
 \section{Introduction}
 
-Transformer language models map a final hidden state \(h\in\R^d\) to next-token logits through an unembedding matrix \(\WU\in\R^{|\mathcal{V}|\times d}\)---the \emph{LM head}, or \emph{readout}. Row \(w_t\) is the learned direction whose dot product with \(h\) scores token \(t\). Lens-style methods~\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes} reuse this map on intermediate hidden states, exposing vocabulary logits, token rankings, or distributions. Yet once a token or contrast is selected, the inspected object remains a single dense dot product \(h^\top q\), where \(q\) is an LM-head row or row combination.
+Transformer language models map a final hidden state \(h\in\R^d\) to next-token logits through an unembedding matrix \(\WU\in\R^{|\mathcal{V}|\times d}\)---the \emph{LM head}, or \emph{readout}. Row \(w_t\) is the learned direction whose dot product with \(h\) scores token \(t\). Lens-style methods~\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes} reuse this map on intermediate hidden states, exposing vocabulary logits, token rankings, or distributions. Once a token or contrast is selected, the inspected object is a dense dot product \(h^\top q\), where \(q\) is an LM-head row or row combination.
 
 \begin{figure}[t]
     \centering
@@ -18,35 +18,33 @@ Transformer language models map a final hidden state \(h\in\R^d\) to next-token 
 Consider one hidden state from a source-verification prompt: does the readout
 favor the source-checking token \texttt{verify} over the assumption token
 \texttt{assume}? The ordinary logit lens reports the signed margin
-(Figure~\ref{fig:main-lens-prism-comparison}A) but is silent on its
-composition---which readout directions support it, which oppose it, and how
-much remains unexplained by any shared basis. This gap is generic to lens
-scores: they report what a hidden state reads out, not which readout
-directions produce the score.
+(Figure~\ref{fig:main-lens-prism-comparison}A). SRP asks a second question:
+how that margin is composed on the readout side---which readout directions
+support it, which oppose it, and how much remains unexplained by the shared
+basis.
 
-Decompositions commonly paired with lens-style readouts act on the hidden-state side. Direct logit attribution (DLA) decomposes \(h=\sum_c h_c\) into contributions from earlier residual-stream components---the embedding, attention heads, and MLP layers---and reads off each component's contribution to a chosen logit~\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. Sparse autoencoders (SAEs) and related dictionary-learning methods learn overcomplete bases that reconstruct each input from a few active coordinates~\citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}; applied to hidden activations, they yield sparse coordinates for \(h\). Neither decomposes the readout direction \(q\) itself.
+Decompositions commonly paired with lens-style readouts act on the hidden-state side. Direct logit attribution (DLA) decomposes \(h=\sum_c h_c\) into contributions from earlier residual-stream components---the embedding, attention heads, and MLP layers---and reads off each component's contribution to a chosen logit~\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. Sparse autoencoders (SAEs) and related dictionary-learning methods learn overcomplete bases that reconstruct each input from a few active coordinates~\citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}; applied to hidden activations, they yield sparse coordinates for \(h\). SRP takes the complementary object: the readout direction \(q\).
 
-Token logits and logit differences are linear in LM-head rows: \(h^\top(w_A - w_B) = h^\top w_A - h^\top w_B\). A per-feature account in logit units therefore requires decomposing the rows themselves; decomposing \(h\) alone cannot produce row-side coordinates.
+Token logits and logit differences are linear in LM-head rows: \(h^\top(w_A - w_B) = h^\top w_A - h^\top w_B\). A per-feature account in logit units therefore starts by decomposing the rows themselves.
 
 Sparse Readout Prism (SRP) applies dictionary learning directly to LM-head rows: each row is written as sparse coefficients over a shared overcomplete basis, plus a residual. We call the shared directions \emph{readout features}---features of LM-head rows, in contrast to SAE features trained on hidden-state activations. Once a \emph{readout score} is fixed---a token logit \(h^\top w_t\), a pairwise logit difference \(h^\top(w_A-w_B)\), or another LM-head row combination---the row-side coefficients combine with hidden-state projections \(p_i(h)=h^\top d_i\) to give signed per-feature contributions in original logit units (Figure~\ref{fig:main-lens-prism-comparison}B). Contributions, offset, and residual sum to the original score.
 
 We demonstrate SRP in two sets of evaluations. First, \Cref{sec:results}
-establishes that the factorization is faithful
-enough to read from. Across eight models, SRP reconstructs unembedding
-rows with explained variance \(0.83\)--\(0.89\) after row centering. It
-tracks the dense LM head on six of eight readouts and preserves
-contrast sign on at least \(91\%\) of held-out logit differences; on
-the matched baseline comparison it outperforms methods such as nearest-row
-ridge, matched-rank PCA, and shuffle/random sparse baselines.
+calibrates the factorization for term-level readout analysis. Across eight
+models, SRP reconstructs unembedding rows with explained variance
+\(0.83\)--\(0.89\) after row centering. It tracks the dense LM head on six of
+eight readouts and preserves contrast sign on at least \(91\%\) of held-out
+logit differences; on the matched baseline comparison it outperforms methods
+such as nearest-row ridge, matched-rank PCA, and shuffle/random sparse
+baselines.
 
-Second, \Cref{sec:readout-analyses} applies SRP within that subset. Each
-token preference reported by a lens becomes a sparse account in
-logit units with an explicit residual. Polysemous logit differences
-expose competing features; prompt context reweights a fixed
-token-row decomposition; direct logit attribution composes with the
-basis to give component-by-feature terms. Decoder directions
-selected from a small discovery set drive constrained lexical edits
-that transfer to held-out tokens.
+Second, \Cref{sec:readout-analyses} uses the calibrated setting for local
+readout analyses. Each token preference reported by a lens becomes a sparse
+account in logit units with an explicit residual. Polysemous logit differences
+expose competing features; prompt context reweights a fixed token-row
+decomposition; direct logit attribution composes with the basis to give
+component-by-feature terms. Decoder directions selected from a small discovery
+set drive constrained lexical edits that transfer to held-out tokens.
 
 In summary, this paper makes three contributions:
 \begin{itemize}

@@ -1,12 +1,12 @@
 \section*{Limitations}
 
 \paragraph{Scope of claims.}
-Decompositions are local and tied to a single selected readout score
-(a token logit, logit difference, group contrast, or other fixed linear
-combination of LM-head rows). Feature-resolved DLA and the readout-side
-edit nominate candidate directions and report induced score shifts and
-distributional side-effects, but neither establishes causal necessity,
-sufficiency, or downstream generation effects.
+SRP's claim object is local: a selected readout score (a token logit, logit
+difference, group contrast, or other fixed linear combination of LM-head rows).
+Feature-resolved DLA and readout-side edits use this object to nominate
+directions and measure induced score shifts plus distributional side-effects.
+Causal necessity, sufficiency, and downstream generation effects are separate
+evaluation targets.
 
 \paragraph{Training cost.}
 Logit lens and standard direct logit attribution require no fitting; SRP
@@ -22,25 +22,24 @@ dictionary size, sparsity \(k\), and recipe choices
 \citep{elhage2022superposition,karvonen2025saebench,makelov2024principled}.
 Operating points reported in the main text are selected from sweeps in
 Appendices~\ref{app:readout-factorizer-sweeps}
-and~\ref{app:readout-factorizer-qwen-sweeps}; we do not claim that the
-reported basis is unique.
+and~\ref{app:readout-factorizer-qwen-sweeps}; the reported basis should be
+read as an audited operating point rather than a unique factorization.
 
 \paragraph{Fidelity and labels.}
-SRP separates the measured coordinate objects --- feature ids, signed terms,
-and residual errors --- from label summaries of high-scoring unembedding
-rows. Reconstruction error, sign agreement, replacement fidelity, and
-stability checks are reported alongside contribution terms so that
-interpretation tracks the measured objects rather than the labels.
+SRP keeps the measured coordinate objects --- feature ids, signed terms, and
+residual errors --- separate from label summaries of high-scoring unembedding
+rows. Reconstruction error, sign agreement, replacement fidelity, and stability
+checks accompany contribution terms, so interpretation follows the measured
+objects.
 
 \paragraph{Vocabulary-geometry artifacts.}
-The selected-score interface inherits vocabulary-geometry caveats: labels
-and groupings can reflect tokenizer geometry, token frequency, row norms, or
-surface-form artifacts
+The selected-score interface inherits vocabulary geometry: labels and groupings
+can reflect tokenizer geometry, token frequency, row norms, or surface-form
+artifacts
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
 Group contrasts reduce single-row dependence; benchmark-derived contrasts
-measure linear readout reconstruction, not task solving; labels remain
-summaries of row geometry rather than ground-truth semantics. Additional
-scope and future-work discussion appears in
+are used for linear readout reconstruction rather than task solving; labels
+summarize row geometry. Additional scope and future-work discussion appears in
 Appendix~\ref{app:extended-discussion-limitations}.
 
 \section*{Ethical Considerations}
@@ -59,7 +58,7 @@ artifact-specific license and usage notes.
 
 SRP makes lexical readout directions and row-level labels easier to inspect,
 and in the readout-edit stress test moves specified lexical scores --- a
-dual-use property of auditing tools. Claims rest on measured coordinate
-objects rather than on label semantics; the edit is reported with distribution shift and
-off-target probes. Safety-filter, moderation, and deployment-control claims
-require direct system-level evaluation, which we do not undertake here.
+dual-use property of auditing tools. We report the edit with
+distribution-shift and off-target probes, and keep claims tied to measured
+coordinate objects. Safety-filter, moderation, and deployment-control
+evaluation are system-level questions beyond this experiment.

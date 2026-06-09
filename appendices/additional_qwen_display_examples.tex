@@ -97,8 +97,8 @@ and a top-competitor margin.
 benchmark-derived answer, abstention, label, and safe/action contrasts
 instantiated as fixed LM-head row combinations
 \citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}.
-The rows measure readout-contrast reconstruction, not task solving. Lower-error
-QA examples appear in Figure~\ref{fig:app-benchmark-task-group-examples}.
+These rows are used as readout-contrast reconstruction checks. Lower-error QA
+examples appear in Figure~\ref{fig:app-benchmark-task-group-examples}.
 
 \begin{table}[!tbp]
 \caption{\textbf{Benchmark-derived readout-contrast reconstruction.}
@@ -293,21 +293,21 @@ terms behind that ranking.
 
 Table~\ref{tab:app-qualitative-feature-label-audit} reports a conservative
 qualitative audit of the claim-bearing displayed labels in the Qwen feature
-figures. The audit is not a feature-validity score: labels that are
-selected-token-heavy, generic, function-word-dominated, punctuation-like, or
-letter/case directions are separated from coherent lexical labels rather than
-counted as labeling successes. The audit asks whether the displayed token-row
-summary supports the prose label used in the paper and whether coherent
-labels point to the side indicated by the signed feature term. The measured
-objects remain feature ids, signed contributions, and reconstruction residuals.
+figures. The audit classifies label readability rather than feature validity:
+labels that are selected-token-heavy, generic, function-word-dominated,
+punctuation-like, or letter/case directions are separated from coherent lexical
+labels. The audit asks whether the displayed token-row summary supports the
+prose label used in the paper and whether coherent labels point to the side
+indicated by the signed feature term. The measured objects are feature ids,
+signed contributions, and reconstruction residuals.
 The row-level source table, refined feature descriptions, and full top-20
 token-row audit accompany the figure artifacts.
 
 \begin{table*}[!tbp]
 \caption{\textbf{Qualitative feature-label audit for claim-bearing Qwen displays.}
 Rows count displayed feature labels, not all dictionary features. Coherent lexical
-labels are counted only when the displayed top-row summary supports the named family;
-ambiguous and token-form labels are not used as evidence for a row-level label.}
+labels are counted when the displayed top-row summary supports the named family;
+ambiguous and token-form labels are reported separately.}
 \label{tab:app-qualitative-feature-label-audit}
 \centering
 \scriptsize

@@ -1,15 +1,13 @@
 \section{Evaluation Setup}
 \label{sec:experimental-setup}
 
-We evaluate SRP in two stages. \emph{Calibration} tests whether the
-learned readout basis is faithful enough to support local feature
-readings. \emph{Analyses}, run only after calibration passes, ask what
-SRP adds beyond logit-lens scores: how the basis responds to varied
-inputs (score choice, token preference, prompt context), and how it
-supports attribution and constrained readout-side edits. All claims are
-readout-level, with one exception: the constrained-edit experiment
-(\Cref{subsec:constrained-readout-edits}) intervenes on the final hidden
-state and reports distribution-shift diagnostics.
+We evaluate SRP in two stages. \emph{Calibration} measures row, replacement,
+and selected-score fidelity for the learned readout basis. \emph{Analyses} use
+the calibrated operating regime to ask what SRP adds beyond logit-lens scores:
+how the basis responds to varied inputs (score choice, token preference, prompt
+context), and how it supports attribution and constrained readout-side edits.
+The constrained-edit experiment (\Cref{subsec:constrained-readout-edits}) also
+intervenes on the final hidden state and reports distribution-shift diagnostics.
 
 \paragraph{Models and held-out sets.}
 The suite spans Qwen3.5~\citep{qwen35collection}, Gemma-4
@@ -27,7 +25,7 @@ Calibration has three components. \emph{Basis} metrics measure held-out
 row reconstruction and LM-head replacement. \emph{Score} metrics measure
 sign preservation and relative error for selected logits, contrasts, and
 margins. \emph{Baselines} are nearest-row ridge, matched-rank PCA,
-shuffled sparse codes, and random sparse patterns. We interpret feature
-contributions only for sign-preserved, low-error accounts; feature
-labels serve as descriptive aids, while the measured objects are feature
-ids, signed contributions, and residuals.
+shuffled sparse codes, and random sparse patterns. Feature contributions are
+reported for sign-preserved, low-error accounts; feature labels serve as
+descriptive aids, while the measured objects are feature ids, signed
+contributions, and residuals.

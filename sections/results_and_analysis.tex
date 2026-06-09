@@ -2,16 +2,15 @@
 \label{sec:results}
 \label{subsec:calibration}
 
-We first test whether the factorized readout preserves the dense LM head and
+We first calibrate the factorized readout against the dense LM head and
 selected readout scores. Across the evaluated models, SRP preserves contrast
 signs and most contrasts satisfy the low-error threshold, with errors and
-flips concentrated near small exact margins. We use this calibration as the
-reading rule for the rest of the section: feature decompositions are
-interpreted only when reconstructed and exact signed scores agree and satisfy
-\(\rho<0.5\) (defined in \Cref{sec:method-reading-local-accounts}).
-\Cref{sec:readout-analyses} then works through score choice, token
-preferences, context shifts, attribution, and edits within that calibrated
-subset.
+flips concentrated near small exact margins. This calibration sets the
+operating regime for the rest of the section: we read feature decompositions
+when reconstructed and exact signed scores agree and satisfy \(\rho<0.5\)
+(defined in \Cref{sec:method-reading-local-accounts}). The subsequent analyses
+use this regime to examine score choice, token preferences, context shifts,
+attribution, and edits.
 
 \paragraph{Dense-Readout Preservation}\label{subsec:readout-replacement-fidelity}
 \begin{table}[t]
@@ -75,9 +74,9 @@ sign-preserved, low-error subset (\(\rho<0.5\), with
 \(\rho=|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/(|s_{\mathrm{exact}}|+0.5)\))
 covers \(0.69\)--\(0.89\) of contrasts per model.
 Errors and flips concentrate near small exact margins
-(\Cref{fig:readout-score-fidelity-result}). This score-level evidence defines
-the calibrated subset used below; small-margin scores enter only the aggregate
-statistics. Within this subset, reference-style contrasts and separated
+(\Cref{fig:readout-score-fidelity-result}). This score-level evidence supplies
+the subset used for the case studies; small-margin scores remain in the
+aggregate statistics. In this regime, reference-style contrasts and separated
 margins reconstruct more reliably than heterogeneous row combinations or
 small exact margins
 (\Cref{tab:benchmark-derived-readout-contrasts,tab:app-general-readout-score-families};
@@ -89,7 +88,8 @@ contrasts as fixed LM-head row combinations: answer-vs-distractor,
 abstention-vs-entity, label, and safe-vs-unsafe contrasts drawn from
 SQuAD2, HotpotQA, ContractNLI, LegalBench, and SecurityEval
 \citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}.
-These rows test readout-contrast reconstruction, not task accuracy. Across
+We use these rows as readout-contrast reconstruction tests rather than
+task-accuracy measurements. Across
 300 such contrasts, Qwen3.5-2B reaches median \(\rho=0.129\), sign agreement
 \(0.943\), and sign-preserved low-error coverage \(0.840\); Qwen3.5-0.8B
 reaches \(0.180\), \(0.983\), and \(0.933\). Per-family results span perfect
@@ -97,7 +97,8 @@ low-error coverage on ContractNLI labels to weaker SecurityEval safe/action
 contrasts: broader row combinations remain reconstructable but heterogeneous
 (\Cref{tab:benchmark-derived-readout-contrasts}).
 
-RowEV remains a capacity metric, not validation of any per-feature term.
+RowEV is therefore reported as a capacity metric; term-level interpretation
+comes from score-level residual and sign checks.
 
 \begin{figure}[t]
     \centering
@@ -145,20 +146,19 @@ lexical proximity between scored tokens; PCA at matched rank isolates dense
 low-rank geometry; shuffling sparse codes preserves the sparsity pattern but
 breaks the learned row--code assignment; random sparse patterns hold sparse
 capacity constant. The gap therefore supports learned sparse row-code structure
-in SRP's reconstructions; it does not establish that every label is
-semantically meaningful.
+in SRP's reconstructions; label interpretation is handled by the separate audit
+below.
 Full details are in Appendix~\ref{app:robustness-key-quantitative}.
 
 \section{Readout Analyses}
 \label{sec:readout-analyses}
 
-Working within the calibrated subset of \Cref{sec:results}, we use
-Qwen3.5-2B as the main analysis setting and report selected
-R1-Distill-Qwen-7B replications in the appendix. The cross-model results above
-support fidelity claims across the evaluated readouts; the analyses below show
-how the fixed SRP basis is used for local readout interpretation in this
-Qwen3.5-2B setting. All analyses describe what the fixed SRP basis records on
-realized forward passes; behavioral and causal claims require separate tests.
+The readout analyses use Qwen3.5-2B as the main low-error display setting and
+report selected R1-Distill-Qwen-7B replications in the appendix. The
+cross-model results above support fidelity claims across the evaluated
+readouts; the examples below show how the fixed SRP basis is used for local
+readout interpretation in this Qwen3.5-2B setting. The section is a set of
+readout-side analyses over realized forward passes.
 
 \begin{description}[leftmargin=!,labelwidth=2.7em]
     \item[RQ1:] Does an SRP decomposition reveal which features drive a
@@ -201,11 +201,11 @@ conventions and the label audit are in
 Appendix~\ref{app:display-taxonomy} and
 Table~\ref{tab:app-main-case-study-feature-audit}.
 
-Because labels are readability summaries, not ground-truth features, we
-audit them separately from the measured feature ids and signed terms
-(Appendix~\ref{app:main-case-study-feature-audit}). Of 99 claim-bearing
-labels, 67 are coherent lexical, 18 ambiguous, and 14 token-form; all 67
-coherent labels point to the signed side reported in the text.
+We treat feature labels as readability summaries of top rows and audit them
+separately from the measured feature ids and signed terms
+(Appendix~\ref{app:main-case-study-feature-audit}). Of 99 claim-bearing labels,
+67 are coherent lexical, 18 ambiguous, and 14 token-form; all 67 coherent labels
+point to the signed side reported in the text.
 
 \begin{figure}[t]
     \centering
@@ -263,10 +263,8 @@ decomposes as \(M_{c,i}(q)=\beta_i(q)\,h_c^\top d_i\).
     \label{fig:qwen-prism-dla-verify-assume-main}
 \end{figure}
 
-Each component thus yields a feature-resolved breakdown of the score rather
-than a single scalar margin contribution---a correlational decomposition of
-a realized forward pass; causal claims require interventions
-\citep{geiger2023causalabstraction}.
+Each component thus yields a feature-resolved breakdown of the realized score,
+extending the scalar DLA contribution into SRP coordinates.
 
 \Cref{fig:qwen-prism-dla-verify-assume-main} applies this to a Qwen3.5-2B
 \texttt{verify}-minus-\texttt{assume} logit difference, separating
@@ -320,12 +318,12 @@ No intervention & \(0.000\) & \(0.000\) & \(0.000\) & \(0.000\) \\
 discovery tokens transfer to evaluation tokens (flip rate \(0.359\)),
 matching the oracle's evaluation flip rate even though the evaluation tokens
 were never seen during selection; a discovery-token-only bias does not
-transfer at all (eval flip \(0.000\)). The trade-off is off-target
-distribution shift: the oracle achieves the same flips at median KL
-\(0.004\) because it uses the evaluation labels at intervention time, while
-SRP incurs median KL \(0.679\) because it acts through a shared basis rather
-than a token-specific penalty. Transfer from a fixed basis is the gain;
-broader distributional shift is the cost. The R1-Distill-Qwen-7B
-replication is in Appendix~\ref{app:lexical-control-stress-test}.
+transfer at all (eval flip \(0.000\)). The comparison separates transfer from
+distributional specificity. The oracle achieves the same flips at median KL
+\(0.004\) because it uses the evaluation labels at intervention time; SRP
+obtains transfer from discovery-selected basis directions, with broader
+distributional shift (median KL \(0.679\)) as the cost. The
+R1-Distill-Qwen-7B replication is in
+Appendix~\ref{app:lexical-control-stress-test}.
 
 \FloatBarrier
