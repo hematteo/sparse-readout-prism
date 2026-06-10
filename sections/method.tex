@@ -78,7 +78,12 @@ projection vector
     p(h)=D_{\mathrm{feat}}h .
 \]
 The coordinate \(p_i(h)\) records the alignment of \(h\) with readout feature
-\(i\).
+\(i\). The projection vector \(p(h)=D_{\mathrm{feat}}h\) is the inner term of
+the reconstructed logit \(\widehat{\ell}(h)\) above, so projecting and
+reconstructing are one operation seen from two sides: \(p(h)\) is the reusable,
+score-agnostic half, reusable across prompts, layers, or residual-stream
+components, and the row codes \(Z\) weight it into per-token logits only once a
+score is selected.
 
 \subsection{Decomposing Selected Readout Scores}
 \label{sec:method-local-score}

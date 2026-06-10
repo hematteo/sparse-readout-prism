@@ -14,7 +14,9 @@ The suite spans Qwen3.5~\citep{qwen35collection}, Gemma-4
 \citep{gemma4official,gemma4collection}, Ministral~\citep{liu2026ministral3},
 and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1};
 identifiers and selection criteria appear in
-Appendix~\ref{app:model-suite-selection}. We fit one readout factorizer per
+Appendix~\ref{app:model-suite-selection}. Because decomposing a fixed readout
+needs only the final weights, the suite is chosen by recency and spans three
+model families with base, instruction-tuned, and reasoning-distilled variants. We fit one readout factorizer per
 model to the rows of its final LM head and evaluate it on 10{,}000
 held-out C4 continuations per model
 \citep{raffel2020exploring,dodge2021documenting} together with a fixed
