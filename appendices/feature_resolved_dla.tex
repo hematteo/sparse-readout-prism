@@ -51,6 +51,31 @@ across residual-stream components. The component view is an additive
 decomposition over a realized forward pass; separate interventions complement
 it for circuit analysis \citep{geiger2023causalabstraction}.
 
+\Cref{fig:qwen-prism-dla-feature-heatmap} resolves the
+\texttt{verify}-minus-\texttt{assume} margin to individual readout features
+across residual-stream stages, rather than to the grouped semantics of the
+main-text figure. The margin is carried by several distinct same-family
+directions rather than a single one: verification and checking features supply
+the positive mass, concentrated in the later layers, against a smaller
+assumption-family group. The exact margin is \(+4.31\), the component
+attribution sum is \(+4.36\), and the sparse feature sum is \(+4.28\), with
+relative residual \(\rho=0.009\).
+
+\begin{figure}[!tbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_feature_heatmap.pdf}
+    \caption{\textbf{Feature-resolved component accounting.}
+    The \texttt{verify}-minus-\texttt{assume} margin decomposed by
+    residual-stream stage (rows) against individual sparse readout features
+    (columns) for Qwen3.5-2B. Red cells support \texttt{verify}; blue cells
+    support \texttt{assume}. The contrast is distributed over several
+    same-family feature directions, with the leading verification feature
+    dominant in the later layers. Exact margin \(+4.31\); component attribution
+    sum \(+4.36\); sparse feature sum \(+4.28\); relative residual
+    \(\rho=0.009\).}
+    \label{fig:qwen-prism-dla-feature-heatmap}
+\end{figure}
+
 \Cref{fig:qwen-prism-dla-verify-token-app} shows the vocabulary-mean contrast
 version. The prompt is the same source-verification prompt; the selected
 score is \(h^\top(w_{\mathrm{verify}}-\bar{w})\), whereas the main figure

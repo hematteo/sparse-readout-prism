@@ -34,4 +34,8 @@ readout-feature projections before score selection: when features become
 readout-readable, which residual components supply them, and when they become
 specific to a token, contrast, or competitor set. SRP-nominated terms then give
 targets for causal patching, ablation, and generation-level evaluation, the
-next tests for moving beyond additive readout decomposition.
+next tests for moving beyond additive readout decomposition. A further
+extension factorizes both sides of a selected margin at once, pairing an
+activation dictionary for \(h\) with the readout factorizer for \(q\) so that
+each term records the alignment between an activation-side feature and a
+readout-side feature.

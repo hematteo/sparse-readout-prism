@@ -144,3 +144,154 @@ compact enough to summarize, and token-boundary, special-token, row-norm,
 frequency, or tokenization-collision effects do not dominate the contrast. The
 remaining cases are retained as quantitative records under the same reporting
 rule.
+
+Each failing condition routes the reading to the part that still holds rather
+than discarding the case: when the residual dominates, only the selected score
+itself is read; when the reconstructed contrast flips sign, the exact contrast
+is used for direction alone; when the exact readout does not support the
+intended target, the score is reselected; when the contribution mass is too
+diffuse for a compact reading, the aggregated mass is reported in place of
+individual terms; and when a single-token contrast turns on token-boundary,
+special-token, row-norm, frequency, or tokenization-collision effects, the
+reading falls back to the safer token-family contrast. Naming the constraint
+and the reading it leaves in place is what gives the promoted displays their
+weight.
+
+\subsection{Selected-Score Bank Provenance}
+\label{app:query-bank-provenance}
+
+The selected-score banks define the analyzed object behind the headline
+fidelity numbers. A row record contains the prompt or hidden-state source,
+token ids or token-family strings before tokenization, the score-family label,
+tokenizer-audit fields, and the exact and reconstructed scores used to compute
+\(\rho\). \Cref{tab:app-query-bank-provenance} lists the source banks. The
+controlled A/B banks are deterministic synthetic probes that build
+benchmark-like margin types, not random samples from an external task
+benchmark; the separate C4 bank is sampled from C4 validation and supports the
+model-native replacement and frontier diagnostics rather than the controlled
+A/B score families. \Cref{tab:app-query-family-provenance} maps each main-text
+score family (\Cref{tab:app-general-readout-score-families}) to its source bank
+and gives a one-line definition of the score object, and
+\Cref{tab:app-query-bank-examples} shows representative A/B records.
+A separate benchmark-derived contrast bank builds answer-vs-distractor,
+abstention-vs-entity, label, and safe-vs-action readout contrasts from SQuAD2,
+HotpotQA, LegalBench (ContractNLI), and SecurityEval formats; it tests
+reconstruction of fixed readout contrasts rather than task accuracy, and its
+per-format results are in
+Table~\ref{tab:benchmark-derived-readout-contrasts}.
+
+\begin{table}[!tbp]
+\caption{\textbf{Source banks for the selected-score checks.} The main-text
+score-family table uses the model-native, curated A/B, and case-candidate banks
+at the fidelity-prioritized operating point; the C4 bank supports the separate
+model-facing replacement diagnostic.}
+\label{tab:app-query-bank-provenance}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{@{}p{0.18\linewidth}p{0.15\linewidth}XX@{}}
+\toprule
+Bank & Records & Score construction & Provenance \\
+\midrule
+Model-native prompts v2 &
+301 prompt records &
+Run-time top-1 contrasts against the vocabulary mean, a row-norm matched
+distractor, a sampled competitor, the rank-5 token, and the rank-2 token. &
+Hand-written prompt set: factual QA (50), instruction (30), paragraph (40),
+code (30), dialogue (30), retrieval-style updates (96), and safety/tool prompts
+(25). \\
+\addlinespace
+Curated A/B v2 &
+320 prompt-target records &
+Single-token \(A-B\) margins, plus abstention-family versus
+forced-answer-family margins. &
+Deterministic template expansion: 80 current-vs-stale, 80 source-vs-prior, 80
+action/tool, and 80 abstention cases. \\
+\addlinespace
+Case candidates v2 &
+40 prompt-target records &
+The same contrast types as the curated A/B bank, used for figure-candidate and
+coverage rows when tokenization checks pass. &
+16 action/tool, 8 source-vs-prior, 12 current-vs-stale, and 4 abstention
+records. \\
+\addlinespace
+C4 model-native v3 &
+10,000 prompt prefixes &
+Model-native replacement, top-token, KL, and top-1--top-2 frontier checks. &
+Sampled from \texttt{allenai/c4} English validation at pinned revision
+\texttt{1588ec45...}; seed 0; 110-word prefixes after length and
+control-character filters. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[!tbp]
+\caption{\textbf{How source banks map to the main-text score-family rows.}
+Cases count distinct base cases after tokenization filters at the
+fidelity-prioritized operating point; rows count evaluated model--case cells
+across the five-model Qwen/Gemma suite.}
+\label{tab:app-query-family-provenance}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{@{}p{0.24\linewidth}p{0.22\linewidth}rrX@{}}
+\toprule
+Score family & Source bank & Cases & Rows & Score object \\
+\midrule
+top1 vs vocab mean & Model-native prompts v2 & 301 & 1505 &
+Exact top token against the vocabulary-mean row. \\
+top1 vs row-norm distractor & Model-native prompts v2 & 301 & 1505 &
+Exact top token against a sampled row-norm matched distractor. \\
+source vs prior & Curated A/B + case candidates & 82 & 392 &
+Source-supported answer against a plausible prior answer. \\
+action/tool alternatives & Curated A/B + case candidates & 96 & 480 &
+Task-appropriate action against a plausible wrong action. \\
+abstention family & Curated A/B + case candidates & 84 & 420 &
+Mean abstention-token family against forced-answer tokens. \\
+current vs stale & Curated A/B + case candidates & 92 & 460 &
+Current or corrected value against an earlier stale value. \\
+top1 vs sampled competitor & Model-native prompts v2 & 301 & 1505 &
+Exact top token against a sampled lower-ranked competitor. \\
+top1 vs top5 competitor & Model-native prompts v2 & 301 & 1505 &
+Exact top token against the rank-5 token. \\
+top1 vs top2 competitor & Model-native prompts v2 & 301 & 1505 &
+Exact top token against the rank-2 token. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[!tbp]
+\caption{\textbf{Representative A/B prompt records.} Representative rows from the
+synthetic controlled banks, used as controlled readout-margin probes rather than
+task-benchmark samples. The full bank is machine-readable.}
+\label{tab:app-query-bank-examples}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{@{}p{0.16\linewidth}Xp{0.21\linewidth}@{}}
+\toprule
+Family & Prompt ending & Specified contrast \\
+\midrule
+current vs stale &
+\texttt{Initial note: the password was blue. Update: the password is now red.
+The current password is} &
+\texttt{red} minus \texttt{blue} \\
+\addlinespace
+source vs prior &
+\texttt{The document says: ``The meeting city is Paris.'' Ignore prior
+assumptions. The meeting city is} &
+\texttt{Paris} minus \texttt{Lyon} \\
+\addlinespace
+action/tool &
+\texttt{The request is ambiguous and might damage files. The appropriate next
+action is to} &
+\texttt{ask} minus \texttt{run} \\
+\addlinespace
+abstention family &
+\texttt{The passage says Alice owns a key. It does not say her favorite color.
+Alice's favorite color is} &
+mean(\texttt{unknown}, \texttt{Unknown}, \texttt{unclear}, \texttt{not}) minus
+forced-color tokens \\
+\bottomrule
+\end{tabularx}
+\end{table}

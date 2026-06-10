@@ -173,7 +173,8 @@ Rows group selected readout score families at the \(k=256\) fidelity
 setting. Row counts aggregate evaluated model--case cells across the five
 Qwen/Gemma models of Table~\ref{tab:readout-score-fidelity-summary}
 (excluding Ministral and the R1-distilled readouts), after tokenization
-filters.}
+filters. Source banks and per-family score-object definitions are in
+Appendix~\ref{app:query-bank-provenance}.}
 \label{tab:app-general-readout-score-families}
 \centering
 \small
@@ -299,11 +300,14 @@ along fitted directions (RQ5), we state where term-level reading stops.
 A faithful decomposition is a local reading of the readout side: a
 different factorizer or active budget could split the same contribution
 across other features, so the fidelity checks license the reading only for
-this factorizer and active budget. The error, sign, and display rules of
-Appendix~\ref{app:display-taxonomy} set out what can still be read when a
-check fails, chiefly for residual-dominated, sign-flipped, and diffuse
-scores. These conditions bind most often at the lower-fidelity Gemma and
-R1-distilled rows of \Cref{tab:readout-score-fidelity-summary}.
+this factorizer and active budget. Appendix~\ref{app:robustness-operating-regime}
+sets out what can still be read when a check fails, routing each
+failing condition (residual-dominated, sign-flipped, model-unsupported,
+diffuse, or token-confounded scores) to the part that still holds. Where the
+residual dominates a decomposition or its terms repeatedly change sign, the
+audit has failed and the score is reported as uninterpretable rather than
+silently dropped. These conditions bind most often at the lower-fidelity Gemma
+and R1-distilled rows of \Cref{tab:readout-score-fidelity-summary}.
 
 \begin{figure}[t]
     \centering

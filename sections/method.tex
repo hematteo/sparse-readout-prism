@@ -1,8 +1,16 @@
 \section{Method: Sparse Readout Prism}
 \label{sec:method}
 
-For hidden state \(h\in\R^d\), the dense LM head produces logit vector
-\(\ell(h)=\WU h\). SRP has three stages: factorize the LM head into a sparse
+We take \(h\in\R^d\) to be the residual-stream vector after the model's final
+normalization (LayerNorm or RMSNorm), the input the unembedding multiplies; the
+logit for token \(t\) is then the exact bilinear identity \(\ell_t(h)=h^\top w_t\),
+with normalization folded into \(h\) so the readout under analysis is \(\WU\)
+alone. Stacking rows, the dense LM head produces \(\ell(h)=\WU h\). The captured
+\(h\) reproduces the model readout with no additional post-readout transform
+(Gemma's logit softcap is the one model-specific exception, handled in
+Appendix~\ref{app:readout-factorizer-diagnostics-reproducibility}), so every
+additive account below sums to the model's own score rather than an
+approximation of it. SRP has three stages: factorize the LM head into a sparse
 readout basis (\S\ref{sec:method-factorization}), project hidden states onto
 the resulting directions (\S\ref{sec:method-feature-projections}), and define
 selected readout scores whose decomposition splits into per-feature
@@ -75,7 +83,11 @@ The coordinate \(p_i(h)\) records the alignment of \(h\) with readout feature
 \subsection{Decomposing Selected Readout Scores}
 \label{sec:method-local-score}
 
-A selected readout score is a fixed linear combination of LM-head rows. Let
+A selected readout score is a fixed linear combination of LM-head rows.
+Selecting one fixes, before any feature term is read, where the hidden state is
+taken (source and position) and what defines the score (token ids, coefficient
+vector, and score family), together with the tokenization filters, competitors,
+references, and split assignments that frame the contrast. Let
 \(\alpha\in\R^{|\mathcal{V}|}\) be vocabulary-row coefficients and define the
 selected readout direction and score
 \[
@@ -106,7 +118,8 @@ groups, write
 \]
 For top-competitor margins, the target row, competitor set, and nonnegative
 weights (summing to one) are taken from the original LM-head ranking computed
-before SRP is applied.
+before SRP is applied. This stops the reconstructed readout from choosing the
+comparison set it is later evaluated against.
 
 \begin{figure}[t]
     \centering
@@ -208,17 +221,26 @@ Selected score family & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
 
 \paragraph{Reading rule.}
 \label{sec:method-reading-local-accounts}
-We interpret local feature terms only after a reconstruction check. For each
-selected score, we report exact and reconstructed scores, feature sum, offset
-when present, residual, and relative reconstruction error
+Adding the residual back to the reconstructed score recovers the exact score, so
+the decomposition always balances arithmetically; whether it can be interpreted
+is a separate question that four checks decide. The \emph{replacement check} is
+global: it asks whether substituting \(\widehat{\WU}\) for \(\WU\) preserves
+model-facing behavior, measured by rowEV together with top-token agreement and
+KL on held-out hidden states (\S\ref{subsec:readout-replacement-fidelity}), since
+a factorizer can match rowEV yet still fail on the specific logits being
+interpreted. The remaining three turn to the selected score. For each one we
+report exact and reconstructed scores, feature sum, offset when present,
+residual, and relative reconstruction error
 \[
     \rho(h,\alpha)=
     \frac{|s_{\mathrm{exact}}-s_{\mathrm{recon}}|}
          {|s_{\mathrm{exact}}|+0.5}.
 \]
-Feature bars are interpreted only when \(\rho<0.5\); for signed contrasts,
-\(s_{\mathrm{exact}}\) and \(s_{\mathrm{recon}}\) must also share sign before
-we read support or opposition. Displayed bars may be truncated, but feature
-sums and residuals always use the full decomposition. We therefore tie claims
-to feature ids, signed contributions, and residuals, with labels used as
-summaries \citep{karvonen2025saebench,makelov2024principled}.
+The \emph{score} and \emph{residual} checks read feature bars only when
+\(\rho<0.5\); the \emph{sign check} additionally requires \(s_{\mathrm{exact}}\)
+and \(s_{\mathrm{recon}}\) to share sign before support or opposition is read,
+because a small \(\rho\) bounds the size of the reconstruction error but not its
+direction, and direction is what the sign decides. Displayed bars may be
+truncated, but feature sums and residuals always use the full decomposition. We
+therefore tie claims to feature ids, signed contributions, and residuals, with
+labels used as summaries \citep{karvonen2025saebench,makelov2024principled}.
