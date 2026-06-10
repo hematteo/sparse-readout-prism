@@ -1,24 +1,28 @@
 \begin{abstract}
-Logit-lens-style methods inspect hidden states by projecting them through the
-LM head and reading vocabulary logits, rankings, or logit differences. After a
-token or contrast is selected, the inspected quantity is a dense dot product
-with an LM-head row or row combination. We introduce Sparse Readout Prism
-(SRP), a sparse feature decomposition that expands that score into supporting
-and opposing readout directions plus an explicit residual.
-SRP factorizes the LM head into shared \emph{readout features} and sparse
-output-token row coefficients. It projects hidden states onto this
-basis once; for any selected token logit, logit difference, or fixed row
-combination, SRP decomposes the score into signed feature contributions in
-original logit units plus an explicit residual.
+Logit-lens-style methods inspect hidden states by projecting them through
+the LM head and reading vocabulary logits, rankings, or logit differences.
+Once a token or contrast is selected, the inspected quantity is a dense dot
+product with an LM-head row or row combination, so the lens reports which
+token a context prefers but not which readout directions carry that
+preference. We introduce Sparse Readout Prism (SRP), which factorizes the
+LM head into shared \emph{readout features} with sparse output-token row
+coefficients. Hidden states are projected onto this basis once; any
+selected token logit, logit difference, or fixed row combination then
+decomposes into signed per-feature contributions plus an explicit
+residual, in original logit units.
 
-The same basis composes with residual-stream attribution and supplies
-candidate directions for constrained readout-side edits. Across eight models,
-SRP preserves held-out contrast signs on at least \(91\%\) of logit differences.
-In the matched Qwen3.5-2B baseline comparison, it improves over nearest-row ridge,
-matched-rank PCA, and shuffled/random sparse-code controls in median
-reconstruction error and sign-preserved low-error coverage. Fidelity varies
-by score family and falls as a contrast approaches a near-tie, so the
-reported diagnostics gate which feature terms are read. Within that regime,
-SRP lets researchers compare token preferences, component attributions, and
-readout-side edits in a shared sparse basis.
+Across eight models, SRP reconstructs centered unembedding rows at
+explained variance \(0.83\)--\(0.89\) and preserves held-out contrast
+signs on at least \(91\%\) of logit differences; on Qwen3.5-2B it improves
+over nearest-row ridge, dense PCA references including a
+compactness-matched point, and shuffled/random sparse-code
+controls in median reconstruction error and sign-preserved low-error
+coverage. Fidelity varies by score family and falls as a contrast
+approaches a near-tie, so the reported diagnostics gate which feature
+terms are read. Within that regime, the basis turns lens scores into
+readout-level analyses: polysemous contrasts decompose into competing
+sense features reweighted by prompt context, direct logit attribution
+refines into component-by-feature terms, and discovery-selected decoder
+directions drive constrained lexical edits that transfer to held-out
+tokens at a measured distribution-shift cost.
 \end{abstract}

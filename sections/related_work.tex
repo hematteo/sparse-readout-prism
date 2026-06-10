@@ -16,7 +16,16 @@ Output-embedding work studies how weight tying
 softmax rank and next-token target geometry
 \citep{yang2018softmaxbottleneck,zhao2024implicit}, and tokenizer
 segmentation \citep{bostrom2020bpe} shape the rows used for vocabulary
-scoring. A
+scoring. Sparse coding of type-level embedding matrices is an established
+NLP tool: non-negative sparse embeddings \citep{murphy2012nnse}, sparse
+overcomplete word vectors \citep{faruqui2015sparse}, SPINE
+\citep{subramanian2018spine}, and sparse sense-atom decompositions of
+polysemous vectors \citep{arora2018polysemy} all recover interpretable
+sparse codes from static word-embedding rows. SRP carries this row-side
+approach to the LM head of a trained transformer and ties it to the
+lens-score interface, where the dictionary is judged by LM-head
+replacement and selected-score reconstruction and its codes enter signed
+per-feature accounts of realized logits. A
 parallel sparse-dictionary line targets the hidden-state factor \(h\) of a
 lens score \(h^\top q\): activation-SAEs learn overcomplete bases for \(h\)
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,templeton2024scaling},

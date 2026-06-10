@@ -241,6 +241,14 @@ residual, and relative reconstruction error
     \frac{|s_{\mathrm{exact}}-s_{\mathrm{recon}}|}
          {|s_{\mathrm{exact}}|+0.5}.
 \]
+The additive constant keeps \(\rho\) finite at near-tie scores and changes what
+the gate measures there: at large \(|s_{\mathrm{exact}}|\) the criterion is
+relative, while as the score approaches zero it tightens to an absolute bound
+(reconstruction error below \(0.25\) logit units at the \(\rho<0.5\) gate), so
+near-tie decompositions pass only with small absolute error. Single-score
+identity checks on well-separated margins instead report the unfloored ratio
+\(|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/|s_{\mathrm{exact}}|\), marked
+\emph{unfloored} where used.
 The \emph{score} and \emph{residual} checks read feature bars only when
 \(\rho<0.5\); the \emph{sign check} additionally requires \(s_{\mathrm{exact}}\)
 and \(s_{\mathrm{recon}}\) to share sign before support or opposition is read,

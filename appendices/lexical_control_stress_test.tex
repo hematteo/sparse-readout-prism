@@ -131,7 +131,18 @@ Reference condition. \\
 Table~\ref{tab:lexical-control-primary-methods} reports the key intervention
 comparison: the readout SAE direction edit matches the oracle token bias held-out flip rate
 while using only directions selected from discovery tokens, whereas the equally
-informed discovery token bias has zero held-out effect. The KL column records
+informed discovery token bias has zero held-out effect. The match is exact
+because scale 16 saturates the evaluation. A candidate can flip only when
+the unedited model prefers the profane side, which holds for 23 of the 64
+held-out and 36 of the 80 discovery candidates; at scale 16 the SAE
+direction edit and the oracle flip exactly the same 23 held-out
+candidates, so both rates equal the ceiling
+\(23/64=0.359\) (cluster-bootstrap 95\% CI \(0.250\)--\(0.469\) for both
+methods). The methods separate below saturation: at scale 4 the oracle
+flips 20 of the 23 against the SAE edit's 11 (intersection 10), and the
+oracle saturates by scale 6 while the SAE edit reaches the ceiling
+at scale 12. KL summaries cluster at the prompt level, since
+the 16 prompts are shared across both splits. The KL column records
 the distributional cost of each edit. Across the dose-response sweep, the
 discovery flip rate under the
 readout SAE direction edit increases monotonically from \(0.038\) to

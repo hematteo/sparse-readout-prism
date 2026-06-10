@@ -38,6 +38,12 @@ For the zero-sum contrasts used in the figures, \(O_c(q)=0\). We therefore repor
 two separate gaps: the DLA additivity error between \(h^\top q\) and
 \(\sum_c h_c^\top q\), and the readout SAE residual \(h^\top r_q\) (or its
 componentized version \(\sum_c R_c(q)\) under the same DLA approximation).
+Because these identity checks sit on well-separated margins, the relative
+residuals quoted in this appendix and in the corresponding main-text figures
+are the unfloored ratio
+\(|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/|s_{\mathrm{exact}}|\)
+(\S\ref{sec:method-reading-local-accounts}), computed on full-precision
+margins before display rounding.
 The difference between \(h^\top q\) and a componentized feature-only sum
 \(\sum_{c,i}M_{c,i}(q)\) contains both sources unless the residual and DLA
 additivity terms are included separately.

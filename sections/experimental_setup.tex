@@ -22,11 +22,36 @@ held-out C4 continuations per model
 \citep{raffel2020exploring,dodge2021documenting} together with a fixed
 prompt-and-score set.
 
+\paragraph{Contrast banks.}
+Selected scores come from fixed, model-agnostic banks
+(Appendix~\ref{app:query-bank-provenance}). A hand-written set of 301
+prompts spanning factual QA, instruction, paragraph, code, dialogue,
+retrieval-update, and safety/tool settings supplies model-native contrasts
+built from each model's own ranking: top-1 against the vocabulary mean, a
+row-norm-matched distractor, a sampled competitor, and the rank-5 and
+rank-2 tokens. A curated A/B bank of 320 template-expanded records,
+supplemented by 40 case-candidate records of the same types,
+supplies the current-vs-stale, source-vs-prior, action/tool, and
+abstention families; per-tokenizer single-token filters on
+length, frequency, whitespace, capitalization, row norm, special-token
+status, and collisions
+leave 82--96 cases per family. The banks are held out by construction:
+factorizers are trained on LM-head rows and selected on
+row-reconstruction, replacement, and code-usage metrics, with the
+contrast set reserved for post-selection evaluation.
+Aggregates cluster items by base case (one prompt--score template with
+its variants), the resampling unit for bootstrap intervals; the Qwen3.5-2B
+baseline comparison uses the full 1{,}348-item set over 848 base cases. A
+separate benchmark-derived bank contributes 300 fixed row combinations
+for each of two Qwen models
+(\Cref{subsec:selected-score-reconstruction}).
+
 \paragraph{Calibration metrics and baselines.}
 Calibration has three components. \emph{Basis} metrics measure held-out
 row reconstruction and LM-head replacement. \emph{Score} metrics measure
 sign preservation and relative error for selected logits, contrasts, and
-margins. \emph{Baselines} are nearest-row ridge, matched-rank PCA,
+margins. \emph{Baselines} are nearest-row ridge, dense PCA references
+(including a point matched to SRP's realized per-score compactness),
 shuffled sparse codes, and random sparse patterns. Feature contributions are
 reported for sign-preserved, low-error accounts; feature labels serve as
 descriptive aids, while the measured objects are feature ids, signed

@@ -189,4 +189,23 @@ metrics are rowEV, top-1 agreement, KL in bits, sparse code usage, and the
 selected-score reconstruction error and sign agreement defined above.
 \endgroup
 
+\paragraph{Compute and software.}
+Readout-SAE training and the headline evaluations ran on a single NVIDIA
+A40 per job on an academic Slurm cluster; a 24\,GB-class GPU
+suffices for inference and evaluation, and training the larger readouts
+(e.g.\ Qwen3.5-9B) wants roughly 40\,GB. One
+readout factorizer costs about 6--12 A40 GPU-hours depending on vocabulary
+size and dictionary width (the Ministral-3-8B \(131072\times4096\) head
+takes 12.2\,h at \(32\times\), \(k=256\), and 6.3\,h at \(16\times\),
+\(k=128\), for 20k steps); the three-model constrained-edit evaluation
+totals about 2.5 GPU-hours. Selected-score fidelity evaluations for the
+three late-added models ran on a single rented cloud GPU, and some figure
+and analysis passes ran on Apple Silicon (PyTorch
+MPS, bfloat16). Experiments use Python 3.11--3.12 with pinned
+dependencies, including \texttt{torch} 2.7.1 (CUDA 11.8) on the cluster
+and \texttt{torch} 2.12.0 on Apple Silicon,
+\texttt{transformers} 5.9.0, \texttt{numpy} 2.4.6,
+\texttt{datasets} 4.8.5, and \texttt{safetensors} 0.7.0; the released
+code includes the full lockfile.
+
 \ReadoutSAEFloatBarrier

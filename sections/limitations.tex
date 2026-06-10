@@ -16,8 +16,10 @@ Logit lens and standard direct logit attribution require no fitting; SRP
 requires training a sparse autoencoder over the rows of \(\WU\). The fit is
 one-time per model and amortizes across downstream readout analyses, and
 because the target is a fixed \(|V|\)-row matrix rather than a hidden-state
-distribution, the cost is well below that of activation SAEs. Selected-score
-decompositions on new hidden states are forward-pass only.
+distribution, the cost is roughly 6--12 GPU-hours per model on a single
+NVIDIA A40
+(Appendix~\ref{app:readout-factorizer-diagnostics-reproducibility}).
+Selected-score decompositions on new hidden states are forward-pass only.
 
 \paragraph{Hyperparameter dependence.}
 As in other sparse dictionary settings, the learned basis depends on

@@ -18,6 +18,10 @@ Model-family-specific activation-SAE releases include Gemma Scope and
 Qwen-Scope \citep{lieberum2024gemmascope,deng2026qwenscope}, and recent
 weight-based SAE interpretation studies how activation-SAE features interact
 with model weights and output-token effects \citep{liu2026weightbasedsae}.
+A separate line trains SAEs on the outputs of dense text-embedding models
+\citep{oneill2024disentangling}; those dictionaries decompose embedding
+vectors computed for inputs, whereas SRP decomposes the weight rows of the
+LM head itself.
 Crosscoders extend dictionary learning across layers, models, or training
 time within a shared feature space \citep{lindsey2024crosscoders}, with
 crosscoder-specific sparsity artifacts documented in chat-model diffing

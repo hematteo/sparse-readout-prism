@@ -78,13 +78,13 @@ the subset used for the case studies; small-margin scores remain in the
 aggregate statistics. In this regime, reference-style contrasts and separated
 margins reconstruct more reliably than heterogeneous row combinations or
 small exact margins
-(\Cref{tab:benchmark-derived-readout-contrasts,tab:app-general-readout-score-families};
+(\Cref{tab:benchmark-derived-readout-contrasts,tab:readout-score-families};
 Appendix~\ref{app:selected-readout-score-family-display-example}). The case
 studies that follow are drawn from this subset.
 
 Beyond hand-picked token pairs, we instantiate benchmark-derived readout
 contrasts as fixed LM-head row combinations: answer-vs-distractor,
-abstention-vs-entity, label, and safe-vs-unsafe contrasts drawn from
+abstention-vs-entity, label, and safe-vs-action contrasts drawn from
 SQuAD2, HotpotQA, LegalBench (ContractNLI), and SecurityEval
 \citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}.
 We use these rows as readout-contrast reconstruction tests rather than
@@ -115,9 +115,11 @@ interpretation comes from score-level residual and sign checks.
 \paragraph{Sparse Structure Versus Baselines}\label{subsec:baseline-comparisons}
 \begin{table}[t]
 \caption{\textbf{Null and reference baselines for Qwen3.5-2B.}
-Full baseline/null logit-difference set: 1,348 items over 848 bootstrap
-clusters. Lower median \(\rho\) and higher Sign / Sign \& \(\rho<0.5\) are
-better.}
+Full baseline/null logit-difference set: 1,348 items over 848 base-case
+bootstrap clusters. Lower median \(\rho\) and higher Sign / Sign \&
+\(\rho<0.5\) are better. ``Matched'' marks the PCA point whose per-score
+compactness matches SRP's (median features carrying \(80\%\) of absolute
+contribution mass: 78 against 76).}
 \label{tab:main-baseline-null-comparison}
 \centering
 \scriptsize
@@ -130,6 +132,7 @@ Method & Med. \(\rho\) & Sign & \makecell{Sign \&\\ \(\rho<0.5\)} \\
 Sparse Readout Prism & 0.081 & 0.941 & 0.774 \\
 Nearest-row ridge & 0.260 & 0.861 & 0.622 \\
 PCA, 1024 dims & 0.470 & 0.829 & 0.539 \\
+PCA, 256 dims (matched) & 0.651 & 0.781 & 0.272 \\
 Shuffled sparse codes & 1.090 & 0.502 & 0.081 \\
 Random sparse pattern & 1.141 & 0.407 & 0.069 \\
 \bottomrule
@@ -139,19 +142,28 @@ Random sparse pattern & 1.141 & 0.407 & 0.069 \\
 For the full logit-difference set used in this baseline comparison, SRP attains
 lower median error and a larger sign-preserved low-error subset than nearest-row ridge
 \citep{hoerl1970ridge}, PCA \citep{jolliffe2002principal}, shuffled sparse
-codes, and random sparse patterns (\Cref{tab:main-baseline-null-comparison}).
+codes, and random sparse patterns (\Cref{tab:main-baseline-null-comparison});
+cluster-bootstrap intervals separate SRP from the closest reference
+(coverage \(0.774\), 95\% CI \(0.755\)--\(0.792\), against \(0.622\), CI
+\(0.603\)--\(0.643\), for ridge).
 Each baseline tests a different alternative explanation: ridge isolates
-lexical proximity between scored tokens; PCA at matched rank isolates dense
-low-rank geometry; shuffling sparse codes preserves the sparsity pattern but
-breaks the learned row--code assignment; random sparse patterns hold sparse
-capacity constant. The gap therefore supports learned sparse row-code structure
+lexical proximity between scored tokens; shuffling sparse codes preserves
+the sparsity pattern but breaks the learned row--code assignment; random
+sparse patterns hold sparse capacity constant. PCA at 1024 components is
+the generous dense reference; at SRP's realized per-score compactness (a
+median of 76 features carries \(80\%\) of absolute contribution mass,
+against 78 for PCA-256) the dense reference drops to coverage \(0.272\).
+The null collapse replicates across models: on all five Qwen/Gemma
+readouts, shuffled codes and random support lower coverage by \(58\)--\(71\)
+points (\Cref{tab:app-cross-model-nulls}). The gap therefore supports
+learned sparse row-code structure
 in SRP's reconstructions; label interpretation is handled by the separate audit
 below.
 Full details are in Appendix~\ref{app:robustness-key-quantitative}.
 
 \paragraph{Fidelity Varies by Score Family}\label{subsec:score-family-fidelity}
 The factorization reconstructs some score families more faithfully than
-others. \Cref{tab:app-general-readout-score-families} reports sign
+others. \Cref{tab:readout-score-families} reports sign
 agreement and median relative residual by family at the \(k=256\)
 comparison point. Reconstruction difficulty tracks how close the
 competitor sits to the selected token: vocabulary-mean and reference-row
@@ -162,6 +174,16 @@ competitor). Difficulty rises as the competitor nears a tie, where the
 current-vs-stale and top1-vs-top2 margins reach \(\rho=0.525\) and
 \(0.551\), both above the \(\rho<0.5\) interpretation gate, so their
 feature terms are read only where the residual and sign checks pass.
+The pattern has a structural cause: the contrast residual
+\(h^\top(r_A-r_B)\) is set by the unembedding-row residuals and contains
+no term that scales with the margin, so relative error grows as a
+contrast approaches a tie, where the floored \(\rho\) reduces to an
+absolute-error bound (\S\ref{sec:method-reading-local-accounts}).
+Near-tie margins are also the contrasts that decide model behavior, so
+the gate excludes some of the scores a user may care most about; a
+near-tie account that passes carries an error bound comparable to the
+margin itself, and we read its terms as evidence about composition,
+with the decision left to the exact margin.
 Because reconstruction difficulty depends on which family is selected,
 SRP keeps the choice of readout direction explicit and reports the
 residual and sign behavior that determine when feature terms can be
@@ -175,7 +197,7 @@ Qwen/Gemma models of Table~\ref{tab:readout-score-fidelity-summary}
 (excluding Ministral and the R1-distilled readouts), after tokenization
 filters. Source banks and per-family score-object definitions are in
 Appendix~\ref{app:query-bank-provenance}.}
-\label{tab:app-general-readout-score-families}
+\label{tab:readout-score-families}
 \centering
 \small
 \setlength{\tabcolsep}{5pt}
@@ -212,29 +234,24 @@ readout interpretation in this Qwen3.5-2B setting. The section is a set of
 readout-side analyses over realized forward passes.
 
 \begin{description}[leftmargin=!,labelwidth=2.7em]
-    \item[RQ1:] Does an SRP decomposition reveal which features drive a
-    logit-lens score on a single contrast?
-    \item[RQ2:] Do the features SRP places on each side of a
+    \item[RQ1:] Do the features SRP places on each side of a
     token-vs-token contrast correspond to interpretable lexical groups?
-    \item[RQ3:] Does prompt context reweight the features contributing to
+    \item[RQ2:] Does prompt context reweight the features contributing to
     a fixed token's logit?
-    \item[RQ4:] Do SRP feature terms compose with residual-stream component
+    \item[RQ3:] Do SRP feature terms compose with residual-stream component
     attribution?
-    \item[RQ5:] Do the learned decoder directions support constrained
+    \item[RQ4:] Do the learned decoder directions support constrained
     lexical edits on held-out tokens?
 \end{description}
 
-\paragraph{Lens Preferences Become Sparse Readout Accounts [RQ1]}\label{subsec:lens-to-sparse-account}
+\paragraph{Logit Differences Expose Competing Features [RQ1]}\label{subsec:feature-competition}\label{subsec:lens-to-sparse-account}
 Lens-style readouts identify a favored token or contrast but leave it as a
-dense LM-head dot product. In \Cref{fig:main-lens-prism-comparison}, SRP holds
-the \texttt{bug}-minus-\texttt{insect} score fixed and decomposes it into
-signed readout terms plus an explicit residual. Positive and negative terms
-support or oppose the chosen side, replacing the single dense score with a
-signed, sparse account in logit units.
-
-\paragraph{Logit Differences Expose Competing Features [RQ2]}\label{subsec:feature-competition}
-Beyond a single contrast, the signed features SRP places on each side of a
-token-vs-token contrast typically cohere as lexical groups. As the score
+dense LM-head dot product; in \Cref{fig:main-lens-prism-comparison}, SRP
+holds the \texttt{bug}-minus-\texttt{insect} score fixed and decomposes it
+into signed readout terms plus an explicit residual, in logit units. The
+signed features such a decomposition places on each side of the contrast
+often cohere as lexical groups; the label audit below quantifies how
+often. As the score
 \(q\) changes, a given feature may support a token, oppose it, or drop out
 after mean subtraction, and the decomposition reads off this competition
 directly from the signed terms. The opening figure showed the
@@ -258,11 +275,15 @@ Table~\ref{tab:app-main-case-study-feature-audit}.
 
 We treat feature labels as readability summaries of top rows and audit them
 separately from the measured feature ids and signed terms
-(Appendix~\ref{app:main-case-study-feature-audit}). Of 99 claim-bearing
+(Appendix~\ref{app:main-case-study-feature-audit}). The audit is an
+author-conducted comparison of each claim-bearing label against its
+feature's top unembedding rows. Of 99 claim-bearing
 labels, 85 name a coherent lexical family and 14 are token-form surface
 artifacts; 66 of the 85 coherent families are on-target, with the sense
 matching the panel's named family and the signed term pointing to the
-claimed side. Panel-level claims use only that on-target subset.
+claimed side. Panel-level claims use only that on-target subset, and the
+one third of labels that fail the audit bound how far label-level
+readings generalize beyond it.
 
 \begin{figure*}[t]
     \centering
@@ -283,7 +304,7 @@ claimed side. Panel-level claims use only that on-target subset.
     \label{fig:selected-readout-prism-examples}
 \end{figure*}
 
-\paragraph{Context Reweights Fixed Token-Row Features [RQ3]}\label{subsec:context-reweighting}
+\paragraph{Context Reweights Fixed Token-Row Features [RQ2]}\label{subsec:context-reweighting}
 Holding the token fixed isolates context effects: the row-side coefficients
 \(z_{t,i}\) are frozen by the token, and only the projections \(p_i(h)\) vary
 across prompts (\Cref{sec:method-local-score}). In
@@ -297,8 +318,8 @@ decomposition without changing its row-side coefficients. Additional views
 are in Appendix~\ref{app:additional-qwen-display-examples}.
 
 \paragraph{Where Term-Level Reading Stops}\label{subsec:interpretation-boundary}
-Before composing feature terms with component attribution (RQ4) and editing
-along fitted directions (RQ5), we state where term-level reading stops.
+Before composing feature terms with component attribution (RQ3) and editing
+along fitted directions (RQ4), we state where term-level reading stops.
 A faithful decomposition is a local reading of the readout side: a
 different factorizer or active budget could split the same contribution
 across other features, so the fidelity checks license the reading only for
@@ -324,7 +345,7 @@ and R1-distilled rows of \Cref{tab:readout-score-fidelity-summary}.
     \label{fig:same-token-polysemy}
 \end{figure}
 
-\paragraph{Readout Features Compose with Component Attribution [RQ4]}\label{sec:feature-resolved-component-decomposition}\label{subsec:feature-resolved-component-attribution}
+\paragraph{Readout Features Compose with Component Attribution [RQ3]}\label{sec:feature-resolved-component-decomposition}\label{subsec:feature-resolved-component-attribution}
 Signed readout terms are linear in \(h\), so direct logit attribution (DLA)
 composes with the fixed SRP basis. DLA decomposes \(h\) into embedding,
 attention-head, and MLP-layer contributions and reads each component's logit
@@ -355,28 +376,33 @@ source-checking token \texttt{verify} over the assumption token
 which components carry it; the feature-resolved view separates
 verification/checking support from assumption-family opposition. The exact
 margin is \(+4.31\); DLA sums to \(+4.36\) (component additivity error
-\(+0.05\)) and the sparse-feature sum is \(+4.28\) (\(\rho=0.009\)). A
+\(+0.05\)) and the sparse-feature sum is \(+4.28\) (unfloored
+\(\rho=0.009\); \S\ref{sec:method-reading-local-accounts}). A
 row-centered companion appears in Appendix~\ref{app:feature-resolved-dla}.
 
-\paragraph{Readout Features Support Constrained Lexical Edits [RQ5]}\label{subsec:constrained-readout-edits}
+\paragraph{Readout Features Support Constrained Lexical Edits [RQ4]}\label{subsec:constrained-readout-edits}
 The learned decoder directions also serve as edit directions: subtracting a
 fixed multiple of a decoder direction from the final hidden state lowers the
 logits of tokens that load positively on that direction. We test this as a
 readout-side stress test in a constrained lexical-score setting. Five discovery terms select ten
-Qwen3.5-2B decoder directions; the edit is then applied to a disjoint set
-of evaluation tokens. A ``flip'' counts when the top-1 next token moves
-away from the target word under the edit. Two logit-bias baselines bracket
+Qwen3.5-2B decoder directions; the edit is then evaluated on candidate
+pairs built from held-out terms disjoint from the discovery set. A
+``flip'' counts when the top-1 next token moves
+away from the target term under the edit. Two logit-bias baselines bracket
 the readout-feature direction edit. The \emph{discovery token bias} subtracts a fixed
-logit penalty from the five discovery tokens only and so by construction
+logit penalty from the five discovery terms' token ids only and so by
+construction
 cannot transfer beyond them. The \emph{oracle token bias} applies the same
-penalty directly to the held-out evaluation tokens---an upper bound that
+penalty directly to the held-out terms, an upper bound that
 uses the evaluation labels at intervention time.
 
 \begin{table}[H]
 \caption{\textbf{Constrained Qwen3.5-2B readout-side lexical edit.}
-All methods use intervention scale \(16\). Discovery flip is measured on tokens
-used to select the directions; evaluation flip and \(\Delta p_{\mathrm{bad}}\)
-are measured on separate tokens not used during selection.
+All methods use intervention scale \(16\), the saturating point of a
+ten-scale dose-response sweep. Discovery flip is measured on candidate
+pairs built from the five discovery terms (\(n=80\)); evaluation flip and
+\(\Delta p_{\mathrm{bad}}\) use pairs built from held-out terms
+(\(n=64\)) not used during selection, over 16 shared prompts.
 \(\Delta p_{\mathrm{bad}}\) is a positive reduction in profane-token
 probability; median KL is next-token distribution shift.}
 \label{tab:main-readout-edit}
@@ -400,15 +426,23 @@ No intervention & \(0.000\) & \(0.000\) & \(0.000\) & \(0.000\) \\
 \end{table}
 
 \Cref{tab:main-readout-edit} shows that sparse readout feature directions
-selected from discovery tokens transfer to evaluation tokens (flip rate \(0.359\)),
-matching the oracle's evaluation flip rate even though the evaluation tokens
-were never seen during selection; a discovery-token-only bias does not
-transfer at all (eval flip \(0.000\)). The comparison separates transfer from
-distributional specificity. The oracle achieves the same flips at median KL
-\(0.004\) because it uses the evaluation labels at intervention time; SRP
-obtains transfer from discovery-selected basis directions, with broader
-distributional shift (median KL \(0.679\)) as the cost. The
-R1-Distill-Qwen-7B replication is in
+selected from discovery terms transfer to held-out evaluation candidates
+(flip rate \(0.359\), \(23/64\); cluster-bootstrap 95\% CI
+\(0.250\)--\(0.469\)), while the equally informed discovery token bias does
+not transfer at all (eval flip \(0.000\)). A candidate can flip only when
+the unedited model already prefers the profane side, which holds for 23 of
+the 64 held-out candidates, so \(0.359\) is the ceiling of this evaluation;
+at scale 16 SRP and the oracle each flip exactly that set, and the
+identical rates follow from saturation. The dose-response sweep separates
+the methods below the ceiling: at scale 4 the oracle flips 20 of the 23
+against SRP's 11, and the oracle saturates by scale 6 while the SRP edit
+reaches the ceiling at scale 12
+(Appendix~\ref{app:lexical-control-stress-test}). The comparison
+also separates transfer from distributional specificity: the oracle
+reaches the ceiling at median KL \(0.004\) because it uses the evaluation
+labels at intervention time, while SRP obtains its transfer from
+discovery-selected basis directions at a broader distribution shift
+(median KL \(0.679\)). The R1-Distill-Qwen-7B replication is in
 Appendix~\ref{app:lexical-control-stress-test}.
 
 \FloatBarrier

@@ -29,7 +29,11 @@ not which readout directions carry that preference, nor how the hidden
 state reweights them as the context changes. SRP asks that second question:
 how the margin is composed on the readout side, which readout directions
 support it, which oppose it, and how much remains unexplained by the shared
-basis (Figure~\ref{fig:main-lens-prism-comparison}, bottom).
+basis (Figure~\ref{fig:main-lens-prism-comparison}, bottom). The answer
+moves with the context: in an insect-context prompt the same token's
+support reassembles around insect-sense readout directions
+(\Cref{fig:selected-readout-prism-examples}), a reorganization invisible
+to the scalar margin.
 
 Decompositions commonly paired with lens-style readouts act on the hidden-state side. Direct logit attribution (DLA) decomposes \(h=\sum_c h_c\) into contributions from earlier residual-stream components---the embedding, attention heads, and MLP layers---and reads off each component's contribution to a chosen logit~\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. Sparse autoencoders (SAEs) and related dictionary-learning methods learn overcomplete bases that reconstruct each input from a few active coordinates~\citep{makhzani2013ksparse,bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}; applied to hidden activations, they yield sparse coordinates for \(h\). SRP takes the complementary object: the readout direction \(q\).
 
@@ -44,9 +48,9 @@ First, \Cref{sec:results} calibrates the factorization for term-level
 readout analysis. Across eight models, SRP reconstructs unembedding rows
 with explained variance \(0.83\)--\(0.89\) after row centering. It tracks
 the dense LM head on six of eight readouts and preserves contrast sign on
-at least \(91\%\) of held-out logit differences; on the matched Qwen3.5-2B
+at least \(91\%\) of held-out logit differences; on the Qwen3.5-2B
 baseline comparison it outperforms methods such as nearest-row ridge,
-matched-rank PCA, and shuffle/random sparse baselines. Because fidelity varies by score
+dense PCA references, and shuffle/random sparse baselines. Because fidelity varies by score
 family, the calibration also fixes the regime (sign agreement with
 relative residual \(\rho<0.5\)) in which the later analyses read feature
 terms.
@@ -63,7 +67,7 @@ analyses also mark where the reading stops: residual-dominated,
 sign-flipped, and diffuse scores (contribution mass spread over many small
 terms) bound what the feature terms license.
 
-In summary, this paper makes three contributions:
+In summary, this paper makes four contributions:
 \begin{itemize}
     \item \emph{A sparse factorization of the LM head.} We fit a shared
     overcomplete dictionary directly to unembedding rows; the full head can be
@@ -75,4 +79,9 @@ In summary, this paper makes three contributions:
     \item \emph{Local score decompositions in logit units.} For any token logit,
     logit difference, or fixed row combination, SRP returns signed per-feature
     contributions plus offset and residual, all in original logit units.
+    \item \emph{Calibrated readout analyses.} We measure replacement and
+    selected-score fidelity across eight models, then use the calibrated basis
+    to expose feature competition under context shifts, compose with direct
+    logit attribution, and drive constrained readout-side edits that transfer
+    to held-out tokens.
 \end{itemize}

@@ -89,12 +89,56 @@ model-family rows use the same metric suite, separating row reconstruction,
 replacement fidelity, and selected-score reconstruction. Null and reference
 baseline comparisons preserve the same ordering: shuffled and random support
 approach chance sign agreement, and dense PCA underperforms Sparse Readout Prism
-at comparable compactness.
+at comparable compactness. Cluster-bootstrap 95\% intervals (848 base cases,
+400 resamples) on the Qwen3.5-2B panel: SRP sign-preserved low-error coverage
+\(0.774\) (\(0.755\)--\(0.792\)) and median \(\rho=0.081\)
+(\(0.071\)--\(0.092\)), against nearest-row ridge at \(0.622\)
+(\(0.603\)--\(0.643\)) and \(0.260\) (\(0.242\)--\(0.295\)); PCA-1024
+reaches \(0.539\) (\(0.514\)--\(0.563\)) using a median of 337 components
+per score, while PCA-256, matched to SRP's realized compactness (median
+features carrying \(80\%\) of absolute contribution mass: 78 against
+SRP's 76), drops to \(0.272\) (\(0.247\)--\(0.296\)).
+\Cref{tab:app-cross-model-nulls} repeats the two null controls on every
+Qwen/Gemma readout at its fidelity-prioritized operating point: each
+model--null cell
+lowers coverage by \(0.58\)--\(0.71\) and sign agreement to
+\(0.38\)--\(0.52\), so the learned row--code assignment carries the
+reconstruction on every evaluated model, including the lower-fidelity
+Gemma rows.
 Figure~\ref{fig:app-robustness-baseline-comparisons} reports the same score set
 and metrics as the Sparse Readout Prism row. Tokenization filters, row-norm
 controls, frequency controls, KL, sign agreement, and relative reconstruction
 error use the same definitions across the score-group and baseline
 comparisons.
+
+\begin{table}[!tbp]
+\caption{\textbf{Cross-model null collapse.}
+Sign-preserved low-error coverage (Sign \& \(\rho<0.5\)), with sign
+agreement in parentheses, for SRP and the two null controls on each
+model's full logit-difference set at its fidelity-prioritized operating
+point (\(32\times\), \(k=256\)). The Qwen3.5-2B SRP row matches the
+main-text baseline table on the same banks. The full set retains the
+near-tie scores excluded from the held-out subset of
+\Cref{tab:readout-score-fidelity-summary}, so anchor sign agreement here
+sits below that table's per-model values (the main-text \(0.91\) sign
+floor refers to the held-out subset).}
+\label{tab:app-cross-model-nulls}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Model & SRP & Shuffled codes & Random support \\
+\midrule
+Qwen3.5-0.8B & 0.752 (0.926) & 0.088 (0.519) & 0.085 (0.484) \\
+Qwen3.5-2B   & 0.774 (0.941) & 0.081 (0.502) & 0.069 (0.407) \\
+Qwen3.5-9B   & 0.784 (0.927) & 0.094 (0.467) & 0.079 (0.424) \\
+Gemma-4-E2B  & 0.665 (0.890) & 0.085 (0.484) & 0.087 (0.377) \\
+Gemma-4-E4B  & 0.701 (0.900) & 0.095 (0.476) & 0.072 (0.438) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[!tbp]
     \centering
@@ -170,7 +214,7 @@ benchmark-like margin types, not random samples from an external task
 benchmark; the separate C4 bank is sampled from C4 validation and supports the
 model-native replacement and frontier diagnostics rather than the controlled
 A/B score families. \Cref{tab:app-query-family-provenance} maps each main-text
-score family (\Cref{tab:app-general-readout-score-families}) to its source bank
+score family (\Cref{tab:readout-score-families}) to its source bank
 and gives a one-line definition of the score object, and
 \Cref{tab:app-query-bank-examples} shows representative A/B records.
 A separate benchmark-derived contrast bank builds answer-vs-distractor,
