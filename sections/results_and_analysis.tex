@@ -24,7 +24,10 @@ dense LM head agree on the argmax token. KL: median KL divergence between
 dense and SRP-reconstructed next-token distributions. Sign: fraction of
 contrasts where the SRP-reconstructed margin shares sign with the exact
 margin. Replacement uses held-out hidden states; score metrics use the main
-held-out logit-difference subset. Higher is better for rowEV, top1, Sign, and
+held-out logit-difference set at each model's \(k=256\) operating point.
+Med.\ \(\rho\) and \(\rho<0.5\) use the floored \(\rho\) of
+\S\ref{sec:method-reading-local-accounts}; cluster-bootstrap 95\% CIs are
+in \Cref{tab:app-fidelity-cis}. Higher is better for rowEV, top1, Sign, and
 \(\rho<0.5\); lower is better for KL and median \(\rho\). Full names:
 Appendix~\ref{app:model-suite-selection}.}
 \label{tab:readout-score-fidelity-summary}
@@ -44,12 +47,12 @@ S[table-format=1.3]@{}}
 \cmidrule(lr){3-5}\cmidrule(l){6-8}
 Model & cfg & {rowEV} & {top1} & {KL} & {Sign} & {Med. \(\rho\)} & {\(\rho<0.5\)} \\
 \midrule
-Q-0.8B & 32/256 & 0.877 & 0.891 & 0.135 & 0.950 & 0.088 & 0.815 \\
-Q-2B   & 32/256 & 0.847 & 0.887 & 0.136 & 0.958 & 0.083 & 0.829 \\
-Q-9B   & 32/256 & 0.857 & 0.900 & 0.105 & 0.949 & 0.098 & 0.823 \\
+Q-0.8B & 32/256 & 0.877 & 0.891 & 0.135 & 0.950 & 0.075 & 0.891 \\
+Q-2B   & 32/256 & 0.847 & 0.887 & 0.136 & 0.958 & 0.071 & 0.890 \\
+Q-9B   & 16/256 & 0.857 & 0.900 & 0.105 & 0.949 & 0.088 & 0.878 \\
 \addlinespace[1pt]
-G-E2B  & 32/256 & 0.834 & 0.333 & 6.37  & 0.914 & 0.269 & 0.691 \\
-G-E4B  & 32/256 & 0.827 & 0.736 & 1.22  & 0.940 & 0.160 & 0.786 \\
+G-E2B  & 32/256 & 0.834 & 0.333 & 6.37  & 0.914 & 0.255 & 0.710 \\
+G-E4B  & 32/256 & 0.827 & 0.736 & 1.22  & 0.940 & 0.155 & 0.807 \\
 \addlinespace[1pt]
 Min-8B & 32/256 & 0.888 & 0.904 & 0.087 & 0.949 & 0.068 & 0.888 \\
 R1-Q-7B & 32/256 & 0.844 & 0.760 & 0.489 & 0.921 & 0.147 & 0.787 \\
@@ -70,8 +73,8 @@ replacement fidelity before any local decomposition.
 \paragraph{Selected-Score Reconstruction}\label{subsec:selected-score-reconstruction}
 The logit-difference columns test whether selected readout scores survive the
 factorization. Sign agreement is at least \(0.91\) across the suite, and the
-sign-preserved, low-error subset (\(\rho<0.5\))
-covers \(0.69\)--\(0.89\) of contrasts per model.
+low-error fraction (\(\rho<0.5\))
+covers \(0.71\)--\(0.89\) of contrasts per model.
 Errors and flips concentrate near small exact margins
 (\Cref{fig:readout-score-fidelity-result}). This score-level evidence supplies
 the subset used for the case studies; small-margin scores remain in the
@@ -116,7 +119,9 @@ interpretation comes from score-level residual and sign checks.
 \begin{table}[t]
 \caption{\textbf{Null and reference baselines for Qwen3.5-2B.}
 Full baseline/null logit-difference set: 1,348 items over 848 base-case
-bootstrap clusters. Lower median \(\rho\) and higher Sign / Sign \&
+bootstrap clusters; \(\rho\) is unfloored
+(\S\ref{sec:method-reading-local-accounts}), identically for all methods.
+Lower median \(\rho\) and higher Sign / Sign \&
 \(\rho<0.5\) are better. ``Matched'' marks the PCA point whose per-score
 compactness matches SRP's (median features carrying \(80\%\) of absolute
 contribution mass: 78 against 76).}
@@ -158,7 +163,14 @@ readouts, shuffled codes and random support lower coverage by \(58\)--\(71\)
 points (\Cref{tab:app-cross-model-nulls}). The gap therefore supports
 learned sparse row-code structure
 in SRP's reconstructions; label interpretation is handled by the separate audit
-below.
+below. A zero-fitting reference completes the comparison: ranking
+vocabulary rows by alignment with the selected direction recovers the
+contrast words' own casing and morphological variants, with sense-bearing
+rows far down the list for \(w_{\texttt{bug}}-w_{\texttt{insect}}\) and
+absent from the top 30 for \(w_{\texttt{bug}}-w_{\texttt{error}}\)
+(Appendix~\ref{app:nearest-rows}), so the sense structure that SRP's
+feature terms expose sits below the morphological band of a nearest-row
+listing.
 Full details are in Appendix~\ref{app:robustness-key-quantitative}.
 
 \paragraph{Fidelity Varies by Score Family}\label{subsec:score-family-fidelity}
@@ -168,12 +180,14 @@ agreement and median relative residual by family at the \(k=256\)
 comparison point. Reconstruction difficulty tracks how close the
 competitor sits to the selected token: vocabulary-mean and reference-row
 contrasts are easiest, with perfect sign agreement and median
-\(\rho\le0.049\), and broad top-competitor margins stay nearly as
-faithful (\(\rho=0.120\) and \(0.253\) for a sampled or top-5
-competitor). Difficulty rises as the competitor nears a tie, where the
-current-vs-stale and top1-vs-top2 margins reach \(\rho=0.525\) and
-\(0.551\), both above the \(\rho<0.5\) interpretation gate, so their
-feature terms are read only where the residual and sign checks pass.
+\(\rho\le0.048\), and broad top-competitor margins stay nearly as
+faithful (\(\rho=0.113\) and \(0.215\) for a sampled or top-5
+competitor). Difficulty rises as the competitor nears a tie: the
+current-vs-stale and top1-vs-top2 margins reach median \(\rho=0.369\) and
+\(0.342\), sign agreement falls to \(0.861\) and \(0.824\), and only
+\(0.61\) and \(0.58\) of their rows pass the joint sign-and-residual
+gate, against \(0.996\) for the vocabulary-mean family, so their
+feature terms are read only where the checks pass.
 The pattern has a structural cause: the contrast residual
 \(h^\top(r_A-r_B)\) is set by the unembedding-row residuals and contains
 no term that scales with the margin, so relative error grows as a
@@ -195,7 +209,9 @@ Rows group selected readout score families at the \(k=256\) fidelity
 setting. Row counts aggregate evaluated model--case cells across the five
 Qwen/Gemma models of Table~\ref{tab:readout-score-fidelity-summary}
 (excluding Ministral and the R1-distilled readouts), after tokenization
-filters. Source banks and per-family score-object definitions are in
+filters. Median \(\rho\) is the floored variant of
+\S\ref{sec:method-reading-local-accounts}. Source banks and per-family
+score-object definitions are in
 Appendix~\ref{app:query-bank-provenance}.}
 \label{tab:readout-score-families}
 \centering
@@ -206,17 +222,17 @@ Appendix~\ref{app:query-bank-provenance}.}
 \toprule
 Group & Selected score & cases & rows & sign agreement & median \(\rho\) \\
 \midrule
-Vocabulary-mean contrast & top1 vs vocabulary mean & 301 & 1505 & 1.000 & 0.021 \\
-Reference-row contrast & top1 vs row-norm distractor & 301 & 1505 & 1.000 & 0.049 \\
+Vocabulary-mean contrast & top1 vs vocabulary mean & 301 & 1505 & 1.000 & 0.020 \\
+Reference-row contrast & top1 vs row-norm distractor & 301 & 1505 & 1.000 & 0.048 \\
 \addlinespace
-Logit difference & source vs prior & 82 & 392 & 0.964 & 0.181 \\
-Logit difference & action/tool alternatives & 96 & 480 & 0.906 & 0.355 \\
-Group contrast & abstention family & 84 & 420 & 0.888 & 0.241 \\
-Logit difference & current vs stale & 92 & 460 & 0.861 & 0.525 \\
+Logit difference & source vs prior & 82 & 392 & 0.964 & 0.172 \\
+Logit difference & action/tool alternatives & 96 & 480 & 0.906 & 0.283 \\
+Group contrast & abstention family & 84 & 420 & 0.888 & 0.198 \\
+Logit difference & current vs stale & 92 & 460 & 0.861 & 0.369 \\
 \addlinespace
-Top competitor & top1 vs sampled competitor & 301 & 1505 & 0.993 & 0.120 \\
-Top competitor & top1 vs top5 competitor & 301 & 1505 & 0.940 & 0.253 \\
-Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.551 \\
+Top competitor & top1 vs sampled competitor & 301 & 1505 & 0.993 & 0.113 \\
+Top competitor & top1 vs top5 competitor & 301 & 1505 & 0.940 & 0.215 \\
+Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.342 \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -266,7 +282,8 @@ positive contributions from mosquito-, bee-, and beetle-labeled rows and
 negative contributions from error-token rows (\(\rho=0.185\)); in the
 software context, positive contributions shift to defect, crash, and
 debug rows (\(\rho=0.003\)). The \texttt{bark} and \texttt{bass} cases
-show the same reassignment (\(\rho=0.126\) and \(0.097\)); the four
+show the same reassignment (\(\rho=0.126\) and \(0.097\); all four
+unfloored); the
 residuals are reported because they bound the interpretation. The same
 surface token recruits different row-labeled feature groups as score and
 context change. Plotting conventions and the label audit are in
@@ -297,7 +314,8 @@ readings generalize beyond it.
     \texttt{bark}-vs-\texttt{dog} in a tree context, and
     \texttt{bass}-vs-\texttt{trout} in a music context. Small bars are
     suppressed for readability. All four panels satisfy the residual
-    threshold \(\rho<0.5\) and preserve the sign of the logit difference
+    threshold \(\rho<0.5\) (quoted \(\rho\) unfloored) and preserve the
+    sign of the logit difference
     (display rules in Appendix~\ref{app:display-taxonomy});
     \cref{tab:app-main-case-study-feature-audit} lists the
     \texttt{bug}-panel feature rows.}
@@ -311,7 +329,7 @@ across prompts (\Cref{sec:method-local-score}). In
 \Cref{fig:same-token-polysemy}, prompt context reweights \texttt{bug},
 \texttt{ring}, and \texttt{bridge} toward features whose row labels match the
 setting; each token score (after subtracting the shared offset
-\(h^\top\mu\)) has \(\rho<0.05\). \texttt{bug} shifts from mosquito/bee to
+\(h^\top\mu\)) has unfloored \(\rho<0.05\). \texttt{bug} shifts from mosquito/bee to
 defect/crash/debug labels; \texttt{bridge} shifts from river/crossing to
 networking labels. Context redistributes mass across a fixed token-row
 decomposition without changing its row-side coefficients. Additional views

@@ -65,10 +65,12 @@ metrics. \\
 \label{app:robustness-key-quantitative}
 
 Selected-score fidelity is the central quantitative check: across the
-eight \(32\times\), \(k=256\) readout factorizers, the sparse
+eight \(k=256\) readout factorizers (\(32\times\) width, \(16\times\) for
+Qwen3.5-9B), the sparse
 reconstruction preserves contrast sign for \(0.914\)--\(0.958\) of
-selected readout scores, with median \(\rho=0.068\)--\(0.269\)
-(Table~\ref{tab:readout-score-fidelity-summary}). The broader all-row
+selected readout scores, with median \(\rho=0.068\)--\(0.255\)
+(Table~\ref{tab:readout-score-fidelity-summary}; cluster-bootstrap 95\%
+intervals in \Cref{tab:app-fidelity-cis}). The broader all-row
 contrast set supplies a supporting diagnostic: aggregating both held-out
 halves, the Qwen3.5-0.8B/2B/9B settings give sign agreement
 \(0.940\)--\(0.951\), median \(\rho=0.091\)--\(0.107\), and \(\rho<0.5\)
@@ -90,7 +92,8 @@ replacement fidelity, and selected-score reconstruction. Null and reference
 baseline comparisons preserve the same ordering: shuffled and random support
 approach chance sign agreement, and dense PCA underperforms Sparse Readout Prism
 at comparable compactness. Cluster-bootstrap 95\% intervals (848 base cases,
-400 resamples) on the Qwen3.5-2B panel: SRP sign-preserved low-error coverage
+400 resamples; unfloored \(\rho\), identically for all methods) on the
+Qwen3.5-2B panel: SRP sign-preserved low-error coverage
 \(0.774\) (\(0.755\)--\(0.792\)) and median \(\rho=0.081\)
 (\(0.071\)--\(0.092\)), against nearest-row ridge at \(0.622\)
 (\(0.603\)--\(0.643\)) and \(0.260\) (\(0.242\)--\(0.295\)); PCA-1024
@@ -116,12 +119,12 @@ comparisons.
 Sign-preserved low-error coverage (Sign \& \(\rho<0.5\)), with sign
 agreement in parentheses, for SRP and the two null controls on each
 model's full logit-difference set at its fidelity-prioritized operating
-point (\(32\times\), \(k=256\)). The Qwen3.5-2B SRP row matches the
-main-text baseline table on the same banks. The full set retains the
-near-tie scores excluded from the held-out subset of
-\Cref{tab:readout-score-fidelity-summary}, so anchor sign agreement here
-sits below that table's per-model values (the main-text \(0.91\) sign
-floor refers to the held-out subset).}
+point (\(k=256\); \(32\times\) width, \(16\times\) for Qwen3.5-9B),
+under the baseline harness's unfloored \(\rho\). The Qwen3.5-2B SRP row
+matches the main-text baseline table on the same banks. Anchor sign
+agreement on this full set sits below the per-model values of
+\Cref{tab:readout-score-fidelity-summary} (the main-text \(0.91\) sign
+floor refers to that table's evaluation).}
 \label{tab:app-cross-model-nulls}
 \centering
 \scriptsize
@@ -139,6 +142,34 @@ Gemma-4-E4B  & 0.701 (0.900) & 0.095 (0.476) & 0.072 (0.438) \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{table*}[!tbp]
+\caption{\textbf{Cluster-bootstrap intervals for the main fidelity table.}
+95\% intervals for the logit-difference columns of
+\Cref{tab:readout-score-fidelity-summary} (floored \(\rho\); base-case
+clusters resampled with replacement, 400 resamples). Rows/base cases per
+model: 1{,}853/649 (Qwen3.5 and R1-distilled), 1{,}859/655 (Gemma-4),
+1{,}856/652 (Ministral).}
+\label{tab:app-fidelity-cis}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Model & Sign & Med.\ \(\rho\) & \(\rho<0.5\) \\
+\midrule
+Qwen3.5-0.8B & 0.950 (0.942, 0.960) & 0.075 (0.069, 0.084) & 0.891 (0.877, 0.905) \\
+Qwen3.5-2B   & 0.958 (0.947, 0.967) & 0.071 (0.064, 0.080) & 0.890 (0.875, 0.904) \\
+Qwen3.5-9B   & 0.949 (0.938, 0.959) & 0.088 (0.079, 0.096) & 0.878 (0.863, 0.893) \\
+Gemma-4-E2B  & 0.914 (0.900, 0.928) & 0.255 (0.233, 0.278) & 0.710 (0.687, 0.730) \\
+Gemma-4-E4B  & 0.940 (0.927, 0.951) & 0.155 (0.141, 0.165) & 0.807 (0.784, 0.828) \\
+Ministral-3-8B & 0.949 (0.939, 0.958) & 0.068 (0.061, 0.078) & 0.888 (0.873, 0.902) \\
+R1-Distill-Qwen-7B & 0.921 (0.908, 0.933) & 0.147 (0.134, 0.160) & 0.787 (0.771, 0.806) \\
+R1-Distill-Llama-8B & 0.926 (0.913, 0.938) & 0.134 (0.125, 0.143) & 0.830 (0.814, 0.846) \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 \begin{figure}[!tbp]
     \centering
@@ -176,6 +207,66 @@ Gemma-4-E4B  & 0.701 (0.900) & 0.095 (0.476) & 0.072 (0.438) \\
     compactness constraint tightens.}
     \label{fig:app-robustness-baseline-comparisons}
 \end{figure*}
+
+\subsection{Nearest-Row Reading of Selected Directions}
+\label{app:nearest-rows}
+
+% Computed from the HF checkpoint Qwen/Qwen3.5-2B (revision 15852e8c,
+% tied embeddings, lm_head = embed_tokens), row-centered with the SRP
+% preprocessing mean; script and JSON archived in the workspace under
+% results/experiments/proto_token_lens/qwen2b_nearest_rows_baseline_20260610/.
+The zero-fitting reading of a selected readout direction \(q\) ranks
+vocabulary rows by cosine alignment with \(q\) and inspects the top
+tokens. \Cref{tab:app-nearest-rows} applies this reading to two
+case-study contrasts on Qwen3.5-2B, ranking row-centered unembedding rows
+with the two contrast tokens themselves excluded; raw-cosine rankings
+behave the same. For \(w_{\texttt{bug}}-w_{\texttt{insect}}\) the listing
+is dominated by casing and morphological variants of the contrast words,
+the first sense-bearing rows (a malfunction row, \texttt{debug},
+\texttt{issue}, \texttt{glitch}, \texttt{flaw}) appear at ranks 13--17 at
+roughly half the leading alignment, and the orthographic neighbor
+\texttt{blog} enters by rank 30. For
+\(w_{\texttt{bug}}-w_{\texttt{error}}\) the top 30 consists entirely of
+casing, sub-word, and cross-lingual variants of the two contrast words.
+The nearest-row reading recovers the contrast's token family, while the
+sense structure that the SRP decomposition of the same scores separates
+into signed feature terms
+(\Cref{fig:selected-readout-prism-examples}) sits below its morphological
+band.
+
+\begin{table}[!tbp]
+\caption{\textbf{Nearest centered unembedding rows for two selected
+directions.} Qwen3.5-2B; top 12 rows by \(|\)cosine\(|\) with each
+direction, contrast tokens excluded. \(\square\) marks a leading space;
+bracketed entries gloss non-Latin tokens. Signed cosines: positive
+supports the first token of the contrast.}
+\label{tab:app-nearest-rows}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}r ll ll@{}}
+\toprule
+& \multicolumn{2}{c}{\(w_{\texttt{bug}}-w_{\texttt{insect}}\)}
+& \multicolumn{2}{c}{\(w_{\texttt{bug}}-w_{\texttt{error}}\)} \\
+\cmidrule(lr){2-3}\cmidrule(l){4-5}
+Rank & Token & cos & Token & cos \\
+\midrule
+1  & \texttt{\(\square\)Bug}     & \(+0.49\) & \texttt{\(\square\)Error}  & \(-0.53\) \\
+2  & \texttt{bug}                & \(+0.46\) & \texttt{error}             & \(-0.50\) \\
+3  & \texttt{Bug}                & \(+0.44\) & \texttt{\(\square\)errors} & \(-0.49\) \\
+4  & \texttt{\(\square\)bugs}    & \(+0.42\) & \texttt{\_error}           & \(-0.47\) \\
+5  & \texttt{\(\square\)BUG}     & \(+0.34\) & \texttt{Bug}               & \(+0.45\) \\
+6  & \texttt{\_bug}              & \(+0.31\) & \texttt{-error}            & \(-0.44\) \\
+7  & \texttt{BUG}                & \(+0.31\) & \texttt{[tab]error}        & \(-0.44\) \\
+8  & \texttt{\(\square\)insects} & \(-0.30\) & \texttt{Error}             & \(-0.44\) \\
+9  & \texttt{bugs}               & \(+0.29\) & \texttt{\(\square\)Bug}    & \(+0.42\) \\
+10 & \texttt{\(\square\)buggy}   & \(+0.29\) & [zh: numerical error]      & \(-0.42\) \\
+11 & \texttt{\(\square\)Bugs}    & \(+0.28\) & \texttt{bug}               & \(+0.42\) \\
+12 & [zh: insect]                & \(-0.24\) & \texttt{\(\square\)bugs}   & \(+0.40\) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Operating-Regime Cases}
 \label{app:robustness-operating-regime}
