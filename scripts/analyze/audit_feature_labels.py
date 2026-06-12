@@ -66,7 +66,7 @@ CATEGORIES = ("coherent", "ambiguous", "token_form")
 def run_substrate(args) -> int:
     from transformers import AutoTokenizer
 
-    from sparse_readout_prism.research._common.qwen_readout import display_label_features, load_sae
+    from sparse_readout_prism.research.qwen_readout import display_label_features, load_sae
 
     feature_ids = [int(x) for x in str(args.feature_ids).replace(" ", "").split(",") if x != ""]
     if not feature_ids:

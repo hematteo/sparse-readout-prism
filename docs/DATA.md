@@ -93,7 +93,7 @@ qualitative producers `scripts/figures/compute_lens_prism_comparison.py`,
 through a Qwen-bound loader (`AutoModelForImageTextToText` only) and default to
 `--model-id Qwen/Qwen3.5-2B`; they assume that architecture. To run them on
 another model, point them at a comparable Qwen image-text-to-text checkpoint (or
-adapt the loader in `sparse_readout_prism.research._common.qwen_readout`).
+adapt the loader in `sparse_readout_prism.research.qwen_readout`).
 
 To add a model:
 

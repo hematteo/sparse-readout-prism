@@ -38,7 +38,7 @@ dependencies = [
     "numpy>=1.26,<3",
     "scipy>=1.15.3,<2",  # scripts/eval/dense_control_diagnostic.py (scipy.optimize.nnls)
     "datasets>=4.8.4,<5",  # scripts/data/extract_model_readout.py + build_query_banks.py
-    "pyyaml>=6,<7",  # config loading in utils.py + research/_common/registry.py (was only transitive)
+    "pyyaml>=6,<7",  # config loading in utils.py + research/registry.py (was only transitive)
 ]
 
 [project.urls]

@@ -22,7 +22,7 @@ from pathlib import Path
 
 import torch
 
-from sparse_readout_prism.research._common.qwen_readout import (
+from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     collect_readout_state,
     find_lm_head,
@@ -31,7 +31,7 @@ from sparse_readout_prism.research._common.qwen_readout import (
     load_sae,
     readable_feature_label,
 )
-from sparse_readout_prism.research.data.qwen_example_prompts import EXAMPLE_SETS
+from sparse_readout_prism.research.qwen_example_prompts import EXAMPLE_SETS
 
 DEFAULT_OUT_DIR = Path("results/qwen_pre_token_readout_directions")
 
@@ -45,57 +45,6 @@ SELECTED_SAES = {
         "description": "Qwen3.5-2B 32x d65536 k256, fidelity/domain SAE",
     },
 }
-
-DOMAIN_CONTEXTS = [
-    {
-        "case_id": "bug_insect",
-        "title": "bug: insect",
-        "prompt": "The child watched a tiny crawling",
-        "paper_context": "same-token/domain bug pair",
-    },
-    {
-        "case_id": "bug_software",
-        "title": "bug: software",
-        "prompt": "The programmer reproduced the crash and filed a",
-        "paper_context": "same-token/domain bug pair",
-    },
-    {
-        "case_id": "ring_jewelry",
-        "title": "ring: jewelry",
-        "prompt": "At the ceremony, she wore a gold",
-        "paper_context": "same-token/domain ring pair",
-    },
-    {
-        "case_id": "ring_phone",
-        "title": "ring: phone",
-        "prompt": "Across the room, he heard the phone",
-        "paper_context": "same-token/domain ring pair",
-    },
-    {
-        "case_id": "bridge_structure",
-        "title": "bridge: structure",
-        "prompt": "Cars crossed the river on a narrow",
-        "paper_context": "same-token/domain bridge pair",
-    },
-    {
-        "case_id": "bridge_network",
-        "title": "bridge: network",
-        "prompt": "The router acted as a network",
-        "paper_context": "same-token/domain bridge pair",
-    },
-    {
-        "case_id": "table_furniture",
-        "title": "table: furniture",
-        "prompt": "Dinner was served on the wooden",
-        "paper_context": "same-token/domain table pair",
-    },
-    {
-        "case_id": "table_database",
-        "title": "table: database",
-        "prompt": "The database stores rows in a",
-        "paper_context": "same-token/domain table pair",
-    },
-]
 
 INTERESTING_CONTEXTS = [
     {
@@ -190,7 +139,6 @@ def paper_contexts(example_set: str) -> list[dict[str, str]]:
 
 
 CONTEXT_SETS = {
-    "domain_main4": DOMAIN_CONTEXTS,
     "interesting_domains": INTERESTING_CONTEXTS,
     **{key: paper_contexts(key) for key in EXAMPLE_SETS},
 }
@@ -472,7 +420,7 @@ def main() -> int:
     parser.add_argument("--sae-id", choices=sorted(SELECTED_SAES), default="qwen2b_k128")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--k", type=int, default=None)
-    parser.add_argument("--context-set", choices=sorted(CONTEXT_SETS), default="paper")
+    parser.add_argument("--context-set", choices=sorted(CONTEXT_SETS), default="interesting_domains")
     parser.add_argument("--analysis-mode", choices=["contexts", "pair_deltas"], default="contexts")
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)

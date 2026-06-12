@@ -1,6 +1,6 @@
 import torch
 
-from sparse_readout_prism.research._common.cell_metrics import coverage_stats
+from sparse_readout_prism.research.cell_metrics import coverage_stats
 
 
 def test_coverage_stats_values():

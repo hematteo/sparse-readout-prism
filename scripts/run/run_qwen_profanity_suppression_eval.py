@@ -40,7 +40,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from sparse_readout_prism.research._common.qwen_readout import (
+from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     find_lm_head,
     display_label_features,

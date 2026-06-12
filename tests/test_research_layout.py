@@ -1,7 +1,7 @@
 """Anti-regression guards for the research-script sub-package.
 
 Shared research code lives in ``sparse_readout_prism.research``; the
-``scripts/`` dir holds entrypoints + thin shims that import from the package.
+``scripts/`` dir holds self-contained entrypoints that import from the package.
 These tests fail if the old flat-package smell creeps back in:
 
   * a script importing a sibling script by bare module name
@@ -20,21 +20,11 @@ SRC = REPO / "src"
 TESTS = REPO / "tests"
 PKG = REPO / "src/sparse_readout_prism/research"
 
-# A ``research/`` module may have a single consumer only if it is a substantial
-# helper factored out of exactly one sibling research body for readability
-# (not an entry-point mirror). Everything else must back >=2 consumers.
-ALLOWED_SINGLE_CONSUMER = {
-    "mine_polysemy_pairs",  # imported only by research/data/mine_polysemy_features.py
-    # Substantial data-mining body behind scripts/data/mine_polysemy_features.py;
-    # its second consumer (a polysemy figure script) was removed in the
-    # metrics-only refactor, leaving the scripts/ entry as the sole consumer.
-    "mine_polysemy_features",
-    # Substantial paper-example body behind scripts/figures/compute_sae_paper_examples.py;
-    # its second consumer (a token-table figure renderer called from the feature
-    # miner) was removed in the metrics-only refactor, leaving the scripts/ entry
-    # as the sole consumer.
-    "compute_sae_paper_examples",
-}
+# Every ``research/`` module must back >=2 consumers; single-consumer bodies
+# live inline in their ``scripts/`` entry point instead. Add a module here only
+# if it is a substantial helper factored out of exactly one sibling for
+# readability — currently none.
+ALLOWED_SINGLE_CONSUMER: set[str] = set()
 
 
 def _module_names(directory: Path) -> set[str]:

@@ -11,7 +11,7 @@ The block here is behaviour-preserving: ``QuerySpec``, ``write_csv``,
 and ``attach_feature_labels`` are moved verbatim from the figure module.
 
 Note: this module keeps its OWN ``load_qwen_model``. It is NOT the same as
-``research._common.qwen_readout.load_qwen_model`` (that one omits
+``research.qwen_readout.load_qwen_model`` (that one omits
 ``local_files_only`` and only tries ``AutoModelForImageTextToText``); this one
 takes ``local_files_only`` and falls back from ``AutoModelForImageTextToText`` to
 ``AutoModelForCausalLM``. They are kept separate intentionally.
@@ -26,7 +26,7 @@ import numpy as np
 import torch
 
 from sparse_readout_prism.token_display import clean_token
-from sparse_readout_prism.research._common.qwen_readout import (
+from sparse_readout_prism.research.qwen_readout import (
     display_label_features,
     encode_topk,
     readable_feature_label,

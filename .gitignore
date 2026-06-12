@@ -12,24 +12,13 @@ __pycache__/
 .DS_Store
 *.swp
 
-# LaTeX build artifacts (keep .tex and .pdf)
-*.aux
-*.bbl
-*.blg
-*.fdb_latexmk
-*.fls
-*.log
-*.out
-*.synctex.gz
-*.toc
-*.nav
-*.snm
-*.vrb
-
 # Generated outputs — large; stay out of source control
-# (data/ is curated paper inputs and IS tracked — only results/ holds outputs)
+# (data/ is curated paper inputs + audited literals and IS tracked; only these
+# output roots are ignored. /paper and /local_snapshots are the scripts'
+# default --paper-dir / SRP_SSD_ROOT targets.)
 /results
 /local_snapshots
+/paper
 # Checkpoints / tensor payloads, wherever they land (the quickstart loads a
 # bare checkpoint.pt from the repo root; results/ is already covered).
 *.pt
@@ -43,34 +32,5 @@ __pycache__/
 *.pem
 *.key
 
-# Optional local convenience: developers can `ln -s` an external paper-LaTeX
-# workspace as `paper/` (e.g. for figure pickup); the symlink is local-only
-# and must not propagate. `Sparse_Readout_Prism` is the same convenience
-# under the paper's own name.
-/paper
-/Sparse_Readout_Prism
-
-# Local cluster wrappers — these are per-deployment sbatch / slurm scripts
-# with hardcoded NFS paths, partition names, and credentials.
-/scripts/cluster/
-
-# Internal write-ups / reports — paper-internal markdown that should not
-# propagate to the public repo.
-/docs/reports/
-
-# Standalone probe experiments live outside the canonical reproduction path;
-# they get their own checkout (see CONTRIBUTING.md) and are not shipped.
-/experiments/
-
-# Vendored template archives + zips
-*.zip
-
-# Local dev scratch files
-PROMPT.md
-symbolic_math_*.md
-
 # Agent / assistant config
 .claude/
-
-# Local Netlify folder
-.netlify

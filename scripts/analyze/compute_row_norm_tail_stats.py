@@ -111,7 +111,7 @@ def _parse_artifacts(raw: list[str]) -> list[tuple[str, Path]]:
 
 
 def _resolve_registry_artifacts(registry: Path, models: list[str]) -> list[tuple[str, Path]]:
-    from sparse_readout_prism.research._common.registry import resolve_registry
+    from sparse_readout_prism.research.registry import resolve_registry
 
     reg = resolve_registry(registry)
     out: list[tuple[str, Path]] = []

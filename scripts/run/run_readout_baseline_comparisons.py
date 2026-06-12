@@ -48,12 +48,12 @@ import torch
 
 from sparse_readout_prism.decompose import decompose_token_logit
 from sparse_readout_prism.factorizers import TopKSAE, load_factorizer
-from sparse_readout_prism.research._common.cell_metrics import coverage_stats
-from sparse_readout_prism.research._common.run_io import (
+from sparse_readout_prism.research.cell_metrics import coverage_stats
+from sparse_readout_prism.research.run_io import (
     group_rows as _by,
     write_rows_csv as _write_csv,
 )
-from sparse_readout_prism.research._common.registry import (
+from sparse_readout_prism.research.registry import (
     load_model,
     resolve_registry,
     resolve_single_token,

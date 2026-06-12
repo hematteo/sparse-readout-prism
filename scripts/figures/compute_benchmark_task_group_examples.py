@@ -9,8 +9,8 @@ from pathlib import Path
 
 import torch
 
-from sparse_readout_prism.research._common.qwen_readout import find_lm_head, load_sae
-from sparse_readout_prism.research._common.query_decompose import (
+from sparse_readout_prism.research.qwen_readout import find_lm_head, load_sae
+from sparse_readout_prism.research.query_decompose import (
     attach_feature_labels,
     load_qwen_model,
     write_csv,

@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install test smoke figures lint clean dist-clean package
+.PHONY: help install test smoke lint clean dist-clean package
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -13,9 +13,6 @@ test: ## uv run --extra dev pytest -q
 
 smoke: ## CPU-only synthetic smoke run
 	uv run python scripts/train/train_readout_sae_from_config.py --config configs/smoke.yaml
-
-figures: ## per-figure commands live in docs/REPRODUCE.md (most need prior GPU runs / Hub checkpoints)
-	@echo "Per-figure commands are in docs/REPRODUCE.md; most need prior GPU runs or Hub checkpoints."
 
 lint: ## ruff check + format --check (same as CI)
 	uv run --extra dev ruff check src/ scripts/ tests/

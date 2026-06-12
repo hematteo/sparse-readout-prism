@@ -1,9 +1,9 @@
 """Shared Qwen readout toolkit: model/SAE loading, encode/topk, label display.
 
-Extracted from ``research.figures.compute_sae_paper_examples`` so the figure
-renderer, the data miners, and the analysis scripts share one definition of the
-loaders and the feature-label helpers instead of importing them from a figure
-module (a figures->run / figures->data dependency inversion).
+Extracted from ``scripts/figures/compute_sae_paper_examples.py`` so the figure
+metrics script, the data miners, and the analysis scripts share one definition
+of the loaders and the feature-label helpers instead of importing them from a
+figure module (a figures->run / figures->data dependency inversion).
 
 The model loader is Qwen-bound: it uses ``AutoModelForImageTextToText`` (the
 Qwen3.5-2B architecture's auto-class), not the generic causal-LM class, hence

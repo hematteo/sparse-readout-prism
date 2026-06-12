@@ -10,7 +10,7 @@ from typing import Any
 
 import torch
 
-from sparse_readout_prism.research._common.qwen_readout import (
+from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     encode_topk,
     find_lm_head,

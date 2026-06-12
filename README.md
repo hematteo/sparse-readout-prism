@@ -61,13 +61,6 @@ the default PyTorch wheel for your platform (CPU/MPS on macOS, CUDA on Linux).
 If your GPU needs a specific CUDA build, pin `torch` to a `download.pytorch.org`
 index in `[tool.uv.sources]` locally and re-lock.
 
-Not using uv? A pinned `requirements.txt` (exported from the same lockfile) is
-provided as a fallback:
-
-```bash
-pip install -r requirements.txt && pip install -e . --no-deps
-```
-
 ## Quickstart (no data, no GPU, ~1 s on CPU)
 
 This whole section is also a runnable notebook,
@@ -187,13 +180,13 @@ src/sparse_readout_prism/         core library
   runner.py                       train -> evaluate -> label-features pipeline
   paths.py                        path helpers
   token_display.py, utils.py      token/text display strings + shared IO helpers
-  research/                       implementation bodies shared by more than one
-    figures/ data/ _common/       scripts/ entry point; the matching scripts/
-                                  files are thin shims that import from here.
-                                  Logic used by a single script stays in that
-                                  script.
+  research/                       flat helpers shared by several scripts/ entry
+                                  points (Qwen readout + query-decomposition
+                                  toolkits, prompt banks, registry, run IO);
+                                  logic used by a single script stays inline in
+                                  that script
 
-scripts/                          CLI entry points (some are thin shims into research/)
+scripts/                          self-contained CLI entry points
   train/, run/, eval/             SAE training, experiment suites, evaluation
   analyze/, data/                 component inspection, data prep
   figures/                        compute + persist the metrics behind the paper
@@ -203,7 +196,10 @@ scripts/                          CLI entry points (some are thin shims into res
 configs/
   models/, sweeps/, registries/   model configs, sweep grids, paper-selected SAEs
 
-data/query_banks/                 curated prompt banks (paper inputs)
+data/
+  query_banks/                    curated prompt banks (paper inputs)
+  appendix/                       audited literals behind the Appendix K tables
+  audit/                          feature-label audit annotations + counts (Appendix L)
 
 notebooks/demo.ipynb              the Quickstart as a runnable notebook (Colab-ready)
 

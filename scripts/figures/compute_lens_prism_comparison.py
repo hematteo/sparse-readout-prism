@@ -9,7 +9,7 @@ from pathlib import Path
 
 import torch
 
-from sparse_readout_prism.research._common.qwen_readout import (
+from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     collect_readout_states_batched,
     encode_topk,

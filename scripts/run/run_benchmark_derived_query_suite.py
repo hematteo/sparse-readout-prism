@@ -28,8 +28,8 @@ import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from sparse_readout_prism.research._common.qwen_readout import find_lm_head, load_sae
-from sparse_readout_prism.research._common.query_decompose import (
+from sparse_readout_prism.research.qwen_readout import find_lm_head, load_sae
+from sparse_readout_prism.research.query_decompose import (
     QuerySpec,
     attach_feature_labels,
     build_query_weights,
@@ -46,7 +46,6 @@ from sparse_readout_prism.paths import ssd_root
 ARCHIVE = ssd_root() / "readout-prism-archive/converged-all/results"
 DEFAULT_OUT_DIR = Path("results/benchmark_derived_query_suite_qwen_20260523")
 DENOM_FLOOR = 0.5
-TARGET_DESIGN = "single_distractor_v1"
 
 
 MODEL_SPECS: dict[str, dict[str, Any]] = {
@@ -289,7 +288,7 @@ def build_squad_answerable(tokenizer, limit: int) -> list[BenchCase]:
         distractors = choose_distractors(tokenizer, row["context"], target, capitalized=True, limit=3)
         if not distractors:
             continue
-        query_kind = "token_family_margin" if TARGET_DESIGN == "task_group_v2" else "pairwise_margin"
+        query_kind = "token_family_margin"
         prompt = (
             "Benchmark: SQuAD2 answerable extractive QA.\n"
             "Use the context to answer in a few words.\n"
@@ -354,7 +353,7 @@ def build_squad_unanswerable(tokenizer, limit: int) -> list[BenchCase]:
                 target_a=None,
                 target_b=None,
                 target_a_family=abstain,
-                target_b_family=tuple(contrasts) if TARGET_DESIGN == "task_group_v2" else (contrasts[0],),
+                target_b_family=tuple(contrasts),
                 expected_side="A",
                 note=(
                     "SQuAD2 unanswerable row; abstention family vs context entities "
@@ -410,7 +409,7 @@ def build_hotpot(tokenizer, limit: int) -> list[BenchCase]:
         context = supporting_context(row, distractors[0])
         if not context:
             continue
-        query_kind = "token_family_margin" if TARGET_DESIGN == "task_group_v2" else "pairwise_margin"
+        query_kind = "token_family_margin"
         prompt = (
             "Benchmark: HotpotQA distractor multi-hop QA.\n"
             "Use the supporting passages and ignore distractors.\n"
@@ -456,7 +455,7 @@ def build_legalbench(tokenizer, limit: int) -> list[BenchCase]:
     for row in ds:
         answer = "Yes" if str(row["answer"]).strip().lower() == "yes" else "No"
         contrast = "No" if answer == "Yes" else "Yes"
-        query_kind = "token_family_margin" if TARGET_DESIGN == "task_group_v2" else "pairwise_margin"
+        query_kind = "token_family_margin"
         yes_family = ("Yes", "yes", "YES")
         no_family = ("No", "no", "NO")
         prompt = (
@@ -556,15 +555,13 @@ def build_securityeval(tokenizer, limit: int) -> list[BenchCase]:
         target, contrast = pair
         if not single_token_ok(tokenizer, target) or not single_token_ok(tokenizer, contrast):
             continue
-        query_kind = "token_family_margin" if TARGET_DESIGN == "task_group_v2" else "pairwise_margin"
+        query_kind = "token_family_margin"
         target_family = SECURITY_FAMILIES.get(target, (target,))
         contrast_family = SECURITY_FAMILIES.get(contrast, (contrast,))
         prompt = f"Benchmark: SecurityEval insecure code-generation prompt.\n{compact_text(row['Prompt'], 1200)}\n\n"
         prompt += (
             "Which keyword family better describes the safer implementation choice: "
             f"{'/'.join(target_family)} or {'/'.join(contrast_family)}?\n"
-            if TARGET_DESIGN == "task_group_v2"
-            else f"Which keyword better describes the safer implementation choice: {target} or {contrast}?\n"
         )
         prompt += "Answer:"
         cases.append(
@@ -950,19 +947,11 @@ def main() -> int:
     parser.add_argument("--progress-every", type=int, default=25)
     parser.add_argument("--skip-missing", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--bank-tokenizer", default="Qwen/Qwen3.5-2B")
-    parser.add_argument(
-        "--target-design",
-        choices=["single_distractor_v1", "task_group_v2"],
-        default="single_distractor_v1",
-        help="single_distractor_v1 preserves the original pairwise suite; task_group_v2 uses group contrasts for task decisions.",
-    )
     args = parser.parse_args()
 
-    global TARGET_DESIGN
-    TARGET_DESIGN = args.target_design
     args.out_dir.mkdir(parents=True, exist_ok=True)
     counts = parse_counts(args.counts)
-    log(f"building bank with counts: {counts}; target_design={TARGET_DESIGN}")
+    log(f"building bank with counts: {counts}")
     bank_tokenizer = AutoTokenizer.from_pretrained(args.bank_tokenizer, local_files_only=True)
     cases = build_bank(bank_tokenizer, counts)
     write_jsonl(args.out_dir / "benchmark_query_bank.jsonl", [asdict(case) for case in cases])

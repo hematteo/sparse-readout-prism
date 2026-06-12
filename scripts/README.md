@@ -1,18 +1,18 @@
 # scripts/
 
-CLI entrypoints for the Sparse Readout Prism paper. Library code (functions,
-classes, decomposition primitives) lives in
-[`src/sparse_readout_prism/`](../src/sparse_readout_prism/). The placement rule
-is simple: an entrypoint with a unique body holds that body itself
-(self-contained — most scripts here); a body shared by several entrypoints
-moves into
-[`src/sparse_readout_prism/research/`](../src/sparse_readout_prism/research/)
-so it imports cleanly without `sys.path` hacks, and the entrypoint becomes a
-one-line shim that calls `main()` on it. `research/` is therefore **not** a
-mirror of `scripts/` — it contains a module only when that module has more than
-one consumer. Its verb sub-packages (`figures/`, `data/`, plus
-`_common/`) group those shared bodies by the bucket they back, so a shim and
-its body sit at parallel paths.
+CLI entrypoints for the Sparse Readout Prism paper. Every script here is
+self-contained: it holds its own body and imports only the runtime library
+(`sparse_readout_prism`) and the shared paper helpers
+([`sparse_readout_prism.research`](../src/sparse_readout_prism/research/) — the
+Qwen readout toolkit, query-decomposition toolkit, example-prompt banks, cell
+metrics, run IO, and the multi-model run-script registry). The placement rule
+is simple: logic used by a single entrypoint stays in that entrypoint; a helper
+needed by several entrypoints lives in `research/` so it imports cleanly
+without `sys.path` hacks. `tests/test_research_layout.py` enforces both
+directions.
+
+[`../docs/REPRODUCE.md`](../docs/REPRODUCE.md) is the authoritative
+figure / table → script + config map; every script below appears in it.
 
 ## Buckets
 
@@ -25,24 +25,6 @@ its body sit at parallel paths.
 | `figures/`   | Compute and persist the metrics behind the paper figures from `results/` artefacts (metric / eval tables, example panels, lens grids, decompositions). This repo is metrics-only: it persists those metrics as CSV/JSON/.pt; the figures themselves are rendered separately in the paper's LaTeX source from these artefacts. |
 | `data/`      | Extract readout + hidden states from a model, build query banks, mine polysemy / example sets.                   |
 
-## Which scripts reproduce the paper?
-
-[`../docs/REPRODUCE.md`](../docs/REPRODUCE.md) is the authoritative
-figure / table → script + config map. If a script doesn't appear there, it is
-**internal research scaffolding**: a probe, baseline, or diagnostic that was
-useful while writing the paper but is not part of the headline reproduction
-path. These are kept because the canonical scripts still import helpers from
-them. They run, but the public surface area is the reproducing-doc subset.
-
-A few modules ship only as importable helper hubs, and live in the
-`sparse_readout_prism.research` package rather than `scripts/`: the Qwen
-readout toolkit and shared decomposition helpers in `_common/`, the shared
-body that computes the metrics behind the SAE paper examples
-(`figures/compute_sae_paper_examples.py`), and the feature miner
-(`data/mine_polysemy_features.py`). Each is reached through a one-line shim at
-the parallel `scripts/` path (the shared `_common/` helpers additionally back
-several entrypoints), so it ships even though it is not itself a headline
-entrypoint.
 The earlier exploratory families (causal / attention-head circuits,
 CoT-faithfulness and agentic-injection probes, the 160M transcoder/SAE lineage,
 the classical / tuned proto-token-lens renderers, and the per-snapshot
