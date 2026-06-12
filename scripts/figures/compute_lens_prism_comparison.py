@@ -23,18 +23,9 @@ from sparse_readout_prism.research.qwen_readout import (
 )
 
 
-DEFAULT_OUT_DIR = Path("results/qwen2b_lens_prism_comparison_verify_assume")
-DEFAULT_PAPER_DIR = Path("paper/figures/qwen2b_lens_prism_comparison_verify_assume")
-DEFAULT_PROMPT = "The source has not been checked yet. The appropriate next action is to"
-
-FEATURE_LABEL_OVERRIDES: dict[int, str] = {
-    25948: "verify family",
-    47092: "check family",
-    16851: "verify/check family",
-    40205: "Ver surface",
-    28177: "consider family",
-    62519: "assume family",
-}
+DEFAULT_OUT_DIR = Path("results/qwen2b_lens_prism_comparison_bug_insect")
+DEFAULT_PAPER_DIR = Path("paper/figures/qwen2b_lens_prism_comparison_bug_insect")
+DEFAULT_PROMPT = "The programmer reproduced the crash and filed a"
 
 
 def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
@@ -226,8 +217,8 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--paper-dir", type=Path, default=DEFAULT_PAPER_DIR)
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
-    parser.add_argument("--target-a", default=" verify")
-    parser.add_argument("--target-b", default=" assume")
+    parser.add_argument("--target-a", default=" bug")
+    parser.add_argument("--target-b", default=" insect")
     parser.add_argument("--k", type=int, default=256)
     parser.add_argument("--top-features", type=int, default=6)
     parser.add_argument("--top-tokens", type=int, default=10)

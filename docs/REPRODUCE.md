@@ -119,17 +119,17 @@ check.
 
 | Paper artifact | Script | Config / inputs |
 |---|---|---|
-| Method schematics (`fig:srp-schematic` / `readout_query_three_panel`, score-accounting TikZ) | — (paper-side LaTeX/TikZ; no producing script in this repo) | — |
+| Method schematics (`fig:readout-score-schematic` / `readout_query_three_panel`, score-accounting TikZ) | — (paper-side LaTeX/TikZ; no producing script in this repo) | — |
 | §4 main fidelity table (Qwen 0.8B/2B/9B) | `scripts/eval/task_fidelity_evaluation.py` | `configs/registries/exp2_selected_sae_checkpoints.yaml` |
 | §4 main case-study four-panel figure (`fig:selected-readout-prism-examples`: bug/error, bug/insect, bark/dog, bass/trout) | `scripts/figures/compute_sae_paper_examples.py` | hardcoded example sets (`--example-set section43_polysemy_margin`, the default; `EXAMPLE_SETS` in `research/qwen_example_prompts.py`), plus a required `--checkpoint` |
-| §5 metrics behind: logit-lens vs Sparse Readout Prism comparison (`fig:srp-lens-prism-comparison`) | `scripts/figures/compute_lens_prism_comparison.py` | defaults reproduce the paper case (`--target-a " verify"`, `--target-b " assume"`, `--k 256`); `--checkpoint` points at the Qwen3.5-2B 32x/k256 selected SAE in `configs/registries/exp2_selected_sae_checkpoints.yaml`. Computes readout states live (reuses `collect_readout_states_batched` from `sparse_readout_prism.research.qwen_readout`; no precomputed cache) |
+| §1 intro figure: logit-lens vs Sparse Readout Prism comparison (`fig:main-lens-prism-comparison`) | `scripts/figures/compute_lens_prism_comparison.py` | defaults reproduce the paper case (software-context prompt, `--target-a " bug"`, `--target-b " insect"`, `--k 256`); `--checkpoint` points at the Qwen3.5-2B 32x/k256 selected SAE in `configs/registries/exp2_selected_sae_checkpoints.yaml`. Computes readout states live (reuses `collect_readout_states_batched` from `sparse_readout_prism.research.qwen_readout`; no precomputed cache) |
 | Table / metrics behind: benchmark-derived task targets | `scripts/run/run_benchmark_derived_query_suite.py`, `scripts/figures/compute_benchmark_task_group_examples.py` | `--out-dir results/benchmark_derived_query_suite_task_group_v2_qwen_20260523` (the suite uses task-group contrasts — the paper's `task_group_v2` design — and does not derive the dir from it; pass `--out-dir` explicitly) |
-| Metrics behind: family / availability / selection queries | `scripts/figures/compute_general_readout_queries.py` | `configs/registries/result1_query_fidelity_cluster.yaml` |
+| Metrics behind: selected-score / family / selection queries (`fig:qwen-general-readout-scores-basic`, `fig:app-qwen-general-readout-scores-extra`) | `scripts/figures/compute_general_readout_queries.py` | query specs are built in (the paper's jury/guilty panels plus the abstention-family contrast); `--checkpoint` points at the Qwen3.5-2B 32x/k256 selected SAE in `configs/registries/result1_query_fidelity_cluster.yaml` |
 | Metrics behind: literature-prompt all-layer trace | `scripts/figures/compute_all_layer_literature_prompt.py` | — |
 | Baseline comparison metrics (Sparse RP vs nulls) | `scripts/run/run_readout_baseline_comparisons.py` | outputs persisted as CSV/JSON for the paper-side baseline figure |
 | Result-1 five-model query-fidelity tables / §4.5 distributional readout metrics | `scripts/run/run_query_fidelity_bank.py` | `configs/registries/result1_query_fidelity_cluster.yaml` + the curated/model-native banks under `data/query_banks/` |
-| Appendix J: lexical-edit / readout-side control stress test (`tab:app-lexical-edit-primary-methods`, `tab:app-lexical-edit-cross-model`) | `scripts/run/run_qwen_profanity_suppression_eval.py` | `--checkpoint <qwen2b 32x/k256 checkpoint.pt>`; the primary-methods table reads `baseline_comparison.csv` / `candidate_constrained_summary.csv` (the eval emits these tables only — no paper figure). For the cross-model table, rerun once per model with the checkpoints in `configs/registries/result1_query_fidelity_cluster.yaml` (Qwen3.5-2B fidelity 32x/k256; R1-Distill-Qwen-7B fidelity 32x/k256; Ministral-3-8B-Base strict_budget 16x/k128) |
-| Appendix K sweep / selection tables (`tab:app-k-model-finalists`, `tab:app-factorizer-selection-evidence`, `tab:app-model-suite-current`) | — (no figure ships; numbers hand-transcribed from the audited literals in [`data/appendix/appendix_k_sweep_tables.json`](../data/appendix/appendix_k_sweep_tables.json)) | `configs/sweeps/arch_frontier_160m.yaml`, `configs/sweeps/paper_phase2_frontier.yaml` |
+| Appendix J: lexical-edit / readout-side control stress test (`tab:lexical-control-primary-methods`, `tab:lexical-control-cross-model-results`) | `scripts/run/run_qwen_profanity_suppression_eval.py` | `--checkpoint <qwen2b 32x/k256 checkpoint.pt>`; the primary-methods table reads `baseline_comparison.csv` / `candidate_constrained_summary.csv` (the eval emits these tables only — no paper figure). For the cross-model table, rerun once per model with the checkpoints in `configs/registries/result1_query_fidelity_cluster.yaml` (Qwen3.5-2B fidelity 32x/k256; R1-Distill-Qwen-7B fidelity 32x/k256; Ministral-3-8B-Base strict_budget 16x/k128) |
+| Appendix K sweep / selection tables (`tab:app-k-model-finalists`, `tab:app-model-suite-current`, and the other `tab:app-k-*` sweep ledgers) | — (no figure ships; numbers hand-transcribed from the audited literals in [`data/appendix/appendix_k_sweep_tables.json`](../data/appendix/appendix_k_sweep_tables.json)) | `configs/sweeps/arch_frontier_160m.yaml`, `configs/sweeps/paper_phase2_frontier.yaml` |
 | Appendix L: global readout-feature profiles (shell/java, port/cell) | `scripts/analyze/analyze_readout_feature_directions.py` | `--sae-id qwen2b_k256 --context-set interesting_domains --case-ids shell_beach,shell_terminal,java_coffee,java_programming --top-directions 20` (rerun with the `port_harbor,port_network,cell_prison,cell_biology` case-ids for `port_cell`); persists the per-direction metrics behind the global-readout bars |
 | Appendix M: metrics behind feature-resolved DLA, vocab-mean verify contrast | `scripts/figures/compute_prism_dla.py` | `--contrast-mode vocab_mean --out-dir results/qwen2b_32x_prism_dla_verify_token_layer_readout` (output basenames are the fixed `qwen2b_32x_prism_dla_*` prefix; the dir distinguishes this vocab-mean run from the default `_verify_assume`) |
 | Appendix L: metrics behind additional bark/bass margin case studies | `scripts/figures/compute_sae_paper_examples.py` | `--example-set section43_margin_appendix2 --out-dir results/qwen2b_32x_margin_examples_appendix2 --k 256` (32x/k256 checkpoint; output basenames are the fixed `qwen2b_selected_paper_examples_*`, so a distinct `--out-dir` keeps them from overwriting the default four-panel run) |
@@ -146,7 +146,7 @@ lexical-edit tables are transcribed by hand from the CSV outputs of the scripts
 above. A few artifacts have no producing script and are authored in the paper's
 LaTeX source:
 
-- **Schematics** — `fig:srp-schematic` (`readout_query_three_panel.pdf`) and the
+- **Schematics** — `fig:readout-score-schematic` (`readout_query_three_panel.pdf`) and the
   score-accounting TikZ schematic are hand-drawn LaTeX/TikZ; there is no repo
   deliverable.
 - **Feature-label audit counts** (`tab:app-qualitative-feature-label-audit`) — the
@@ -158,7 +158,7 @@ LaTeX source:
   `bug` panels); the per-set totals the paper reports are recorded in
   `data/audit/feature_label_audit.json`. Annotating the remaining figure-sets needs
   the displayed feature ids from the figure scripts plus the same human pass.
-- **`fig:app-qwen-prism-dla-verify-token`** — `compute_prism_dla.py` persists the
+- **`fig:qwen-prism-dla-verify-token-app`** — `compute_prism_dla.py` persists the
   per-component / per-feature DLA metrics (`qwen2b_32x_prism_dla_*` CSVs plus a
   `manifest.json`) under the `--out-dir` directory; the heatmap and stacked
   component-bar layout shown in the paper are composed in the paper's LaTeX

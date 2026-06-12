@@ -36,10 +36,6 @@ from sparse_readout_prism.research.qwen_example_prompts import EXAMPLE_SETS
 DEFAULT_OUT_DIR = Path("results/qwen_pre_token_readout_directions")
 
 SELECTED_SAES = {
-    "qwen2b_k128": {
-        "k": 128,
-        "description": "Qwen3.5-2B 16x d32768 k128, main case-study SAE",
-    },
     "qwen2b_k256": {
         "k": 256,
         "description": "Qwen3.5-2B 32x d65536 k256, fidelity/domain SAE",
@@ -417,7 +413,7 @@ def write_summary(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sae-id", choices=sorted(SELECTED_SAES), default="qwen2b_k128")
+    parser.add_argument("--sae-id", choices=sorted(SELECTED_SAES), default="qwen2b_k256")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--k", type=int, default=None)
     parser.add_argument("--context-set", choices=sorted(CONTEXT_SETS), default="interesting_domains")

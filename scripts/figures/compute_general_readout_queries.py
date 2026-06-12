@@ -28,69 +28,6 @@ DEFAULT_OUT_DIR = Path("results/qwen2b_general_readout_queries")
 DEFAULT_PAPER_DIR = Path("paper/figures/qwen2b_general_readout_queries")
 
 
-QUERY_SPECS: tuple[QuerySpec, ...] = (
-    QuerySpec(
-        case_id="selected_bug_raw",
-        role="Selected token",
-        query_kind="selected_token",
-        title="Selected token score",
-        prompt="The programmer reproduced the crash and filed a",
-        target="bug",
-        note="Raw selected-token score h^T W_U[bug].",
-    ),
-    QuerySpec(
-        case_id="availability_bug_mean",
-        role="Availability",
-        query_kind="target_vs_vocab_mean",
-        title="Token vs vocabulary mean",
-        prompt="The programmer reproduced the crash and filed a",
-        target="bug",
-        note="Centered selected-token availability h^T(W_U[bug]-mean(W_U)).",
-    ),
-    QuerySpec(
-        case_id="pairwise_bug_insect",
-        role="Named arbitration",
-        query_kind="pairwise_margin",
-        title="Software sense over insect",
-        prompt="The programmer reproduced the crash and filed a",
-        target_a="bug",
-        target_b="insect",
-        note="Pairwise token margin h^T(W_U[bug]-W_U[insect]).",
-    ),
-    QuerySpec(
-        case_id="family_unknown_color",
-        role="Token-family arbitration",
-        query_kind="token_family_margin",
-        title="Abstention family",
-        prompt=("The passage says Alice owns a key. It does not say her favorite color. Alice's favorite color is"),
-        target_family=("unknown", "Unknown", "unclear", "unavailable", "not"),
-        contrast_family=("red", "blue"),
-        note="Mean abstention-family rows versus mean forced-color rows.",
-    ),
-    QuerySpec(
-        case_id="selection_bug_topk",
-        role="Selection pressure",
-        query_kind="winner_vs_topk",
-        title="Winner vs local competitors",
-        prompt="The programmer reproduced the crash and filed a",
-        note="Exact local winner versus a softmax-weighted top-k competitor row average.",
-        top_competitors=10,
-    ),
-)
-
-BUG_TOP5_QUERY_SPECS: tuple[QuerySpec, ...] = (
-    *QUERY_SPECS[:4],
-    QuerySpec(
-        case_id="selection_bug_top5",
-        role="Selection pressure",
-        query_kind="winner_vs_rank",
-        title="Winner vs rank-5 competitor",
-        prompt="The programmer reproduced the crash and filed a",
-        note="Exact local winner versus the rank-5 competitor row.",
-        competitor_rank=5,
-    ),
-)
-
 JURY_TOP5_QUERY_SPECS: tuple[QuerySpec, ...] = (
     QuerySpec(
         case_id="selected_guilty_raw",
@@ -120,7 +57,16 @@ JURY_TOP5_QUERY_SPECS: tuple[QuerySpec, ...] = (
         target_b="not",
         note="Pairwise token margin h^T(W_U[guilty]-W_U[not]).",
     ),
-    QUERY_SPECS[3],
+    QuerySpec(
+        case_id="family_unknown_color",
+        role="Token-family arbitration",
+        query_kind="token_family_margin",
+        title="Abstention family",
+        prompt=("The passage says Alice owns a key. It does not say her favorite color. Alice's favorite color is"),
+        target_family=("unknown", "Unknown", "unclear", "unavailable", "not"),
+        contrast_family=("red", "blue"),
+        note="Mean abstention-family rows versus mean forced-color rows.",
+    ),
     QuerySpec(
         case_id="selection_guilty_top5",
         role="Selection pressure",
@@ -131,12 +77,6 @@ JURY_TOP5_QUERY_SPECS: tuple[QuerySpec, ...] = (
         competitor_rank=5,
     ),
 )
-
-CASE_SETS: dict[str, tuple[QuerySpec, ...]] = {
-    "default": QUERY_SPECS,
-    "bug_top5": BUG_TOP5_QUERY_SPECS,
-    "jury_top5": JURY_TOP5_QUERY_SPECS,
-}
 
 
 def select_display_rows(feature_rows: list[dict[str, object]], *, top_features: int) -> list[dict[str, object]]:
@@ -152,7 +92,7 @@ def select_display_rows(feature_rows: list[dict[str, object]], *, top_features: 
 
 @torch.no_grad()
 def run(args: argparse.Namespace) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
-    query_specs = CASE_SETS[args.case_set]
+    query_specs = JURY_TOP5_QUERY_SPECS
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
     device = torch.device(args.device)
     model, tokenizer = load_qwen_model(args.model_id, dtype, local_files_only=args.local_files_only)
@@ -238,7 +178,7 @@ def run(args: argparse.Namespace) -> tuple[list[dict[str, object]], list[dict[st
         "model_id": args.model_id,
         "checkpoint": str(args.checkpoint),
         "k": args.k,
-        "case_set": args.case_set,
+        "case_set": "jury_top5",
         "query_case_ids": [spec.case_id for spec in query_specs],
         "sae_config": sae_config,
     }
@@ -285,7 +225,6 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--paper-dir", type=Path, default=DEFAULT_PAPER_DIR)
     parser.add_argument("--k", type=int, default=256)
-    parser.add_argument("--case-set", choices=sorted(CASE_SETS), default="default")
     parser.add_argument("--top-features", type=int, default=8)
     parser.add_argument("--label-top-tokens", type=int, default=4)
     parser.add_argument("--label-chunk-size", type=int, default=4096)

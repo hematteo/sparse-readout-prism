@@ -16,11 +16,11 @@ not evaluate toxicity or alignment.
 Produces the data behind the Appendix-J lexical-edit / readout-side control
 stress test (paper Section 5 edit-stress, ``sec:srp-edit-stress``):
 ``baseline_comparison.csv`` / ``candidate_constrained_summary.csv`` ->
-``tab:app-lexical-edit-primary-methods`` (single model, primary methods at the
+``tab:lexical-control-primary-methods`` (single model, primary methods at the
 selected operating point). Rerun once per model (Qwen3.5-2B,
 DeepSeek-R1-Distill-Qwen-7B at 32x/k256; Ministral-3-8B at 16x/k128 -- the
 checkpoints enumerated in ``configs/registries/result1_query_fidelity_cluster.yaml``)
-for ``tab:app-lexical-edit-cross-model``. See ``docs/REPRODUCE.md``.
+for ``tab:lexical-control-cross-model-results``. See ``docs/REPRODUCE.md``.
 """
 
 from __future__ import annotations
@@ -989,8 +989,8 @@ def main() -> int:
         type=Path,
         required=True,
         help="Trained readout-feature SAE checkpoint.pt (qwen2b 32x/k256 for "
-        "tab:app-lexical-edit-primary-methods; per-model checkpoints for "
-        "tab:app-lexical-edit-cross-model are in "
+        "tab:lexical-control-primary-methods; per-model checkpoints for "
+        "tab:lexical-control-cross-model-results are in "
         "configs/registries/result1_query_fidelity_cluster.yaml).",
     )
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
@@ -1104,7 +1104,7 @@ def main() -> int:
     write_summary_md(args.out_dir / "summary.md", manifest, operating, cand_summary, benign)
 
     # Tables (baseline_comparison.csv / candidate_constrained_summary.csv) are the
-    # only paper-facing outputs (Appendix J tab:app-lexical-edit-*); the eval emits
+    # only paper-facing outputs (Appendix J tab:lexical-control-*); the eval emits
     # no paper figure, so it does not render or copy any plots.
     log(f"done: {args.out_dir}")
     return 0
