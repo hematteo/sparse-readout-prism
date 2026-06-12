@@ -23,7 +23,7 @@ figure / table → script + config map; every script below appears in it.
 | `eval/`      | Evaluate trained factorizers (task-fidelity evaluation; dense / negative-control row-reconstruction diagnostic). |
 | `analyze/`   | Inspect readout-feature projection directions at the final hidden state; W_U row-norm tail stats; feature-label audit. |
 | `figures/`   | Compute and persist the metrics behind the paper figures from `results/` artefacts (metric / eval tables, example panels, lens grids, decompositions). This repo is metrics-only: it persists those metrics as CSV/JSON/.pt; the figures themselves are rendered separately in the paper's LaTeX source from these artefacts. |
-| `data/`      | Extract readout + hidden states from a model, build query banks, mine polysemy / example sets.                   |
+| `data/`      | Extract readout + hidden states from a model, build query banks, mine same-token polysemy context pairs.         |
 
 The earlier exploratory families (causal / attention-head circuits,
 CoT-faithfulness and agentic-injection probes, the 160M transcoder/SAE lineage,

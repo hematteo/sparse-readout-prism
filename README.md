@@ -227,9 +227,9 @@ smoke pipeline above reproduces the full workflow without any download.
 
 **Model nicknames.** `qwen2b` is a historical shorthand for one of the
 selected Qwen checkpoints, not a model identity. It no longer appears in script
-or module names; it survives only in some generated result paths and figure
-filenames (`qwen2b_32x_*`), kept so they match the artifact names cited in the
-paper. The model configs and the registry manifest are the source of truth for
+or module names; it survives in generated result paths and figure filenames
+(`qwen2b_32x_*`) and in registry / CLI operating-point ids (`qwen2b_k256`), kept
+so they match the artifact names cited in the paper. The model configs and the registry manifest are the source of truth for
 which checkpoint a run used (see [`configs/models/`](configs/models/) and the
 registry). Similarly, `proto_token_lens` / `proto_lens` is another historical
 project codename — it predates the "Sparse Readout Prism" name and survives only
