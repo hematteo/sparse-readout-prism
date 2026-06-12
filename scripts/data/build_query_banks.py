@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the Result-1 five-model query banks (frozen JSONL).
 
-Produces three banks under assets/query_banks/:
+Produces three banks under data/query_banks/:
 
   qwen_gemma_result1_model_native_prompts.jsonl  (~520 prompts)
   qwen_gemma_result1_curated_ab.jsonl            (320 base cases: 80 x 4)
@@ -33,7 +33,7 @@ from pathlib import Path
 
 from sparse_readout_prism.paths import repo_root
 
-BANK_DIR = repo_root() / "assets/query_banks"
+BANK_DIR = repo_root() / "data/query_banks"
 
 # --------------------------------------------------------------------------- #
 # Curated A/B bank

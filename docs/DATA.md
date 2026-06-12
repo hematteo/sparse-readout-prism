@@ -2,14 +2,14 @@
 
 Where each kind of artifact lives, what its schema is, and how to wire up
 your own. For the figure → script + config map, see
-[`reproducing.md`](reproducing.md).
+[`REPRODUCE.md`](REPRODUCE.md).
 
 ## 1. Query banks (paper inputs)
 
 Curated and model-native prompt + target-pair JSONL files live in
-[`assets/query_banks/`](../assets/query_banks/). The full schema and a
+[`data/query_banks/`](../data/query_banks/). The full schema and a
 file-by-file table are in
-[`assets/query_banks/README.md`](../assets/query_banks/README.md).
+[`data/query_banks/README.md`](../data/query_banks/README.md).
 
 A record is one **case** — a prompt, a position to score, two targets
 (`A`, `B`), and an expected side. Every script that consumes a bank reads
@@ -74,7 +74,7 @@ uv run python scripts/train/train_readout_sae_from_config.py \
 `configs/sweeps/` — TopK 32×/k256; its `factorizer.d_features: 65536` is `32 ×
 d_model` for Qwen-3.5-2B, so override it with `--set
 factorizer.d_features=<width×d_model>` for another model. See
-`docs/reproducing.md` §1.)
+`docs/REPRODUCE.md` §1.)
 
 ## 5. Adapting to a different model
 
@@ -130,7 +130,7 @@ results/
 ```
 
 Repo doesn't ship a `results/` symlink — point it wherever you keep big
-artefacts (see [`reproducing.md`](reproducing.md#results-directory)).
+artefacts (see [`REPRODUCE.md`](REPRODUCE.md#results-directory)).
 
 ## 7. Filename codename glossary
 

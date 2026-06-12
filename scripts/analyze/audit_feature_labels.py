@@ -19,8 +19,8 @@ Two halves, matching what is and isn't automatable:
   (one row per displayed label) and tallies it into
   ``tab:app-qualitative-feature-label-audit``. A starter annotations file for the
   main ``bug`` panels (transcribed from ``tab:app-main-case-study-feature-audit``)
-  ships at ``assets/audit/feature_label_audit_annotations.csv``; the per-set totals the
-  paper reports are recorded in ``assets/audit/feature_label_audit.json`` for validation.
+  ships at ``data/audit/feature_label_audit_annotations.csv``; the per-set totals the
+  paper reports are recorded in ``data/audit/feature_label_audit.json`` for validation.
   Annotating the other figure-sets needs the displayed feature ids, which come
   from running the figure scripts (GPU + Hub checkpoints) and then classifying.
 
@@ -37,8 +37,8 @@ Substrate for the main case-study features:
 Reproduce the count table from annotations:
 
     uv run python scripts/analyze/audit_feature_labels.py aggregate \
-        --annotations assets/audit/feature_label_audit_annotations.csv \
-        --validate-against assets/audit/feature_label_audit.json \
+        --annotations data/audit/feature_label_audit_annotations.csv \
+        --validate-against data/audit/feature_label_audit.json \
         --out-csv results/feature_label_audit/counts.csv
 """
 

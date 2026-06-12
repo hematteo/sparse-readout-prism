@@ -132,7 +132,7 @@ on the Hugging Face Hub at
 (`<model>/<operating_point>/checkpoint.pt`); download one with
 `huggingface_hub.hf_hub_download`, or train your own
 (`scripts/data/extract_model_readout.py` + the trainer — Pythia-160M is
-CPU-feasible; see [`docs/reproducing.md`](docs/reproducing.md)). The synthetic
+CPU-feasible; see [`docs/REPRODUCE.md`](docs/REPRODUCE.md)). The synthetic
 smoke checkpoint above is **not** shape-compatible with a real model.
 
 ```python
@@ -158,7 +158,7 @@ row_mean, row_norms, rows_normalized = preprocess_rows(W_U)
 #    For a published model, pull the dictionary straight from the Hub, e.g.:
 #      from huggingface_hub import hf_hub_download
 #      ckpt = hf_hub_download("matteohe/sparse-readout-prism", "qwen3.5-2b/k256_32x/checkpoint.pt")
-#    For pythia-160m here, train one locally first (see docs/reproducing.md).
+#    For pythia-160m here, train one locally first (see docs/REPRODUCE.md).
 sae = load_factorizer("checkpoint.pt", freeze=True)       # trained on this model's W_U
 d = decompose_token_logit(
     h              = h,
@@ -175,40 +175,7 @@ print(f"{d.original_logit:.3f} = {d.base_term:.3f} + {d.feature_sum:.3f} + {d.re
 For paired margins, family contrasts, target-vs-vocabulary-mean, and
 winner-vs-competitors decompositions — and for the per-query fidelity gate
 used in the paper — see [`evaluate.py`](src/sparse_readout_prism/evaluate.py)
-and [`docs/reproducing.md`](docs/reproducing.md).
-
-## Documentation
-
-| Doc | What's in it |
-|---|---|
-| [`docs/method.md`](docs/method.md) | 5-minute TL;DR of the algorithm — the setup, the decomposition, the fidelity gate. |
-| [`docs/experiment_design.md`](docs/experiment_design.md) | Claim → experiment → data → metric map for reading the paper results without mixing diagnostics. |
-| [`docs/reproducing.md`](docs/reproducing.md) | Figure / table → script + config map. Hardware budget. |
-| [`docs/data.md`](docs/data.md) | Where artefacts live, schema, how to adapt to a different model. |
-| [`assets/query_banks/README.md`](assets/query_banks/README.md) | Paper-input JSONL schema + per-file purpose. |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Expectations for issues + PRs (this is a paper companion repo). |
-
-Pretrained readout-feature dictionaries (the selected SAEs cited in the
-paper) are published on the Hugging Face Hub at
-[`matteohe/sparse-readout-prism`](https://huggingface.co/matteohe/sparse-readout-prism)
-— 17 dictionaries across 8 base models, laid out as
-`<model>/<operating_point>/checkpoint.pt`.
-[`configs/registries/exp2_selected_sae_checkpoints.yaml`](configs/registries/exp2_selected_sae_checkpoints.yaml)
-records the canonical manifest (model, width, `k`, metrics), and the synthetic
-smoke pipeline above reproduces the full workflow without any download.
-
-**Model nicknames.** `qwen2b` is a historical shorthand for one of the
-selected Qwen checkpoints, not a model identity. It no longer appears in script
-or module names; it survives only in some generated result paths and figure
-filenames (`qwen2b_32x_*`), kept so they match the artifact names cited in the
-paper. The model configs and the registry manifest are the source of truth for
-which checkpoint a run used (see [`configs/models/`](configs/models/) and the
-registry). Similarly, `proto_token_lens` / `proto_lens` is another historical
-project codename — it predates the "Sparse Readout Prism" name and survives only
-in some archive paths and output-dir defaults, not in the method itself. The
-paper additionally reports further Qwen / Gemma / Ministral
-models — those checkpoints are published on the Hub alongside the others; their
-training configs and metrics are listed in the registry manifest.
+and [`docs/REPRODUCE.md`](docs/REPRODUCE.md).
 
 ## Repository layout
 
@@ -236,13 +203,44 @@ scripts/                          CLI entry points (some are thin shims into res
 configs/
   models/, sweeps/, registries/   model configs, sweep grids, paper-selected SAEs
 
-assets/query_banks/               curated prompt banks (paper inputs)
+data/query_banks/                 curated prompt banks (paper inputs)
 
 notebooks/demo.ipynb              the Quickstart as a runnable notebook (Colab-ready)
 
 tests/                            pytest suite (identity + schema; no GPU, no model loads)
-docs/reproducing.md               figure → script + config map
+docs/                             REPRODUCE.md (figure → script + config map),
+                                  DATA.md (artifact layout), THIRD_PARTY.md
 ```
+
+## Documentation
+
+| Doc | What's in it |
+|---|---|
+| [`docs/REPRODUCE.md`](docs/REPRODUCE.md) | Figure / table → script + config map. Hardware budget. |
+| [`docs/DATA.md`](docs/DATA.md) | Where artefacts live, schema, how to adapt to a different model. |
+| [`data/query_banks/README.md`](data/query_banks/README.md) | Paper-input JSONL schema + per-file purpose. |
+
+Pretrained readout-feature dictionaries (the selected SAEs cited in the
+paper) are published on the Hugging Face Hub at
+[`matteohe/sparse-readout-prism`](https://huggingface.co/matteohe/sparse-readout-prism)
+— 17 dictionaries across 8 base models, laid out as
+`<model>/<operating_point>/checkpoint.pt`.
+[`configs/registries/exp2_selected_sae_checkpoints.yaml`](configs/registries/exp2_selected_sae_checkpoints.yaml)
+records the canonical manifest (model, width, `k`, metrics), and the synthetic
+smoke pipeline above reproduces the full workflow without any download.
+
+**Model nicknames.** `qwen2b` is a historical shorthand for one of the
+selected Qwen checkpoints, not a model identity. It no longer appears in script
+or module names; it survives only in some generated result paths and figure
+filenames (`qwen2b_32x_*`), kept so they match the artifact names cited in the
+paper. The model configs and the registry manifest are the source of truth for
+which checkpoint a run used (see [`configs/models/`](configs/models/) and the
+registry). Similarly, `proto_token_lens` / `proto_lens` is another historical
+project codename — it predates the "Sparse Readout Prism" name and survives only
+in some archive paths and output-dir defaults, not in the method itself. The
+paper additionally reports further Qwen / Gemma / Ministral
+models — those checkpoints are published on the Hub alongside the others; their
+training configs and metrics are listed in the registry manifest.
 
 ## Tests
 
@@ -254,6 +252,14 @@ The suite is deliberately small and CI-safe: identity correctness of the
 decomposition, schema invariants of the task-fidelity evaluator, and layout
 guardrails for the `research/` sub-package. No GPU, no model loads, no
 figure rendering.
+
+## Related repository
+
+[`learning-to-read-out`](https://github.com/hematteo/learning-to-read-out) is the
+companion release: it studies how the `W_U` readout *forms over pretraining*
+(parameter-trajectory crosscoders across checkpoints), where this repo
+factorizes the *final* readout into a sparse feature basis for logit-lens
+analysis.
 
 ## Citation
 

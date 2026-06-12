@@ -27,11 +27,11 @@ __pycache__/
 *.vrb
 
 # Generated outputs — large; stay out of source control
+# (data/ is curated paper inputs and IS tracked — only results/ holds outputs)
 /results
-/data
 /local_snapshots
 # Checkpoints / tensor payloads, wherever they land (the quickstart loads a
-# bare checkpoint.pt from the repo root; results/ + data/ are already covered).
+# bare checkpoint.pt from the repo root; results/ is already covered).
 *.pt
 *.pth
 *.ckpt

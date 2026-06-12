@@ -12,7 +12,7 @@ Public API:
         TopKSAE,
     )
 
-See the README for the runtime quickstart, ``docs/reproducing.md`` for the
+See the README for the runtime quickstart, ``docs/REPRODUCE.md`` for the
 paper-figure -> script mapping, and ``scripts/`` for CLI entry points.
 """
 

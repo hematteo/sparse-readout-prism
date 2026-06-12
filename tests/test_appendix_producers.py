@@ -123,8 +123,8 @@ def test_dense_control_diagnostic_orderings():
 
 
 def test_feature_label_audit_aggregate_matches_shipped_counts():
-    ann_path = ROOT / "assets" / "audit" / "feature_label_audit_annotations.csv"
-    ref_path = ROOT / "assets" / "audit" / "feature_label_audit.json"
+    ann_path = ROOT / "data" / "audit" / "feature_label_audit_annotations.csv"
+    ref_path = ROOT / "data" / "audit" / "feature_label_audit.json"
     annotations = fla._read_annotations(ann_path)
     counts = fla.tally_annotations(annotations)
     by_set = {r["feature_set"]: r for r in counts}
@@ -142,7 +142,7 @@ def test_feature_label_audit_aggregate_matches_shipped_counts():
 
 
 def test_recorded_audit_totals_sum():
-    ref = json.loads((ROOT / "assets" / "audit" / "feature_label_audit.json").read_text())
+    ref = json.loads((ROOT / "data" / "audit" / "feature_label_audit.json").read_text())
     total = ref["total"]
     for key in ("labels", "coherent", "ambiguous", "token_form", "target_consistent"):
         assert sum(s[key] for s in ref["feature_sets"]) == total[key]

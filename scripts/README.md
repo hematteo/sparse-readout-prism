@@ -27,7 +27,7 @@ its body sit at parallel paths.
 
 ## Which scripts reproduce the paper?
 
-[`../docs/reproducing.md`](../docs/reproducing.md) is the authoritative
+[`../docs/REPRODUCE.md`](../docs/REPRODUCE.md) is the authoritative
 figure / table → script + config map. If a script doesn't appear there, it is
 **internal research scaffolding**: a probe, baseline, or diagnostic that was
 useful while writing the paper but is not part of the headline reproduction
@@ -47,7 +47,7 @@ The earlier exploratory families (causal / attention-head circuits,
 CoT-faithfulness and agentic-injection probes, the 160M transcoder/SAE lineage,
 the classical / tuned proto-token-lens renderers, and the per-snapshot
 proto-token-lens PoC plus the readout / logit-trajectory display renderers)
-have been removed. See `docs/reproducing.md` §4.
+have been removed. See `docs/REPRODUCE.md` §4.
 
 For the runtime API of the library helpers (the `decompose_token_logit`
 family) see [`../README.md`](../README.md).

@@ -20,7 +20,7 @@ stress test (paper Section 5 edit-stress, ``sec:srp-edit-stress``):
 selected operating point). Rerun once per model (Qwen3.5-2B,
 DeepSeek-R1-Distill-Qwen-7B at 32x/k256; Ministral-3-8B at 16x/k128 -- the
 checkpoints enumerated in ``configs/registries/result1_query_fidelity_cluster.yaml``)
-for ``tab:app-lexical-edit-cross-model``. See ``docs/reproducing.md``.
+for ``tab:app-lexical-edit-cross-model``. See ``docs/REPRODUCE.md``.
 """
 
 from __future__ import annotations

@@ -14,8 +14,8 @@ test: ## uv run --extra dev pytest -q
 smoke: ## CPU-only synthetic smoke run
 	uv run python scripts/train/train_readout_sae_from_config.py --config configs/smoke.yaml
 
-figures: ## per-figure commands live in docs/reproducing.md (most need prior GPU runs / Hub checkpoints)
-	@echo "Per-figure commands are in docs/reproducing.md; most need prior GPU runs or Hub checkpoints."
+figures: ## per-figure commands live in docs/REPRODUCE.md (most need prior GPU runs / Hub checkpoints)
+	@echo "Per-figure commands are in docs/REPRODUCE.md; most need prior GPU runs or Hub checkpoints."
 
 lint: ## ruff check + format --check (same as CI)
 	uv run --extra dev ruff check src/ scripts/ tests/

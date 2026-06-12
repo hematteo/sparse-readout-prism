@@ -2,7 +2,7 @@
 """Dense and negative-control row-reconstruction diagnostic (Appendix K).
 
 Reproduces the "Dense and Negative-Control Results Omitted from Section 5"
-numbers (recorded literals in ``assets/appendix/appendix_k_sweep_tables.json`` under
+numbers (recorded literals in ``data/appendix/appendix_k_sweep_tables.json`` under
 ``omp_diagnostic``): on the centred+normalised W_U rows the trained encoder is
 compared against coefficient refits on its own support and against greedy
 matching pursuit over the full decoder dictionary, plus a dense rank-k

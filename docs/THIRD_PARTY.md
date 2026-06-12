@@ -31,7 +31,7 @@ default PyPI index.
 
 The model-native query bank is sampled from the C4 `en` `validation` split. The
 exact dataset revision and the sampling configuration are pinned in the
-query-bank manifest (`assets/query_banks/*_c4_manifest.json`; the shipped
+query-bank manifest (`data/query_banks/*_c4_manifest.json`; the shipped
 manifest is `qwen_gemma_result1_model_native_prompts_c4_manifest.json`):
 
 - `source_dataset: allenai/c4`

@@ -1,8 +1,7 @@
 # Reproducing the paper
 
-This doc maps each paper claim to the script and config that produced it. For
-the experiment hierarchy and claim boundaries, start with
-[`experiment_design.md`](experiment_design.md).
+This doc maps each paper claim to the script and config that produced it; the
+experiment hierarchy and claim boundaries are laid out in the paper itself.
 
 **This repo is metrics-only.** Every script computes and *persists* its metrics
 (CSV / JSON / `.pt`), and those committed metric artifacts are the reproducible
@@ -29,7 +28,7 @@ External data:
 - The C4 model-native slice used for headline numbers is built by
   `scripts/data/build_query_banks.py --native-source c4` (its provenance /
   revision is pinned in
-  `assets/query_banks/qwen_gemma_result1_model_native_prompts_c4_manifest.json`).
+  `data/query_banks/qwen_gemma_result1_model_native_prompts_c4_manifest.json`).
 
 Pretrained readout-feature dictionaries (the *selected* SAEs cited in the
 paper) are published on the Hugging Face Hub at
@@ -96,7 +95,7 @@ the displayed query passes its residual/sign gate.
    `checkpoint.pt` + `config.yaml`); `--data-path` is the extract `.pt` from step 1;
    `--bank` is a torch `.pt` margin/query bank loaded via `torch.load` (the
    `{h, margin_items, query_items}` schema documented in the script's module
-   docstring). The `.jsonl` files under `assets/query_banks/` are case *inputs*,
+   docstring). The `.jsonl` files under `data/query_banks/` are case *inputs*,
    not this bank — the `.pt` bank is built separately from those cases plus
    extracted hidden states.
    ```bash
@@ -113,8 +112,7 @@ The `scripts/figures/*.py` entries below compute and persist the metrics behind
 each figure (CSV / JSON / `.pt`); they do not render figures. The figures
 themselves are assembled in the paper's LaTeX source from these metrics.
 
-Use this table together with the claim map in
-[`experiment_design.md`](experiment_design.md): a figure that reports rowEV,
+When reading this table, keep the claim boundaries in mind: a figure that reports rowEV,
 top1, or KL is a replacement/reconstruction diagnostic, while a figure that
 interprets feature bars should also report the local query residual and sign
 check.
@@ -129,16 +127,16 @@ check.
 | Metrics behind: family / availability / selection queries | `scripts/figures/compute_general_readout_queries.py` | `configs/registries/result1_query_fidelity_cluster.yaml` |
 | Metrics behind: literature-prompt all-layer trace | `scripts/figures/compute_all_layer_literature_prompt.py` | — |
 | Baseline comparison metrics (Sparse RP vs nulls) | `scripts/run/run_readout_baseline_comparisons.py` | outputs persisted as CSV/JSON for the paper-side baseline figure |
-| Result-1 five-model query-fidelity tables / §4.5 distributional readout metrics | `scripts/run/run_query_fidelity_bank.py` | `configs/registries/result1_query_fidelity_cluster.yaml` + the curated/model-native banks under `assets/query_banks/` |
+| Result-1 five-model query-fidelity tables / §4.5 distributional readout metrics | `scripts/run/run_query_fidelity_bank.py` | `configs/registries/result1_query_fidelity_cluster.yaml` + the curated/model-native banks under `data/query_banks/` |
 | Appendix J: lexical-edit / readout-side control stress test (`tab:app-lexical-edit-primary-methods`, `tab:app-lexical-edit-cross-model`) | `scripts/run/run_qwen_profanity_suppression_eval.py` | `--checkpoint <qwen2b 32x/k256 checkpoint.pt>`; the primary-methods table reads `baseline_comparison.csv` / `candidate_constrained_summary.csv` (the eval emits these tables only — no paper figure). For the cross-model table, rerun once per model with the checkpoints in `configs/registries/result1_query_fidelity_cluster.yaml` (Qwen3.5-2B fidelity 32x/k256; R1-Distill-Qwen-7B fidelity 32x/k256; Ministral-3-8B-Base strict_budget 16x/k128) |
-| Appendix K sweep / selection tables (`tab:app-k-model-finalists`, `tab:app-factorizer-selection-evidence`, `tab:app-model-suite-current`) | — (no figure ships; numbers hand-transcribed from the audited literals in [`assets/appendix/appendix_k_sweep_tables.json`](../assets/appendix/appendix_k_sweep_tables.json)) | `configs/sweeps/arch_frontier_160m.yaml`, `configs/sweeps/paper_phase2_frontier.yaml` |
+| Appendix K sweep / selection tables (`tab:app-k-model-finalists`, `tab:app-factorizer-selection-evidence`, `tab:app-model-suite-current`) | — (no figure ships; numbers hand-transcribed from the audited literals in [`data/appendix/appendix_k_sweep_tables.json`](../data/appendix/appendix_k_sweep_tables.json)) | `configs/sweeps/arch_frontier_160m.yaml`, `configs/sweeps/paper_phase2_frontier.yaml` |
 | Appendix L: global readout-feature profiles (shell/java, port/cell) | `scripts/analyze/analyze_readout_feature_directions.py` | `--sae-id qwen2b_k256 --context-set interesting_domains --case-ids shell_beach,shell_terminal,java_coffee,java_programming --top-directions 20` (rerun with the `port_harbor,port_network,cell_prison,cell_biology` case-ids for `port_cell`); persists the per-direction metrics behind the global-readout bars |
 | Appendix M: metrics behind feature-resolved DLA, vocab-mean verify contrast | `scripts/figures/compute_prism_dla.py` | `--contrast-mode vocab_mean --out-dir results/qwen2b_32x_prism_dla_verify_token_layer_readout` (output basenames are the fixed `qwen2b_32x_prism_dla_*` prefix; the dir distinguishes this vocab-mean run from the default `_verify_assume`) |
 | Appendix L: metrics behind additional bark/bass margin case studies | `scripts/figures/compute_sae_paper_examples.py` | `--example-set section43_margin_appendix2 --out-dir results/qwen2b_32x_margin_examples_appendix2 --k 256` (32x/k256 checkpoint; output basenames are the fixed `qwen2b_selected_paper_examples_*`, so a distinct `--out-dir` keeps them from overwriting the default `paper` set) |
 | Appendix L: ring fixed-token context delta metrics | `scripts/data/mine_polysemy_features.py` | `--force-pair-ids ring_jewelry_phone`; persists the polysemy delta metrics behind the ring context-delta figure |
 | Appendix K: W_U row-norm tail stats (`tab:app-k-row-norm-tail`) | `scripts/analyze/compute_row_norm_tail_stats.py` | `--registry configs/registries/result1_query_fidelity_cluster.yaml --models Qwen3.5-9B,Ministral-3-8B-Base,R1-Distill-Qwen-7B,R1-Distill-Llama-8B` (or `--artifact "label=<extract>.pt"`); centred row norms, no GPU/checkpoint |
-| Appendix K: dense / negative-control diagnostic (`omp_diagnostic` in [`assets/appendix/appendix_k_sweep_tables.json`](../assets/appendix/appendix_k_sweep_tables.json)) | `scripts/eval/dense_control_diagnostic.py` | `--w-u <extract>.pt --checkpoint <ckpt.pt> --setting "Qwen-9B 32x, k=256" --n-rows 20000 --bootstrap 1000` (encoder vs LS/NNLS-on-support vs signed/nonneg OMP vs dense rank-k, scored by rowEV) |
-| Appendix L: feature-label audit (`tab:app-main-case-study-feature-audit` data; `tab:app-qualitative-feature-label-audit` counts) | `scripts/analyze/audit_feature_labels.py` | `substrate --feature-ids 36,4095,… --model-id Qwen/Qwen3.5-2B` emits per-feature top rows; `aggregate --annotations assets/audit/feature_label_audit_annotations.csv --validate-against assets/audit/feature_label_audit.json` tallies the counts (classification is human; see note below) |
+| Appendix K: dense / negative-control diagnostic (`omp_diagnostic` in [`data/appendix/appendix_k_sweep_tables.json`](../data/appendix/appendix_k_sweep_tables.json)) | `scripts/eval/dense_control_diagnostic.py` | `--w-u <extract>.pt --checkpoint <ckpt.pt> --setting "Qwen-9B 32x, k=256" --n-rows 20000 --bootstrap 1000` (encoder vs LS/NNLS-on-support vs signed/nonneg OMP vs dense rank-k, scored by rowEV) |
+| Appendix L: feature-label audit (`tab:app-main-case-study-feature-audit` data; `tab:app-qualitative-feature-label-audit` counts) | `scripts/analyze/audit_feature_labels.py` | `substrate --feature-ids 36,4095,… --model-id Qwen/Qwen3.5-2B` emits per-feature top rows; `aggregate --annotations data/audit/feature_label_audit_annotations.csv --validate-against data/audit/feature_label_audit.json` tallies the counts (classification is human; see note below) |
 
 ### Notes and paper-only artifacts
 
@@ -155,9 +153,9 @@ LaTeX source:
   `scripts/analyze/audit_feature_labels.py substrate`, but the
   coherent / ambiguous / token-form classification is a human judgment. The
   count table is reproduced by `… aggregate` from a checked-in annotations CSV
-  (`assets/audit/feature_label_audit_annotations.csv`, currently covering the main
+  (`data/audit/feature_label_audit_annotations.csv`, currently covering the main
   `bug` panels); the per-set totals the paper reports are recorded in
-  `assets/audit/feature_label_audit.json`. Annotating the remaining figure-sets needs
+  `data/audit/feature_label_audit.json`. Annotating the remaining figure-sets needs
   the displayed feature ids from the figure scripts plus the same human pass.
 - **`fig:app-qwen-prism-dla-verify-token`** — `compute_prism_dla.py` persists the
   per-component / per-feature DLA metrics (`qwen2b_32x_prism_dla_*` CSVs plus a
