@@ -1,0 +1,85 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: pytest (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python }}
+        run: uv python install ${{ matrix.python }}
+
+      - name: Install dependencies
+        run: uv sync --locked --extra dev
+
+      - name: Run tests
+        run: uv run pytest -q
+
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      # Lint through the locked dev env so CI uses the same ruff version as
+      # `make lint` / `uv sync --extra dev` instead of drifting to latest.
+      - name: Install dependencies (locked dev env)
+        run: uv sync --locked --extra dev
+
+      - name: ruff check
+        run: uv run ruff check src/ scripts/ tests/
+
+      - name: ruff format --check
+        run: uv run ruff format --check src/ scripts/ tests/
+
+  smoke:
+    name: smoke pipeline (CPU, synthetic)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      # Exercises the full train -> eval -> label pipeline on the
+      # synthetic fallback (no GPU, no external data, ~1s). Outputs and the
+      # report are redirected to a temp dir so no tracked file is modified.
+      - name: Run synthetic smoke pipeline
+        run: |
+          uv run python scripts/train/train_readout_sae_from_config.py \
+            --config configs/smoke.yaml \
+            --out-dir "$RUNNER_TEMP/smoke" \
+            --set artifacts.report_path="$RUNNER_TEMP/smoke/smoke.md"

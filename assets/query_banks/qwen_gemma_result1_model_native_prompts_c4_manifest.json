@@ -1,0 +1,29 @@
+{
+  "bank": "model_native",
+  "family": "c4_model_native",
+  "source_dataset": "allenai/c4",
+  "source_config": "en",
+  "source_split": "validation",
+  "source_revision": "1588ec454efa1a09f29cd18ddd04fe05fc8653a2",
+  "sampling_seed": 0,
+  "shuffle_buffer_size": 100000,
+  "prefix_words": 110,
+  "max_native": 10000,
+  "n_emitted": 10000,
+  "n_scanned": 11865,
+  "n_skipped": 1865,
+  "skipped_by_reason": {
+    "too_short_words": 1338,
+    "too_short_chars": 502,
+    "control_heavy": 25
+  },
+  "filter": {
+    "min_chars": 200,
+    "min_words": 64,
+    "min_alpha_ratio": 0.6,
+    "max_newline_ratio": 0.05,
+    "max_http_count": 3
+  },
+  "generated_at": "2026-05-19T15:22:31",
+  "command": "scripts/data/build_query_banks.py --native-source c4 --c4-revision 1588ec454efa1a09f29cd18ddd04fe05fc8653a2 --seed 0 --max-native 10000"
+}

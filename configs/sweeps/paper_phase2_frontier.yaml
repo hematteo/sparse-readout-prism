@@ -1,0 +1,109 @@
+# Paper SAE training-recipe sweep — Phase 2: Main Architecture Frontier.
+# Pythia-160M step 143000 (development model; only extracted data on cluster).
+#
+# This is the checkpoint-saving frontier the master report flags as the
+# pre-publication blocker: the prior arch_frontier_160m ran with
+# save_checkpoint=false so the rigorous v2 eval + hard checks could not be
+# applied. paper_phase2_base.yaml sets save_checkpoint=true.
+#
+# Grid (plan §"Phase 2: Main Architecture Frontier"):
+#   - 6 SAE architectures (minimal-defensible required set)
+#   - widths {16384, 32768}
+#   - target L0 / audit-k {64, 128, 256, 512}
+#   - lambda_prism {0, 1e-3}   (0 included to show the prism loss is needed)
+#   - seed 0 (single data_seed; seed confirmation is Phase 5)
+#
+# Per-architecture k_l0_factor reused from the arch_frontier_160m
+# calibration so achieved eval-L0 lands on a common grid:
+#     topk        achieved ~ 1.00*k   -> k_l0_factor 1.00
+#     batch_topk  achieved ~ 1.30*k   -> k_l0_factor 0.77
+#     matryoshka  achieved ~ 0.58*k   -> k_l0_factor 1.72
+#     l1_relu     controller-driven, achieved ~ 1.2x target -> pre-scale targets
+#     jumprelu    controller-driven, targets L0 directly (low coeff_init)
+# Analysis still bins by ACHIEVED mean_l0; this only aligns the Pareto region.
+#
+# Cell count: topk/batch_topk/matryoshka 16 each (2 w x 4 L0 x 2 lam) = 48;
+#             l1_relu 16; jumprelu 16; gated 8 (2 w x 2 gate_l1 x 2 lam) = 88.
+
+output_root: results/paper_phase2_frontier
+
+fixed:
+  data:
+    path: ${SRP_ARCHIVE_ROOT}/data/pythia-160m/hLN.pt
+    fallback: error
+    max_rows: 12000
+    max_hidden: 512
+    val_hidden: 256
+    row_preprocessing: center_normalize
+  training:
+    steps: 10000
+    batch_size: 256
+    lr: 0.001
+    weight_decay: 0.0001
+    code_l2: 0.000001
+    prism_top_n: 1
+    row_sampling: frequency
+    log_every: 250
+    checkpoint_every: 20000          # > steps: final checkpoint only (disk)
+    l0_controller:
+      kp: 0.2
+      ema: 0.9
+      warmup_steps: 500
+      control_period: 10
+      err_clip: 0.3
+      coeff_init: 0.0001
+      coeff_min: 1.0e-08
+  evaluation:
+    max_eval_rows: 12000
+    max_eval_hidden: 512
+    topk_overlap: 5
+    contribution_top_k: 8
+  artifacts:
+    save_checkpoint: true
+
+grid:
+  - architecture: matryoshka_topk
+    d_features: [16384, 32768]
+    k_l0_factor: 1.72
+    target_l0: [64, 128, 256, 512]
+    lambda_prism: [0, 0.001]
+    data_seed: [0]
+
+  - architecture: topk
+    d_features: [16384, 32768]
+    k_l0_factor: 1.0
+    target_l0: [64, 128, 256, 512]
+    lambda_prism: [0, 0.001]
+    data_seed: [0]
+
+  - architecture: batch_topk
+    d_features: [16384, 32768]
+    k_l0_factor: 0.77
+    target_l0: [64, 128, 256, 512]
+    lambda_prism: [0, 0.001]
+    data_seed: [0]
+
+  # Controller-driven; achieved ~1.2x target, pre-scale targets by ~0.83 so
+  # achieved L0 lands on the common {64,128,256,512} grid.
+  - architecture: l1_relu
+    d_features: [16384, 32768]
+    target_l0: [53, 107, 213, 427]
+    lambda_prism: [0, 0.001]
+    data_seed: [0]
+
+  # Controller targets L0 directly; coeff_init 1e-4 is the survivable value
+  # from the master report's calibration analysis (higher dead-collapses).
+  - architecture: jumprelu
+    d_features: [16384, 32768]
+    target_l0: [64, 128, 256, 512]
+    lambda_prism: [0, 0.001]
+    data_seed: [0]
+
+  # Gated has no L0 knob; sweep gate_l1_coeff across the alive window
+  # (master report: only ~5e-5..2e-4 stays sparse-but-alive). aux recon on.
+  - architecture: gated
+    d_features: [16384, 32768]
+    gate_l1_coeff: [0.00005, 0.0001]
+    gated_aux_coeff: 1.0
+    lambda_prism: [0, 0.001]
+    data_seed: [0]

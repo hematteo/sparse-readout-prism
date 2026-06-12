@@ -1,0 +1,59 @@
+# Headline per-model run recipe — the shared "converged finalist" recipe behind
+# the selected SAEs: TopK, 32x d_model width, k=256, 20000 steps. Same
+# data/sampling/optimizer recipe as deepseek_r1_distill_*_paper.yaml and
+# ministral3_8b_paper.yaml; this is the complete run config docs/reproducing.md §1
+# and docs/data.md §4 train from.
+#
+# d_features below is 32 * d_model for Qwen-3.5-2B (d_model=2048 -> 65536) — the
+# qwen2b_k256 finalist in configs/registries/exp2_selected_sae_checkpoints.yaml
+# (rowEV 0.847). For a different model/width, override it via
+#   --set factorizer.d_features=<width * d_model>
+# and point --data-path at that model's extracted readout (see docs/reproducing.md).
+
+run:
+  name: paper_phase2_base
+  seed: 0
+  output_dir: results/paper_phase2_base/qwen2b_topk_32x_k256_s0
+  device: auto
+
+data:
+  path: ${SRP_ARCHIVE_ROOT}/data/qwen35-2b/hLN.pt
+  fallback: error
+  max_rows: null
+  max_hidden: 2048
+  val_hidden: 512
+  data_seed: 0
+  row_preprocessing: center_normalize
+
+factorizer:
+  architecture: topk
+  d_features: 65536           # 32 * d_model (Qwen-3.5-2B d_model=2048); override per model
+  k: 256
+  encoder_init_scale: 0.02
+
+training:
+  steps: 20000
+  batch_size: 4096
+  lr: 0.001
+  weight_decay: 0.0001
+  code_l2: 0.000001
+  prism_top_n: 1
+  lambda_prism: 0.001
+  row_sampling: hybrid_50freq_50uniform
+  log_every: 250
+  checkpoint_every: 5000
+
+evaluation:
+  max_eval_rows: 20000
+  max_eval_hidden: 1024
+  topk_overlap: 5
+  contribution_top_k: 8
+  k: 256
+
+artifacts:
+  save_checkpoint: true
+
+autoresearch:
+  score_thresholds:
+    max_dead_feature_rate: 0.5
+    max_val_logit_kl_bits_mean: 20.0

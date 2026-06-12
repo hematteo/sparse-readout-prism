@@ -1,0 +1,55 @@
+# DeepSeek-R1-Distill-Llama-8B W_U-row SAE — PAPER CANDIDATE (32x/k=256).
+# Companion to deepseek_r1_distill_qwen_7b_paper.yaml; confirms post-training
+# rowEV/top1 inversion isn't Qwen-base-specific.
+#
+# d_features PLACEHOLDER assumes d_model=4096 (32 * 4096 = 131072); the true
+# value is read from the extraction manifest and injected by
+# deepseek_r1_distill_llama_8b_train.sbatch via `--set factorizer.d_features=<32*d_model>`.
+
+run:
+  name: deepseek_r1_distill_llama_8b_paper_topk_32x_k256_s0
+  seed: 0
+  output_dir: results/experiments/proto_token_lens/deepseek_r1_distill_llama_8b_sae/topk_32x_k256_rowseeded_hybrid_s0
+  device: auto
+
+data:
+  path: ${SRP_ARCHIVE_ROOT}/data/deepseek-r1-distill-llama-8b/deepseek_r1_distill_llama_8b.pt
+  fallback: error
+  max_rows: null
+  max_hidden: 2048
+  val_hidden: 512
+  data_seed: 0
+  row_preprocessing: center_normalize
+
+factorizer:
+  architecture: topk
+  d_features: 131072           # OVERRIDDEN by sbatch: 32 * manifest d_model
+  k: 256
+  encoder_init_scale: 0.02
+
+training:
+  steps: 20000
+  batch_size: 4096
+  lr: 0.001
+  weight_decay: 0.0001
+  code_l2: 0.000001
+  prism_top_n: 1
+  lambda_prism: 0.001
+  row_sampling: hybrid_50freq_50uniform
+  log_every: 250
+  checkpoint_every: 5000
+
+evaluation:
+  max_eval_rows: 20000
+  max_eval_hidden: 1024
+  topk_overlap: 5
+  contribution_top_k: 8
+  k: 256
+
+artifacts:
+  save_checkpoint: true
+
+autoresearch:
+  score_thresholds:
+    max_dead_feature_rate: 0.5
+    max_val_logit_kl_bits_mean: 20.0

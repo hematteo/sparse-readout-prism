@@ -1,0 +1,131 @@
+# Result-1 five-model query-fidelity registry (cluster paths).
+#
+# Resolves W_U extraction artifacts and converged SAE checkpoints to their
+# on-cluster locations under ${SRP_ARCHIVE_ROOT}. The runner skips
+# any (model, operating_point) whose checkpoint file is missing, so partially
+# synced runs degrade gracefully until their weights are present.
+#
+# Operating points:
+#   fidelity      = fidelity-prioritized point  (32x, k=256)
+#   strict_budget = strict-budget point         (16x/8x,  k=128)
+#
+# W_U_orig in each data/<m>/<m>.pt is the EXACT matrix the SAE was trained on
+# (lm_head input via forward_pre_hook; Gemma post-readout tanh softcap recorded
+# in the *_manifest.json, prism decomposes the pre-softcap readout).
+
+# The trained checkpoints are published on the Hugging Face Hub at
+# `huggingface_repo`, laid out as <model>/<operating_point>/checkpoint.pt
+# (fidelity -> <model>/k256_32x, strict_budget -> <model>/k128_16x; qwen9b
+# strict_budget -> qwen3.5-9b/k128_8x). The `checkpoint:` paths below remain the
+# canonical on-cluster training locations.
+huggingface_repo: matteohe/sparse-readout-prism
+archive_root: ${SRP_ARCHIVE_ROOT}
+
+models:
+  Qwen3.5-0.8B:
+    model_id: Qwen/Qwen3.5-0.8B
+    revision: null
+    w_u_artifact: data/qwen35-0p8b/qwen35_0p8b.pt
+    manifest: data/qwen35-0p8b/qwen35_0p8b_manifest.json
+    operating_points:
+      fidelity:
+        id: qwen0p8b_k256_32x
+        checkpoint: results/qwen35_0p8b_sae/converge/topk_d32768_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+      strict_budget:
+        id: qwen0p8b_k128_16x
+        checkpoint: results/qwen35_0p8b_sae/converge/topk_d16384_16x_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+
+  Qwen3.5-2B:
+    model_id: Qwen/Qwen3.5-2B
+    revision: null
+    w_u_artifact: data/qwen35-2b/qwen35_2b.pt
+    manifest: data/qwen35-2b/qwen35_2b_manifest.json
+    operating_points:
+      fidelity:
+        id: qwen2b_k256_32x
+        checkpoint: results/qwen35_2b_sae/converge/topk_d65536_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+      strict_budget:
+        id: qwen2b_k128_16x
+        checkpoint: results/qwen35_2b_sae/converge/topk_d32768_16x_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+
+  Gemma-4-E2B:
+    model_id: google/gemma-4-E2B-it
+    revision: null
+    w_u_artifact: data/gemma4-e2b/gemma4_e2b.pt
+    manifest: data/gemma4-e2b/gemma4_e2b_manifest.json
+    operating_points:
+      fidelity:
+        id: gemma_e2b_k256_32x
+        checkpoint: results/gemma4_e2b_sae/converge/topk_d49152_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+      strict_budget:
+        id: gemma_e2b_k128_16x
+        checkpoint: results/gemma4_e2b_sae/converge/topk_d24576_16x_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+
+  Gemma-4-E4B:
+    model_id: google/gemma-4-E4B-it
+    revision: null
+    w_u_artifact: data/gemma4-e4b/gemma4_e4b.pt
+    manifest: data/gemma4-e4b/gemma4_e4b_manifest.json
+    operating_points:
+      fidelity:
+        id: gemma_e4b_k256_32x
+        checkpoint: results/gemma4_e4b_sae/converge/topk_d81920_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+      strict_budget:
+        id: gemma_e4b_k128_16x
+        checkpoint: results/gemma4_e4b_sae/converge/topk_d40960_16x_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+
+  Qwen3.5-9B:
+    model_id: Qwen/Qwen3.5-9B
+    revision: null
+    w_u_artifact: data/qwen35-9b/qwen35_9b.pt
+    manifest: data/qwen35-9b/qwen35_9b_manifest.json
+    operating_points:
+      fidelity:
+        id: qwen9b_k256_32x
+        checkpoint: results/qwen9b_no_pca_width_k_sweep/converged/topk_d131072_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+      strict_budget:
+        id: qwen9b_k128_8x
+        checkpoint: results/qwen35_9b_sae/converge/topk_d32768_8x_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+
+  # Cross-family + post-training stress tests added 2026-05-21--22.
+  # SAE checkpoints live under the workspace tree (absolute paths); the
+  # w_u_artifact / manifest fields remain relative to archive_root since the
+  # extraction artifacts are under ${SRP_ARCHIVE_ROOT}/data/.
+  Ministral-3-8B-Base:
+    model_id: mistralai/Ministral-3-8B-Base-2512
+    revision: null
+    w_u_artifact: data/ministral3-8b-base/ministral3_8b_base.pt
+    manifest: data/ministral3-8b-base/ministral3_8b_base_manifest.json
+    operating_points:
+      fidelity:
+        id: ministral8b_k256_32x
+        checkpoint: ${SRP_ARCHIVE_ROOT}/results/experiments/proto_token_lens/ministral3_8b_base_sae/topk_d131072_32x_k256_rowseeded_hybrid_s0/checkpoint.pt
+      strict_budget:
+        id: ministral8b_k128_16x
+        checkpoint: ${SRP_ARCHIVE_ROOT}/results/experiments/proto_token_lens/ministral3_8b_base_sae/topk_d65536_16x_k128_paper20k_s0/checkpoint.pt
+
+  R1-Distill-Qwen-7B:
+    model_id: deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
+    revision: null
+    w_u_artifact: data/deepseek-r1-distill-qwen-7b/deepseek_r1_distill_qwen_7b.pt
+    manifest: data/deepseek-r1-distill-qwen-7b/deepseek_r1_distill_qwen_7b_manifest.json
+    operating_points:
+      fidelity:
+        id: r1dist_qwen7b_k256_32x
+        checkpoint: ${SRP_ARCHIVE_ROOT}/results/experiments/proto_token_lens/deepseek_r1_distill_qwen_7b_sae/topk_32x_k256_rowseeded_hybrid_s0/checkpoint.pt
+      strict_budget:
+        id: r1dist_qwen7b_k128_16x
+        checkpoint: ${SRP_ARCHIVE_ROOT}/results/experiments/proto_token_lens/deepseek_r1_distill_qwen_7b_sae/topk_16x_k128_paper20k_s0/checkpoint.pt
+
+  R1-Distill-Llama-8B:
+    model_id: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
+    revision: null
+    w_u_artifact: data/deepseek-r1-distill-llama-8b/deepseek_r1_distill_llama_8b.pt
+    manifest: data/deepseek-r1-distill-llama-8b/deepseek_r1_distill_llama_8b_manifest.json
+    operating_points:
+      fidelity:
+        id: r1dist_llama8b_k256_32x
+        checkpoint: ${SRP_ARCHIVE_ROOT}/results/experiments/proto_token_lens/deepseek_r1_distill_llama_8b_sae/topk_32x_k256_rowseeded_hybrid_s0/checkpoint.pt
+      strict_budget:
+        id: r1dist_llama8b_k128_16x
+        checkpoint: ${SRP_ARCHIVE_ROOT}/results/experiments/proto_token_lens/deepseek_r1_distill_llama_8b_sae/topk_16x_k128_paper20k_s0/checkpoint.pt

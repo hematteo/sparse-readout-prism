@@ -1,0 +1,688 @@
+{
+  "_provenance": "Audited numeric provenance for the Appendix K sweep/selection tables. These literals are the machine-readable record of the numbers transcribed by hand into Appendix K of the paper (factorizer/operating-point sweep coverage, model finalists, selection-evidence rows, and OMP/dense negative-control diagnostics). No code imports them; kept as a provenance record. See docs/reproducing.md.",
+  "sweep_coverage": [
+    {
+      "family": "Pythia architecture/\nrecipe sweep",
+      "rigorous_or_converged": 243,
+      "pilot_or_design": 294,
+      "control": 0,
+      "in_flight": 0,
+      "notes": "537 training cells across 8 imported sweeps; 243 checkpointed cells received v2 evaluation."
+    },
+    {
+      "family": "Pythia continuity/\nworkspace sweeps",
+      "rigorous_or_converged": 0,
+      "pilot_or_design": 42,
+      "control": 0,
+      "in_flight": 0,
+      "notes": "Local overnight, paper-design, steered, and architecture-continuity run directories."
+    },
+    {
+      "family": "Qwen-9B fixed-k128\nrecipe rescue",
+      "rigorous_or_converged": 1,
+      "pilot_or_design": 22,
+      "control": 0,
+      "in_flight": 0,
+      "notes": "Local metrics mirror: baseline/canaries/pilots plus one converged promoted recipe."
+    },
+    {
+      "family": "Qwen-9B capacity\nwidth/k sweep",
+      "rigorous_or_converged": 3,
+      "pilot_or_design": 4,
+      "control": 0,
+      "in_flight": 0,
+      "notes": "Four 5k capacity pilots plus converged native operating points: k128 anchor, 16x k256, 32x k256 boundary."
+    },
+    {
+      "family": "Qwen-9B JumpReLU\ncontrol",
+      "rigorous_or_converged": 0,
+      "pilot_or_design": 0,
+      "control": 6,
+      "in_flight": 0,
+      "notes": "Four JumpReLU calibration cells plus two step/sparsity-matched TopK controls."
+    },
+    {
+      "family": "Small-model\nwidth/k transfer",
+      "rigorous_or_converged": 8,
+      "pilot_or_design": 24,
+      "control": 4,
+      "in_flight": 0,
+      "notes": "Four-model 8/16/32 x k128/k256 pilot grid, 16x k128 and 32x k256 convergences, plus support-selection oracles."
+    }
+  ],
+  "pythia_curve": [
+    {
+      "k_eval": 64,
+      "top1": 0.714,
+      "top1_lo": 0.7,
+      "top1_hi": 0.727,
+      "top5": 0.725,
+      "kl_bits": 1.139,
+      "rowEV": 0.553
+    },
+    {
+      "k_eval": 128,
+      "top1": 0.69,
+      "top1_lo": 0.675,
+      "top1_hi": 0.704,
+      "top5": 0.681,
+      "kl_bits": 1.28,
+      "rowEV": 0.605
+    },
+    {
+      "k_eval": 192,
+      "top1": 0.67,
+      "top1_lo": 0.656,
+      "top1_hi": 0.684,
+      "top5": 0.659,
+      "kl_bits": 1.332,
+      "rowEV": 0.629
+    },
+    {
+      "k_eval": 256,
+      "top1": 0.671,
+      "top1_lo": 0.657,
+      "top1_hi": 0.685,
+      "top5": 0.657,
+      "kl_bits": 1.331,
+      "rowEV": 0.64
+    },
+    {
+      "k_eval": 384,
+      "top1": 0.67,
+      "top1_lo": 0.656,
+      "top1_hi": 0.684,
+      "top5": 0.657,
+      "kl_bits": 1.335,
+      "rowEV": 0.642
+    }
+  ],
+  "recipe_effects": [
+    {
+      "panel": "Initialization",
+      "setting": "random",
+      "metric": "rowEV",
+      "value": 0.278,
+      "selected": false
+    },
+    {
+      "panel": "Initialization",
+      "setting": "row-seeded",
+      "metric": "rowEV",
+      "value": 0.563,
+      "selected": true
+    },
+    {
+      "panel": "Prism ramp",
+      "setting": "no ramp",
+      "metric": "selected-logit residual",
+      "value": 0.064,
+      "selected": false
+    },
+    {
+      "panel": "Prism ramp",
+      "setting": "delayed ramp",
+      "metric": "selected-logit residual",
+      "value": 0.038,
+      "selected": true
+    },
+    {
+      "panel": "Architecture",
+      "setting": "TopK",
+      "metric": "rowEV",
+      "value": 0.567,
+      "selected": true
+    },
+    {
+      "panel": "Architecture",
+      "setting": "Matry. tail",
+      "metric": "rowEV",
+      "value": 0.559,
+      "selected": false
+    },
+    {
+      "panel": "Architecture",
+      "setting": "Matry. uniform",
+      "metric": "rowEV",
+      "value": 0.554,
+      "selected": false
+    },
+    {
+      "panel": "Architecture",
+      "setting": "BatchTopK",
+      "metric": "rowEV",
+      "value": 0.531,
+      "selected": false
+    },
+    {
+      "panel": "Width",
+      "setting": "16k",
+      "metric": "rowEV",
+      "value": 0.502,
+      "selected": false
+    },
+    {
+      "panel": "Width",
+      "setting": "32k",
+      "metric": "rowEV",
+      "value": 0.564,
+      "selected": true
+    }
+  ],
+  "capacity_native": [
+    {
+      "setting": "8x\nk=128",
+      "d_features": 32768,
+      "k": 128,
+      "rowEV": 0.6206,
+      "top1": 0.8457,
+      "kl_bits": 0.2955,
+      "rare": 0.021
+    },
+    {
+      "setting": "16x\nk=256",
+      "d_features": 65536,
+      "k": 256,
+      "rowEV": 0.7611,
+      "top1": 0.8738,
+      "kl_bits": 0.167,
+      "rare": 0.061
+    },
+    {
+      "setting": "32x\nk=256",
+      "d_features": 131072,
+      "k": 256,
+      "rowEV": 0.8569,
+      "top1": 0.9001,
+      "kl_bits": 0.1048,
+      "rare": 0.2918
+    }
+  ],
+  "qwen_capacity_pilot_trajectories": [
+    {
+      "series": "8x k=128 anchor",
+      "stage": "20k anchor",
+      "width": "8x",
+      "d_features": 32768,
+      "k": 128,
+      "rowEV": 0.6206,
+      "rare": 0.021,
+      "role": "fixed-k128 reference",
+      "status": "reference"
+    },
+    {
+      "series": "16x k=192",
+      "stage": "5k pilot",
+      "width": "16x",
+      "d_features": 65536,
+      "k": 192,
+      "rowEV": 0.6746,
+      "rare": 0.164,
+      "role": "not promoted",
+      "status": "pilot-only"
+    },
+    {
+      "series": "16x k=256",
+      "stage": "5k pilot",
+      "width": "16x",
+      "d_features": 65536,
+      "k": 256,
+      "rowEV": 0.6952,
+      "rare": 0.1,
+      "role": "promoted",
+      "status": "pilot"
+    },
+    {
+      "series": "16x k=256",
+      "stage": "20k converged",
+      "width": "16x",
+      "d_features": 65536,
+      "k": 256,
+      "rowEV": 0.7611,
+      "rare": 0.061,
+      "role": "compact k256 comparison",
+      "status": "converged-compact"
+    },
+    {
+      "series": "32x k=256",
+      "stage": "5k pilot",
+      "width": "32x",
+      "d_features": 131072,
+      "k": 256,
+      "rowEV": 0.799,
+      "rare": 0.319,
+      "role": "promoted to boundary test",
+      "status": "pilot"
+    },
+    {
+      "series": "32x k=256",
+      "stage": "20k converged",
+      "width": "32x",
+      "d_features": 131072,
+      "k": 256,
+      "rowEV": 0.8569,
+      "rare": 0.2918,
+      "role": "capacity frontier",
+      "status": "converged-frontier"
+    }
+  ],
+  "truncation_points": [
+    {
+      "label": "k=128 anchor",
+      "family": "anchor",
+      "rowEV": 0.6206,
+      "top1": 0.8457,
+      "budget": "native k=128"
+    },
+    {
+      "label": "16x native k=256",
+      "family": "16x",
+      "rowEV": 0.7611,
+      "top1": 0.8738,
+      "budget": "native k=256"
+    },
+    {
+      "label": "16x truncated k=128",
+      "family": "16x",
+      "rowEV": 0.695,
+      "top1": 0.721,
+      "budget": "truncated to k=128"
+    },
+    {
+      "label": "32x native k=256",
+      "family": "32x",
+      "rowEV": 0.8569,
+      "top1": 0.9001,
+      "budget": "native k=256"
+    },
+    {
+      "label": "32x truncated k=128",
+      "family": "32x",
+      "rowEV": 0.816,
+      "top1": 0.738,
+      "budget": "truncated to k=128"
+    }
+  ],
+  "small_model_pilot_grid": [
+    {
+      "model": "Qwen-0.8B",
+      "family": "Qwen",
+      "width": "8x",
+      "k": 128,
+      "rowEV": 0.6653,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-0.8B",
+      "family": "Qwen",
+      "width": "16x",
+      "k": 128,
+      "rowEV": 0.7116,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-0.8B",
+      "family": "Qwen",
+      "width": "32x",
+      "k": 128,
+      "rowEV": 0.7627,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-2B",
+      "family": "Qwen",
+      "width": "8x",
+      "k": 128,
+      "rowEV": 0.5892,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-2B",
+      "family": "Qwen",
+      "width": "16x",
+      "k": 128,
+      "rowEV": 0.6524,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-2B",
+      "family": "Qwen",
+      "width": "32x",
+      "k": 128,
+      "rowEV": 0.7273,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E2B",
+      "family": "Gemma",
+      "width": "8x",
+      "k": 128,
+      "rowEV": 0.5591,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E2B",
+      "family": "Gemma",
+      "width": "16x",
+      "k": 128,
+      "rowEV": 0.614,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E2B",
+      "family": "Gemma",
+      "width": "32x",
+      "k": 128,
+      "rowEV": 0.6892,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E4B",
+      "family": "Gemma",
+      "width": "8x",
+      "k": 128,
+      "rowEV": 0.5181,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E4B",
+      "family": "Gemma",
+      "width": "16x",
+      "k": 128,
+      "rowEV": 0.6088,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E4B",
+      "family": "Gemma",
+      "width": "32x",
+      "k": 128,
+      "rowEV": 0.7145,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-0.8B",
+      "family": "Qwen",
+      "width": "8x",
+      "k": 256,
+      "rowEV": 0.7376,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-0.8B",
+      "family": "Qwen",
+      "width": "16x",
+      "k": 256,
+      "rowEV": 0.772,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-0.8B",
+      "family": "Qwen",
+      "width": "32x",
+      "k": 256,
+      "rowEV": 0.8115,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-2B",
+      "family": "Qwen",
+      "width": "8x",
+      "k": 256,
+      "rowEV": 0.6522,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-2B",
+      "family": "Qwen",
+      "width": "16x",
+      "k": 256,
+      "rowEV": 0.7033,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Qwen-2B",
+      "family": "Qwen",
+      "width": "32x",
+      "k": 256,
+      "rowEV": 0.7653,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E2B",
+      "family": "Gemma",
+      "width": "8x",
+      "k": 256,
+      "rowEV": 0.6004,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E2B",
+      "family": "Gemma",
+      "width": "16x",
+      "k": 256,
+      "rowEV": 0.6348,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E2B",
+      "family": "Gemma",
+      "width": "32x",
+      "k": 256,
+      "rowEV": 0.7111,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E4B",
+      "family": "Gemma",
+      "width": "8x",
+      "k": 256,
+      "rowEV": 0.55,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E4B",
+      "family": "Gemma",
+      "width": "16x",
+      "k": 256,
+      "rowEV": 0.6304,
+      "stage": "5k pilot"
+    },
+    {
+      "model": "Gemma-E4B",
+      "family": "Gemma",
+      "width": "32x",
+      "k": 256,
+      "rowEV": 0.742,
+      "stage": "5k pilot"
+    }
+  ],
+  "cross_model_scaling": [
+    {
+      "model": "Qwen-0.8B",
+      "family": "Qwen",
+      "operating_point": "16x, k=128",
+      "k": 128,
+      "rowEV": 0.7604,
+      "top1": 0.844,
+      "kl_bits": 0.2768,
+      "dead": 0.0,
+      "rare": 0.001,
+      "status": "fixed-budget",
+      "rare_panel": false
+    },
+    {
+      "model": "Qwen-0.8B",
+      "family": "Qwen",
+      "operating_point": "32x, k=256",
+      "k": 256,
+      "rowEV": 0.877,
+      "top1": 0.891,
+      "kl_bits": 0.135,
+      "dead": 0.0,
+      "rare": 0.001,
+      "status": "high-capacity",
+      "rare_panel": true
+    },
+    {
+      "model": "Qwen-2B",
+      "family": "Qwen",
+      "operating_point": "16x, k=128",
+      "k": 128,
+      "rowEV": 0.7115,
+      "top1": 0.858,
+      "kl_bits": 0.261,
+      "dead": 0.0,
+      "rare": 0.004,
+      "status": "fixed-budget",
+      "rare_panel": false
+    },
+    {
+      "model": "Qwen-2B",
+      "family": "Qwen",
+      "operating_point": "32x, k=256",
+      "k": 256,
+      "rowEV": 0.847,
+      "top1": 0.887,
+      "kl_bits": 0.136,
+      "dead": 0.0,
+      "rare": 0.01,
+      "status": "high-capacity",
+      "rare_panel": true
+    },
+    {
+      "model": "Qwen-9B",
+      "family": "Qwen",
+      "operating_point": "8x, k=128",
+      "k": 128,
+      "rowEV": 0.6206,
+      "top1": 0.8457,
+      "kl_bits": 0.2955,
+      "dead": 0.0,
+      "rare": 0.021,
+      "status": "recipe anchor",
+      "rare_panel": false
+    },
+    {
+      "model": "Qwen-9B",
+      "family": "Qwen",
+      "operating_point": "16x, k=256",
+      "k": 256,
+      "rowEV": 0.7611,
+      "top1": 0.8738,
+      "kl_bits": 0.167,
+      "dead": 0.0,
+      "rare": 0.061,
+      "status": "compact high-capacity",
+      "rare_panel": false
+    },
+    {
+      "model": "Qwen-9B",
+      "family": "Qwen",
+      "operating_point": "32x, k=256",
+      "k": 256,
+      "rowEV": 0.8569,
+      "top1": 0.9001,
+      "kl_bits": 0.1048,
+      "dead": 0.0,
+      "rare": 0.2918,
+      "status": "capacity frontier",
+      "rare_panel": true
+    },
+    {
+      "model": "Gemma-E2B",
+      "family": "Gemma",
+      "operating_point": "16x, k=128",
+      "k": 128,
+      "rowEV": 0.7144,
+      "top1": 0.623,
+      "kl_bits": 2.58,
+      "dead": 0.001,
+      "rare": 0.031,
+      "status": "pre-softcap caveat",
+      "rare_panel": false
+    },
+    {
+      "model": "Gemma-E2B",
+      "family": "Gemma",
+      "operating_point": "32x, k=256",
+      "k": 256,
+      "rowEV": 0.834,
+      "top1": 0.333,
+      "kl_bits": 7.3,
+      "dead": 0.0,
+      "rare": 0.038,
+      "status": "pre-softcap caveat",
+      "rare_panel": true
+    },
+    {
+      "model": "Gemma-E4B",
+      "family": "Gemma",
+      "operating_point": "16x, k=128",
+      "k": 128,
+      "rowEV": 0.6929,
+      "top1": 0.669,
+      "kl_bits": 1.93,
+      "dead": 0.012,
+      "rare": 0.04,
+      "status": "pre-softcap caveat",
+      "rare_panel": false
+    }
+  ],
+  "omp_diagnostic": [
+    {
+      "setting": "Qwen-9B 8x, k=128",
+      "method": "Dense rank-k",
+      "rowEV": 0.101,
+      "method_class": "dense"
+    },
+    {
+      "setting": "Qwen-9B 8x, k=128",
+      "method": "Trained encoder",
+      "rowEV": 0.621,
+      "method_class": "encoder"
+    },
+    {
+      "setting": "Qwen-9B 8x, k=128",
+      "method": "NNLS on support",
+      "rowEV": 0.625,
+      "method_class": "refit"
+    },
+    {
+      "setting": "Qwen-9B 8x, k=128",
+      "method": "Nonneg OMP",
+      "rowEV": 0.647,
+      "method_class": "omp"
+    },
+    {
+      "setting": "Qwen-9B 8x, k=128",
+      "method": "Signed OMP",
+      "rowEV": 0.655,
+      "method_class": "omp"
+    },
+    {
+      "setting": "Qwen-9B 32x, k=256",
+      "method": "Dense rank-k",
+      "rowEV": 0.155,
+      "method_class": "dense"
+    },
+    {
+      "setting": "Qwen-9B 32x, k=256",
+      "method": "Trained encoder",
+      "rowEV": 0.858,
+      "method_class": "encoder"
+    },
+    {
+      "setting": "Qwen-9B 32x, k=256",
+      "method": "Signed LS on support",
+      "rowEV": 0.864,
+      "method_class": "refit"
+    },
+    {
+      "setting": "Qwen-9B 32x, k=256",
+      "method": "Signed OMP",
+      "rowEV": 0.902,
+      "method_class": "omp"
+    }
+  ]
+}

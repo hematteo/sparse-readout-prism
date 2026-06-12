@@ -1,0 +1,29 @@
+# Pre-commit hooks for sparse-readout-prism.
+#
+# Contributors: install the git hook once with
+#     uvx pre-commit install
+# after which these run automatically on `git commit`. Run on everything with
+#     uvx pre-commit run --all-files
+# (pre-commit is not a project dependency; uvx fetches it on demand.)
+#
+# ruff is pinned to v0.15.13 to match the lockfile-pinned ruff (uv.lock), so
+# local hooks and CI agree. The ruff hooks are scoped to src/ scripts/ tests/,
+# the same paths CI lints; other files (configs, docs) are left untouched.
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.13
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^(src|scripts|tests)/.*\.py$
+      - id: ruff-format
+        files: ^(src|scripts|tests)/.*\.py$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-toml

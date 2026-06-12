@@ -1,0 +1,12 @@
+feature_set,feature_id,category,target_consistent,note
+Main bug panels,36,coherent,1,mosquito / insect / disease-vector bug sense
+Main bug panels,4095,coherent,1,bees / insects
+Main bug panels,18302,coherent,1,beetle / bug token family
+Main bug panels,58330,coherent,1,programming / error-token feature
+Main bug panels,13081,coherent,1,error / exception surface forms
+Main bug panels,59571,token_form,0,single leading-space capitals; formatting-like
+Main bug panels,21804,coherent,1,defect / flaw / software-bug sense
+Main bug panels,43419,coherent,1,crash / bug / panic software failure
+Main bug panels,5680,coherent,1,debug / debugging code tokens
+Main bug panels,34693,token_form,0,single lowercase leading-space letters
+Main bug panels,23681,token_form,0,single uppercase letters / alphabetic family

@@ -1,0 +1,37 @@
+# Qwen3.5-2B — Qwen3.5-series causal LM (multimodal: text + vision encoder).
+# The `qwen2b` artifact / results-dir prefix refers to this model: d_model 2048,
+# confirmed by the selected SAE widths in the exp2 registry (e.g. qwen2b_k256 =
+# 32x x 2048 = 65536). Shares the Qwen3.5 tokenizer (248320-row padded vocab).
+# token_mask keeps only text tokens in the row subset.
+model:
+  hf_id: Qwen/Qwen3.5-2B
+  slug: qwen35-2b
+  family: qwen
+  arch:
+    hidden_size: 2048
+    vocab_size: 248320
+    has_vision: true
+
+data:
+  relative_path: qwen35-2b/hLN.pt
+  source_note: |
+    To be extracted with scripts/data/extract_model_readout.py (see its --model-id / --out flags). The token_mask drops vision and special
+    tokens so the row subset is mostly text.
+
+extraction:
+  corpus: wikitext
+  corpus_config: wikitext-2-raw-v1
+  corpus_split: test
+  n_prompts: 256
+  max_len: 512
+  dtype: bfloat16
+  apply_token_mask: true
+
+sweep_hints:
+  # Dictionary size tiers: pilot/small/medium/large dictionaries.
+  d_features: [16384, 32768, 49152, 65536]
+  k: [192, 384, 512, 640]
+  # 50k text-token rows is plenty given ~200k unique text tokens in vocab.
+  max_eval_rows: 50000
+  max_hidden: 1024
+  val_hidden: 256

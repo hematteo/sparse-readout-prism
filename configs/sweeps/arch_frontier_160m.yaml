@@ -1,0 +1,84 @@
+# 160M architecture-comparison frontier, v2 (re-centered, JumpReLU dropped).
+#
+# 4 architectures x 5 L0 levels x 3 paired data_seeds = 60 cells.
+#
+# JumpReLU excluded: it could not be trained to a competitive operating point
+# in our setup (forced-init bug, dead collapse at d=16384, penalty-during-
+# warmup irreversibility). Reported as an implementation limitation, not an
+# architectural claim. The remaining 4 all train cleanly.
+#
+# Re-centering: v1 used a single k = 2*target for all TopK-family archs, but
+# the empirical achieved-eval-L0 / k ratios from the v1 75-cell run were
+# arch-specific:
+#     topk        achieved ~ 1.00 * k   -> k_l0_factor 1.00
+#     batch_topk  achieved ~ 1.30 * k   -> k_l0_factor 0.77
+#     matryoshka  achieved ~ 0.58 * k   -> k_l0_factor 1.72
+#     l1_relu     achieved ~ 1.20 * controller_target  (target list pre-scaled)
+# so all four now land on a common achieved-L0 grid ~ {45,75,115,165,220}.
+# Analysis still bins by ACHIEVED mean_l0 (the per-arch ratios are noisy);
+# this only guarantees the Pareto curves overlap in the same L0 region.
+#
+# Data settings are chosen so gate_calibration.json applies.
+
+output_root: results/arch_frontier_160m
+
+fixed:
+  data:
+    path: ${SRP_ARCHIVE_ROOT}/data/pythia-160m/hLN.pt
+    fallback: error
+    max_rows: 12000
+    max_hidden: 512
+    val_hidden: 256
+    row_preprocessing: center_normalize
+  training:
+    steps: 10000
+    batch_size: 256
+    lr: 0.001
+    weight_decay: 0.0001
+    code_l2: 0.000001
+    prism_top_n: 1
+    lambda_prism: 0.002
+    row_sampling: frequency
+    log_every: 250
+    checkpoint_every: 1000
+    l0_controller:
+      kp: 0.2
+      ema: 0.9
+      warmup_steps: 500
+      control_period: 10
+      err_clip: 0.3
+      coeff_init: 0.0001
+      coeff_min: 1.0e-08
+  evaluation:
+    max_eval_rows: 12000
+    max_eval_hidden: 512
+    topk_overlap: 5
+    contribution_top_k: 8
+  artifacts:
+    save_checkpoint: false
+
+grid:
+  - architecture: matryoshka_topk
+    d_features: [16384]
+    k_l0_factor: 1.72
+    target_l0: [45, 75, 115, 165, 220]
+    data_seed: [31, 47, 71]
+
+  - architecture: topk
+    d_features: [16384]
+    k_l0_factor: 1.0
+    target_l0: [45, 75, 115, 165, 220]
+    data_seed: [31, 47, 71]
+
+  - architecture: batch_topk
+    d_features: [16384]
+    k_l0_factor: 0.77
+    target_l0: [45, 75, 115, 165, 220]
+    data_seed: [31, 47, 71]
+
+  # l1 is controller-driven; achieved ~ 1.2x target, so pre-scale targets by
+  # 1/1.2 to land on the same ~{45,75,115,165,220} achieved grid.
+  - architecture: l1_relu
+    d_features: [16384]
+    target_l0: [38, 63, 96, 138, 183]
+    data_seed: [31, 47, 71]

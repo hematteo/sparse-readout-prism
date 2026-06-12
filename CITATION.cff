@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use Sparse Readout Prism, please cite the paper."
+type: software
+title: "Sparse Readout Prism"
+abstract: >-
+  Sparse Readout Prism factorizes language-model unembedding rows into a
+  dictionary of reusable readout features, then decomposes selected
+  vocabulary logits and linear logit contrasts into signed feature
+  contributions plus an explicit residual, gated by a per-query fidelity
+  test.
+authors:
+  - given-names: Matteo
+    family-names: He
+    email: mh2274@cam.ac.uk
+    affiliation: University of Cambridge
+  - given-names: William F.
+    family-names: Shen
+    affiliation: University of Cambridge
+  - given-names: Xinchi
+    family-names: Qiu
+    affiliation: University of Cambridge
+  - given-names: Nicholas D.
+    family-names: Lane
+    affiliation: University of Cambridge
+license: MIT
+version: "0.1.0"
+date-released: "2026-06-12"
+repository-code: "https://github.com/hematteo/sparse-readout-prism"
+preferred-citation:
+  type: unpublished
+  title: "Sparse Readout Prism: A Sparse LM-Head Basis for Logit-Lens Readouts"
+  authors:
+    - given-names: Matteo
+      family-names: He
+      email: mh2274@cam.ac.uk
+      affiliation: University of Cambridge
+    - given-names: William F.
+      family-names: Shen
+      affiliation: University of Cambridge
+    - given-names: Xinchi
+      family-names: Qiu
+      affiliation: University of Cambridge
+    - given-names: Nicholas D.
+      family-names: Lane
+      affiliation: University of Cambridge
+  notes: "Preprint forthcoming; see the repository for the up-to-date reference."
+  year: 2026

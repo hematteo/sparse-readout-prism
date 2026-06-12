@@ -1,0 +1,49 @@
+run:
+  name: smoke
+  seed: 7
+  output_dir: results/smoke
+  device: auto
+
+data:
+  # No path: this config is self-contained — it always uses the synthetic
+  # fallback (deterministic from data_seed), so the smoke run needs no dataset.
+  path: null
+  fallback: synthetic
+  max_rows: 4096
+  max_hidden: 256
+  val_hidden: 96
+  row_preprocessing: center_normalize
+
+model:
+  name: synthetic-smoke
+  vocab_size: null
+  d_model: null
+
+factorizer:
+  architecture: matryoshka_topk
+  d_features: 1024
+  k: 32
+  k_values: [16, 32, 64]
+  matryoshka_weights: [3, 2, 1]
+  encoder_init_scale: 0.02
+
+training:
+  steps: 80
+  batch_size: 256
+  lr: 0.001
+  weight_decay: 0.0001
+  code_l2: 0.000001
+  prism_top_n: 1
+  lambda_prism: 0.01
+  row_sampling: top1_sqrt_frequency
+  log_every: 20
+
+evaluation:
+  k: 32
+  max_eval_rows: 4096
+  max_eval_hidden: 96
+  topk_overlap: 5
+  contribution_top_k: 8
+
+artifacts:
+  save_checkpoint: true

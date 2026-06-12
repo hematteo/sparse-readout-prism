@@ -1,0 +1,127 @@
+# Experiment 2 (Benchmark-Derived Contrastive Margin Benchmark)
+# Registry of the selected readout-factorizer checkpoints from Appendix K.
+#
+# Selection source: Appendix K (Table tab:app-k-model-finalists + K.9 reproducibility notes)
+# Extraction space (all Qwen/Gemma): final RMSNorm output immediately before the
+#   LM head (validated by lm_head pre-hook; bf16 readout precision floor noted).
+#   logit = h @ W_U.T ; W_U is the model's final readout matrix.
+#
+# PATH NOTE: the selected checkpoints are published on the Hugging Face Hub at
+# `huggingface_repo` below, laid out as <model>/<operating_point>/checkpoint.pt
+# (e.g. qwen2b_k256 -> qwen3.5-2b/k256_32x/checkpoint.pt; qwen9b_k128_fixed ->
+# qwen3.5-9b/k128_8x). The `checkpoint:` paths below are the canonical training
+# archive locations under ${SRP_ARCHIVE_ROOT}/; sizes are the on-disk checkpoint.pt.
+# The Pythia-160M continuity anchor uses a legacy state-dict schema and is NOT
+# published on the Hub.
+
+huggingface_repo: matteohe/sparse-readout-prism
+archive_root: ${SRP_ARCHIVE_ROOT}
+
+headline:
+  model: Qwen3.5-9B
+  d_model: 4096
+  vocab: 248320
+  hf_id_pending_confirmation: true   # exact base-model HF revision pin TBD
+  operating_points:
+    - id: qwen9b_k128_fixed
+      role: headline fixed-budget (primary; k_audit)
+      width: 8x
+      d_features: 32768
+      k: 128
+      rowEV: 0.621
+      top1: 0.846
+      KL: 0.296
+      checkpoint: survivors/qwen9b_fixed_k128_ev_rescue/converged/topk_d32768_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+      size: 1.0G
+      verified: true
+    - id: qwen9b_k256_16x
+      role: compact k=256 capacity comparison
+      width: 16x
+      d_features: 65536
+      k: 256
+      rowEV: 0.761
+      top1: 0.874
+      KL: 0.167
+      checkpoint: no_pca_width_k_sweep/converged/topk_d65536_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+      size: 2.0G
+      verified: true
+    - id: qwen9b_k256_32x
+      role: strongest 9B capacity point (secondary)
+      width: 32x
+      d_features: 131072
+      k: 256
+      rowEV: 0.857
+      top1: 0.900
+      KL: 0.105
+      checkpoint: survivors/qwen9b_no_pca_width_k_sweep/converged/topk_d131072_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+      size: 4.0G
+      verified: true
+
+small_model_transfer:
+  - id: qwen0p8b_k128
+    model: Qwen3.5-0.8B
+    width: 16x
+    d_features: 16384
+    k: 128
+    rowEV: 0.760
+    top1: 0.844
+    checkpoint: converged-all/results/qwen35_0p8b_sae/converge/topk_d16384_16x_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+    size: 128M
+    verified: true
+  - id: qwen0p8b_k256
+    model: Qwen3.5-0.8B
+    width: 32x
+    d_features: 32768
+    k: 256
+    rowEV: 0.877
+    top1: 0.891
+    checkpoint: converged-all/results/qwen35_0p8b_sae/converge/topk_d32768_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+    size: 256M
+    verified: true
+  - id: qwen2b_k128
+    model: Qwen3.5-2B
+    width: 16x
+    d_features: 32768
+    k: 128
+    rowEV: 0.712
+    top1: 0.858
+    checkpoint: converged-all/results/qwen35_2b_sae/converge/topk_d32768_16x_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+    size: 512M
+    verified: true
+  - id: qwen2b_k256
+    model: Qwen3.5-2B
+    width: 32x
+    d_features: 65536
+    k: 256
+    rowEV: 0.847          # cited in Appendix K Table tab:app-k-model-finalists
+    top1: 0.887
+    checkpoint: converged-all/results/qwen35_2b_sae/converge/topk_d65536_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+    size: 1.0G
+    verified: true
+    restored_from: ${SRP_ARCHIVE_ROOT}/results/qwen35_2b_sae/converge/topk_d65536_32x_k256_rowseeded_hybrid_lamramp_s0/
+    restored_date: 2026-05-19
+
+gemma_provisional:   # pre-softcap fidelity caveat — table-only until softcap eval
+  - id: gemma_e2b_k128
+    model: Gemma-4-E2B
+    width: 16x
+    d_features: 24576
+    k: 128
+    checkpoint: converged-all/results/gemma4_e2b_sae/converge/topk_d24576_16x_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+    verified: true
+    caveat: pre-softcap top1/KL; final_logit_softcapping eval layer not yet implemented
+  - id: gemma_e4b_k128
+    model: Gemma-4-E4B
+    width: 16x
+    d_features: 40960
+    k: 128
+    checkpoint: converged-all/results/gemma4_e4b_sae/converge/topk_d40960_16x_k128_rowseeded_hybrid_lamramp_s0/checkpoint.pt
+    verified: true
+    caveat: pre-softcap top1/KL; same as E2B
+
+pythia_continuity:
+  model: Pythia-160M
+  role: May-14 margin/DLA continuity anchor (k_audit=256); not a Qwen/Gemma claim
+  checkpoint: results/sae_160m_paper_design_sweep/pd_top5_rows_top5_prism_w02_pca16_d8192/sae_checkpoint.pt
+  in_workspace_results: true
+  verified: true

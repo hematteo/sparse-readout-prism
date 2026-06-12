@@ -1,0 +1,37 @@
+# Pythia-160M (current prototype). Data already extracted upstream; this
+# registry entry documents the assumed shape so loaders can sanity-check.
+model:
+  hf_id: EleutherAI/pythia-160m
+  slug: pythia-160m
+  family: pythia
+  arch:
+    hidden_size: 768
+    vocab_size: 50304
+    num_layers: 12
+    has_vision: false
+
+data:
+  # Cluster-relative path; absolute prefix lives in the sweep base-config.
+  relative_path: pythia-160m/hLN.pt
+  source_note: |
+    Extracted upstream from a Pythia training run (step 143000). The original
+    file is hLN_step143000.pt and remains symlinked at the legacy path so
+    pre-registry sweeps keep working.
+
+extraction:
+  # Not used (data was extracted outside this repo) but kept for reference.
+  corpus: wikitext
+  corpus_config: wikitext-2-raw-v1
+  corpus_split: test
+  n_prompts: 256
+  max_len: 512
+  dtype: bfloat16
+  apply_token_mask: false  # Pythia has no vision tokens
+
+sweep_hints:
+  # Recommended starting points; sweep manifests can override.
+  d_features: [16384, 24576, 32768]
+  k: [192, 224, 256]
+  max_eval_rows: 12000
+  max_hidden: 512
+  val_hidden: 128
