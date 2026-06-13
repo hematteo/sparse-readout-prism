@@ -52,7 +52,6 @@ from pathlib import Path
 
 import torch
 
-from sparse_readout_prism.data import preprocess_rows
 from sparse_readout_prism.utils import write_csv, write_json
 
 CATEGORIES = ("coherent", "ambiguous", "token_form")

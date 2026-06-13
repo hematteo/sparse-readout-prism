@@ -88,10 +88,14 @@ Qwen-3.5-2B (paper nickname: `qwen2b`).
 The per-figure **case-study and mining scripts** are not model-agnostic: the
 qualitative producers `scripts/figures/compute_lens_prism_comparison.py`,
 `compute_sae_paper_examples.py`, `compute_prism_dla.py`,
-`scripts/analyze/analyze_readout_feature_directions.py`, and
-`scripts/data/mine_polysemy_features.py` load
+`compute_benchmark_task_group_examples.py`,
+`scripts/analyze/analyze_readout_feature_directions.py`,
+`scripts/data/mine_polysemy_features.py`, and
+`scripts/run/run_benchmark_derived_query_suite.py` load
 through a Qwen-bound loader (`AutoModelForImageTextToText` only) and default to
-`--model-id Qwen/Qwen3.5-2B`; they assume that architecture. To run them on
+`--model-id Qwen/Qwen3.5-2B`; they assume that architecture.
+(`compute_general_readout_queries.py` uses a variant of that loader that falls
+back to `AutoModelForCausalLM`.) To run them on
 another model, point them at a comparable Qwen image-text-to-text checkpoint (or
 adapt the loader in `sparse_readout_prism.research.qwen_readout`).
 

@@ -71,20 +71,11 @@ target-version = "py311"
 [tool.ruff.lint]
 # Conservative default: pyflakes (F) catches real bugs (unused imports / vars,
 # undefined names); a small subset of pycodestyle (E) covers indentation +
-# import placement. Research scripts get per-file relaxations below.
+# import placement.
 select = ["F", "E4", "E7", "E9", "W"]
 ignore = [
     "E741",  # ambiguous variable names — common in math-heavy research code
-    "E402",  # module-level imports not at top — needed by sys.path setup blocks
 ]
-
-[tool.ruff.lint.per-file-ignores]
-# Research scripts have intentional unused names (for in-place debugging) and
-# late imports after path/mpl setup; don't litter them with `# noqa`.
-# F821 (undefined name) is *not* relaxed: it catches real NameErrors.
-"src/sparse_readout_prism/research/**/*.py" = ["F401", "F841"]
-"scripts/**/*.py" = ["F401", "F841"]
-"tests/*.py" = ["F401"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

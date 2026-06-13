@@ -13,9 +13,7 @@ margin such as answer-vs-distractor, abstention-vs-entity, or safe-vs-unsafe.
 from __future__ import annotations
 
 import argparse
-import csv
 import json
-import math
 import re
 import time
 from dataclasses import asdict, dataclass

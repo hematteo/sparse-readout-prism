@@ -22,7 +22,6 @@ Outputs include cell-level metrics, per-query rows, and paper-facing mirrors.
 from __future__ import annotations
 
 import argparse
-import csv
 import hashlib
 import json
 import os

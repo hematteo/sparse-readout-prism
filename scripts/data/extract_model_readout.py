@@ -192,7 +192,7 @@ def main() -> None:
     n_layers = getattr(tcfg, "num_hidden_layers", getattr(cfg, "num_hidden_layers", None))
     tied = bool(getattr(cfg, "tie_word_embeddings", False))
     lm_head = find_lm_head(model)
-    final_norm = find_final_norm(model)
+    find_final_norm(model)  # raises if no final norm is locatable; logs the path
     W_U = lm_head.weight.detach()  # (vocab, d_model)
     lm_bias = getattr(lm_head, "bias", None)
     vocab, d_model = W_U.shape

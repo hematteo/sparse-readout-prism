@@ -18,12 +18,10 @@ dependencies (see `pyproject.toml`) are:
 - `scipy`
 - `datasets`
 
-On Linux, `torch` is installed from the official PyTorch CUDA 11.8 wheel index
-(`https://download.pytorch.org/whl/cu118`) rather than from PyPI. This is
-configured in `pyproject.toml` under `[tool.uv.sources]` and the
-`[[tool.uv.index]]` entry named `pytorch-cu118` (applied via the
-`sys_platform == 'linux'` marker). On macOS, `torch` falls through to the
-default PyPI index.
+`torch` installs from the default PyPI index on every platform (CPU/MPS wheels
+on macOS, CUDA wheels on Linux). No alternative wheel index is configured; if
+your GPU needs a specific CUDA build, add a local `[tool.uv.sources]` pin and
+re-lock (see the comment in `pyproject.toml`).
 
 ## Data
 
@@ -78,6 +76,24 @@ redistributed here.
 License: CC-BY-SA 3.0.
 
 Citation: Merity et al. (2016), "Pointer Sentinel Mixture Models" (WikiText).
+
+### Benchmark-derived query suites
+
+`scripts/run/run_benchmark_derived_query_suite.py` builds readout-contrast
+cases from four public benchmarks, downloaded from the Hugging Face Hub at
+runtime. None of their text is redistributed in this repository; the derived
+case bank is written under the gitignored `results/` tree.
+
+| Dataset | Hugging Face id | Used for | License |
+| --- | --- | --- | --- |
+| SQuAD 2.0 | `rajpurkar/squad_v2` (validation) | extractive-QA answer + abstention contrasts | CC-BY-SA 4.0 |
+| HotpotQA | `hotpotqa/hotpot_qa` (distractor, validation) | multi-hop QA contrasts | CC-BY-SA 4.0 |
+| LegalBench | `nguha/legalbench` (`contract_nli_confidentiality_of_agreement`, test) | yes/no label contrasts | per-task licensing; this task derives from ContractNLI — see the dataset card |
+| SecurityEval | `s2e-lab/SecurityEval` (train) | safer-implementation keyword contrasts | see the upstream `s2e-lab/SecurityEval` repository |
+
+Citations: Rajpurkar et al. (2018) for SQuAD 2.0; Yang et al. (2018) for
+HotpotQA; Guha et al. (2023) for LegalBench and Koreeda & Manning (2021) for
+ContractNLI; Siddiq & Santos (2022) for SecurityEval.
 
 ## Models
 

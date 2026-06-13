@@ -1,5 +1,5 @@
 {
-  "_provenance": "Audited numeric provenance for the Appendix K sweep/selection tables. These literals are the machine-readable record of the numbers transcribed by hand into Appendix K of the paper (factorizer/operating-point sweep coverage, model finalists, selection-evidence rows, and OMP/dense negative-control diagnostics). No code imports them; kept as a provenance record. See docs/reproducing.md.",
+  "_provenance": "Audited numeric provenance for the Appendix K sweep/selection tables. These literals are the machine-readable record of the numbers transcribed by hand into Appendix K of the paper (factorizer/operating-point sweep coverage, model finalists, selection-evidence rows, and OMP/dense negative-control diagnostics). No code imports them; kept as a provenance record. See docs/REPRODUCE.md.",
   "sweep_coverage": [
     {
       "family": "Pythia architecture/\nrecipe sweep",
