@@ -5,6 +5,9 @@
 # token_mask keeps only text tokens in the row subset.
 model:
   hf_id: Qwen/Qwen3.5-2B
+  # HF weight revision the paper extraction used. null = not recorded (latest
+  # at paper time); pass --revision to extract_model_readout.py to pin.
+  revision: null
   slug: qwen35-2b
   family: qwen
   arch:

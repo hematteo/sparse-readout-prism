@@ -17,6 +17,7 @@ dependencies (see `pyproject.toml`) are:
 - `numpy`
 - `scipy`
 - `datasets`
+- `pyyaml`
 
 `torch` installs from the default PyPI index on every platform (CPU/MPS wheels
 on macOS, CUDA wheels on Linux). No alternative wheel index is configured; if

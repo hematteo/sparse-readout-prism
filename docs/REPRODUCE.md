@@ -23,8 +23,11 @@ training for the larger models (Qwen-9B) wants ~40 GB.
 External data:
 
 - HuggingFace models are downloaded on first use to `$HF_HOME` (default
-  `~/.cache/huggingface`). Pin commit hashes via the model configs in
-  `configs/models/`.
+  `~/.cache/huggingface`). The paper extractions did **not** pin HF weight
+  revisions (they used the latest revision at paper time; the model configs in
+  `configs/models/` record `revision: null`). To pin a rerun, pass
+  `--revision` to `scripts/data/extract_model_readout.py` — the revision is
+  recorded in the extraction manifest.
 - The C4 model-native slice used for headline numbers is built by
   `scripts/data/build_query_banks.py --native-source c4` (its provenance /
   revision is pinned in
@@ -42,8 +45,11 @@ synthetic smoke config (see the README quickstart).
 
 ### Determinism
 
-Runners seed Python / NumPy / Torch RNG (`sparse_readout_prism.utils.set_seed`),
-so a fixed seed reproduces the same sampling and bootstrap draws. This is
+The training runner seeds Python / NumPy / Torch RNG
+(`sparse_readout_prism.utils.set_seed`); the evaluation and figure scripts use
+locally seeded generators (fixed seeds or case-id-derived seeds) rather than
+global seeding. Either way a fixed seed reproduces the same sampling and
+bootstrap draws. This is
 seeded-RNG reproducibility, **not** bitwise determinism: on GPU, CUDA reductions
 (topk / scatter / matmul) can differ at the last ULPs across hardware and
 library versions. We deliberately do not enable
@@ -125,7 +131,7 @@ check.
 | §1 intro figure: logit-lens vs Sparse Readout Prism comparison (`fig:main-lens-prism-comparison`) | `scripts/figures/compute_lens_prism_comparison.py` | defaults reproduce the paper case (software-context prompt, `--target-a " bug"`, `--target-b " insect"`, `--k 256`); `--checkpoint` points at the Qwen3.5-2B 32x/k256 selected SAE in `configs/registries/exp2_selected_sae_checkpoints.yaml`. Computes readout states live (reuses `collect_readout_states_batched` from `sparse_readout_prism.research.qwen_readout`; no precomputed cache) |
 | Table / metrics behind: benchmark-derived task targets | `scripts/run/run_benchmark_derived_query_suite.py`, `scripts/figures/compute_benchmark_task_group_examples.py` | `--out-dir results/benchmark_derived_query_suite_task_group_v2_qwen_20260523` (the suite uses task-group contrasts — the paper's `task_group_v2` design — and does not derive the dir from it; pass `--out-dir` explicitly) |
 | Metrics behind: selected-score / family / selection queries (`fig:qwen-general-readout-scores-basic`, `fig:app-qwen-general-readout-scores-extra`) | `scripts/figures/compute_general_readout_queries.py` | query specs are built in (the paper's jury/guilty panels plus the abstention-family contrast); `--checkpoint` points at the Qwen3.5-2B 32x/k256 selected SAE in `configs/registries/result1_query_fidelity_cluster.yaml` |
-| Metrics behind: literature-prompt all-layer trace | `scripts/figures/compute_all_layer_literature_prompt.py` | — |
+| Metrics behind: literature-prompt all-layer trace | `scripts/figures/compute_all_layer_literature_prompt.py` | requires `--checkpoint` (the Qwen3.5-2B 32x/k256 selected SAE); prompt/model defaults reproduce the paper trace |
 | Baseline comparison metrics (Sparse RP vs nulls) | `scripts/run/run_readout_baseline_comparisons.py` | outputs persisted as CSV/JSON for the paper-side baseline figure |
 | Result-1 five-model query-fidelity tables / §4.5 distributional readout metrics | `scripts/run/run_query_fidelity_bank.py` | `configs/registries/result1_query_fidelity_cluster.yaml` + the curated/model-native banks under `data/query_banks/` |
 | Appendix J: lexical-edit / readout-side control stress test (`tab:lexical-control-primary-methods`, `tab:lexical-control-cross-model-results`) | `scripts/run/run_qwen_profanity_suppression_eval.py` | `--checkpoint <qwen2b 32x/k256 checkpoint.pt>`; the primary-methods table reads `baseline_comparison.csv` / `candidate_constrained_summary.csv` (the eval emits these tables only — no paper figure). For the cross-model table, rerun once per model with the checkpoints in `configs/registries/result1_query_fidelity_cluster.yaml` (Qwen3.5-2B fidelity 32x/k256; R1-Distill-Qwen-7B fidelity 32x/k256; Ministral-3-8B-Base strict_budget 16x/k128) |

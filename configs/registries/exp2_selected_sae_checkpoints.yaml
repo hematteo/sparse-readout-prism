@@ -21,7 +21,11 @@ headline:
   model: Qwen3.5-9B
   d_model: 4096
   vocab: 248320
-  hf_id_pending_confirmation: true   # exact base-model HF revision pin TBD
+  # Base weights: Qwen/Qwen3.5-9B (see result1_query_fidelity_cluster.yaml).
+  # The exact HF weight revision was not recorded at extraction time — the
+  # extraction used the latest revision as of the paper runs. Rerun
+  # scripts/data/extract_model_readout.py with --revision to pin explicitly.
+  hf_revision: null
   operating_points:
     - id: qwen9b_k128_fixed
       role: headline fixed-budget (primary; k_audit)

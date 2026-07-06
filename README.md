@@ -1,6 +1,6 @@
 # Sparse Readout Prism
 
-[![ci](https://img.shields.io/badge/ci-pytest-blue)](.github/workflows/ci.yml)
+[![ci](https://github.com/hematteo/sparse-readout-prism/actions/workflows/ci.yml/badge.svg)](https://github.com/hematteo/sparse-readout-prism/actions/workflows/ci.yml)
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](pyproject.toml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![ruff](https://img.shields.io/badge/lint-ruff-261230)](https://docs.astral.sh/ruff/)

@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
+dist/
+build/
+# `make package` output
+/sparse-readout-prism-*.tar.gz
 .ruff_cache/
 .mypy_cache/
 .pytest_cache/

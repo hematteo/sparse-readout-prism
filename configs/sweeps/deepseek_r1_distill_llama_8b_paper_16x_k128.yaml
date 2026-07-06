@@ -18,7 +18,7 @@ data:
 
 factorizer:
   architecture: topk
-  d_features: 65536            # OVERRIDDEN by sbatch: 16 * manifest d_model
+  d_features: 65536            # override at launch: --set factorizer.d_features=<16 * manifest d_model>
   k: 128
   encoder_init_scale: 0.02
 

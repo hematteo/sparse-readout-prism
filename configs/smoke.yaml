@@ -14,11 +14,6 @@ data:
   val_hidden: 96
   row_preprocessing: center_normalize
 
-model:
-  name: synthetic-smoke
-  vocab_size: null
-  d_model: null
-
 factorizer:
   architecture: matryoshka_topk
   d_features: 1024

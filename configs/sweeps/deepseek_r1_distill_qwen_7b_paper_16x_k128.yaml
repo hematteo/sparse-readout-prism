@@ -4,7 +4,8 @@
 #
 # d_features PLACEHOLDER assumes d_model=3584 (16 * 3584 = 57344); the true
 # value is read from the extraction manifest and injected by
-# deepseek_r1_distill_qwen_7b_train.sbatch via `--set factorizer.d_features=<16*d_model>`.
+# the launch command via `--set factorizer.d_features=<16 * manifest d_model>`
+# (no launch wrapper ships with this repo; see configs/sweeps/README.md).
 
 run:
   name: deepseek_r1_distill_qwen_7b_paper_topk_16x_k128_s0
@@ -23,7 +24,7 @@ data:
 
 factorizer:
   architecture: topk
-  d_features: 57344            # OVERRIDDEN by sbatch: 16 * manifest d_model
+  d_features: 57344            # override at launch: --set factorizer.d_features=<16 * manifest d_model>
   k: 128
   encoder_init_scale: 0.02
 

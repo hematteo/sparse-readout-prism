@@ -2,6 +2,9 @@
 # registry entry documents the assumed shape so loaders can sanity-check.
 model:
   hf_id: EleutherAI/pythia-160m
+  # HF weight revision the paper extraction used. null = not recorded (latest
+  # at paper time); pass --revision to extract_model_readout.py to pin.
+  revision: null
   slug: pythia-160m
   family: pythia
   arch:

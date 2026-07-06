@@ -76,6 +76,23 @@ d_model` for Qwen-3.5-2B, so override it with `--set
 factorizer.d_features=<width×d_model>` for another model. See
 `docs/REPRODUCE.md` §1.)
 
+To reproduce a **strict-budget (16×/k128)** cell for a model without a
+dedicated `*_16x_k128.yaml` config (e.g. the provisional Gemma points), the
+full override set is:
+
+```bash
+uv run python scripts/train/train_readout_sae_from_config.py \
+    --config configs/sweeps/paper_phase2_base.yaml \
+    --data-path <extract>.pt --out-dir <run_dir> \
+    --set factorizer.d_features=<16 × d_model> \
+    --set factorizer.k=128 \
+    --set evaluation.k=128
+```
+
+(`factorizer.k` and `evaluation.k` both matter — the dedicated
+`deepseek_*_16x_k128.yaml` / `ministral3_8b_paper_16x_k128.yaml` configs show
+the same three-field change.)
+
 ## 5. Adapting to a different model
 
 The **core pipeline** — extraction, SAE training, task-fidelity / query-fidelity

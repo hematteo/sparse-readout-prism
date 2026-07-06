@@ -19,6 +19,16 @@ Two kinds of file live here:
    which is **not shipped in this repo**; reproduce the Appendix-K grids by
    writing one complete run config per cell from the `fixed` + `grid` values.
 
+   **Expansion mapping** (the parts a naive copy misses):
+   - TopK-family cells: `factorizer.k = round(k_l0_factor × target_l0)` and
+     `evaluation.k` set to the same value.
+   - Controller-driven cells (`jumprelu`, `l1_relu`): the grids ship the
+     `l0_controller` gains but **not** `enabled` — a per-cell run config must
+     set `training.l0_controller.enabled: true` *and* move the cell's
+     `target_l0` to `training.l0_controller.target_l0` (`train.py` reads it
+     from inside the controller block), or the controller silently stays off
+     and the cell trains at an uncontrolled L0.
+
 | Config | Kind | Role |
 |---|---|---|
 | `paper_phase2_base.yaml` | run config | Complete headline recipe (TopK 32×/k256, Qwen-3.5-2B finalist); override `factorizer.d_features` per model. |
@@ -26,7 +36,14 @@ Two kinds of file live here:
 | `arch_frontier_160m.yaml` | grid template | Fine-`k` architecture frontier (Pythia-160m; Appendix K). Expand before running. |
 | `deepseek_r1_distill_qwen_7b_paper.yaml`, `…_16x_k128.yaml` | run config | R1-Distill-Qwen-7B finalists (32×/k256 and strict-budget 16×/k128). |
 | `deepseek_r1_distill_llama_8b_paper.yaml`, `…_16x_k128.yaml` | run config | R1-Distill-Llama-8B finalists. |
-| `ministral3_8b_paper.yaml` | run config | Ministral-3-8B-Base recipe. |
+| `ministral3_8b_paper.yaml`, `…_16x_k128.yaml` | run config | Ministral-3-8B-Base finalists (32×/k256 and strict-budget 16×/k128). |
+
+The provisional Gemma operating points in the registries were trained with the
+same converge recipe as the Qwen models (`paper_phase2_base.yaml` protocol);
+no dedicated Gemma run config is shipped — reproduce a Gemma cell by overriding
+`factorizer.d_features` (width × d_model from the extraction manifest),
+`factorizer.k`, `evaluation.k`, and `data.path` on `paper_phase2_base.yaml`
+(see `docs/DATA.md` §4).
 
 The run configs set `data.fallback: error` and a cluster `data.path`
 (`${SRP_ARCHIVE_ROOT}/...`); without the dataset synced they exit with a clean
