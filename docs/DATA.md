@@ -106,15 +106,20 @@ The per-figure **case-study and mining scripts** are not model-agnostic: the
 qualitative producers `scripts/figures/compute_lens_prism_comparison.py`,
 `compute_sae_paper_examples.py`, `compute_prism_dla.py`,
 `compute_benchmark_task_group_examples.py`,
+`compute_general_readout_queries.py`,
 `scripts/analyze/analyze_readout_feature_directions.py`,
 `scripts/data/mine_polysemy_features.py`, and
-`scripts/run/run_benchmark_derived_query_suite.py` load
-through a Qwen-bound loader (`AutoModelForImageTextToText` only) and default to
-`--model-id Qwen/Qwen3.5-2B`; they assume that architecture.
-(`compute_general_readout_queries.py` uses a variant of that loader that falls
-back to `AutoModelForCausalLM`.) To run them on
-another model, point them at a comparable Qwen image-text-to-text checkpoint (or
-adapt the loader in `sparse_readout_prism.research.qwen_readout`).
+`scripts/run/run_benchmark_derived_query_suite.py` default to
+`--model-id Qwen/Qwen3.5-2B`, and their prompts and example sets assume that
+model. They all share one loader —
+`research.qwen_readout.load_qwen_model`, a thin wrapper over
+`utils.load_causal_lm` with the multimodal-first class order Qwen3.5 requires
+(`AutoModelForImageTextToText`, falling back to `AutoModelForCausalLM`) — so
+*loading* another model generally works; the real constraints are that the
+dictionary must be trained on **that** model's `W_U`, and that the DLA /
+all-layer scripts additionally assume the Qwen3.5 submodule layout
+(`model.model.language_model`, `model.model.norm` — they fail with explicit
+messages on other architectures).
 
 To add a model:
 

@@ -180,9 +180,12 @@ LaTeX source:
 uv run pytest -q
 ```
 
-The test suite is deliberately small: identity-correctness of the
-decomposition, schema invariants of the task-fidelity evaluator, and layout
-guardrails for the `research` package. CI-safe — no GPU, no model loads.
+The test suite is fast and CI-safe (no GPU, no model loads): identity
+correctness of the decomposition, schema invariants of the task-fidelity
+evaluator, checkpoint-registry resolution, the data-loading branches
+(token-mask filtering, val-split fallbacks), the trainer's L0 controller and
+resume path, the public-API surface, and layout guardrails for the
+`research/` package.
 
 ## 4. Notes on removed exploratory code
 

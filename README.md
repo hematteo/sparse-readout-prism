@@ -179,7 +179,7 @@ src/sparse_readout_prism/         core library
   data.py, train.py               dataset assembly + training loop
   runner.py                       train -> evaluate -> label-features pipeline
   paths.py                        path helpers
-  token_display.py, utils.py      token/text display strings + shared IO helpers
+  token_display.py, utils.py      token/text display strings + shared IO / model-loader helpers
   research/                       flat helpers shared by several scripts/ entry
                                   points (Qwen readout + query-decomposition
                                   toolkits, prompt banks, registry, run IO);
@@ -244,10 +244,12 @@ training configs and metrics are listed in the registry manifest.
 uv run pytest -q
 ```
 
-The suite is deliberately small and CI-safe: identity correctness of the
-decomposition, schema invariants of the task-fidelity evaluator, and layout
-guardrails for the `research/` sub-package. No GPU, no model loads, no
-figure rendering.
+The suite is fast and CI-safe: identity correctness of the decomposition,
+schema invariants of the task-fidelity evaluator, checkpoint-registry
+resolution, the data-loading branches (token-mask filtering, val-split
+fallbacks), the trainer's L0 controller and resume path, the public-API
+surface, and layout guardrails for the `research/` sub-package. No GPU, no
+model loads, no figure rendering.
 
 ## Related repository
 
