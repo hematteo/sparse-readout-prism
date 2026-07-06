@@ -13,7 +13,26 @@ class FactorizerBatch:
     reconstruction: torch.Tensor  # (B, d_model)
     code: torch.Tensor  # (B, d_features), post-sparsity
     aux_loss: torch.Tensor = field(default_factory=lambda: torch.zeros(()))
+    # Gradient-bearing auxiliary reconstruction (GatedSAE's activation-only
+    # path); kept out of `info` so that dict stays JSON-safe scalars only.
+    aux_recon: torch.Tensor | None = None  # (B, d_model)
     info: dict[str, float] = field(default_factory=dict)
+
+
+def topk_mask(acts: torch.Tensor, k: int) -> torch.Tensor:
+    """Keep the ``k`` largest activations per row, zero the rest.
+
+    The one top-k selection kernel: ``TopKSAE.encode`` and the raw-tensor
+    ``research.qwen_readout.encode_topk`` path both route through it, so the
+    tie-breaking/selection semantics cannot drift between library and scripts.
+    """
+    kk = min(int(k), acts.shape[-1])
+    if kk >= acts.shape[-1]:
+        return acts
+    values, indices = torch.topk(acts, k=kk, dim=-1)
+    code = torch.zeros_like(acts)
+    code.scatter_(dim=-1, index=indices, src=values)
+    return code
 
 
 class SAEBase(nn.Module):
@@ -65,14 +84,8 @@ class TopKSAE(SAEBase):
         self.k = int(k)
 
     def encode(self, x: torch.Tensor, k: int | None = None) -> torch.Tensor:
-        kk = min(int(k or self.k), self.d_features)
-        acts = F.relu(self.encoder(x))
-        if kk >= self.d_features:
-            return acts
-        values, indices = torch.topk(acts, k=kk, dim=-1)
-        code = torch.zeros_like(acts)
-        code.scatter_(dim=-1, index=indices, src=values)
-        return code
+        # `k or self.k`: k=0/None both fall back to the trained k on purpose.
+        return topk_mask(F.relu(self.encoder(x)), int(k or self.k))
 
 
 class BatchTopKSAE(SAEBase):
@@ -243,9 +256,14 @@ class GatedSAE(SAEBase):
         super().__init__(d_model, d_features, encoder_init_scale)
         self.gate_bias = nn.Parameter(torch.zeros(d_features))
         self.log_r = nn.Parameter(torch.zeros(d_features))
+        # k attribute exists for API parity with TopK consumers (see JumpReLU);
+        # Gated does not enforce a hard k.
         self.k = int(d_features)
 
     def encode(self, x: torch.Tensor, k: int | None = None) -> torch.Tensor:
+        # NOTE: SAEBase's `encoder.bias` is repurposed as the MAGNITUDE-branch
+        # bias here (the gate branch has its own `gate_bias`); the shared
+        # `encoder.weight` is the paper's weight-tying variant.
         z = x @ self.encoder.weight.T  # (B, d_features)
         gate_pre = z + self.gate_bias
         gate_active = (gate_pre > 0).to(z.dtype)
@@ -272,8 +290,8 @@ class GatedSAE(SAEBase):
             reconstruction=self.decode(code),
             code=code,
             aux_loss=aux_loss,
+            aux_recon=aux_recon,
             info={
-                "aux_recon": aux_recon,
                 "mean_l0_train": float((gate_active.sum(dim=-1).float().mean()).cpu().item()),
             },
         )
@@ -369,6 +387,9 @@ def build_factorizer(config: dict[str, Any], d_model: int) -> SAEBase:
         )
     else:
         raise AssertionError("unreachable")
+    # Instance attribute shadowing the class attribute on purpose: it is how a
+    # TopKSAE built as "matryoshka_topk" stays distinguishable from "topk"
+    # downstream (train.py dispatches the matryoshka loss on it).
     model.architecture = arch
     return model
 
@@ -450,7 +471,8 @@ def reconstruction_loss(
     rec = F.mse_loss(batch.reconstruction, x)
     aux = batch.aux_loss
     info = dict(batch.info)
-    if architecture == "gated" and "aux_recon" in info:
+    if architecture == "gated" and batch.aux_recon is not None:
         # Aux reconstruction (activation-only path) — standard Gated SAE objective.
-        info["gated_aux_recon_mse"] = F.mse_loss(info["aux_recon"], x)
+        # Gradient-bearing: train.py adds it to the loss (the only non-scalar entry).
+        info["gated_aux_recon_mse"] = F.mse_loss(batch.aux_recon, x)
     return rec, batch.code, aux, info

@@ -28,7 +28,16 @@ def decompose_token_logit(
     model: SAEBase,
     k: int,
 ) -> Decomposition:
-    """Decompose one selected token logit into base, sparse features, and residual."""
+    """Decompose one selected token logit into base, sparse features, and residual.
+
+    The exact identity (checked by ``identity_error``) is
+    ``original_logit == base_term + feature_sum + residual_term``;
+    ``reconstructed_logit = base_term + feature_sum`` is the prism
+    *approximation*, i.e. it deliberately excludes the residual.
+
+    ``k`` only has an effect for TopK-family factorizers; the threshold-based
+    architectures (jumprelu / gated / l1_relu) accept and ignore it.
+    """
     if h.ndim != 1:
         raise ValueError("h must be a single hidden vector")
     if W_row.ndim != 1:

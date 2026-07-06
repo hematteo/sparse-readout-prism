@@ -9,13 +9,13 @@ from sparse_readout_prism.data import load_prism_dataset
 from sparse_readout_prism.evaluate import (
     evaluate_model,
     label_features,
-    reconstruct_normalized_rows,
 )
 from sparse_readout_prism.factorizers import build_factorizer
 from sparse_readout_prism.train import train_factorizer
 from sparse_readout_prism.utils import (
     ensure_dir,
     format_metric_table,
+    git_commit,
     read_json,
     resolve_device,
     set_seed,
@@ -39,16 +39,15 @@ def run_experiment(config: dict[str, Any]) -> dict[str, Any]:
     if done_marker.exists() and metrics_path.exists():
         cached = read_json(metrics_path)
         if cached.get("finite_metrics"):
-            print(
-                f"[skip] {output_dir} already complete (selection_score={cached.get('selection_score'):.6g})",
-                flush=True,
-            )
+            score = cached.get("selection_score")
+            score_str = f"{score:.6g}" if isinstance(score, (int, float)) else str(score)
+            print(f"[skip] {output_dir} already complete (selection_score={score_str})", flush=True)
             return cached
 
     dataset = load_prism_dataset(config, seed=seed)
     model = build_factorizer(config, d_model=dataset.d_model).to(device)
     history = train_factorizer(model, dataset, config, device, output_dir=output_dir)
-    metrics = evaluate_model(model, dataset, config, device)
+    metrics, usage = evaluate_model(model, dataset, config, device, return_usage=True)
     metrics["train_seconds"] = history["train_seconds"]
     metrics["mean_l0_train"] = history.get("mean_l0_train")
     metrics["l0_controller_enabled"] = history.get("l0_controller_enabled", False)
@@ -56,17 +55,27 @@ def run_experiment(config: dict[str, Any]) -> dict[str, Any]:
     metrics["l0_controller_target"] = history.get("l0_controller_target")
     metrics["data_source"] = dataset.source_path
     metrics["used_fallback_data"] = dataset.used_fallback
+    metrics["val_overlaps_train"] = dataset.val_overlaps_train
     metrics["device"] = str(device)
-    metrics["architecture"] = config.get("factorizer", {}).get("architecture", "topk")
-    metrics["d_features"] = int(config.get("factorizer", {}).get("d_features", 0))
+    # Read architecture/d_features off the model, not the config: build_factorizer
+    # applies defaults, so a config that omits them would be misreported here.
+    metrics["architecture"] = model.architecture
+    metrics["d_features"] = int(model.d_features)
     metrics["init_seed"] = init_seed
     metrics["data_seed"] = int(config.get("data", {}).get("data_seed", seed))
+    metrics["git_commit"] = git_commit()
 
     steps_run = int(history.get("steps_run", 0))
     bs = int(history.get("batch_size", 0))
     df = int(metrics["d_features"])
     dm = int(dataset.d_model)
     flops_per_step = 6 * bs * dm * df  # fwd+bwd, encoder+decoder ≈ 6 BDF
+    try:
+        from importlib.metadata import version
+
+        pkg_version = version("sparse-readout-prism")
+    except Exception:  # noqa: BLE001
+        pkg_version = None
     compute_meta = {
         "architecture": metrics["architecture"],
         "d_features": df,
@@ -80,23 +89,22 @@ def run_experiment(config: dict[str, Any]) -> dict[str, Any]:
         "device": str(device),
         "gpu_name": (torch.cuda.get_device_name(0) if torch.cuda.is_available() else None),
         "torch_version": torch.__version__,
+        "package_version": pkg_version,
+        "git_commit": metrics["git_commit"],
     }
-    _atomic_write_json(compute_meta, output_dir / "compute_meta.json")
+    write_json(compute_meta, output_dir / "compute_meta.json", atomic=True)
 
     write_yaml(config, output_dir / "config.yaml")
-    _atomic_write_json(metrics, output_dir / "metrics.json")
-    _atomic_write_json({"history": history["losses"]}, output_dir / "history.json")
+    write_json(metrics, output_dir / "metrics.json", atomic=True)
+    write_json({"history": history["losses"]}, output_dir / "history.json", atomic=True)
 
-    _, usage, _ = reconstruct_normalized_rows(
-        model,
-        dataset.rows_normalized[: int(config.get("evaluation", {}).get("max_eval_rows") or dataset.vocab_size)],
-        k=int(config.get("evaluation", {}).get("k") or config.get("factorizer", {}).get("k", model.k)),
-    )
     labels = label_features(model, dataset, usage=usage, top_n=6, max_features=min(256, model.d_features))
     write_json({"features": labels}, output_dir / "feature_labels.json")
 
     artifacts = config.get("artifacts", {})
     if artifacts.get("save_checkpoint", True):
+        ckpt_path = output_dir / "checkpoint.pt"
+        ckpt_tmp = ckpt_path.with_suffix(".pt.tmp")
         torch.save(
             {
                 "model_state_dict": model.state_dict(),
@@ -107,8 +115,9 @@ def run_experiment(config: dict[str, Any]) -> dict[str, Any]:
                 "row_token_ids": dataset.row_token_ids,
                 "metrics": metrics,
             },
-            output_dir / "checkpoint.pt",
+            ckpt_tmp,
         )
+        ckpt_tmp.replace(ckpt_path)
 
     report_path = artifacts.get("report_path")
     if report_path:
@@ -168,9 +177,3 @@ def write_basic_report(
     for note in notes or ["Review high-usage features and token-frequency artifacts before claiming concepts."]:
         lines.append(f"- {note}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
-def _atomic_write_json(data: dict[str, Any], path: Path) -> None:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    write_json(data, tmp)
-    tmp.replace(path)

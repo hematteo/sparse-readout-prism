@@ -34,15 +34,30 @@ def reconstruct_normalized_rows(
     return torch.cat(recons, dim=0), usage, per_row_l0
 
 
+def resolve_eval_k(config: dict[str, Any], model: SAEBase) -> int:
+    """The k used at evaluation time: evaluation.k, else factorizer.k, else model.k.
+
+    The single definition of that fallback chain (evaluate + runner both use it).
+    The `or` chain is deliberate: an explicit ``evaluation.k: 0``/``null`` means
+    "defer to the factorizer/model k", not "k = 0".
+    """
+    return int(config.get("evaluation", {}).get("k") or config.get("factorizer", {}).get("k", model.k))
+
+
 @torch.no_grad()
 def evaluate_model(
     model: SAEBase,
     dataset: PrismDataset,
     config: dict[str, Any],
     device: torch.device,
-) -> dict[str, Any]:
+    *,
+    return_usage: bool = False,
+) -> dict[str, Any] | tuple[dict[str, Any], torch.Tensor]:
+    """Compute the full eval-metric dict; ``return_usage=True`` also returns the
+    per-feature usage counts from the reconstruction pass (so callers such as
+    the runner don't repeat the whole O(rows x d_features) pass for them)."""
     eval_cfg = config.get("evaluation", {})
-    k = int(eval_cfg.get("k") or config.get("factorizer", {}).get("k", model.k))
+    k = resolve_eval_k(config, model)
     max_eval_rows = eval_cfg.get("max_eval_rows")
     max_eval_hidden = int(eval_cfg.get("max_eval_hidden") or dataset.hidden_val.shape[0])
     contribution_top_k = int(eval_cfg.get("contribution_top_k") or 8)
@@ -140,15 +155,19 @@ def evaluate_model(
         "k": k,
         "eval_rows": n_rows,
         "eval_hidden": int(hidden.shape[0]),
+        "contribution_top_k": contribution_top_k,
+        "topk_overlap": topk_overlap,
         "row_centered_ev": row_centered_ev,
         "row_centered_cosine": row_centered_cosine,
         "top1_logit_residual_frac_mean": top1_logit_residual_frac_mean,
         "top1_logit_residual_abs_mean": top1_logit_residual_abs_mean,
-        "top8_positive_contrib_coverage_mean": coverage_pos,
-        "top8_abs_contrib_coverage_mean": coverage_abs,
+        # Key names carry the configured widths (default 8 / 5) so a non-default
+        # `contribution_top_k` / `topk_overlap` can't be mislabeled as top8/top5.
+        f"top{contribution_top_k}_positive_contrib_coverage_mean": coverage_pos,
+        f"top{contribution_top_k}_abs_contrib_coverage_mean": coverage_abs,
         "val_logit_kl_bits_mean": val_logit_kl_bits_mean,
         "val_top1_match": val_top1_match,
-        "val_top5_overlap": val_top5_overlap,
+        f"val_top{topk_overlap}_overlap": val_top5_overlap,
         "dead_feature_rate": dead_feature_rate,
         "feature_usage_entropy": feature_usage_entropy,
         "mean_l0": mean_l0,
@@ -163,6 +182,8 @@ def evaluate_model(
         "finite_metrics": True,
     }
     metrics["selection_score"] = selection_score(metrics, config)
+    if return_usage:
+        return metrics, usage
     return metrics
 
 
@@ -217,6 +238,16 @@ def contribution_coverages(
 
 
 def selection_score(metrics: dict[str, Any], config: dict[str, Any] | None = None) -> float:
+    """Model-selection score used by the sweep configs to rank cells within a grid.
+
+    Sweep plumbing, not a paper metric: the weights are ad hoc (chosen once
+    during the Appendix-K frontier sweeps and frozen), and the sentinel tiers
+    order failure modes — -1e9 non-finite metrics, -1e6 dead dictionary,
+    -1e5 KL/identity gate failures — so broken runs sort below every finite
+    score. Gate thresholds come from ``autoresearch.score_thresholds`` in the
+    sweep configs (see configs/sweeps/README.md); the identity gate (1e-3) is
+    fixed because a violated identity means the decomposition is wrong, full stop.
+    """
     if not all(math.isfinite(float(v)) for v in metrics.values() if isinstance(v, (int, float))):
         return -1e9
     thresholds = ((config or {}).get("autoresearch", {}) or {}).get("score_thresholds", {})
@@ -229,13 +260,16 @@ def selection_score(metrics: dict[str, Any], config: dict[str, Any] | None = Non
     if metrics.get("identity_abs_error_max", 1.0) > 1e-3:
         return -1e5 - metrics.get("identity_abs_error_max", 0.0)
 
+    # Coverage/overlap key names carry the configured widths (see evaluate_model).
+    ck = int(metrics.get("contribution_top_k", 8))
+    ov = int(metrics.get("topk_overlap", 5))
     return float(
         1.5 * metrics.get("row_centered_ev", 0.0)
         + 0.5 * metrics.get("row_centered_cosine", 0.0)
-        + 0.7 * metrics.get("top8_abs_contrib_coverage_mean", 0.0)
-        + 0.4 * metrics.get("top8_positive_contrib_coverage_mean", 0.0)
+        + 0.7 * metrics.get(f"top{ck}_abs_contrib_coverage_mean", 0.0)
+        + 0.4 * metrics.get(f"top{ck}_positive_contrib_coverage_mean", 0.0)
         + 0.5 * metrics.get("val_top1_match", 0.0)
-        + 0.3 * metrics.get("val_top5_overlap", 0.0)
+        + 0.3 * metrics.get(f"val_top{ov}_overlap", 0.0)
         - 0.8 * metrics.get("top1_logit_residual_frac_mean", 0.0)
         - 0.03 * metrics.get("val_logit_kl_bits_mean", 0.0)
         - 0.2 * metrics.get("dead_feature_rate", 0.0)

@@ -25,6 +25,7 @@ except PackageNotFoundError:  # editable install before package metadata is buil
 
 from sparse_readout_prism.data import (
     PrismDataset,
+    center_normalize_rows,
     load_prism_dataset,
     preprocess_rows,
 )
@@ -45,6 +46,7 @@ __all__ = [
     "__version__",
     "Decomposition",
     "PrismDataset",
+    "center_normalize_rows",
     "decompose_token_logit",
     "load_prism_dataset",
     "preprocess_rows",

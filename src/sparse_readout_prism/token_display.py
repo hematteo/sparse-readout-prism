@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from typing import Any
 
-_CLEAN_TOKEN_CACHE: dict[tuple[int, int], str] = {}
-
 
 def clean_token(
     tokenizer: Any,
@@ -18,7 +16,6 @@ def clean_token(
     *,
     max_len: int = 24,
     skip_special_tokens: bool = False,
-    cached: bool = False,
 ) -> str:
     """Decode a token id and produce a compact display string.
 
@@ -27,17 +24,9 @@ def clean_token(
     and ``<empty>`` if the decoded text is empty. Escapes control characters,
     keeps a single leading space, and truncates to ``max_len`` for the
     printable case.
-
-    ``cached=True`` keys on ``(id(tokenizer), token_id)``; useful in tight
-    inner loops over many features.
     """
     if int(token_id) < 0 or int(token_id) >= len(tokenizer):
         return f"<extra:{int(token_id)}>"
-    if cached:
-        key = (id(tokenizer), int(token_id))
-        hit = _CLEAN_TOKEN_CACHE.get(key)
-        if hit is not None:
-            return hit
     text = tokenizer.decode([int(token_id)], skip_special_tokens=skip_special_tokens)
     text = text.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t").replace("�", "")
     if text == " ":
@@ -50,8 +39,6 @@ def clean_token(
         text = "<empty>"
     if len(text) > max_len:
         text = text[: max_len - 1] + "..."
-    if cached:
-        _CLEAN_TOKEN_CACHE[(id(tokenizer), int(token_id))] = text
     return text
 
 

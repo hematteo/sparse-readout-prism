@@ -5,6 +5,7 @@ import json
 import logging
 import math
 import random
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -28,12 +29,15 @@ def write_yaml(data: dict[str, Any], path: str | Path) -> None:
         yaml.safe_dump(data, f, sort_keys=False)
 
 
-def write_json(data: dict[str, Any], path: str | Path) -> None:
+def write_json(data: dict[str, Any], path: str | Path, *, atomic: bool = False) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
+    target = path.with_suffix(path.suffix + ".tmp") if atomic else path
+    with target.open("w", encoding="utf-8") as f:
         json.dump(to_jsonable(data), f, indent=2, sort_keys=True)
         f.write("\n")
+    if atomic:
+        target.replace(path)
 
 
 def read_json(path: str | Path) -> dict[str, Any]:
@@ -182,7 +186,7 @@ def write_csv(
                     seen.add(key)
                     fieldnames.append(key)
     target = path.with_suffix(path.suffix + ".tmp") if atomic else path
-    with target.open("w", newline="") as f:
+    with target.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
@@ -228,23 +232,31 @@ def load_causal_lm(
     *,
     revision: str | None = None,
     dtype: torch.dtype | str = "auto",
-    device_map: str = "auto",
+    device_map: str | None = "auto",
     low_cpu_mem_usage: bool = True,
+    local_files_only: bool = False,
+    prefer_multimodal: bool = False,
 ) -> tuple[torch.nn.Module, Any]:
     """Load a HuggingFace causal LM via the most-specific auto-class that works.
 
-    Tries ``AutoModelForCausalLM`` first, falls back to
-    ``AutoModelForImageTextToText`` (multimodal models that ship a usable
-    ``lm_head``). Returns ``(model.eval(), tokenizer)``.
+    The single model loader for the repo. Tries ``AutoModelForCausalLM`` first,
+    falls back to ``AutoModelForImageTextToText`` (multimodal models that ship a
+    usable ``lm_head``); ``prefer_multimodal=True`` flips that order (Qwen3.5's
+    multimodal architecture only loads via the ImageTextToText class).
+    ``device_map=None`` loads on CPU so the caller controls placement with
+    ``.to(device)``. Returns ``(model.eval(), tokenizer)`` with parameters frozen.
     """
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(model_id, revision=revision)
+    tok = AutoTokenizer.from_pretrained(model_id, revision=revision, local_files_only=local_files_only)
     auto_classes: list[Any] = [AutoModelForCausalLM]
     try:
         from transformers import AutoModelForImageTextToText
 
-        auto_classes.append(AutoModelForImageTextToText)
+        if prefer_multimodal:
+            auto_classes.insert(0, AutoModelForImageTextToText)
+        else:
+            auto_classes.append(AutoModelForImageTextToText)
     except Exception:
         pass
 
@@ -257,10 +269,28 @@ def load_causal_lm(
                 dtype=dtype,
                 low_cpu_mem_usage=low_cpu_mem_usage,
                 device_map=device_map,
+                local_files_only=local_files_only,
             )
             logger.info("loaded %s via %s dtype=%s", model_id, ac.__name__, dtype)
+            for param in model.parameters():
+                param.requires_grad_(False)
             return model.eval(), tok
         except Exception as e:  # noqa: BLE001
             last_err = e
             logger.warning("%s failed for %s: %s", ac.__name__, model_id, e)
     raise RuntimeError(f"could not load {model_id}: {last_err}")
+
+
+def git_commit() -> str | None:
+    """Short git hash of the source checkout, or None (wheel install, no git)."""
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).resolve().parent,
+            timeout=5,
+        )
+    except Exception:  # noqa: BLE001
+        return None
+    return out.stdout.strip() if out.returncode == 0 else None

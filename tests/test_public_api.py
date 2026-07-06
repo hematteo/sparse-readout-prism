@@ -20,6 +20,7 @@ import sparse_readout_prism as srp
 #   - dataclasses Decomposition / PrismDataset / FactorizerBatch: plain classes,
 #     deliberately NOT nn.Module.
 _FUNCTIONS = {
+    "center_normalize_rows",
     "decompose_token_logit",
     "load_prism_dataset",
     "preprocess_rows",

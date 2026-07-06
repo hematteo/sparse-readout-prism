@@ -3,6 +3,11 @@
 Honours ``SRP_SSD_ROOT`` (default: a ``local_snapshots/`` dir under the repo)
 so the same code runs on the laptop or the cluster after ``export SRP_SSD_ROOT=...``.
 
+These helpers locate the *repo checkout* — they are for the ``scripts/`` entry
+points, not for the installed package: under a wheel install (no ``.git``, no
+``pyproject.toml`` in any parent) ``repo_root()`` raises, and ``ssd_root()``
+then requires ``SRP_SSD_ROOT`` to be set.
+
 Use:
 
     from sparse_readout_prism.paths import repo_root, ssd_root
@@ -12,9 +17,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-
-PROJECT = Path(__file__).resolve().parents[2]
-DEFAULT_SSD_ROOT = PROJECT / "local_snapshots"
 
 
 def repo_root() -> Path:
@@ -33,5 +35,8 @@ def repo_root() -> Path:
 
 
 def ssd_root() -> Path:
-    """Root of the canonical project SSD."""
-    return Path(os.environ.get("SRP_SSD_ROOT", str(DEFAULT_SSD_ROOT)))
+    """Root of the canonical project SSD (``SRP_SSD_ROOT``, else ``<repo>/local_snapshots``)."""
+    env = os.environ.get("SRP_SSD_ROOT")
+    if env:
+        return Path(env)
+    return repo_root() / "local_snapshots"

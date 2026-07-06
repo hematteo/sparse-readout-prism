@@ -19,11 +19,16 @@ class PrismDataset:
     hidden_val: torch.Tensor
     h_LN_grid: torch.Tensor
     row_token_ids: torch.Tensor
+    # Placeholder "tok_<id>" strings; real decoded labels come from a tokenizer
+    # later (research.qwen_readout.display_label_features), never from here.
     token_labels: list[str]
     top_targets: torch.Tensor
     top_counts: torch.Tensor
     source_path: str
     used_fallback: bool
+    # True when val_hidden could not be carved out and val metrics are computed
+    # on (a prefix of) the training rows — see load_prism_dataset.
+    val_overlaps_train: bool = False
 
     @property
     def vocab_size(self) -> int:
@@ -91,6 +96,8 @@ def load_prism_dataset(config: dict[str, Any], seed: int) -> PrismDataset:
         # We keep a global vocab-sized indexing intact for top_targets later,
         # so instead of slicing W_U here, we override choose_row_subset's
         # candidate pool via max_rows + the mask.
+    else:
+        token_mask = None  # apply_token_mask: false really does disable it
 
     hidden_flat = h_LN.reshape(-1, h_LN.shape[-1])
     # Drop padding zeros from extracted-corpus h_LN where short docs were padded.
@@ -100,8 +107,12 @@ def load_prism_dataset(config: dict[str, Any], seed: int) -> PrismDataset:
     hidden_sample = sample_rows(hidden_flat, max_hidden + val_hidden, seed=data_seed + 11)
     hidden_train = hidden_sample[:max_hidden].contiguous()
     hidden_val = hidden_sample[max_hidden : max_hidden + val_hidden].contiguous()
+    val_overlaps_train = False
     if hidden_val.numel() == 0:
+        # Corpus smaller than max_hidden: fall back to a training prefix so val
+        # metrics still compute, but flag it — they are NOT held out.
         hidden_val = hidden_train[: min(64, hidden_train.shape[0])].contiguous()
+        val_overlaps_train = True
 
     row_ids = choose_row_subset(W_U, hidden_train, max_rows=max_rows, seed=data_seed + 23, token_mask=token_mask)
     W_U = W_U[row_ids].contiguous()
@@ -125,6 +136,7 @@ def load_prism_dataset(config: dict[str, Any], seed: int) -> PrismDataset:
         top_counts=top_counts,
         source_path=source_path,
         used_fallback=used_fallback,
+        val_overlaps_train=val_overlaps_train,
     )
 
 
@@ -148,19 +160,55 @@ def make_synthetic_data(
 
 
 def sample_rows(x: torch.Tensor, n: int, seed: int) -> torch.Tensor:
-    if n >= x.shape[0]:
-        return x
+    # Shuffle even when keeping everything: callers split the result into
+    # train/val by position, so an unshuffled pass-through would silently make
+    # the split a corpus-order prefix in the small-data regime.
     gen = torch.Generator().manual_seed(seed)
-    idx = torch.randperm(x.shape[0], generator=gen)[:n]
+    idx = torch.randperm(x.shape[0], generator=gen)[: min(n, x.shape[0])]
     return x[idx]
 
 
 def preprocess_rows(W_U: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Center + per-row normalize a full row matrix. Returns (row_mean, row_norms, rows_normalized)."""
     row_mean = W_U.mean(dim=0)
-    centered = W_U - row_mean
-    row_norms = centered.norm(dim=1).clamp_min(1e-8)
-    rows_normalized = centered / row_norms[:, None]
+    row_norms, rows_normalized = center_normalize_rows(W_U, row_mean)
     return row_mean, row_norms, rows_normalized
+
+
+def center_normalize_rows(rows: torch.Tensor, row_mean: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """Center ``rows`` against a given ``row_mean`` and per-row L2-normalize.
+
+    Returns ``(norms, rows_normalized)``. The one definition of the training
+    preprocessing applied to any row subset at decompose time — the 1e-8 norm
+    floor here must stay in sync with training, so do not reimplement inline.
+    """
+    centered = rows - row_mean
+    norms = centered.norm(dim=1).clamp_min(1e-8)
+    return norms, centered / norms[:, None]
+
+
+def resolve_row_mean(
+    W_U: torch.Tensor,
+    *,
+    token_mask: torch.Tensor | None = None,
+    ckpt: dict[str, Any] | None = None,
+) -> torch.Tensor:
+    """The centering mean matched to how the dictionary was trained.
+
+    Preference order: the checkpoint's stored ``row_mean`` (exact training
+    value), else the mean over ``token_mask``-kept rows (how a masked
+    extraction trains), else the full-vocab mean. Evaluation scripts must use
+    this rather than ad-hoc ``W_U.mean(dim=0)`` — centering against a different
+    mean than training silently changes every decomposition on masked
+    (multimodal) vocabularies.
+    """
+    if ckpt is not None:
+        stored = ckpt.get("row_mean")
+        if stored is not None:
+            return stored.detach().float().cpu()
+    if token_mask is not None:
+        return W_U[token_mask.bool()].float().mean(dim=0).cpu()
+    return W_U.float().mean(dim=0).cpu()
 
 
 def choose_row_subset(
