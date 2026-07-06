@@ -8,10 +8,13 @@ from pathlib import Path
 
 import torch
 
+from sparse_readout_prism.utils import resolve_device
+
 from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     collect_readout_state,
-    find_lm_head,
+    find_lm_head_with_path,
+    load_qwen_model,
     load_sae,
 )
 from sparse_readout_prism.research.query_decompose import (
@@ -19,7 +22,6 @@ from sparse_readout_prism.research.query_decompose import (
     attach_feature_labels,
     build_query_weights,
     decompose_query,
-    load_qwen_model,
     token_rank_and_prob,
     write_csv,
 )
@@ -94,10 +96,10 @@ def select_display_rows(feature_rows: list[dict[str, object]], *, top_features: 
 def run(args: argparse.Namespace) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
     query_specs = JURY_TOP5_QUERY_SPECS
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
-    device = torch.device(args.device)
+    device = resolve_device(args.device)
     model, tokenizer = load_qwen_model(args.model_id, dtype, local_files_only=args.local_files_only)
     model.to(device)
-    lm_head, lm_head_path = find_lm_head(model)
+    lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().cpu().float().contiguous()
     row_mean = W.mean(dim=0).contiguous()
     decoder, encoder_w, encoder_b, sae_config = load_sae(args.checkpoint)
@@ -223,14 +225,19 @@ def main() -> int:
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument("--paper-dir", type=Path, default=DEFAULT_PAPER_DIR)
+    parser.add_argument(
+        "--paper-dir",
+        type=lambda s: Path(s) if s else None,
+        default=DEFAULT_PAPER_DIR,
+        help="mirror paper-facing outputs here; pass '' to disable",
+    )
     parser.add_argument("--k", type=int, default=256)
     parser.add_argument("--top-features", type=int, default=8)
     parser.add_argument("--label-top-tokens", type=int, default=4)
     parser.add_argument("--label-chunk-size", type=int, default=4096)
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
-    parser.add_argument("--device", choices=["cpu", "mps"], default="cpu")
-    parser.add_argument("--local-files-only", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--device", choices=["auto", "cpu", "mps", "cuda"], default="cpu")
+    parser.add_argument("--local-files-only", action=argparse.BooleanOptionalAction, default=False)
     args = parser.parse_args()
     run(args)
     print(

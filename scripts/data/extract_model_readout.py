@@ -29,39 +29,20 @@ def log(msg: str) -> None:
 
 
 def load_model(model_id: str, revision: str | None, dtype: torch.dtype):
-    """Load via the most specific auto-class that works; return (model, tok)."""
-    from transformers import AutoConfig, AutoTokenizer
+    """Load via ``utils.load_causal_lm``; also return the AutoConfig.
+
+    device_map="auto": accelerate fits everything on the A40 if it can
+    (fp32 9B ~38GB < 48GB), else CPU-offloads overflow layers — so fp32
+    never hard-OOMs. Do NOT call .to(device) afterwards.
+    """
+    from transformers import AutoConfig
+
+    from sparse_readout_prism.utils import load_causal_lm
 
     cfg = AutoConfig.from_pretrained(model_id, revision=revision)
-    tok = AutoTokenizer.from_pretrained(model_id, revision=revision)
-    last_err = None
-    from transformers import AutoModelForCausalLM
-
-    auto_classes = [AutoModelForCausalLM]
-    try:
-        from transformers import AutoModelForImageTextToText
-
-        auto_classes.append(AutoModelForImageTextToText)
-    except Exception:  # noqa: BLE001
-        pass
-    for ac in auto_classes:
-        try:
-            # device_map="auto": accelerate fits everything on the A40 if it
-            # can (fp32 9B ~38GB < 48GB), else CPU-offloads overflow layers —
-            # so fp32 never hard-OOMs. Do NOT call .to(device) afterwards.
-            model = ac.from_pretrained(
-                model_id,
-                revision=revision,
-                dtype=dtype,
-                low_cpu_mem_usage=True,
-                device_map="auto",
-            )
-            log(f"loaded {model_id} via {ac.__name__} (device_map=auto, dtype={dtype})")
-            return model.eval(), tok, cfg
-        except Exception as e:  # noqa: BLE001
-            last_err = e
-            log(f"{ac.__name__} failed: {type(e).__name__}: {e}")
-    raise RuntimeError(f"could not load {model_id}: {last_err}")
+    model, tok = load_causal_lm(model_id, revision=revision, dtype=dtype, device_map="auto")
+    log(f"loaded {model_id} via {type(model).__name__} (device_map=auto, dtype={dtype})")
+    return model, tok, cfg
 
 
 def find_lm_head(model) -> torch.nn.Linear | torch.nn.Module:
@@ -306,9 +287,12 @@ def main() -> None:
 
     payload = {
         "W_U_orig": W_U.float().cpu().contiguous(),  # (vocab, d_model) fp32
-        "h_LN": h_LN.contiguous(),  # (n_prompts, max_len, d_model) fp16
+        "h_LN": h_LN.contiguous(),  # (n_prompts, max_len, d_model) save_h_dtype (fp32)
     }
+    from sparse_readout_prism.research.run_io import run_provenance
+
     manifest = {
+        **run_provenance(args),
         "model_id": args.model_id,
         "revision": args.revision,
         "tie_word_embeddings": tied,

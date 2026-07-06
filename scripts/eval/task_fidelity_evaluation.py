@@ -49,7 +49,9 @@ from pathlib import Path
 import torch
 import yaml
 
+from sparse_readout_prism.data import center_normalize_rows, resolve_row_mean
 from sparse_readout_prism.factorizers import load_factorizer
+from sparse_readout_prism.utils import resolve_device
 
 EPS = 1e-6
 
@@ -232,10 +234,11 @@ def run(args, device) -> None:
 
     raw = torch.load(args.data_path, map_location="cpu", weights_only=True)
     W_U = raw.get("W_U_orig", raw.get("W_U")).float().to(device)
-    row_mean = W_U.mean(dim=0)
-    centered = W_U - row_mean
-    row_norms = centered.norm(dim=1).clamp_min(1e-8)
-    rows_normalized = centered / row_norms[:, None]
+    # Centering matched to training: checkpoint row_mean, else token_mask-kept
+    # mean, else full-vocab mean — NOT an ad-hoc W_U.mean(dim=0), which silently
+    # diverges from training on masked (multimodal) vocabularies.
+    row_mean = resolve_row_mean(W_U, token_mask=raw.get("token_mask"), ckpt=ckpt).to(device)
+    row_norms, rows_normalized = center_normalize_rows(W_U, row_mean)
 
     model = load_factorizer(ckpt, factorizer_config=cfg.get("factorizer", {}), d_model=W_U.shape[1], device=device)
     k = int(args.k or cfg.get("factorizer", {}).get("k", 128))
@@ -275,11 +278,10 @@ def main() -> None:
     p.add_argument("--checkpoint", default=None, help="specific ckpt (default cell/checkpoint.pt)")
     p.add_argument("--k", type=int, default=0, help="eval k (default factorizer.k)")
     p.add_argument("--out-name", default="metrics_task_fidelity.json")
-    p.add_argument("--device", default=None)
+    p.add_argument("--device", default="auto", help="cuda|mps|cpu|auto")
     p.add_argument("--force", action="store_true")
     args = p.parse_args()
-    device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
-    run(args, device)
+    run(args, resolve_device(args.device))
 
 
 if __name__ == "__main__":

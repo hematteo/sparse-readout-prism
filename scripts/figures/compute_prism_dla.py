@@ -13,7 +13,7 @@ import torch
 from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     encode_topk,
-    find_lm_head,
+    find_lm_head_with_path,
     display_label_features,
     load_qwen_model,
     load_sae,
@@ -48,7 +48,14 @@ def dtype_from_name(name: str) -> torch.dtype:
 
 
 def text_model_from_qwen(model):
-    return model.model.language_model
+    lm = getattr(getattr(model, "model", None), "language_model", None)
+    if lm is None:
+        raise SystemExit(
+            f"{type(model).__name__} has no .model.language_model submodule — this DLA "
+            "script assumes the Qwen3.5 multimodal layout; adapt text_model_from_qwen "
+            "for other architectures"
+        )
+    return lm
 
 
 def as_hidden(output):
@@ -427,7 +434,12 @@ def main() -> int:
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument("--paper-dir", type=Path, default=DEFAULT_PAPER_DIR)
+    parser.add_argument(
+        "--paper-dir",
+        type=lambda s: Path(s) if s else None,
+        default=DEFAULT_PAPER_DIR,
+        help="mirror paper-facing outputs here; pass '' to disable",
+    )
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
     parser.add_argument("--target", default=" verify")
     parser.add_argument("--contrast-target", default=" assume")
@@ -445,7 +457,7 @@ def main() -> int:
     dtype = dtype_from_name(args.dtype)
     model, tokenizer = load_qwen_model(args.model_id, dtype)
     model.to(device)
-    lm_head, lm_head_path = find_lm_head(model)
+    lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().float().cpu().contiguous()
     decoder, encoder_w, encoder_b, sae_config = load_sae(args.checkpoint)
     if decoder.shape[1] != W.shape[1]:
@@ -516,8 +528,16 @@ def main() -> int:
             reconstructed_norm=reconstructed_norm,
             reconstructed_resid=reconstructed_resid,
         )
-    print(json.dumps({"summary": summary, "out_dir": str(args.out_dir), "paper_dir": str(args.paper_dir)}, indent=2))
-    _ = sae_config
+    print(
+        json.dumps(
+            {
+                "summary": summary,
+                "out_dir": str(args.out_dir),
+                "paper_dir": str(args.paper_dir) if args.paper_dir is not None else None,
+            },
+            indent=2,
+        )
+    )
     return 0
 
 

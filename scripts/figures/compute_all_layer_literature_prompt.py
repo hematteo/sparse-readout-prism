@@ -17,7 +17,7 @@ import torch.nn.functional as F
 
 from sparse_readout_prism.research.qwen_readout import (
     clean_token,
-    find_lm_head,
+    find_lm_head_with_path,
     display_label_features,
     load_sae,
     readable_feature_label,
@@ -32,7 +32,6 @@ DEFAULT_PAPER_DIR = Path("paper/figures/qwen2b_32x_dickens_best_times_all_layer"
 DEFAULT_LABEL_GLOBS = (
     "paper/figures/qwen2b_32x_*/**/*.csv",
     "paper/figures/qwen2b_general_readout_queries/*.csv",
-    "paper/figures/section45_general_readout_queries/*.csv",
 )
 PUNCT_CHARS = set(".,;:!?-_\"'()[]{}")
 CODE_LABEL_WORDS = {
@@ -414,19 +413,9 @@ def write_feature_descriptions(out_dir: Path, rows: list[dict[str, Any]]) -> Non
 
 
 def load_model(model_id: str, dtype: torch.dtype, *, local_files_only: bool):
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from sparse_readout_prism.utils import load_causal_lm
 
-    tokenizer = AutoTokenizer.from_pretrained(model_id, local_files_only=local_files_only)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        dtype=dtype,
-        low_cpu_mem_usage=True,
-        local_files_only=local_files_only,
-    )
-    model.eval()
-    for param in model.parameters():
-        param.requires_grad_(False)
-    return model, tokenizer
+    return load_causal_lm(model_id, dtype=dtype, device_map=None, local_files_only=local_files_only)
 
 
 def final_norm_for_layer(model, hidden: tuple[torch.Tensor, ...], layer_index: int) -> torch.Tensor:
@@ -434,7 +423,12 @@ def final_norm_for_layer(model, hidden: tuple[torch.Tensor, ...], layer_index: i
     h = hidden[layer_index]
     if layer_index == n_layers:
         return h
-    norm = getattr(getattr(model, "model"), "norm")
+    norm = getattr(getattr(model, "model", None), "norm", None)
+    if norm is None:
+        raise SystemExit(
+            f"{type(model).__name__} has no .model.norm submodule — this all-layer script "
+            "assumes that layout; adapt final_norm_for_layer for other architectures"
+        )
     return norm(h)
 
 
@@ -464,7 +458,7 @@ def collect_cells(
     list[str],
     dict[str, Any],
 ]:
-    lm_head, lm_head_path = find_lm_head(model)
+    lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().float().cpu().contiguous()
     vocab, d_model = W.shape
     decoder, encoder_w, encoder_b, sae_config = load_sae(checkpoint)
@@ -649,10 +643,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--layers", default="all")
     parser.add_argument("--num-cols", type=int, default=8)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument("--paper-dir", type=Path, default=DEFAULT_PAPER_DIR)
+    parser.add_argument(
+        "--paper-dir",
+        type=lambda s: Path(s) if s else None,
+        default=DEFAULT_PAPER_DIR,
+        help="mirror paper-facing outputs here; pass '' to disable",
+    )
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--dtype", choices=("float32", "bfloat16"), default="bfloat16")
-    parser.add_argument("--local-files-only", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--local-files-only", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--display-features-per-cell", type=int, default=2)
     parser.add_argument("--label-top-tokens", type=int, default=12)
     parser.add_argument("--display-label-tokens", type=int, default=2)

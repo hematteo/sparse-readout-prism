@@ -5,25 +5,26 @@ metrics script, the data miners, and the analysis scripts share one definition
 of the loaders and the feature-label helpers instead of importing them from a
 figure module (a figures->run / figures->data dependency inversion).
 
-The model loader is Qwen-bound: it uses ``AutoModelForImageTextToText`` (the
-Qwen3.5-2B architecture's auto-class), not the generic causal-LM class, hence
-the ``qwen`` in the module name.
+``load_qwen_model`` wraps the repo-wide ``utils.load_causal_lm`` with the
+multimodal-first class order that Qwen3.5's architecture requires — hence the
+``qwen`` in the module name.
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 import torch
 import torch.nn.functional as F
 
+from sparse_readout_prism.data import center_normalize_rows
+from sparse_readout_prism.factorizers import TopKSAE, load_factorizer, topk_mask
 from sparse_readout_prism.token_display import clean_token, is_display_token
-from sparse_readout_prism.utils import find_lm_head_with_path as find_lm_head
+from sparse_readout_prism.utils import find_lm_head_with_path, load_causal_lm
 
 __all__ = [
-    "DISPLAY_EXCLUDE_RE",
-    "DISPLAY_TOKEN_RE",
     "ContrastDecomposition",
     "clean_token",
     "collect_readout_state",
@@ -32,7 +33,7 @@ __all__ = [
     "display_label_features",
     "encode_topk",
     "fallback_feature_label",
-    "find_lm_head",
+    "find_lm_head_with_path",
     "load_qwen_model",
     "load_sae",
     "parse_single_token",
@@ -85,9 +86,7 @@ def decompose_row_contrast(
     identical block in the Qwen2B A/B paper-example and interesting-feature miners.
     """
     rows = W[[target_a, target_b]].float()
-    centered = rows - row_mean
-    norms = centered.norm(dim=1).clamp_min(1e-8)
-    x = centered / norms[:, None]
+    norms, x = center_normalize_rows(rows, row_mean)
     z = encode_topk(x, encoder_w, encoder_b, k=k)
     coeff = norms[0] * z[0] - norms[1] * z[1]
     active = torch.nonzero(coeff != 0, as_tuple=False).flatten()
@@ -106,10 +105,6 @@ def decompose_row_contrast(
     )
 
 
-DISPLAY_EXCLUDE_RE = re.compile(r"(<\||\|>|�|\\n|\\t)")
-DISPLAY_TOKEN_RE = re.compile(r"[A-Za-z0-9]")
-
-
 def parse_single_token(tokenizer, raw: str) -> int:
     ids = tokenizer.encode(raw, add_special_tokens=False)
     if len(ids) != 1:
@@ -118,39 +113,52 @@ def parse_single_token(tokenizer, raw: str) -> int:
     return int(ids[0])
 
 
-def load_qwen_model(model_id: str, dtype: torch.dtype):
-    from transformers import AutoModelForImageTextToText, AutoTokenizer
+def load_qwen_model(model_id: str, dtype: torch.dtype, *, local_files_only: bool = False):
+    """Load a (possibly multimodal) Qwen-family LM on CPU with frozen params.
 
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
-    model = AutoModelForImageTextToText.from_pretrained(
+    Thin wrapper over ``utils.load_causal_lm``: multimodal-first auto-class
+    order (Qwen3.5 only loads via ``AutoModelForImageTextToText``) and no
+    ``device_map``, so the caller controls placement with ``.to(device)``.
+    """
+    return load_causal_lm(
         model_id,
         dtype=dtype,
-        low_cpu_mem_usage=True,
+        device_map=None,
+        local_files_only=local_files_only,
+        prefer_multimodal=True,
     )
-    model.eval()
-    for param in model.parameters():
-        param.requires_grad_(False)
-    return model, tokenizer
 
 
-def load_sae(checkpoint) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict]:
+def load_sae(checkpoint) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict[str, Any]]:
+    """Load a TopK-family checkpoint as raw ``(decoder, encoder_w, encoder_b, config)`` tensors.
+
+    Built on ``load_factorizer`` (the single checkpoint reader), then flattened
+    to float32 CPU tensors for the raw-tensor script path (``encode_topk`` /
+    ``decompose_row_contrast``). Raises for non-TopK architectures — their
+    state dicts carry extra parameters (gate/threshold) that the raw-tensor
+    path would silently drop, producing wrong codes.
+    """
     ckpt = torch.load(checkpoint, map_location="cpu", weights_only=True)
-    state = ckpt["model_state_dict"]
-    decoder = state["decoder"].float().contiguous()
-    encoder_w = state["encoder.weight"].float().contiguous()
-    encoder_b = state["encoder.bias"].float().contiguous()
+    model = load_factorizer(ckpt, freeze=True)
+    if not isinstance(model, TopKSAE):
+        raise ValueError(
+            f"load_sae only supports TopK-family checkpoints, got architecture "
+            f"{model.architecture!r}; use load_factorizer + model.encode instead"
+        )
+    decoder = model.decoder.detach().float().contiguous()
+    # Training keeps decoder rows unit-norm (normalize_decoder_ after each
+    # step), so this is a no-op guard for well-formed checkpoints; it protects
+    # the decomposition against hand-edited/legacy ones.
     decoder = decoder / decoder.norm(dim=1, keepdim=True).clamp_min(1e-8)
+    encoder_w = model.encoder.weight.detach().float().contiguous()
+    encoder_b = model.encoder.bias.detach().float().contiguous()
     return decoder, encoder_w, encoder_b, ckpt.get("config", {})
 
 
 @torch.no_grad()
 def encode_topk(x: torch.Tensor, encoder_w: torch.Tensor, encoder_b: torch.Tensor, k: int) -> torch.Tensor:
-    acts = F.relu(x @ encoder_w.T + encoder_b)
-    kk = min(int(k), acts.shape[-1])
-    values, indices = torch.topk(acts, k=kk, dim=-1)
-    code = torch.zeros_like(acts)
-    code.scatter_(dim=-1, index=indices, src=values)
-    return code
+    """Raw-tensor equivalent of ``TopKSAE.encode`` (same ``topk_mask`` kernel)."""
+    return topk_mask(F.relu(x @ encoder_w.T + encoder_b), k)
 
 
 def readable_feature_label(labels: list[str], feature_id: int, max_len: int = 36) -> str:
@@ -207,9 +215,7 @@ def display_label_features(
     ids = torch.full((len(feature_ids), candidate_pool), -1, dtype=torch.long, device=device)
     for start in range(0, vocab_for_labels, chunk_size):
         rows = W[start : start + chunk_size].float()
-        centered = rows - row_mean
-        norms = centered.norm(dim=1).clamp_min(1e-8)
-        x = centered / norms[:, None]
+        _norms, x = center_normalize_rows(rows, row_mean)
         chunk_scores = F.relu(x @ enc.T + bias).T
         merged_scores = torch.cat([scores, chunk_scores], dim=1)
         chunk_ids = torch.arange(start, start + rows.shape[0], dtype=torch.long, device=device).expand(
@@ -237,7 +243,7 @@ def display_label_features(
 
 @torch.no_grad()
 def collect_readout_state(model, tokenizer, prompt: str, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
-    lm_head, _path = find_lm_head(model)
+    lm_head, _path = find_lm_head_with_path(model)
     captured: dict[str, torch.Tensor] = {}
 
     def pre_hook(_module, inputs):
@@ -262,7 +268,7 @@ def collect_readout_states_batched(model, tokenizer, prompts: list[str], device:
     the last non-pad position per row. Returns ``(states, logits)`` lists of
     per-prompt CPU tensors (each ``(d_model,)`` / ``(vocab,)``).
     """
-    lm_head, _ = find_lm_head(model)
+    lm_head, _ = find_lm_head_with_path(model)
     states: list[torch.Tensor] = []
     logits_out: list[torch.Tensor] = []
     if tokenizer.pad_token_id is None:

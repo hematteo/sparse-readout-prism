@@ -36,7 +36,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -45,21 +44,23 @@ from typing import Iterable, Optional
 import numpy as np
 import torch
 
+from sparse_readout_prism.data import resolve_row_mean
 from sparse_readout_prism.decompose import decompose_token_logit
 from sparse_readout_prism.factorizers import TopKSAE, load_factorizer
 from sparse_readout_prism.research.cell_metrics import coverage_stats
 from sparse_readout_prism.research.run_io import (
     group_rows as _by,
+    load_bank,
+    margin_row_stats,
+    resolve_ab_case,
+    run_provenance,
     write_rows_csv as _write_csv,
 )
-from sparse_readout_prism.research.registry import (
-    load_model,
-    resolve_registry,
-    resolve_single_token,
-)
+from sparse_readout_prism.research.registry import resolve_registry
 from sparse_readout_prism.utils import (
     atomic_write_text as _atomic_write,
     find_lm_head,
+    load_causal_lm,
     pearson as _pearson,
     spearman as _spearman,
     write_jsonl as _write_jsonl,
@@ -627,12 +628,6 @@ def margin_from_rows(
     }
 
 
-# ---- constants (duplicated from run_query_fidelity_bank.py) ----
-EPS = 1e-6
-PASS_THRESHOLDS = (0.25, 0.50, 1.00)
-MARGIN_BINS = [(0.0, 0.5), (0.5, 1.0), (1.0, 2.0), (2.0, float("inf"))]
-MARGIN_BIN_LABELS = ["<0.5", "0.5-1", "1-2", ">=2"]
-
 # Method panel for Stages 1+2 (Qwen2B). All seven share the same row budget
 # and run in the order listed; sparse_rp first so its precomputed h cache
 # warms the model forward path for the rest.
@@ -697,25 +692,19 @@ def _group_metrics(rows: list[dict]) -> dict:
     }
 
 
-def load_bank(path: Path, cap: int | None) -> list[dict]:
-    rows = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
-    if cap is not None and cap < len(rows):
-        keep_bases = list(dict.fromkeys(r["base_case_id"] for r in rows))[:cap]
-        rows = [r for r in rows if r["base_case_id"] in set(keep_bases)]
-    return rows
-
-
 # --------------------------------------------------------------------------- #
-# Model-native frontier query construction (mirror of the canonical runner)
+# Model-native frontier query construction
 # --------------------------------------------------------------------------- #
 
 
-def native_queries(logits: torch.Tensor, row_norms_all, row_mean, case_id, n_vocab):
+def native_queries_top1(logits: torch.Tensor):
     """Yield (qname, a_id, b_id, b_is_mean) tuples for model-native rows.
 
-    Two queries per row:
-      * top1_vs_top2: A = argmax logit, B = second-argmax
-      * top1_vs_vocabmean: A = argmax, B = row_mean (pseudo-target)
+    Deliberately REDUCED relative to ``run_query_fidelity_bank.native_queries``
+    (five queries): the baseline comparison only needs the two cheap anchors,
+    * top1_vs_top2: A = argmax logit, B = second-argmax
+    * top1_vs_vocabmean: A = argmax, B = row_mean (pseudo-target)
+    hence the distinct name.
     """
     vals, idx = torch.topk(logits, k=2)
     a_id = int(idx[0].item())
@@ -754,12 +743,10 @@ def run_cell(
 
     W = cache["W"]
     row_mean = cache["row_mean"]
-    row_norms_all = cache["row_norms_all"]
     sae = cache["sae"]
     k = cache["k"]
     tok = cache["tok"]
     hidden_for = cache["hidden_for"]
-    n_vocab = cache["n_vocab"]
     softcap = cache["softcap"]
     device = cache["device"]
 
@@ -787,11 +774,6 @@ def run_cell(
     skipped: list[dict] = []
 
     def emit(base_id, case_id, family, query, mr, expected_side):
-        exact, sparse = mr["exact"], mr["sparse"]
-        rd = abs(exact - sparse) / max(abs(exact), EPS)
-        cov = coverage_stats(mr["feat_margin"], sparse)
-        sign_match = (exact > 0) == (sparse > 0)
-        binlbl = next(MARGIN_BIN_LABELS[i] for i, (lo, hi) in enumerate(MARGIN_BINS) if lo <= abs(exact) < hi)
         row = {
             "model": model_name,
             "operating_point": op_name,
@@ -803,113 +785,34 @@ def run_cell(
             "case_id": case_id,
             "query": query,
             "k": k,
-            "exact_margin": exact,
-            "sparse_margin": sparse,
-            "residual": exact - sparse,
-            "abs_residual": abs(exact - sparse),
-            "residual_direct": rd,
-            "resid_term": mr["resid_term"],
-            "sign_match": bool(sign_match),
-            "abs_exact": abs(exact),
-            "margin_bin": binlbl,
-            "tiny_margin": abs(exact) < 0.5,
-            "expected_side": expected_side,
-            "softcap": softcap,
         }
-        row.update(cov)
+        row.update(margin_row_stats(mr))
+        row["expected_side"] = expected_side
+        row["softcap"] = softcap
+        row.update(coverage_stats(mr["feat_margin"], mr["sparse"]))
         rows.append(row)
 
     # Process bank rows.
     if bank_name in ("curated_ab", "case_candidates"):
         for r in bank_rows:
-            fam = r["family"]
             try:
                 h = hidden_for(r["prompt"]).to(device)
             except Exception as e:  # noqa: BLE001
                 skipped.append({"case_id": r["case_id"], "reason": f"forward:{e}"})
                 continue
-            if r.get("target_a") is not None:
-                ta, va, ra = resolve_single_token(tok, r["target_a"])
-                tb, vb, rb = resolve_single_token(tok, r["target_b"])
-                audit += [
-                    {
-                        "model": model_name,
-                        "case_id": r["case_id"],
-                        "target": r["target_a"],
-                        "side": "A",
-                        "token_id": ta,
-                        "variant": va,
-                        "reason": ra or "ok",
-                    },
-                    {
-                        "model": model_name,
-                        "case_id": r["case_id"],
-                        "target": r["target_b"],
-                        "side": "B",
-                        "token_id": tb,
-                        "variant": vb,
-                        "reason": rb or "ok",
-                    },
-                ]
-                if ta is None or tb is None:
-                    skipped.append({"case_id": r["case_id"], "reason": f"tok A={ra} B={rb}"})
-                    continue
-                if ta == tb:
-                    skipped.append({"case_id": r["case_id"], "reason": "ab_collision"})
-                    continue
-                mr = margin_from_rows(h, method, [ta], [tb])
-                emit(
-                    r["base_case_id"],
-                    r["case_id"],
-                    fam,
-                    "single_token",
-                    mr,
-                    r.get("expected_side"),
-                )
-            else:
-                a_ids, b_ids = [], []
-                for s in r["target_a_family"]:
-                    tid, v, rsn = resolve_single_token(tok, s)
-                    audit.append(
-                        {
-                            "model": model_name,
-                            "case_id": r["case_id"],
-                            "target": s,
-                            "side": "Afam",
-                            "token_id": tid,
-                            "variant": v,
-                            "reason": rsn or "ok",
-                        }
-                    )
-                    if tid is not None:
-                        a_ids.append(tid)
-                for s in r["target_b_family"]:
-                    tid, v, rsn = resolve_single_token(tok, s)
-                    audit.append(
-                        {
-                            "model": model_name,
-                            "case_id": r["case_id"],
-                            "target": s,
-                            "side": "Bfam",
-                            "token_id": tid,
-                            "variant": v,
-                            "reason": rsn or "ok",
-                        }
-                    )
-                    if tid is not None:
-                        b_ids.append(tid)
-                if not a_ids or not b_ids:
-                    skipped.append({"case_id": r["case_id"], "reason": "family_empty"})
-                    continue
-                mr = margin_from_rows(h, method, a_ids, b_ids)
-                emit(
-                    r["base_case_id"],
-                    r["case_id"],
-                    fam + "_family",
-                    "token_family",
-                    mr,
-                    r.get("expected_side"),
-                )
+            resolved = resolve_ab_case(tok, r, model_name, audit, skipped)
+            if resolved is None:
+                continue
+            a_ids, b_ids, fam_label, query_label = resolved
+            mr = margin_from_rows(h, method, a_ids, b_ids)
+            emit(
+                r["base_case_id"],
+                r["case_id"],
+                fam_label,
+                query_label,
+                mr,
+                r.get("expected_side"),
+            )
     elif bank_name == "model_native":
         for r in bank_rows:
             try:
@@ -918,7 +821,7 @@ def run_cell(
                 skipped.append({"case_id": r["case_id"], "reason": f"forward:{e}"})
                 continue
             logits = h.cpu() @ W.T
-            for qname, a_id, b_id, b_mean in native_queries(logits, row_norms_all, row_mean, r["case_id"], n_vocab):
+            for qname, a_id, b_id, b_mean in native_queries_top1(logits):
                 mr = margin_from_rows(
                     h,
                     method,
@@ -1056,16 +959,13 @@ def main() -> int:
         raise KeyError(f"no factorizer config in {op['checkpoint']}")
     sae = load_factorizer(ckpt, factorizer_config=cfg, d_model=d_model, freeze=True)
     k = int(ckpt.get("evaluation", {}).get("k") or cfg.get("k"))
-    if ckpt.get("row_mean") is not None:
-        row_mean = ckpt["row_mean"].float()
-    elif token_mask is not None:
-        row_mean = W[token_mask.bool()].mean(dim=0)
-    else:
-        row_mean = W.mean(dim=0)
+    # row_mean matched to training: checkpoint's stored value, else the
+    # token_mask-kept mean, else the full-vocab mean (one shared definition).
+    row_mean = resolve_row_mean(W, token_mask=token_mask, ckpt=ckpt)
     row_norms_all = (W - row_mean).norm(dim=1)
 
     dtype = torch.bfloat16 if args.model_dtype == "bfloat16" else torch.float32
-    model, tok = load_model(m_entry["model_id"], m_entry["revision"], dtype)
+    model, tok = load_causal_lm(m_entry["model_id"], revision=m_entry["revision"], dtype=dtype)
     dev = next(model.parameters()).device
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
@@ -1213,22 +1113,13 @@ def main() -> int:
         )
     _write_csv(args.out_root / "baseline_feature_compactness.csv", compact)
 
-    git_hash = None
-    try:
-        import subprocess
-
-        git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(REPO), text=True).strip()
-    except Exception:  # noqa: BLE001
-        pass
     _atomic_write(
         args.out_root / "manifest.json",
         json.dumps(
             {
-                "command": " ".join(sys.argv),
-                "args": {k_: str(v) for k_, v in vars(args).items()},
+                **run_provenance(args),
                 "registry": str(args.registry),
                 "archive_root": reg["archive_root"],
-                "git_hash": git_hash,
                 "model": args.model,
                 "operating_point": args.operating_point,
                 "methods": methods,

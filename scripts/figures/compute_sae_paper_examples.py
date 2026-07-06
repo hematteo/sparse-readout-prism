@@ -8,14 +8,14 @@ from pathlib import Path
 
 import torch
 
-from sparse_readout_prism.utils import write_csv
+from sparse_readout_prism.utils import resolve_device, write_csv
 from sparse_readout_prism.token_display import clean_token
 from sparse_readout_prism.research.qwen_readout import (
     collect_readout_state,
     decompose_row_contrast,
     display_label_features,
     fallback_feature_label,
-    find_lm_head,
+    find_lm_head_with_path,
     load_qwen_model,
     load_sae,
     parse_single_token,
@@ -42,7 +42,7 @@ def build_rows(
     label_top_tokens: int,
     label_chunk_size: int,
 ) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]], dict]:
-    lm_head, lm_head_path = find_lm_head(model)
+    lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().cpu()
     vocab, d_model = W.shape
     decoder, encoder_w, encoder_b, sae_config = load_sae(checkpoint)
@@ -217,19 +217,24 @@ def main() -> int:
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument("--paper-dir", type=Path, default=DEFAULT_PAPER_DIR)
-    parser.add_argument("--k", type=int, default=128)
+    parser.add_argument(
+        "--paper-dir",
+        type=lambda s: Path(s) if s else None,
+        default=DEFAULT_PAPER_DIR,
+        help="mirror paper-facing outputs here; pass '' to disable",
+    )
+    parser.add_argument("--k", type=int, default=256)
     parser.add_argument("--top-features", type=int, default=6)
     parser.add_argument("--label-top-tokens", type=int, default=4)
     parser.add_argument("--label-chunk-size", type=int, default=4096)
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
-    parser.add_argument("--device", choices=["cpu", "mps"], default="cpu")
+    parser.add_argument("--device", choices=["auto", "cpu", "mps", "cuda"], default="cpu")
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     paper_dir = args.paper_dir if args.paper_dir is not None else None
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
-    device = torch.device(args.device)
+    device = resolve_device(args.device)
     examples = EXAMPLE_SETS[args.example_set]
     model, tokenizer = load_qwen_model(args.model_id, dtype)
     model.to(device)

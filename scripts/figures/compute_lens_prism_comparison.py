@@ -8,11 +8,13 @@ from pathlib import Path
 
 import torch
 
+from sparse_readout_prism.utils import resolve_device
+
 from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     collect_readout_states_batched,
-    encode_topk,
-    find_lm_head,
+    decompose_row_contrast,
+    find_lm_head_with_path,
     display_label_features,
     load_qwen_model,
     load_sae,
@@ -65,7 +67,7 @@ def compute_case(
     label_chunk_size: int,
     device: torch.device,
 ) -> tuple[dict[str, object], list[dict[str, object]], list[dict[str, object]], dict[str, object]]:
-    lm_head, lm_head_path = find_lm_head(model)
+    lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().cpu()
     vocab, d_model = W.shape
     decoder, encoder_w, encoder_b, sae_config = load_sae(checkpoint)
@@ -84,17 +86,22 @@ def compute_case(
     target_b_logit = float(logits[target_b_id])
     exact_margin = target_a_logit - target_b_logit
 
-    rows = W[[target_a_id, target_b_id]].float()
-    centered = rows - row_mean
-    norms = centered.norm(dim=1).clamp_min(1e-8)
-    x = centered / norms[:, None]
-    z = encode_topk(x, encoder_w, encoder_b, k=k)
-    coeff = norms[0] * z[0] - norms[1] * z[1]
-    active = torch.nonzero(coeff != 0, as_tuple=False).flatten()
-    feature_scores = h @ decoder[active].T
-    contrib = coeff[active] * feature_scores
-    sparse_feature_sum = float(contrib.sum())
-    residual = exact_margin - sparse_feature_sum
+    d = decompose_row_contrast(
+        W=W,
+        target_a=target_a_id,
+        target_b=target_b_id,
+        row_mean=row_mean,
+        encoder_w=encoder_w,
+        encoder_b=encoder_b,
+        decoder=decoder,
+        h=h,
+        k=k,
+        exact=exact_margin,
+    )
+    z, active, coeff = d.z, d.active, d.coeff
+    contrib, feature_scores = d.contrib, d.feature_scores
+    sparse_feature_sum = d.feature_sum
+    residual = d.residual
 
     feature_rows: list[dict[str, object]] = []
     for fid, value, score, coef in zip(
@@ -214,7 +221,12 @@ def main() -> int:
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument("--paper-dir", type=Path, default=DEFAULT_PAPER_DIR)
+    parser.add_argument(
+        "--paper-dir",
+        type=lambda s: Path(s) if s else None,
+        default=DEFAULT_PAPER_DIR,
+        help="mirror paper-facing outputs here; pass '' to disable",
+    )
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
     parser.add_argument("--target-a", default=" bug")
     parser.add_argument("--target-b", default=" insect")
@@ -224,14 +236,15 @@ def main() -> int:
     parser.add_argument("--label-top-tokens", type=int, default=4)
     parser.add_argument("--label-chunk-size", type=int, default=4096)
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
-    parser.add_argument("--device", choices=["cpu", "mps"], default="cpu")
+    parser.add_argument("--device", choices=["auto", "cpu", "mps", "cuda"], default="cpu")
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    args.paper_dir.mkdir(parents=True, exist_ok=True)
+    if args.paper_dir is not None:
+        args.paper_dir.mkdir(parents=True, exist_ok=True)
 
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
-    device = torch.device(args.device)
+    device = resolve_device(args.device)
     model, tokenizer = load_qwen_model(args.model_id, dtype)
     model.to(device)
 
@@ -253,9 +266,10 @@ def main() -> int:
     write_csv(args.out_dir / "lens_prism_comparison_summary.csv", [summary])
     write_csv(args.out_dir / "lens_prism_comparison_top_tokens.csv", top_rows)
     write_csv(args.out_dir / "lens_prism_comparison_features.csv", feature_rows)
-    write_csv(args.paper_dir / "lens_prism_comparison_summary.csv", [summary])
-    write_csv(args.paper_dir / "lens_prism_comparison_top_tokens.csv", top_rows)
-    write_csv(args.paper_dir / "lens_prism_comparison_features.csv", feature_rows)
+    if args.paper_dir is not None:
+        write_csv(args.paper_dir / "lens_prism_comparison_summary.csv", [summary])
+        write_csv(args.paper_dir / "lens_prism_comparison_top_tokens.csv", top_rows)
+        write_csv(args.paper_dir / "lens_prism_comparison_features.csv", feature_rows)
     torch.save(
         {"summary": summary, "top_rows": top_rows, "feature_rows": feature_rows, "meta": meta},
         args.out_dir / "lens_prism_comparison_cache.pt",
@@ -266,18 +280,19 @@ def main() -> int:
         feature_rows=feature_rows,
         top_rows=top_rows,
     )
-    write_report(
-        args.paper_dir / "lens_prism_comparison.md",
-        summary=summary,
-        feature_rows=feature_rows,
-        top_rows=top_rows,
-    )
+    if args.paper_dir is not None:
+        write_report(
+            args.paper_dir / "lens_prism_comparison.md",
+            summary=summary,
+            feature_rows=feature_rows,
+            top_rows=top_rows,
+        )
     manifest = {
         "description": "Focused logit-lens top-token and Sparse Readout Prism comparison for one Qwen2B prompt.",
         "model_id": args.model_id,
         "checkpoint": str(args.checkpoint),
         "out_dir": str(args.out_dir),
-        "paper_dir": str(args.paper_dir),
+        "paper_dir": str(args.paper_dir) if args.paper_dir is not None else None,
         "prompt": args.prompt,
         "target_a": args.target_a,
         "target_b": args.target_b,
@@ -289,7 +304,7 @@ def main() -> int:
         json.dumps(
             {
                 "out_dir": str(args.out_dir),
-                "paper_dir": str(args.paper_dir),
+                "paper_dir": str(args.paper_dir) if args.paper_dir is not None else None,
                 "exact_margin": summary["exact_margin"],
                 "sparse_feature_sum": summary["sparse_feature_sum"],
                 "residual": summary["residual"],

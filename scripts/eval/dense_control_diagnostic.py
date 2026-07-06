@@ -49,9 +49,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from sparse_readout_prism.data import preprocess_rows
+from sparse_readout_prism.data import center_normalize_rows, resolve_row_mean
 from sparse_readout_prism.factorizers import load_factorizer
-from sparse_readout_prism.utils import set_seed, write_csv, write_json
+from sparse_readout_prism.utils import resolve_device, set_seed, write_csv, write_json
 
 ALL_METHODS = ("encoder", "ls_support", "nnls_support", "omp_signed", "omp_nonneg", "dense_rank")
 METHOD_CLASS = {
@@ -293,7 +293,7 @@ def main(argv: list[str] | None = None) -> int:
         ap.error(f"unknown method(s) {bad}; have {list(ALL_METHODS)}")
 
     set_seed(args.seed)
-    device = torch.device(args.device) if args.device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = resolve_device(args.device)
 
     payload = torch.load(args.w_u, map_location="cpu", weights_only=True)
     W_U = payload.get("W_U_orig", payload.get("W_U"))
@@ -301,12 +301,16 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(f"{args.w_u}: no W_U_orig/W_U")
     token_mask = payload.get("token_mask")
     W_U = W_U.float()
-    if token_mask is not None:
-        W_U = W_U[token_mask.bool()]
-    _, _, rows_normalized = preprocess_rows(W_U)
-    rows_normalized = _subsample_rows(rows_normalized, args.n_rows, args.seed + 23)
 
     ckpt = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
+    # Centering matched to training: checkpoint row_mean, else token_mask-kept
+    # mean, else full-vocab mean (shared definition in data.resolve_row_mean).
+    row_mean = resolve_row_mean(W_U, token_mask=token_mask, ckpt=ckpt)
+    if token_mask is not None:
+        W_U = W_U[token_mask.bool()]
+    _, rows_normalized = center_normalize_rows(W_U, row_mean)
+    rows_normalized = _subsample_rows(rows_normalized, args.n_rows, args.seed + 23)
+
     model = load_factorizer(ckpt, d_model=rows_normalized.shape[1], freeze=True).to(device)
     cfg = ckpt.get("factorizer") or ckpt.get("config", {}).get("factorizer", {})
     k = int(args.k or ckpt.get("evaluation", {}).get("k") or cfg.get("k"))

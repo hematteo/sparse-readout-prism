@@ -113,6 +113,10 @@ HELDOUT_TERMS = [
     "pissed",
 ]
 
+# CHECKPOINT-SPECIFIC feature ids: these index the Qwen3.5-2B 32x/k256 paper
+# dictionary and are meaningless for any other model/checkpoint. Reruns on
+# other models rely on the discovery pass; the fallback to these ids is gated
+# behind --allow-feature-set-fallback.
 FEATURE_SETS = {
     "hell_damn": [9918, 27722, 5872],
     "shit_crap": [10545],
@@ -1001,7 +1005,12 @@ def main() -> int:
         help="Device for W_U / SAE tensors and intervention math. 'auto' follows --device.",
     )
     ap.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
-    ap.add_argument("--local-files-only", action=argparse.BooleanOptionalAction, default=True)
+    ap.add_argument("--local-files-only", action=argparse.BooleanOptionalAction, default=False)
+    ap.add_argument(
+        "--allow-feature-set-fallback",
+        action="store_true",
+        help="if discovery selects nothing, fall back to the hardcoded Qwen3.5-2B 32x/k256 FEATURE_SETS ids",
+    )
     ap.add_argument("--selected-feature-count", type=int, default=10)
     ap.add_argument("--random-seed", type=int, default=17)
     ap.add_argument("--label-chunk-size", type=int, default=16384)
@@ -1043,6 +1052,13 @@ def main() -> int:
 
     selected_features = select_discovery_features(feature_token_rows, args.selected_feature_count)
     if not selected_features:
+        if not args.allow_feature_set_fallback:
+            raise SystemExit(
+                "feature discovery selected nothing; the FEATURE_SETS fallback ids are "
+                "specific to the Qwen3.5-2B 32x/k256 paper checkpoint and would be wrong "
+                "for this model — pass --allow-feature-set-fallback only if that is the "
+                "checkpoint you are evaluating"
+            )
         selected_features = FEATURE_SETS["all_narrow"]
     selected_features = selected_features[: args.selected_feature_count]
     log(f"selected discovery features: {selected_features}")

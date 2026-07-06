@@ -26,45 +26,45 @@ import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
-from sparse_readout_prism.research.qwen_readout import find_lm_head, load_sae
+from sparse_readout_prism.research.qwen_readout import find_lm_head_with_path, load_qwen_model, load_sae
 from sparse_readout_prism.research.query_decompose import (
     QuerySpec,
     attach_feature_labels,
     build_query_weights,
     decompose_query,
-    load_qwen_model,
     resolve_single_token,
     token_rank_and_prob,
     write_csv,
 )
 from sparse_readout_prism.token_display import clean_token
 from sparse_readout_prism.paths import ssd_root
+from sparse_readout_prism.utils import resolve_device
 
 
-ARCHIVE = ssd_root() / "readout-prism-archive/converged-all/results"
+DEFAULT_ARCHIVE_ROOT = ssd_root() / "readout-prism-archive/converged-all/results"
 DEFAULT_OUT_DIR = Path("results/benchmark_derived_query_suite_qwen_20260523")
 DENOM_FLOOR = 0.5
 
 
+# Checkpoint paths are relative to --archive-root, so Hub-downloaded
+# checkpoints can be pointed at without editing this file.
 MODEL_SPECS: dict[str, dict[str, Any]] = {
     "qwen0p8b": {
         "label": "Qwen3.5-0.8B",
         "model_id": "Qwen/Qwen3.5-0.8B",
-        "checkpoint": ARCHIVE
-        / "qwen35_0p8b_sae/converge/topk_d32768_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt",
+        "checkpoint": "qwen35_0p8b_sae/converge/topk_d32768_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt",
         "k": 256,
     },
     "qwen2b": {
         "label": "Qwen3.5-2B",
         "model_id": "Qwen/Qwen3.5-2B",
-        "checkpoint": ARCHIVE / "qwen35_2b_sae/converge/topk_d65536_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt",
+        "checkpoint": "qwen35_2b_sae/converge/topk_d65536_32x_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt",
         "k": 256,
     },
     "qwen9b": {
         "label": "Qwen3.5-9B",
         "model_id": "Qwen/Qwen3.5-9B",
-        "checkpoint": ARCHIVE
-        / "qwen9b_no_pca_width_k_sweep/converged/topk_d131072_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt",
+        "checkpoint": "qwen9b_no_pca_width_k_sweep/converged/topk_d131072_k256_rowseeded_hybrid_lamramp_s0/checkpoint.pt",
         "k": 256,
     },
 }
@@ -286,7 +286,6 @@ def build_squad_answerable(tokenizer, limit: int) -> list[BenchCase]:
         distractors = choose_distractors(tokenizer, row["context"], target, capitalized=True, limit=3)
         if not distractors:
             continue
-        query_kind = "token_family_margin"
         prompt = (
             "Benchmark: SQuAD2 answerable extractive QA.\n"
             "Use the context to answer in a few words.\n"
@@ -303,17 +302,13 @@ def build_squad_answerable(tokenizer, limit: int) -> list[BenchCase]:
                 source_split="validation",
                 source_id=str(row["id"]),
                 prompt=prompt,
-                query_kind=query_kind,
-                target_a=None if query_kind == "token_family_margin" else target,
-                target_b=None if query_kind == "token_family_margin" else distractors[0],
-                target_a_family=(target,) if query_kind == "token_family_margin" else (),
-                target_b_family=tuple(distractors) if query_kind == "token_family_margin" else (),
+                query_kind="token_family_margin",
+                target_a=None,
+                target_b=None,
+                target_a_family=(target,),
+                target_b_family=tuple(distractors),
                 expected_side="A",
-                note=(
-                    f"Gold answer token {target!r}; context distractors {', '.join(repr(d) for d in distractors)}."
-                    if query_kind == "token_family_margin"
-                    else f"Gold answer token {target!r}; context distractor {distractors[0]!r}."
-                ),
+                note=f"Gold answer token {target!r}; context distractors {', '.join(repr(d) for d in distractors)}.",
             )
         )
         if len(cases) >= limit:
@@ -407,7 +402,6 @@ def build_hotpot(tokenizer, limit: int) -> list[BenchCase]:
         context = supporting_context(row, distractors[0])
         if not context:
             continue
-        query_kind = "token_family_margin"
         prompt = (
             "Benchmark: HotpotQA distractor multi-hop QA.\n"
             "Use the supporting passages and ignore distractors.\n"
@@ -423,17 +417,13 @@ def build_hotpot(tokenizer, limit: int) -> list[BenchCase]:
                 source_split="validation[distractor]",
                 source_id=str(row["id"]),
                 prompt=prompt,
-                query_kind=query_kind,
-                target_a=None if query_kind == "token_family_margin" else target,
-                target_b=None if query_kind == "token_family_margin" else distractors[0],
-                target_a_family=(target,) if query_kind == "token_family_margin" else (),
-                target_b_family=tuple(distractors) if query_kind == "token_family_margin" else (),
+                query_kind="token_family_margin",
+                target_a=None,
+                target_b=None,
+                target_a_family=(target,),
+                target_b_family=tuple(distractors),
                 expected_side="A",
-                note=(
-                    f"Answer token {target!r}; distractor-passage tokens {', '.join(repr(d) for d in distractors)}."
-                    if query_kind == "token_family_margin"
-                    else f"Answer token {target!r}; distractor-passage token {distractors[0]!r}."
-                ),
+                note=f"Answer token {target!r}; distractor-passage tokens {', '.join(repr(d) for d in distractors)}.",
             )
         )
         if len(cases) >= limit:
@@ -452,8 +442,6 @@ def build_legalbench(tokenizer, limit: int) -> list[BenchCase]:
     assertion = "The agreement's existence or terms are confidential."
     for row in ds:
         answer = "Yes" if str(row["answer"]).strip().lower() == "yes" else "No"
-        contrast = "No" if answer == "Yes" else "Yes"
-        query_kind = "token_family_margin"
         yes_family = ("Yes", "yes", "YES")
         no_family = ("No", "no", "NO")
         prompt = (
@@ -470,21 +458,13 @@ def build_legalbench(tokenizer, limit: int) -> list[BenchCase]:
                 source_split="test[contract_nli_confidentiality_of_agreement]",
                 source_id=str(row["index"]),
                 prompt=prompt,
-                query_kind=query_kind,
-                target_a=None if query_kind == "token_family_margin" else answer,
-                target_b=None if query_kind == "token_family_margin" else contrast,
-                target_a_family=(yes_family if answer == "Yes" else no_family)
-                if query_kind == "token_family_margin"
-                else (),
-                target_b_family=(no_family if answer == "Yes" else yes_family)
-                if query_kind == "token_family_margin"
-                else (),
+                query_kind="token_family_margin",
+                target_a=None,
+                target_b=None,
+                target_a_family=yes_family if answer == "Yes" else no_family,
+                target_b_family=no_family if answer == "Yes" else yes_family,
                 expected_side="A",
-                note=(
-                    f"LegalBench label-family {answer}; document {row['document_name']}."
-                    if query_kind == "token_family_margin"
-                    else f"LegalBench label {answer}; document {row['document_name']}."
-                ),
+                note=f"LegalBench label-family {answer}; document {row['document_name']}.",
             )
         )
         if len(cases) >= limit:
@@ -553,7 +533,6 @@ def build_securityeval(tokenizer, limit: int) -> list[BenchCase]:
         target, contrast = pair
         if not single_token_ok(tokenizer, target) or not single_token_ok(tokenizer, contrast):
             continue
-        query_kind = "token_family_margin"
         target_family = SECURITY_FAMILIES.get(target, (target,))
         contrast_family = SECURITY_FAMILIES.get(contrast, (contrast,))
         prompt = f"Benchmark: SecurityEval insecure code-generation prompt.\n{compact_text(row['Prompt'], 1200)}\n\n"
@@ -570,17 +549,13 @@ def build_securityeval(tokenizer, limit: int) -> list[BenchCase]:
                 source_split="train",
                 source_id=str(row["ID"]),
                 prompt=prompt,
-                query_kind=query_kind,
-                target_a=None if query_kind == "token_family_margin" else target,
-                target_b=None if query_kind == "token_family_margin" else contrast,
-                target_a_family=target_family if query_kind == "token_family_margin" else (),
-                target_b_family=contrast_family if query_kind == "token_family_margin" else (),
+                query_kind="token_family_margin",
+                target_a=None,
+                target_b=None,
+                target_a_family=target_family,
+                target_b_family=contrast_family,
                 expected_side="A",
-                note=(
-                    f"SecurityEval {row['ID']}; safer family {target_family!r} vs unsafe family {contrast_family!r}."
-                    if query_kind == "token_family_margin"
-                    else f"SecurityEval {row['ID']}; safer keyword {target!r} vs unsafe keyword {contrast!r}."
-                ),
+                note=f"SecurityEval {row['ID']}; safer family {target_family!r} vs unsafe family {contrast_family!r}.",
             )
         )
         if len(cases) >= limit:
@@ -611,7 +586,7 @@ def build_bank(tokenizer, counts: dict[str, int]) -> list[BenchCase]:
 def collect_readout_state(
     model, tokenizer, prompt: str, device: torch.device, max_len: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    lm_head, _path = find_lm_head(model)
+    lm_head, _path = find_lm_head_with_path(model)
     captured: dict[str, torch.Tensor] = {}
 
     def pre_hook(_module, inputs):
@@ -716,14 +691,14 @@ def evaluate_model(
     args: argparse.Namespace,
 ) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
     model_id = str(spec["model_id"])
-    checkpoint = Path(spec["checkpoint"])
+    checkpoint = Path(args.archive_root) / spec["checkpoint"]
     if not checkpoint.exists():
         log(f"skip {model_slug}: missing checkpoint {checkpoint}")
         return [], [], [{"model_slug": model_slug, "reason": "missing_checkpoint", "checkpoint": str(checkpoint)}], []
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
-    device = torch.device(args.device)
+    device = resolve_device(args.device)
     try:
-        model, tokenizer = load_qwen_model(model_id, dtype, local_files_only=True)
+        model, tokenizer = load_qwen_model(model_id, dtype, local_files_only=args.local_files_only)
     except Exception as exc:  # noqa: BLE001
         if args.skip_missing:
             log(f"skip {model_slug}: could not load cached model {model_id}: {exc}")
@@ -735,7 +710,7 @@ def evaluate_model(
             )
         raise
     model.to(device)
-    lm_head, lm_head_path = find_lm_head(model)
+    lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().cpu().float().contiguous()
     row_mean = W.mean(dim=0).contiguous()
     decoder, encoder_w, encoder_b, sae_config = load_sae(checkpoint)
@@ -934,7 +909,14 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--models", default="qwen0p8b,qwen2b,qwen9b")
     parser.add_argument("--counts", default="")
-    parser.add_argument("--device", choices=["cpu", "mps", "cuda"], default="mps")
+    parser.add_argument("--device", choices=["auto", "cpu", "mps", "cuda"], default="auto")
+    parser.add_argument("--local-files-only", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument(
+        "--archive-root",
+        type=Path,
+        default=DEFAULT_ARCHIVE_ROOT,
+        help="root the MODEL_SPECS checkpoint paths are resolved against",
+    )
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
     parser.add_argument("--max-len", type=int, default=1024)
     parser.add_argument("--top-features", type=int, default=10)
@@ -950,7 +932,7 @@ def main() -> int:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     counts = parse_counts(args.counts)
     log(f"building bank with counts: {counts}")
-    bank_tokenizer = AutoTokenizer.from_pretrained(args.bank_tokenizer, local_files_only=True)
+    bank_tokenizer = AutoTokenizer.from_pretrained(args.bank_tokenizer, local_files_only=args.local_files_only)
     cases = build_bank(bank_tokenizer, counts)
     write_jsonl(args.out_dir / "benchmark_query_bank.jsonl", [asdict(case) for case in cases])
 

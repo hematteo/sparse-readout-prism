@@ -9,10 +9,9 @@ from pathlib import Path
 
 import torch
 
-from sparse_readout_prism.research.qwen_readout import find_lm_head, load_sae
+from sparse_readout_prism.research.qwen_readout import find_lm_head_with_path, load_qwen_model, load_sae
 from sparse_readout_prism.research.query_decompose import (
     attach_feature_labels,
-    load_qwen_model,
     write_csv,
 )
 
@@ -37,6 +36,11 @@ SELECTED_CASES = (
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        raise SystemExit(
+            f"missing {path} — run scripts/run/run_benchmark_derived_query_suite.py first "
+            f"and point --run-dir at its --out-dir (the two defaults are different run names)"
+        )
     with path.open(newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
@@ -87,9 +91,10 @@ def attach_labels(
     dtype: torch.dtype,
     top_tokens: int,
     chunk_size: int,
+    local_files_only: bool = False,
 ) -> None:
-    model, tokenizer = load_qwen_model(model_id, dtype, local_files_only=True)
-    lm_head, _lm_head_path = find_lm_head(model)
+    model, tokenizer = load_qwen_model(model_id, dtype, local_files_only=local_files_only)
+    lm_head, _lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().cpu().float().contiguous()
     row_mean = W.mean(dim=0).contiguous()
     _decoder, encoder_w, encoder_b, _sae_config = load_sae(checkpoint)
@@ -110,7 +115,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-dir", type=Path, default=DEFAULT_RUN_DIR)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument("--paper-dir", type=Path, default=DEFAULT_PAPER_DIR)
+    parser.add_argument(
+        "--paper-dir",
+        type=lambda s: Path(s) if s else None,
+        default=DEFAULT_PAPER_DIR,
+        help="mirror paper-facing outputs here; pass '' to disable",
+    )
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
     parser.add_argument("--model-slug", default="qwen2b", help="model_slug to select in the run CSVs")
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -118,6 +128,7 @@ def main() -> int:
     parser.add_argument("--top-features", type=int, default=6)
     parser.add_argument("--label-top-tokens", type=int, default=4)
     parser.add_argument("--label-chunk-size", type=int, default=8192)
+    parser.add_argument("--local-files-only", action=argparse.BooleanOptionalAction, default=False)
     args = parser.parse_args()
 
     case_rows, feature_rows = load_selected_rows(
@@ -131,6 +142,7 @@ def main() -> int:
         dtype=dtype,
         top_tokens=args.label_top_tokens,
         chunk_size=args.label_chunk_size,
+        local_files_only=args.local_files_only,
     )
 
     args.out_dir.mkdir(parents=True, exist_ok=True)

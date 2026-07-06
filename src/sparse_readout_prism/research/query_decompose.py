@@ -1,20 +1,12 @@
-"""Shared readout-query decomposition toolkit: specs, loaders, and decompose.
+"""Shared readout-query decomposition toolkit: specs and decompose.
 
 Extracted from ``scripts/figures/compute_general_readout_queries.py`` so the
 benchmark-derived query suite (a run script) and the task-group example figure no
 longer import experiment/support primitives from a figure module (a run->figures
 / figures->figures dependency inversion).
 
-The block here is behaviour-preserving: ``QuerySpec``, ``write_csv``,
-``load_qwen_model``, ``resolve_single_token``, ``token_rank_and_prob``,
-``build_query_weights`` (with its ``merge_weight`` helper), ``decompose_query``,
-and ``attach_feature_labels`` are moved verbatim from the figure module.
-
-Note: this module keeps its OWN ``load_qwen_model``. It is NOT the same as
-``research.qwen_readout.load_qwen_model`` (that one omits
-``local_files_only`` and only tries ``AutoModelForImageTextToText``); this one
-takes ``local_files_only`` and falls back from ``AutoModelForImageTextToText`` to
-``AutoModelForCausalLM``. They are kept separate intentionally.
+Model loading lives in ``research.qwen_readout.load_qwen_model`` (one wrapper
+over ``utils.load_causal_lm``); this module holds only the query machinery.
 """
 
 from __future__ import annotations
@@ -25,6 +17,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from sparse_readout_prism.data import center_normalize_rows
 from sparse_readout_prism.token_display import clean_token
 from sparse_readout_prism.research.qwen_readout import (
     display_label_features,
@@ -37,7 +30,6 @@ __all__ = [
     "attach_feature_labels",
     "build_query_weights",
     "decompose_query",
-    "load_qwen_model",
     "resolve_single_token",
     "token_rank_and_prob",
     "write_csv",
@@ -68,49 +60,14 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     return _write_csv(path, rows, write_empty=True)
 
 
-def load_qwen_model(model_id: str, dtype: torch.dtype, *, local_files_only: bool):
-    from transformers import AutoTokenizer
-
-    model_classes = []
-    try:
-        from transformers import AutoModelForImageTextToText
-
-        model_classes.append(AutoModelForImageTextToText)
-    except Exception:  # noqa: BLE001
-        pass
-    try:
-        from transformers import AutoModelForCausalLM
-
-        model_classes.append(AutoModelForCausalLM)
-    except Exception:  # noqa: BLE001
-        pass
-    if not model_classes:
-        raise RuntimeError("no compatible transformers auto model class is available")
-
-    tokenizer = AutoTokenizer.from_pretrained(model_id, local_files_only=local_files_only)
-    last_error: Exception | None = None
-    for model_class in model_classes:
-        try:
-            model = model_class.from_pretrained(
-                model_id,
-                dtype=dtype,
-                low_cpu_mem_usage=True,
-                local_files_only=local_files_only,
-            )
-            model.eval()
-            for param in model.parameters():
-                param.requires_grad_(False)
-            return model, tokenizer
-        except Exception as exc:  # noqa: BLE001
-            last_error = exc
-    raise RuntimeError(f"could not load {model_id}") from last_error
-
-
 def resolve_single_token(tokenizer, raw: str) -> tuple[int | None, str, str, str]:
     """Resolve a paper token string to one tokenizer row.
 
     Returns token id, used text, decoded label, and reason. The reason is
-    "ok" on success.
+    "ok" on success. The audit-CSV variant: unlike
+    ``research.registry.resolve_single_token_strict`` it does not reject
+    special tokens, and it reports the used text + decoded label (which the
+    token-audit CSVs record) instead of the spacing variant.
     """
     candidates = [raw]
     if not raw.startswith(" "):
@@ -284,9 +241,7 @@ def decompose_query(
 ) -> tuple[dict[str, object], list[dict[str, object]]]:
     token_ids = sorted(weights)
     rows = W[token_ids].float()
-    centered = rows - row_mean
-    norms = centered.norm(dim=1).clamp_min(1e-8)
-    x = centered / norms[:, None]
+    norms, x = center_normalize_rows(rows, row_mean)
     z = encode_topk(x, encoder_w, encoder_b, k=k)
     alpha = torch.tensor([weights[tid] for tid in token_ids], dtype=torch.float32)
     coeff = (alpha[:, None] * norms[:, None] * z).sum(dim=0)

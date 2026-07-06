@@ -17,11 +17,13 @@ import sys
 from pathlib import Path
 
 import torch
+
+from sparse_readout_prism.utils import resolve_device
 from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     collect_readout_states_batched,
     encode_topk,
-    find_lm_head,
+    find_lm_head_with_path,
     display_label_features,
     load_qwen_model,
     load_sae,
@@ -148,7 +150,7 @@ def compute_rows(
     torch.Tensor,
     dict[str, object],
 ]:
-    lm_head, lm_head_path = find_lm_head(model)
+    lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().cpu()
     vocab, d_model = W.shape
     decoder, encoder_w, encoder_b, sae_config = load_sae(checkpoint)
@@ -973,7 +975,12 @@ def main() -> int:
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
-    parser.add_argument("--paper-dir", type=Path, default=DEFAULT_PAPER_DIR)
+    parser.add_argument(
+        "--paper-dir",
+        type=lambda s: Path(s) if s else None,
+        default=DEFAULT_PAPER_DIR,
+        help="mirror paper-facing outputs here; pass '' to disable",
+    )
     parser.add_argument("--k", type=int, default=256)
     parser.add_argument("--top-features", type=int, default=6)
     parser.add_argument("--top-delta-features", type=int, default=4)
@@ -988,13 +995,14 @@ def main() -> int:
     parser.add_argument("--rank-top-n", type=int, default=6)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
-    parser.add_argument("--device", choices=["cpu", "mps"], default="cpu")
+    parser.add_argument("--device", choices=["auto", "cpu", "mps", "cuda"], default="cpu")
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    args.paper_dir.mkdir(parents=True, exist_ok=True)
+    if args.paper_dir is not None:
+        args.paper_dir.mkdir(parents=True, exist_ok=True)
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
-    device = torch.device(args.device)
+    device = resolve_device(args.device)
     model, tokenizer = load_qwen_model(args.model_id, dtype)
     model.to(device)
 
@@ -1043,10 +1051,11 @@ def main() -> int:
     write_csv(args.out_dir / "qwen2b_32x_polysemy_pairs.csv", pair_rows)
     write_csv(args.out_dir / "qwen2b_32x_polysemy_display_features.csv", display_rows)
     write_csv(args.out_dir / "qwen2b_32x_polysemy_delta_features.csv", delta_rows)
-    write_csv(args.paper_dir / "qwen2b_32x_polysemy_contexts.csv", context_rows)
-    write_csv(args.paper_dir / "qwen2b_32x_polysemy_pairs.csv", pair_rows)
-    write_csv(args.paper_dir / "qwen2b_32x_polysemy_display_features.csv", display_rows)
-    write_csv(args.paper_dir / "qwen2b_32x_polysemy_delta_features.csv", delta_rows)
+    if args.paper_dir is not None:
+        write_csv(args.paper_dir / "qwen2b_32x_polysemy_contexts.csv", context_rows)
+        write_csv(args.paper_dir / "qwen2b_32x_polysemy_pairs.csv", pair_rows)
+        write_csv(args.paper_dir / "qwen2b_32x_polysemy_display_features.csv", display_rows)
+        write_csv(args.paper_dir / "qwen2b_32x_polysemy_delta_features.csv", delta_rows)
     cache = {
         "meta": meta,
         "context_rows": context_rows,
@@ -1057,7 +1066,6 @@ def main() -> int:
         "delta_rows": delta_rows,
     }
     torch.save(cache, args.out_dir / "qwen2b_32x_polysemy_cache.pt")
-    torch.save(cache, args.paper_dir / "qwen2b_32x_polysemy_cache.pt")
     write_report(
         args.out_dir / "qwen2b_32x_polysemy_features.md",
         selected_pairs=selected_pairs,
@@ -1066,19 +1074,21 @@ def main() -> int:
         display_rows=display_rows,
         delta_rows=delta_rows,
     )
-    write_report(
-        args.paper_dir / "qwen2b_32x_polysemy_features.md",
-        selected_pairs=selected_pairs,
-        pair_rows=pair_rows,
-        context_rows=context_rows,
-        display_rows=display_rows,
-        delta_rows=delta_rows,
-    )
+    if args.paper_dir is not None:
+        torch.save(cache, args.paper_dir / "qwen2b_32x_polysemy_cache.pt")
+        write_report(
+            args.paper_dir / "qwen2b_32x_polysemy_features.md",
+            selected_pairs=selected_pairs,
+            pair_rows=pair_rows,
+            context_rows=context_rows,
+            display_rows=display_rows,
+            delta_rows=delta_rows,
+        )
     manifest = {
         "description": "Qwen2B 32x same-token context/polysemy Sparse Readout Prism feature mine.",
         **meta,
         "out_dir": str(args.out_dir),
-        "paper_dir": str(args.paper_dir),
+        "paper_dir": str(args.paper_dir) if args.paper_dir is not None else None,
         "n_contexts": len(context_rows),
         "n_pairs": len(pair_rows),
         "n_selected_pairs": len(selected_pairs),
@@ -1100,7 +1110,7 @@ def main() -> int:
         json.dumps(
             {
                 "out_dir": str(args.out_dir),
-                "paper_dir": str(args.paper_dir),
+                "paper_dir": str(args.paper_dir) if args.paper_dir is not None else None,
                 "pairs": len(pair_rows),
                 "selected": [row["pair_id"] for row in selected_pairs],
             },
