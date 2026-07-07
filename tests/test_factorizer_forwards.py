@@ -7,6 +7,7 @@ Gated, so a silent bug in any encode path would corrupt every downstream metric.
 
 from __future__ import annotations
 
+import pytest
 import torch
 import torch.nn.functional as F
 
@@ -55,6 +56,15 @@ def test_batch_topk_train_selects_global_bk() -> None:
     n_pos = int((F.relu(sae.encoder(x)) > 0).sum())
     assert (code != 0).sum().item() == min(4 * 3, n_pos)  # B*k kept across the whole plane
     assert int(sae.threshold_initialized.item()) == 1  # EMA threshold initialised
+
+
+def test_batch_topk_eval_before_threshold_fit_raises() -> None:
+    # threshold buffer defaults to 0.0; silently passing every positive
+    # activation would be a dense code masquerading as sparse.
+    sae = BatchTopKSAE(d_model=8, d_features=32, k=3)
+    sae.eval()
+    with pytest.raises(RuntimeError, match="threshold"):
+        sae.encode(torch.randn(4, 8), k=3)
 
 
 def test_batch_topk_eval_applies_threshold() -> None:
