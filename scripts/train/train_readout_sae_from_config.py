@@ -117,7 +117,7 @@ def main() -> None:
     # Compact stdout summary for the slurm log.
     keys = [
         "selection_score",
-        "val_row_explained_variance",
+        "row_centered_ev",
         "val_top1_match",
         "val_logit_kl_bits_mean",
         "dead_feature_rate",

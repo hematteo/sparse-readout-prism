@@ -285,9 +285,21 @@ def main() -> None:
     _remove_hooks()
     h_LN = torch.cat(h_chunks, dim=0)  # (n_prompts, max_len, d_model)
 
+    # Text-token mask over W_U rows, consumed by data.py (apply_token_mask) and
+    # resolve_row_mean: True = keep. Drops (a) embedding rows beyond the
+    # tokenizer vocab (padded/unused rows on models whose embedding matrix is
+    # larger than the tokenizer) and (b) special tokens — including the
+    # additional specials multimodal tokenizers register for vision/image ids.
+    token_mask = torch.zeros(vocab, dtype=torch.bool)
+    token_mask[: min(vocab, len(tok))] = True
+    special_ids = [i for i in (getattr(tok, "all_special_ids", None) or []) if 0 <= i < vocab]
+    token_mask[special_ids] = False
+    log(f"token_mask: {int(token_mask.sum())}/{vocab} rows kept ({len(special_ids)} specials dropped)")
+
     payload = {
         "W_U_orig": W_U.float().cpu().contiguous(),  # (vocab, d_model) fp32
         "h_LN": h_LN.contiguous(),  # (n_prompts, max_len, d_model) save_h_dtype (fp32)
+        "token_mask": token_mask,  # (vocab,) bool, True = text token row
     }
     from sparse_readout_prism.research.run_io import run_provenance
 
@@ -308,6 +320,8 @@ def main() -> None:
         "post_readout_transform_rel": post_rel,
         "n_prompts": len(prompts),
         "max_len": args.max_len,
+        "token_mask_true": int(token_mask.sum()),
+        "token_mask_semantics": "True = text-token row; False = beyond-tokenizer-vocab or special/vision token",
         "h_LN_dtype": str(save_h_dtype).replace("torch.", ""),
         "extracted_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }

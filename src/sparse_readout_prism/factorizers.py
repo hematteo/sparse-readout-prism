@@ -136,6 +136,14 @@ class BatchTopKSAE(SAEBase):
                     self.activation_threshold.mul_(m).add_(cutoff, alpha=1.0 - m)
             return code
         # Eval: per-row threshold.
+        if int(self.threshold_initialized.item()) == 0:
+            # threshold defaults to 0.0, which would pass every positive
+            # activation — a dense code masquerading as a sparse one.
+            raise RuntimeError(
+                "BatchTopKSAE.encode called in eval mode before the activation "
+                "threshold was fitted (no training batch seen and none restored "
+                "from a checkpoint); the result would silently be dense"
+            )
         thresh = self.activation_threshold
         return torch.where(acts > thresh, acts, torch.zeros_like(acts))
 
@@ -453,7 +461,11 @@ def reconstruction_loss(
     weights: list[float] | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict[str, Any]]:
     """Returns (rec_loss, code, aux_loss, info). aux_loss is the architecture's
-    own sparsity/auxiliary term (raw, no coefficient applied)."""
+    own sparsity/auxiliary term (raw, no coefficient applied).
+
+    ``info`` holds JSON-safe scalars, with one exception: for the gated
+    architecture it carries ``gated_aux_recon_mse`` as a gradient-bearing
+    tensor that train.py adds to the loss — do not serialize ``info`` raw."""
     if architecture == "matryoshka_topk" and k_values:
         if weights is None:
             weights = [1.0] * len(k_values)

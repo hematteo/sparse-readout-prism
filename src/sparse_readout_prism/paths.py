@@ -22,12 +22,17 @@ from pathlib import Path
 def repo_root() -> Path:
     """Repo root, robust to scripts moving up/down the tree.
 
-    Walks up from this module to the first dir containing ``.git`` or
-    ``pyproject.toml``. Use instead of ``Path(__file__).resolve().parents[N]``
-    in experiment scripts so path resolution survives reorgs.
+    Walks up from this module to the first dir containing ``.git``, or a
+    ``pyproject.toml`` alongside ``src/sparse_readout_prism`` (the src check
+    keeps a wheel installed into some *other* project's venv from silently
+    resolving to that project's root). Use instead of
+    ``Path(__file__).resolve().parents[N]`` in experiment scripts so path
+    resolution survives reorgs.
     """
     for p in (Path(__file__).resolve(), *Path(__file__).resolve().parents):
-        if (p / ".git").exists() or (p / "pyproject.toml").exists():
+        if (p / ".git").exists():
+            return p
+        if (p / "pyproject.toml").exists() and (p / "src" / "sparse_readout_prism").is_dir():
             return p
     raise RuntimeError(
         "could not find repo root from sparse_readout_prism/paths.py (no .git or pyproject.toml in any parent dir)"

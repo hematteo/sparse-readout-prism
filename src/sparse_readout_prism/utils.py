@@ -142,12 +142,18 @@ def pearson(x: Any, y: Any) -> float:
 
 
 def spearman(x: Any, y: Any) -> float:
-    """Spearman rank correlation (rank-transform then Pearson); nan if <3 points."""
-    if len(x) < 3:
+    """Spearman rank correlation; nan if <3 points or either input is ~constant.
+
+    Uses average ranks for ties (scipy), not argsort-of-argsort — the latter
+    assigns arbitrary distinct ranks to tied values and deviates from the
+    standard definition whenever the data is quantized.
+    """
+    x, y = np.asarray(x, float), np.asarray(y, float)
+    if len(x) < 3 or x.std() < 1e-12 or y.std() < 1e-12:
         return float("nan")
-    rx = np.argsort(np.argsort(np.asarray(x, float)))
-    ry = np.argsort(np.argsort(np.asarray(y, float)))
-    return pearson(rx, ry)
+    from scipy.stats import spearmanr
+
+    return float(spearmanr(x, y).statistic)
 
 
 def write_csv(
@@ -282,15 +288,29 @@ def load_causal_lm(
 
 
 def git_commit() -> str | None:
-    """Short git hash of the source checkout, or None (wheel install, no git)."""
+    """Short git hash of the source checkout (``-dirty`` suffix if the tree has
+    uncommitted changes), or None (wheel install, no git)."""
+    cwd = Path(__file__).resolve().parent
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).resolve().parent,
+            cwd=cwd,
+            timeout=5,
+        )
+        if out.returncode != 0:
+            return None
+        sha = out.stdout.strip()
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            cwd=cwd,
             timeout=5,
         )
     except Exception:  # noqa: BLE001
         return None
-    return out.stdout.strip() if out.returncode == 0 else None
+    if status.returncode == 0 and status.stdout.strip():
+        return sha + "-dirty"
+    return sha

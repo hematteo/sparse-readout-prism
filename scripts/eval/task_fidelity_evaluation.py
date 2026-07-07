@@ -51,7 +51,7 @@ import yaml
 
 from sparse_readout_prism.data import center_normalize_rows, resolve_row_mean
 from sparse_readout_prism.factorizers import load_factorizer
-from sparse_readout_prism.utils import resolve_device
+from sparse_readout_prism.utils import pearson, resolve_device, spearman
 
 EPS = 1e-6
 
@@ -73,22 +73,13 @@ def reconstruct_w_u(model, rows_normalized, row_mean, row_norms, k, batch=4096):
 
 
 def _pearson(a: torch.Tensor, b: torch.Tensor) -> float:
-    if a.numel() < 2:
-        return float("nan")
-    a = a.double()
-    b = b.double()
-    a = a - a.mean()
-    b = b - b.mean()
-    d = (a.norm() * b.norm()).clamp_min(1e-12)
-    return float((a @ b) / d)
+    # Shared definition (nan if <3 points or ~constant input).
+    return pearson(a.double().numpy(), b.double().numpy())
 
 
 def _spearman(a: torch.Tensor, b: torch.Tensor) -> float:
-    if a.numel() < 2:
-        return float("nan")
-    ra = a.double().argsort().argsort().double()
-    rb = b.double().argsort().argsort().double()
-    return _pearson(ra, rb)
+    # Shared tie-aware definition (average ranks, not argsort-of-argsort).
+    return spearman(a.double().numpy(), b.double().numpy())
 
 
 def _resid_direct(exact: torch.Tensor, approx: torch.Tensor) -> torch.Tensor:
