@@ -12,7 +12,6 @@ data:
   max_rows: 4096
   max_hidden: 256
   val_hidden: 96
-  row_preprocessing: center_normalize
 
 factorizer:
   architecture: matryoshka_topk

@@ -20,6 +20,7 @@ from pathlib import Path
 
 import torch
 
+from sparse_readout_prism.data import resolve_row_mean
 from sparse_readout_prism.utils import resolve_device
 
 from sparse_readout_prism.research.qwen_readout import (
@@ -419,6 +420,7 @@ def main() -> int:
     parser.add_argument("--context-set", choices=sorted(CONTEXT_SETS), default="interesting_domains")
     parser.add_argument("--analysis-mode", choices=["contexts", "pair_deltas"], default="contexts")
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
+    parser.add_argument("--revision", default=None, help="HF weight revision to pin (default: latest)")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--device", choices=["auto", "cpu", "mps", "cuda"], default="cpu")
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
@@ -436,12 +438,14 @@ def main() -> int:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
     device = resolve_device(args.device)
-    model, tokenizer = load_qwen_model(args.model_id, dtype)
+    model, tokenizer = load_qwen_model(args.model_id, dtype, revision=args.revision)
     model.to(device)
     lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().float().cpu().contiguous()
-    row_mean = W.mean(dim=0)
-    decoder, encoder_w, encoder_b, sae_config = load_sae(args.checkpoint)
+    decoder, encoder_w, encoder_b, sae_config, ckpt_row_mean = load_sae(args.checkpoint)
+    # Centering mean matched to how the dictionary was trained (checkpoint's
+    # stored row_mean; live-model mean only for legacy checkpoints).
+    row_mean = resolve_row_mean(W, ckpt={"row_mean": ckpt_row_mean})
     if decoder.shape[1] != W.shape[1]:
         raise ValueError(f"SAE d_model {decoder.shape[1]} does not match LM head d_model {W.shape[1]}")
 

@@ -113,15 +113,18 @@ def parse_single_token(tokenizer, raw: str) -> int:
     return int(ids[0])
 
 
-def load_qwen_model(model_id: str, dtype: torch.dtype, *, local_files_only: bool = False):
+def load_qwen_model(model_id: str, dtype: torch.dtype, *, revision: str | None = None, local_files_only: bool = False):
     """Load a (possibly multimodal) Qwen-family LM on CPU with frozen params.
 
     Thin wrapper over ``utils.load_causal_lm``: multimodal-first auto-class
     order (Qwen3.5 only loads via ``AutoModelForImageTextToText``) and no
     ``device_map``, so the caller controls placement with ``.to(device)``.
+    ``revision`` pins the HF weight revision — pass it when reproducing paper
+    artifacts so a Hub weight update can't silently shift every decomposition.
     """
     return load_causal_lm(
         model_id,
+        revision=revision,
         dtype=dtype,
         device_map=None,
         local_files_only=local_files_only,
@@ -129,14 +132,21 @@ def load_qwen_model(model_id: str, dtype: torch.dtype, *, local_files_only: bool
     )
 
 
-def load_sae(checkpoint) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict[str, Any]]:
-    """Load a TopK-family checkpoint as raw ``(decoder, encoder_w, encoder_b, config)`` tensors.
+def load_sae(checkpoint) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict[str, Any], torch.Tensor | None]:
+    """Load a TopK-family checkpoint as raw ``(decoder, encoder_w, encoder_b, config, row_mean)`` tensors.
 
     Built on ``load_factorizer`` (the single checkpoint reader), then flattened
     to float32 CPU tensors for the raw-tensor script path (``encode_topk`` /
     ``decompose_row_contrast``). Raises for non-TopK architectures — their
     state dicts carry extra parameters (gate/threshold) that the raw-tensor
     path would silently drop, producing wrong codes.
+
+    ``row_mean`` is the exact centering mean the dictionary was trained
+    against (``ckpt['row_mean']``, written by the runner), or None for legacy
+    checkpoints that predate it. Callers must center with
+    ``data.resolve_row_mean(W, ckpt={'row_mean': row_mean})`` rather than
+    recomputing ``W.mean(0)`` from a live (possibly bf16 / differently masked)
+    model — a different mean silently changes every decomposition.
     """
     ckpt = torch.load(checkpoint, map_location="cpu", weights_only=True)
     model = load_factorizer(ckpt, freeze=True)
@@ -152,7 +162,10 @@ def load_sae(checkpoint) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict
     decoder = decoder / decoder.norm(dim=1, keepdim=True).clamp_min(1e-8)
     encoder_w = model.encoder.weight.detach().float().contiguous()
     encoder_b = model.encoder.bias.detach().float().contiguous()
-    return decoder, encoder_w, encoder_b, ckpt.get("config", {})
+    row_mean = ckpt.get("row_mean")
+    if row_mean is not None:
+        row_mean = row_mean.detach().float().cpu().contiguous()
+    return decoder, encoder_w, encoder_b, ckpt.get("config", {}), row_mean
 
 
 @torch.no_grad()
@@ -273,23 +286,31 @@ def collect_readout_states_batched(model, tokenizer, prompts: list[str], device:
     logits_out: list[torch.Tensor] = []
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
-    for start in range(0, len(prompts), batch_size):
-        batch = prompts[start : start + batch_size]
-        captured: dict[str, torch.Tensor] = {}
+    # The last-real-position index below (attention_mask.sum - 1) is only
+    # correct under right padding; several Qwen tokenizer configs default to
+    # left padding, which would silently read early positions instead.
+    prev_padding_side = tokenizer.padding_side
+    tokenizer.padding_side = "right"
+    try:
+        for start in range(0, len(prompts), batch_size):
+            batch = prompts[start : start + batch_size]
+            captured: dict[str, torch.Tensor] = {}
 
-        def pre_hook(_module, inputs):
-            captured["h"] = (inputs[0] if isinstance(inputs, tuple) else inputs).detach()
+            def pre_hook(_module, inputs):
+                captured["h"] = (inputs[0] if isinstance(inputs, tuple) else inputs).detach()
 
-        handle = lm_head.register_forward_pre_hook(pre_hook)
-        try:
-            enc = tokenizer(batch, return_tensors="pt", padding=True).to(device)
-            out = model(**enc)
-        finally:
-            handle.remove()
-        last_idx = enc["attention_mask"].sum(dim=1).cpu() - 1
-        hidden = captured["h"].float().cpu()
-        logits = out.logits.float().cpu()
-        for i, idx in enumerate(last_idx.tolist()):
-            states.append(hidden[i, idx].contiguous())
-            logits_out.append(logits[i, idx].contiguous())
+            handle = lm_head.register_forward_pre_hook(pre_hook)
+            try:
+                enc = tokenizer(batch, return_tensors="pt", padding=True).to(device)
+                out = model(**enc)
+            finally:
+                handle.remove()
+            last_idx = enc["attention_mask"].sum(dim=1).cpu() - 1
+            hidden = captured["h"].float().cpu()
+            logits = out.logits.float().cpu()
+            for i, idx in enumerate(last_idx.tolist()):
+                states.append(hidden[i, idx].contiguous())
+                logits_out.append(logits[i, idx].contiguous())
+    finally:
+        tokenizer.padding_side = prev_padding_side
     return states, logits_out

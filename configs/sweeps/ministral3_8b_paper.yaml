@@ -26,7 +26,6 @@ data:
   max_hidden: 2048
   val_hidden: 512
   data_seed: 0
-  row_preprocessing: center_normalize
 
 factorizer:
   architecture: topk

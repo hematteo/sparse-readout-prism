@@ -10,6 +10,7 @@ from typing import Any
 
 import torch
 
+from sparse_readout_prism.data import resolve_row_mean
 from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     encode_topk,
@@ -447,6 +448,7 @@ def main() -> int:
     parser.add_argument("--k", type=int, default=256)
     parser.add_argument("--top-features", type=int, default=12)
     parser.add_argument("--label-top-tokens", type=int, default=4)
+    parser.add_argument("--revision", default=None, help="HF weight revision to pin (default: latest)")
     parser.add_argument("--label-chunk-size", type=int, default=8192)
     parser.add_argument("--contrast-mode", choices=["token_token", "vocab_mean"], default="token_token")
     parser.add_argument("--device", default="cpu")
@@ -455,18 +457,20 @@ def main() -> int:
 
     device = torch.device(args.device)
     dtype = dtype_from_name(args.dtype)
-    model, tokenizer = load_qwen_model(args.model_id, dtype)
+    model, tokenizer = load_qwen_model(args.model_id, dtype, revision=args.revision)
     model.to(device)
     lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().float().cpu().contiguous()
-    decoder, encoder_w, encoder_b, sae_config = load_sae(args.checkpoint)
+    decoder, encoder_w, encoder_b, sae_config, ckpt_row_mean = load_sae(args.checkpoint)
     if decoder.shape[1] != W.shape[1]:
         raise ValueError(f"SAE d_model {decoder.shape[1]} does not match lm_head d_model {W.shape[1]}")
     target_id = parse_single_token(tokenizer, args.target)
     contrast_id = parse_single_token(tokenizer, args.contrast_target)
     target_label = clean_token(tokenizer, target_id)
     contrast_label = clean_token(tokenizer, contrast_id)
-    row_mean = W.mean(dim=0)
+    # Centering mean matched to how the dictionary was trained (checkpoint's
+    # stored row_mean; live-model mean only for legacy checkpoints).
+    row_mean = resolve_row_mean(W, ckpt={"row_mean": ckpt_row_mean})
 
     components, token_ids, final_resid, final_norm_exact, reconstructed_norm, reconstructed_resid, logits = (
         collect_components(

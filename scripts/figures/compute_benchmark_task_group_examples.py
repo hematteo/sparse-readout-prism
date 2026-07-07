@@ -9,6 +9,7 @@ from pathlib import Path
 
 import torch
 
+from sparse_readout_prism.data import resolve_row_mean
 from sparse_readout_prism.research.qwen_readout import find_lm_head_with_path, load_qwen_model, load_sae
 from sparse_readout_prism.research.query_decompose import (
     attach_feature_labels,
@@ -91,13 +92,16 @@ def attach_labels(
     dtype: torch.dtype,
     top_tokens: int,
     chunk_size: int,
+    revision: str | None = None,
     local_files_only: bool = False,
 ) -> None:
-    model, tokenizer = load_qwen_model(model_id, dtype, local_files_only=local_files_only)
+    model, tokenizer = load_qwen_model(model_id, dtype, revision=revision, local_files_only=local_files_only)
     lm_head, _lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().cpu().float().contiguous()
-    row_mean = W.mean(dim=0).contiguous()
-    _decoder, encoder_w, encoder_b, _sae_config = load_sae(checkpoint)
+    _decoder, encoder_w, encoder_b, _sae_config, ckpt_row_mean = load_sae(checkpoint)
+    # Centering mean matched to how the dictionary was trained (checkpoint's
+    # stored row_mean; live-model mean only for legacy checkpoints).
+    row_mean = resolve_row_mean(W, ckpt={"row_mean": ckpt_row_mean}).contiguous()
     attach_feature_labels(
         W=W,
         row_mean=row_mean,
@@ -122,6 +126,7 @@ def main() -> int:
         help="mirror paper-facing outputs here; pass '' to disable",
     )
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
+    parser.add_argument("--revision", default=None, help="HF weight revision to pin (default: latest)")
     parser.add_argument("--model-slug", default="qwen2b", help="model_slug to select in the run CSVs")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
@@ -142,6 +147,7 @@ def main() -> int:
         dtype=dtype,
         top_tokens=args.label_top_tokens,
         chunk_size=args.label_chunk_size,
+        revision=args.revision,
         local_files_only=args.local_files_only,
     )
 

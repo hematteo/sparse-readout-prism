@@ -26,9 +26,7 @@ for ``tab:lexical-control-cross-model-results``. See ``docs/REPRODUCE.md``.
 from __future__ import annotations
 
 import argparse
-import csv
 import hashlib
-import json
 import math
 import random
 import time
@@ -40,14 +38,21 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from sparse_readout_prism.data import resolve_row_mean
 from sparse_readout_prism.research.qwen_readout import (
     clean_token,
-    find_lm_head,
     display_label_features,
+    load_qwen_model,
     load_sae,
     readable_feature_label,
 )
-from sparse_readout_prism.utils import set_seed
+from sparse_readout_prism.research.registry import resolve_single_token_strict
+from sparse_readout_prism.utils import (
+    find_lm_head_with_path,
+    set_seed,
+    write_csv as _shared_write_csv,
+    write_json as _shared_write_json,
+)
 
 
 MODEL_ID = "Qwen/Qwen3.5-2B"
@@ -190,19 +195,13 @@ def log(msg: str) -> None:
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not rows:
-        path.write_text("")
-        return
-    with path.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-        writer.writeheader()
-        writer.writerows(rows)
+    # Shared writer: unions keys across ragged rows instead of crashing on any
+    # row whose keys differ from row 0 (DictWriter's default extrasaction).
+    _shared_write_csv(path, rows, write_empty=True, atomic=True)
 
 
-def write_json(path: Path, obj: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, indent=2, sort_keys=True) + "\n")
+def write_json(path: Path, obj: dict) -> None:
+    _shared_write_json(obj, path, atomic=True)
 
 
 def ci_mean(values: Iterable[float], seed: int = 0, n_boot: int = 800) -> tuple[float, float]:
@@ -216,12 +215,10 @@ def ci_mean(values: Iterable[float], seed: int = 0, n_boot: int = 800) -> tuple[
 
 
 def single_token_id(tokenizer, term: str) -> tuple[int | None, str, str]:
-    for variant, raw in (("leading_space", " " + term), ("bare", term)):
-        ids = tokenizer.encode(raw, add_special_tokens=False)
-        if len(ids) == 1:
-            return int(ids[0]), variant, ""
-    ids = tokenizer.encode(" " + term, add_special_tokens=False)
-    return None, "", f"multi_token_{len(ids)}"
+    # The shared strict resolver (also rejects special tokens); adapted to this
+    # script's (id, variant, note) audit-row shape.
+    token_id, variant, reason = resolve_single_token_strict(tokenizer, term)
+    return token_id, variant or "", reason
 
 
 def topk_labels(tokenizer, logits: torch.Tensor, k: int = 8) -> str:
@@ -264,26 +261,26 @@ class Loaded:
 
 
 def load_all(args: argparse.Namespace) -> Loaded:
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
     log(f"loading tokenizer/model: {args.model_id}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_id, local_files_only=args.local_files_only)
-    model = AutoModelForCausalLM.from_pretrained(
+    # Shared loader: multimodal-first auto-class order (Qwen3.5 only loads via
+    # AutoModelForImageTextToText), frozen params, eval mode.
+    model, tokenizer = load_qwen_model(
         args.model_id,
-        local_files_only=args.local_files_only,
         dtype=torch.bfloat16 if args.dtype == "bfloat16" else torch.float32,
-        low_cpu_mem_usage=True,
-    ).eval()
+        revision=args.revision,
+        local_files_only=args.local_files_only,
+    )
     model.to(args.device)
-    for p in model.parameters():
-        p.requires_grad_(False)
 
     log(f"loading SAE: {args.checkpoint}")
-    decoder, encoder_w, encoder_b, _config = load_sae(args.checkpoint)
-    lm_head, _path = find_lm_head(model)
+    decoder, encoder_w, encoder_b, _config, ckpt_row_mean = load_sae(args.checkpoint)
+    lm_head, _path = find_lm_head_with_path(model)
     tensor_device = args.device if args.tensor_device == "auto" else args.tensor_device
     W_U = lm_head.weight.detach().float().to(tensor_device)
-    row_mean = W_U.mean(dim=0, keepdim=True)
+    # Center against the exact mean the dictionary was trained with (stored in
+    # the checkpoint); falls back to the live-model mean only for legacy
+    # checkpoints that predate the stored row_mean.
+    row_mean = resolve_row_mean(W_U, ckpt={"row_mean": ckpt_row_mean}).to(tensor_device)
     decoder = decoder.to(tensor_device)
     encoder_w = encoder_w.to(tensor_device)
     encoder_b = encoder_b.to(tensor_device)
@@ -856,7 +853,7 @@ def generate_one(
 ) -> str:
     handle = None
     if suppress is not None:
-        lm_head, _path = find_lm_head(model)
+        lm_head, _path = find_lm_head_with_path(model)
 
         def pre_hook(_module, inputs):
             h = inputs[0]
@@ -988,6 +985,7 @@ def write_summary_md(
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model-id", default=MODEL_ID)
+    ap.add_argument("--revision", default=None, help="HF weight revision to pin (default: latest)")
     ap.add_argument(
         "--checkpoint",
         type=Path,

@@ -125,17 +125,25 @@ class BaselineMethod:
         W: torch.Tensor,  # (V, d_model) cpu fp32
         row_mean: torch.Tensor,  # (d_model,)
         device: torch.device,
+        row_norm_all: torch.Tensor | None = None,  # (V,) on device
+        row_normalized_all: torch.Tensor | None = None,  # (V, d_model) on device
     ) -> None:
         # Caller may pass W on CPU and row_mean on either device; align both
         # explicitly so the centered subtraction does not crash with a
         # cross-device error. We keep `self.W` on CPU and only materialise the
-        # centered/normalised rows on `device` (~V*d_model*4 bytes).
+        # centered/normalised rows on `device` (~V*d_model*4 bytes). The
+        # centered rows are identical for every method in the panel, so run_cell
+        # precomputes them once and passes them in; the local fallback keeps the
+        # class usable standalone. Treat them as read-only — they are shared.
         self.W = W
         self.device = device
         self.row_mean = row_mean.to(device)
-        centered = W.to(device) - self.row_mean
-        self.row_norm_all = centered.norm(dim=1).clamp_min(1e-8)
-        self.row_normalized_all = centered / self.row_norm_all[:, None]
+        if row_norm_all is None or row_normalized_all is None:
+            centered = W.to(device) - self.row_mean
+            row_norm_all = centered.norm(dim=1).clamp_min(1e-8)
+            row_normalized_all = centered / row_norm_all[:, None]
+        self.row_norm_all = row_norm_all
+        self.row_normalized_all = row_normalized_all
 
     # ---- subclasses fill these in -----------------------------------------
 
@@ -524,6 +532,8 @@ def build_method(
     sae: Optional[TopKSAE] = None,
     k: Optional[int] = None,
     seed: int = 0,
+    row_norm_all: Optional[torch.Tensor] = None,
+    row_normalized_all: Optional[torch.Tensor] = None,
 ) -> BaselineMethod:
     """spec examples:
     'sparse_rp'
@@ -532,7 +542,13 @@ def build_method(
     'pca_64', 'pca_256', 'pca_1024'
     'nearest_row_ridge_top128'
     """
-    common = dict(W=W, row_mean=row_mean, device=device)
+    common = dict(
+        W=W,
+        row_mean=row_mean,
+        device=device,
+        row_norm_all=row_norm_all,
+        row_normalized_all=row_normalized_all,
+    )
     if spec == "sparse_rp":
         if sae is None or k is None:
             raise ValueError("sparse_rp requires sae and k")
@@ -757,6 +773,13 @@ def run_cell(
     methods_cache = cache.setdefault("methods", {})
     if method_spec not in methods_cache:
         t0 = time.time()
+        # The centered/normalised row matrix is identical across the whole
+        # method panel; compute it once per run instead of once per method
+        # (~V*d_model work + transfer each time).
+        if "row_normalized_all" not in cache:
+            centered = W.to(device) - row_mean.to(device)
+            cache["row_norm_all"] = centered.norm(dim=1).clamp_min(1e-8)
+            cache["row_normalized_all"] = centered / cache["row_norm_all"][:, None]
         methods_cache[method_spec] = build_method(
             method_spec,
             W=W,
@@ -765,6 +788,8 @@ def run_cell(
             sae=sae,
             k=k,
             seed=args.seed,
+            row_norm_all=cache["row_norm_all"],
+            row_normalized_all=cache["row_normalized_all"],
         )
         log(f"built method {method_spec} in {time.time() - t0:.1f}s")
     method = methods_cache[method_spec]

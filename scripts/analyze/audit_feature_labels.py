@@ -65,6 +65,7 @@ CATEGORIES = ("coherent", "ambiguous", "token_form")
 def run_substrate(args) -> int:
     from transformers import AutoTokenizer
 
+    from sparse_readout_prism.data import resolve_row_mean
     from sparse_readout_prism.research.qwen_readout import display_label_features, load_sae
 
     feature_ids = [int(x) for x in str(args.feature_ids).replace(" ", "").split(",") if x != ""]
@@ -77,14 +78,12 @@ def run_substrate(args) -> int:
         raise SystemExit(f"{args.w_u}: no W_U_orig/W_U")
     W_U = W_U.float()
     token_mask = payload.get("token_mask")
-    # Centre by the same pool training used, but keep the FULL matrix so a row
-    # index still equals a token id for the tokenizer decode in the labeller.
-    if token_mask is not None:
-        row_mean = W_U[token_mask.bool()].mean(dim=0)
-    else:
-        row_mean = W_U.mean(dim=0)
 
-    _decoder, encoder_w, encoder_b, _cfg = load_sae(args.checkpoint)
+    _decoder, encoder_w, encoder_b, _cfg, ckpt_row_mean = load_sae(args.checkpoint)
+    # Centre by the exact mean training used (checkpoint's stored row_mean,
+    # else the token_mask pool), but keep the FULL matrix so a row index still
+    # equals a token id for the tokenizer decode in the labeller.
+    row_mean = resolve_row_mean(W_U, token_mask=token_mask, ckpt={"row_mean": ckpt_row_mean})
     tokenizer = AutoTokenizer.from_pretrained(args.model_id)
 
     labels = display_label_features(

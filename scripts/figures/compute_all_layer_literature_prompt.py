@@ -15,6 +15,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from sparse_readout_prism.data import resolve_row_mean
 from sparse_readout_prism.research.qwen_readout import (
     clean_token,
     find_lm_head_with_path,
@@ -412,10 +413,10 @@ def write_feature_descriptions(out_dir: Path, rows: list[dict[str, Any]]) -> Non
     write_feature_key_tex(out_dir, description_rows)
 
 
-def load_model(model_id: str, dtype: torch.dtype, *, local_files_only: bool):
+def load_model(model_id: str, dtype: torch.dtype, *, revision: str | None = None, local_files_only: bool):
     from sparse_readout_prism.utils import load_causal_lm
 
-    return load_causal_lm(model_id, dtype=dtype, device_map=None, local_files_only=local_files_only)
+    return load_causal_lm(model_id, revision=revision, dtype=dtype, device_map=None, local_files_only=local_files_only)
 
 
 def final_norm_for_layer(model, hidden: tuple[torch.Tensor, ...], layer_index: int) -> torch.Tensor:
@@ -452,23 +453,23 @@ def collect_cells(
 ) -> tuple[
     list[dict[str, Any]],
     np.ndarray,
-    list[list[str]],
     np.ndarray,
-    list[list[str]],
     list[str],
     dict[str, Any],
 ]:
     lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().float().cpu().contiguous()
     vocab, d_model = W.shape
-    decoder, encoder_w, encoder_b, sae_config = load_sae(checkpoint)
+    decoder, encoder_w, encoder_b, sae_config, ckpt_row_mean = load_sae(checkpoint)
     decoder = decoder.float().contiguous()
     encoder_w = encoder_w.float().contiguous()
     encoder_b = encoder_b.float().contiguous()
     if decoder.shape[1] != d_model:
         raise ValueError(f"SAE d_model {decoder.shape[1]} does not match W_U d_model {d_model}")
 
-    row_mean = W.mean(dim=0)
+    # Centering mean matched to how the dictionary was trained (checkpoint's
+    # stored row_mean; live-model mean only for legacy checkpoints).
+    row_mean = resolve_row_mean(W, ckpt={"row_mean": ckpt_row_mean})
     prompt_ids = tokenizer.encode(prompt, add_special_tokens=False)
     if not prompt_ids:
         raise ValueError("prompt tokenized to no tokens")
@@ -482,8 +483,6 @@ def collect_cells(
 
     logit_values = np.zeros((len(layers), len(positions)), dtype=np.float32)
     feature_values = np.zeros_like(logit_values)
-    logit_labels: list[list[str]] = []
-    feature_id_grid: list[list[list[int]]] = []
     rows: list[dict[str, Any]] = []
 
     vocab_size = min(len(tokenizer), W.shape[0])
@@ -492,8 +491,6 @@ def collect_cells(
 
     for row_idx, layer in enumerate(layers):
         h_layer = final_norm_for_layer(model, hidden, layer)[0].detach().float().cpu().contiguous()
-        logit_row: list[str] = []
-        feature_row_ids: list[list[int]] = []
         for col_idx, pos in enumerate(positions):
             h = h_layer[pos]
             logits = h @ W_vocab.T
@@ -534,10 +531,7 @@ def collect_cells(
 
             logit_values[row_idx, col_idx] = float(top_prob.item())
             top_label = display_token(tokenizer, top_id, max_len=14)
-            logit_labels_row_label = top_label
-            logit_row.append(logit_labels_row_label)
 
-            cell_feature_ids: list[int] = []
             for rank, fid_t in enumerate(selected.tolist(), start=1):
                 fid = int(fid_t)
                 cached = label_cache.get(fid, "")
@@ -545,7 +539,6 @@ def collect_cells(
                 label = short_text(label, 22)
                 if not label.startswith("f"):
                     label = f"f{fid} {label}"
-                cell_feature_ids.append(fid)
                 rows.append(
                     {
                         "layer": int(layer),
@@ -576,10 +569,6 @@ def collect_cells(
                         "total_positive_contribution": total_positive,
                     }
                 )
-            feature_row_ids.append(cell_feature_ids)
-        logit_labels.append(logit_row)
-        feature_id_grid.append(feature_row_ids)
-
     input_labels = [display_token(tokenizer, prompt_ids[pos], max_len=18) for pos in positions]
     label_ids = sorted({int(row["feature_id"]) for row in rows})
     computed_labels = display_label_features(
@@ -606,10 +595,6 @@ def collect_cells(
         fid = int(row["feature_id"])
         row["feature_label"] = label_by_id[fid]
         row["feature_top_tokens"] = top_tokens_by_id.get(fid, "")
-    feature_labels = [
-        ["\n".join(short_text(label_by_id.get(fid, f"f{fid}"), 22) for fid in cell) for cell in row]
-        for row in feature_id_grid
-    ]
     meta = {
         "model_id": model_id,
         "checkpoint": str(checkpoint),
@@ -621,7 +606,7 @@ def collect_cells(
         "prompt_token_ids": prompt_ids,
         "feature_label_method": "Top Qwen unembedding rows by current-SAE encoder preactivation.",
     }
-    return rows, logit_values, logit_labels, feature_values, feature_labels, input_labels, meta
+    return rows, logit_values, feature_values, input_labels, meta
 
 
 def parse_layers(raw: str, n_layers: int) -> list[int]:
@@ -637,6 +622,7 @@ def parse_layers(raw: str, n_layers: int) -> list[int]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-id", default=DEFAULT_MODEL_ID)
+    parser.add_argument("--revision", default=None, help="HF weight revision to pin (default: latest)")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--k", type=int, default=256)
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
@@ -664,7 +650,7 @@ def main() -> None:
     args = parse_args()
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
     device = torch.device(args.device)
-    model, tokenizer = load_model(args.model_id, dtype, local_files_only=args.local_files_only)
+    model, tokenizer = load_model(args.model_id, dtype, revision=args.revision, local_files_only=args.local_files_only)
     model.to(device)
     n_layers = int(getattr(model.config, "num_hidden_layers"))
     layers = parse_layers(args.layers, n_layers)
@@ -672,7 +658,7 @@ def main() -> None:
     positions = list(range(min(args.num_cols, len(prompt_ids))))
     label_globs = tuple(args.label_glob) if args.label_glob else DEFAULT_LABEL_GLOBS
     label_cache = load_label_cache(label_globs)
-    rows, logit_values, _logit_labels, feature_values, _feature_labels, input_labels, meta = collect_cells(
+    rows, logit_values, feature_values, input_labels, meta = collect_cells(
         model=model,
         tokenizer=tokenizer,
         model_id=args.model_id,

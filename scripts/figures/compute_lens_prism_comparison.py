@@ -8,6 +8,7 @@ from pathlib import Path
 
 import torch
 
+from sparse_readout_prism.data import resolve_row_mean
 from sparse_readout_prism.utils import resolve_device
 
 from sparse_readout_prism.research.qwen_readout import (
@@ -70,9 +71,11 @@ def compute_case(
     lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().cpu()
     vocab, d_model = W.shape
-    decoder, encoder_w, encoder_b, sae_config = load_sae(checkpoint)
+    decoder, encoder_w, encoder_b, sae_config, ckpt_row_mean = load_sae(checkpoint)
     decoder = decoder.float()
-    row_mean = W.float().mean(dim=0)
+    # Centering mean matched to how the dictionary was trained (checkpoint's
+    # stored row_mean; live-model mean only for legacy checkpoints).
+    row_mean = resolve_row_mean(W, ckpt={"row_mean": ckpt_row_mean})
 
     target_a_id = parse_single_token(tokenizer, target_a)
     target_b_id = parse_single_token(tokenizer, target_b)
@@ -219,6 +222,7 @@ def write_report(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-id", default="Qwen/Qwen3.5-2B")
+    parser.add_argument("--revision", default=None, help="HF weight revision to pin (default: latest)")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument(
@@ -245,7 +249,7 @@ def main() -> int:
 
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
     device = resolve_device(args.device)
-    model, tokenizer = load_qwen_model(args.model_id, dtype)
+    model, tokenizer = load_qwen_model(args.model_id, dtype, revision=args.revision)
     model.to(device)
 
     summary, feature_rows, top_rows, meta = compute_case(

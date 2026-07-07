@@ -26,6 +26,7 @@ import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
+from sparse_readout_prism.data import resolve_row_mean
 from sparse_readout_prism.research.qwen_readout import find_lm_head_with_path, load_qwen_model, load_sae
 from sparse_readout_prism.research.query_decompose import (
     QuerySpec,
@@ -698,7 +699,11 @@ def evaluate_model(
     dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
     device = resolve_device(args.device)
     try:
-        model, tokenizer = load_qwen_model(model_id, dtype, local_files_only=args.local_files_only)
+        # Per-spec revision pin (None = latest); the MODELS specs may add a
+        # "revision" key without any CLI change.
+        model, tokenizer = load_qwen_model(
+            model_id, dtype, revision=spec.get("revision"), local_files_only=args.local_files_only
+        )
     except Exception as exc:  # noqa: BLE001
         if args.skip_missing:
             log(f"skip {model_slug}: could not load cached model {model_id}: {exc}")
@@ -712,8 +717,10 @@ def evaluate_model(
     model.to(device)
     lm_head, lm_head_path = find_lm_head_with_path(model)
     W = lm_head.weight.detach().cpu().float().contiguous()
-    row_mean = W.mean(dim=0).contiguous()
-    decoder, encoder_w, encoder_b, sae_config = load_sae(checkpoint)
+    decoder, encoder_w, encoder_b, sae_config, ckpt_row_mean = load_sae(checkpoint)
+    # Centering mean matched to how the dictionary was trained (checkpoint's
+    # stored row_mean; live-model mean only for legacy checkpoints).
+    row_mean = resolve_row_mean(W, ckpt={"row_mean": ckpt_row_mean}).contiguous()
     if decoder.shape[1] != W.shape[1]:
         raise ValueError(f"{model_slug}: SAE d_model {decoder.shape[1]} != W_U d_model {W.shape[1]}")
 
