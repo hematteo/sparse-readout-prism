@@ -78,8 +78,11 @@ fractions \(0.790\)--\(0.818\). The main-text fidelity table reports the
 prespecified high-fidelity subset of this evaluation, which is why its
 Qwen sign and reconstruction error ranges are tighter; it also reports
 Gemma score-reconstruction rows and Ministral/R1 replacement rows under
-the same metric conventions. The baseline/null table fixes Qwen3.5-2B and evaluates
-every method on its 1,348-row full logit-difference set. Many C4 positions are
+the same metric conventions. The Qwen3.5-2B reference panel below
+evaluates every method on that model's 1,348-row full logit-difference
+set under the original submission harness; the redesigned six-model
+comparison behind the main-text baseline table is in
+\Cref{app:direct-geometry-grid}. Many C4 positions are
 local near-ties, which lowers headline numbers; Qwen still reaches
 \(0.822\)--\(0.838\) top-1 agreement and \(0.634\)--\(0.667\)
 preservation of the top-1--top-2 ordering at relative error \(0.5\) on 10,000
@@ -92,8 +95,8 @@ replacement fidelity, and selected-score reconstruction. Null and reference
 baseline comparisons preserve the same ordering: shuffled and random support
 approach chance sign agreement, and dense PCA underperforms Sparse Readout Prism
 at comparable compactness. Cluster-bootstrap 95\% intervals (848 base cases,
-400 resamples; unfloored \(\rho\), identically for all methods) on the
-Qwen3.5-2B panel: SRP sign-preserved low-error coverage
+400 resamples; unfloored \(\tilde\rho\), identically for all methods) on
+the original-harness Qwen3.5-2B panel: SRP sign-preserved low-error coverage
 \(0.774\) (\(0.755\)--\(0.792\)) and median \(\rho=0.081\)
 (\(0.071\)--\(0.092\)), against nearest-row ridge at \(0.622\)
 (\(0.603\)--\(0.643\)) and \(0.260\) (\(0.242\)--\(0.295\)); PCA-1024
@@ -114,14 +117,55 @@ controls, frequency controls, KL, sign agreement, and relative reconstruction
 error use the same definitions across the score-group and baseline
 comparisons.
 
+Fidelity also varies by selected-score family.
+\Cref{tab:readout-score-families} breaks the main \(k=256\) comparison point
+down by family, ordered by how close the competitor sits to the selected token;
+the main text reads its per-family digest from this table.
+
+\begin{table*}[!tbp]
+\caption{\textbf{Score and contrast groups at the main \(k=256\) setting.}
+Rows group selected readout score families at the \(k=256\) fidelity
+setting. Row counts aggregate evaluated model--case cells across the five
+Qwen/Gemma models of Table~\ref{tab:readout-score-fidelity-summary}
+(excluding Ministral and the R1-distilled readouts), after tokenization
+filters. Median \(\rho\) is the floored variant of
+\S\ref{sec:method-reading-local-accounts}. Source banks and per-family
+score-object definitions are in
+Appendix~\ref{app:query-bank-provenance}.}
+\label{tab:readout-score-families}
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{0.96\textwidth}{@{}p{0.20\textwidth}Yrrrr@{}}
+\toprule
+Group & Selected score & cases & rows & sign agreement & median \(\rho\) \\
+\midrule
+Vocabulary-mean contrast & top1 vs vocabulary mean & 301 & 1505 & 1.000 & 0.020 \\
+Reference-row contrast & top1 vs row-norm distractor & 301 & 1505 & 1.000 & 0.048 \\
+\addlinespace
+Logit difference & source vs prior & 82 & 392 & 0.964 & 0.172 \\
+Logit difference & action/tool alternatives & 96 & 480 & 0.906 & 0.283 \\
+Group contrast & abstention family & 84 & 420 & 0.888 & 0.198 \\
+Logit difference & current vs stale & 92 & 460 & 0.861 & 0.369 \\
+\addlinespace
+Top competitor & top1 vs sampled competitor & 301 & 1505 & 0.993 & 0.113 \\
+Top competitor & top1 vs top5 competitor & 301 & 1505 & 0.940 & 0.215 \\
+Top competitor & top1 vs top2 competitor & 301 & 1505 & 0.824 & 0.342 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
 \begin{table}[!tbp]
 \caption{\textbf{Cross-model null collapse.}
 Sign-preserved low-error coverage (Sign \& \(\rho<0.5\)), with sign
 agreement in parentheses, for SRP and the two null controls on each
 model's full logit-difference set at its fidelity-prioritized operating
 point (\(k=256\); \(32\times\) width, \(16\times\) for Qwen3.5-9B),
-under the baseline harness's unfloored \(\rho\). The Qwen3.5-2B SRP row
-matches the main-text baseline table on the same banks. Anchor sign
+under the baseline harness's unfloored \(\tilde\rho\). The Qwen3.5-2B SRP
+row is computed on the same banks as the main-text baseline table (whose
+redesigned harness gives 0.780 for SRP on this model;
+\Cref{app:direct-geometry-grid}). Anchor sign
 agreement on this full set sits below the per-model values of
 \Cref{tab:readout-score-fidelity-summary} (the main-text \(0.91\) sign
 floor refers to that table's evaluation).}
@@ -173,13 +217,26 @@ R1-Distill-Llama-8B & 0.926 (0.913, 0.938) & 0.134 (0.125, 0.143) & 0.830 (0.814
 
 \begin{figure}[!tbp]
     \centering
+    \includegraphics[width=\columnwidth]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_five_model_margin_fidelity.pdf}
+    \caption{\textbf{Held-out logit-difference fidelity.}
+    Per-bin reconstruction across five readout factorizers vs exact-margin
+    magnitude \(|m_{\mathrm{exact}}|\). \textbf{A.} Median relative error
+    \(|m_{\mathrm{exact}}-m_{\mathrm{recon}}|/|m_{\mathrm{exact}}|\) (log).
+    \textbf{B.} Decision-flip rate. Solid: Qwen3.5-0.8B/2B/9B; dashed:
+    Gemma-4-E2B/E4B. Both concentrate at small margins; calibration in
+    Figure~\ref{fig:app-readout-score-margin-reconstruction}.}
+    \label{fig:readout-score-fidelity-result}
+\end{figure}
+
+\begin{figure}[!tbp]
+    \centering
     \AppendixCompactGraphic[height=0.27\textheight]{figures/proto_token_lens/result1_query_fidelity_v2/result1_v2_five_model_margin_reconstruction.pdf}
     \caption{\textbf{Exact versus reconstructed logit differences.}
     Binned exact versus reconstructed margins on the five-model held-out
     contrast set; the dashed line marks perfect reconstruction. Global
-    calibration companion to the main-text reconstruction error and
-    decision-flip summaries; the decision boundary is better captured by
-    margin-binned views.}
+    calibration companion to the reconstruction error and decision-flip
+    summaries of Figure~\ref{fig:readout-score-fidelity-result}; the
+    decision boundary is better captured by margin-binned views.}
     \label{fig:app-readout-score-margin-reconstruction}
 \end{figure}
 
@@ -207,6 +264,54 @@ R1-Distill-Llama-8B & 0.926 (0.913, 0.938) & 0.134 (0.125, 0.143) & 0.830 (0.814
     compactness constraint tightens.}
     \label{fig:app-robustness-baseline-comparisons}
 \end{figure*}
+
+\subsection{Direct-Geometry Alternatives Across the Gated Models}
+\label{app:direct-geometry-grid}
+
+The main-text baseline table (\Cref{tab:main-baseline-null-comparison})
+summarizes a six-model comparison against methods built directly from
+\(\WU\) geometry; \Cref{tab:app-direct-geometry-grid} gives the full
+grid. Each method reconstructs the same selected scores on the same
+banks and is scored identically (sign agreement and unfloored
+\(\tilde\rho\), cluster-bootstrap CIs by base case). The methods are:
+\emph{nearest-row ridge} (ridge regression of each selected direction on
+its top-128 nearest rows), \emph{weighted row-kNN} (zero-fit weighted
+average of the top-128 nearest rows), \emph{k-means centroid
+dictionaries} at \(D=65{,}536\) and \(D=16{,}384\) with \(k=256\) active
+centroids per row (width- and sparsity-matched to SRP),
+\emph{hard cluster assignment} (each row explained by its single
+\(D=65{,}536\) cluster centroid), and \emph{PCA-256}. An earlier version
+of the clustering and kNN baselines over-reconstructed through a
+full-rank projection artifact and was redesigned before any results were
+used. The k-means centroid dictionary at matched \(D\) and \(k\) is the
+sharpest test---it grants the alternative SRP's exact capacity---and
+still trails SRP's coverage on every model.
+
+\begin{table*}[!tbp]
+\caption{\textbf{Sign-preserved low-error coverage for SRP and six
+direct-geometry alternatives.} Coverage = sign agreement and unfloored
+\(\tilde\rho<0.5\), on each gated model's full logit-difference bank
+(\(\sim\)1{,}350 rows over \(\sim\)850 base-case clusters); cluster
+bootstrap 95\% CIs in brackets. Bold: best method per model.}
+\label{tab:app-direct-geometry-grid}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Method & Q-0.8B & Q-2B & Q-9B & Min-8B & R1-Q-7B & R1-L-8B \\
+\midrule
+SRP & \textbf{0.754} [.733, .773] & \textbf{0.780} [.759, .798] & \textbf{0.812} [.792, .831] & \textbf{0.777} [.759, .795] & \textbf{0.716} [.694, .738] & \textbf{0.751} [.728, .772] \\
+Nearest-row ridge (top-128) & 0.665 [.645, .686] & 0.625 [.606, .644] & 0.639 [.618, .658] & 0.648 [.629, .665] & 0.579 [.560, .598] & 0.600 [.580, .620] \\
+k-means dict, \(D{=}65{,}536\), \(k{=}256\) & 0.585 [.566, .603] & 0.596 [.575, .614] & 0.619 [.598, .639] & 0.628 [.610, .648] & 0.479 [.457, .503] & 0.624 [.606, .642] \\
+k-means dict, \(D{=}16{,}384\), \(k{=}256\) & 0.570 [.550, .591] & 0.561 [.540, .581] & 0.602 [.580, .623] & 0.604 [.585, .622] & 0.312 [.284, .339] & 0.537 [.516, .558] \\
+Hard cluster, \(D{=}65{,}536\) & 0.430 [.405, .451] & 0.397 [.370, .422] & 0.411 [.386, .435] & 0.499 [.475, .521] & 0.353 [.325, .377] & 0.492 [.470, .512] \\
+Weighted row-kNN (top-128) & 0.420 [.397, .442] & 0.331 [.308, .353] & 0.403 [.377, .426] & 0.480 [.456, .504] & 0.163 [.143, .184] & 0.257 [.234, .279] \\
+PCA-256 & 0.462 [.439, .486] & 0.269 [.244, .291] & 0.244 [.224, .268] & 0.338 [.317, .367] & 0.084 [.070, .099] & 0.105 [.090, .120] \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 \subsection{Nearest-Row Reading of Selected Directions}
 \label{app:nearest-rows}

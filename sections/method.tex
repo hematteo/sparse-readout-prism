@@ -10,12 +10,14 @@ alone. Stacking rows, the dense LM head produces \(\ell(h)=\WU h\). The captured
 (Gemma's logit softcap is the one model-specific exception, handled in
 Appendix~\ref{app:readout-factorizer-diagnostics-reproducibility}), so every
 additive account below sums to the model's own score rather than an
-approximation of it. SRP has three stages: factorize the LM head into a sparse
-readout basis (\S\ref{sec:method-factorization}), project hidden states onto
-the resulting directions (\S\ref{sec:method-feature-projections}), and define
-selected readout scores whose decomposition splits into per-feature
-contributions plus residual (\S\ref{sec:method-local-score}). The projection
-step is score-agnostic; the local decomposition is score-conditioned.
+approximation of it. SRP supplies four operations: factorize the LM head into
+a sparse readout basis (\S\ref{sec:method-factorization}), project hidden
+states onto the resulting directions (\S\ref{sec:method-feature-projections}),
+decompose any selected readout score into per-feature contributions plus
+residual (\S\ref{sec:method-local-score}), and compare the resulting feature
+accounts across contexts, tokens, or fitted lenses under a fixed reading rule
+(\S\ref{sec:method-comparing-accounts}). The projection step is
+score-agnostic; the local decomposition is score-conditioned.
 
 \subsection{Factorizing the LM Head into Sparse Readout Features}
 \label{sec:method-factorization}
@@ -23,11 +25,8 @@ step is score-agnostic; the local decomposition is score-conditioned.
 SRP fits a sparse dictionary to the rows of \(\WU\). Following
 sparse-autoencoder practice~\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling},
 each row decomposes as
-\[
-    w_t = \widehat{w}_t + r_t,
-    \qquad
-    \widehat{w}_t = \mu + \sum_{i=1}^{D} z_{t,i} d_i,
-\]
+\(w_t = \widehat{w}_t + r_t\) with
+\(\widehat{w}_t = \mu + \textstyle\sum_{i=1}^{D} z_{t,i} d_i\),
 where \(\mu\) is a shared offset, \(d_i\in\R^d\) is a readout feature direction
 (an SAE decoder direction), \(z_{t,i}\) is token row \(t\)'s sparse coefficient,
 \(\widehat{w}_t\) is the fitted row, and \(r_t\) is the residual.
@@ -70,20 +69,14 @@ the reconstructed LM head and reconstructed logit vector,
     Z(D_{\mathrm{feat}}h).
     \end{aligned}
 \]
-For a hidden state \(h\), define the readout feature projection coordinate and
-projection vector
-\[
-    p_i(h)=h^\top d_i,
-    \qquad
-    p(h)=D_{\mathrm{feat}}h .
-\]
-The coordinate \(p_i(h)\) records the alignment of \(h\) with readout feature
+For a hidden state \(h\), define the readout feature projection
+coordinate \(p_i(h)=h^\top d_i\) and projection vector
+\(p(h)=D_{\mathrm{feat}}h\). The coordinate \(p_i(h)\) records the alignment of \(h\) with readout feature
 \(i\). The projection vector \(p(h)=D_{\mathrm{feat}}h\) is the inner term of
-the reconstructed logit \(\widehat{\ell}(h)\) above, so projecting and
-reconstructing are one operation seen from two sides: \(p(h)\) is the reusable,
-score-agnostic half, reusable across prompts, layers, or residual-stream
-components, and the row codes \(Z\) weight it into per-token logits only once a
-score is selected.
+the reconstructed logit \(\widehat{\ell}(h)\) above: score-agnostic and
+reusable across prompts, layers, and residual-stream components, while the
+row codes \(Z\) weight it into per-token logits only once a score is
+selected.
 
 \subsection{Decomposing Selected Readout Scores}
 \label{sec:method-local-score}
@@ -93,34 +86,20 @@ Selecting one fixes, before any feature term is read, where the hidden state is
 taken (source and position) and what defines the score (token ids, coefficient
 vector, and score family), together with the tokenization filters, competitors,
 references, and split assignments that frame the contrast. Let
-\(\alpha\in\R^{|\mathcal{V}|}\) be vocabulary-row coefficients and define the
-selected readout direction and score
-\[
-    q_\alpha = \sum_{t\in\mathcal{V}} \alpha_t w_t,
-    \qquad
-    s_\alpha(h)=h^\top q_\alpha .
-\]
-Setting \(\alpha_A=1\) and all other coefficients to zero recovers the
-familiar logit-lens coordinate
-\[
-    \ell_A(h)=h^\top w_A
-\]
-for vocabulary token \(A\in\mathcal{V}\).
+\(\alpha\in\R^{|\mathcal{V}|}\) be vocabulary-row coefficients and define
+the selected readout direction and score
+\(q_\alpha = \textstyle\sum_{t\in\mathcal{V}} \alpha_t w_t\) and
+\(s_\alpha(h)=h^\top q_\alpha\). Setting \(\alpha_A=1\) and all other
+coefficients to zero recovers the familiar logit-lens coordinate
+\(\ell_A(h)=h^\top w_A\) for vocabulary token \(A\in\mathcal{V}\).
 
 Contrasts cancel score components shared across the compared rows, including
 output-embedding and tokenizer-row structure
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe};
 for two tokens \(A,B\in\mathcal{V}\), the pairwise logit difference
-\[
-    m_{A,B}(h)=h^\top(w_A-w_B),
-\]
-is positive when the readout favors token \(A\) over token \(B\). For token
-groups, write
-\[
-    \bar{w}_{\mathcal{A}}
-    =
-    \frac{1}{|\mathcal{A}|}\sum_{a\in\mathcal{A}}w_a .
-\]
+\(m_{A,B}(h)=h^\top(w_A-w_B)\) is positive when the readout favors token
+\(A\) over token \(B\). For token groups, write
+\(\bar{w}_{\mathcal{A}}=\tfrac{1}{|\mathcal{A}|}\textstyle\sum_{a\in\mathcal{A}}w_a\).
 For top-competitor margins, the target row, competitor set, and nonnegative
 weights (summing to one) are taken from the original LM-head ranking computed
 before SRP is applied. This stops the reconstructed readout from choosing the
@@ -147,17 +126,14 @@ reconstruction row-by-row and exchanging the sums gives
 \[
 \begin{aligned}
     s_\alpha(h)
-    &= h^\top q_\alpha
-     = \sum_t \alpha_t \, h^\top w_t \\
-    &= \sum_t \alpha_t \, h^\top
-       \!\left(\mu + \sum_{i=1}^{D} z_{t,i} d_i + r_t\right) \\
-    &=
-    \left(\sum_t \alpha_t\right) h^\top\mu
-    + \sum_{i=1}^{D}
-        \left(\sum_t \alpha_t z_{t,i}\right) h^\top d_i \\
-    &\quad + h^\top \sum_t \alpha_t r_t .
+    =
+    \Big(\textstyle\sum_t \alpha_t\Big) h^\top\mu
+    &+ \sum_{i=1}^{D}
+        \Big(\textstyle\sum_t \alpha_t z_{t,i}\Big) h^\top d_i \\
+    &+ h^\top \textstyle\sum_t \alpha_t r_t
 \end{aligned}
 \]
+(full expansion in Appendix~\ref{app:score-decomposition}).
 The shared-offset term \(\left(\sum_t\alpha_t\right) h^\top\mu\) vanishes
 whenever the coefficients sum to zero, which covers logit differences, group
 and vocabulary-mean contrasts, and top-competitor margins; for these scores,
@@ -174,55 +150,33 @@ factorizer, while \(p_i(h)\) varies with context; when \(q=q_\alpha\) is clear, 
 write \(\beta_i(q)\). A feature contributes locally only when both factors are
 large in magnitude (Appendix~\ref{app:global-readout-feature-profiles}).
 
-We label the components:
-\[
-\begin{aligned}
-    s_{\mu}            &= \left(\sum_t\alpha_t\right)h^\top\mu, \\
-    s_{\mathrm{feat}}  &= \sum_i c_i(h,\alpha), \\
-    s_{\mathrm{recon}} &= s_{\mu}+s_{\mathrm{feat}}, \\
-    s_{\mathrm{exact}} &= s_\alpha(h), \\
-    \epsilon           &= s_{\mathrm{exact}}-s_{\mathrm{recon}}
-                        = h^\top\sum_{t\in\mathcal{V}}\alpha_t r_t .
-\end{aligned}
-\]
-\Cref{tab:method-special-cases} instantiates \(q_\alpha\) and
+We label the components
+\(s_{\mu}=(\textstyle\sum_t\alpha_t)h^\top\mu\),
+\(s_{\mathrm{feat}}=\textstyle\sum_i c_i(h,\alpha)\),
+\(s_{\mathrm{recon}}=s_{\mu}+s_{\mathrm{feat}}\), and
+\(s_{\mathrm{exact}}=s_\alpha(h)\), with residual
+\(\epsilon=s_{\mathrm{exact}}-s_{\mathrm{recon}}
+=h^\top\sum_{t\in\mathcal{V}}\alpha_t r_t\).
+Table~\ref{tab:method-special-cases}
+(Appendix~\ref{app:score-decomposition}) instantiates \(q_\alpha\) and
 \(\beta_i(\alpha)\) for the score families used in our analyses.
 
-\begin{table}[t]
-\caption{\textbf{Selected scores and their sparse-feature coefficients.}
-Rows instantiate the selected readout direction \(q_\alpha\) and corresponding
-direction coefficient \(\beta_i(\alpha)\). Barred \(w\) and \(z\) denote
-uniform token-set averages; for top-competitor margins,
-\(\bar{w}_{\pi,\mathcal{R}}=\sum_r\pi_r w_r\) and
-\(\bar{z}_{\pi,\mathcal{R},i}=\sum_r\pi_r z_{r,i}\), where \(\pi_r\) are the
-nonnegative competitor weights summing to one over the competitor set
-\(\mathcal{R}\).}
-\label{tab:method-special-cases}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.14}
-\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{0.34\linewidth}Z Z@{}}
-\toprule
-Selected score family & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
-\midrule
-\textbf{Token logit} & \(w_A\) & \(z_{A,i}\) \\
-\addlinespace[1pt]
-\textbf{Vocabulary-mean contrast} & \(w_A-\bar{w}_{\mathcal{V}}\) &
-\(z_{A,i}-\bar{z}_{\mathcal{V},i}\) \\
-\addlinespace[1pt]
-\textbf{Logit difference} & \(w_A-w_B\) & \(z_{A,i}-z_{B,i}\) \\
-\addlinespace[1pt]
-\textbf{Group contrast} &
-\(\bar{w}_{\mathcal{A}}-\bar{w}_{\mathcal{B}}\) &
-\(\bar{z}_{\mathcal{A},i}-\bar{z}_{\mathcal{B},i}\) \\
-\addlinespace[1pt]
-\textbf{Top-competitor margin} &
-\(w_u-\bar{w}_{\pi,\mathcal{R}}\) &
-\(z_{u,i}-\bar{z}_{\pi,\mathcal{R},i}\) \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\subsection{Comparing and Reading Feature Accounts}
+\label{sec:method-comparing-accounts}
+
+Because the basis is fixed by the weights, decompositions taken at
+different contexts, layers, tokens, or selected scores land in one
+coordinate system and can be compared term by term. We compare accounts
+operationally: two readings agree at the feature level when the same
+feature id dominates both signed contribution profiles (or when their
+profiles correlate, where stated). The same operation extends to fitted
+vocabulary lenses: when a lens maps an intermediate state into the space
+the LM head reads, the score the lens reports is itself a selected
+readout score on the transported state, and SRP decomposes it in the
+shared basis. We claim this comparison only for the lens construction
+tested in \Cref{sec:beyond-token}, whose implemented form feeds the
+unembedding directly; we do not claim a general transport calculus for
+arbitrary lens families.
 
 \paragraph{Reading rule.}
 \label{sec:method-reading-local-accounts}
@@ -232,7 +186,7 @@ is a separate question that four checks decide. The \emph{replacement check} is
 global: it asks whether substituting \(\widehat{\WU}\) for \(\WU\) preserves
 model-facing behavior, measured by rowEV together with top-token agreement and
 KL on held-out hidden states (\S\ref{subsec:readout-replacement-fidelity}), since
-a factorizer can match rowEV yet still fail on the specific logits being
+a factorizer can match rowEV yet still miss the specific logits being
 interpreted. The remaining three turn to the selected score. For each one we
 report exact and reconstructed scores, feature sum, offset when present,
 residual, and relative reconstruction error
@@ -241,16 +195,16 @@ residual, and relative reconstruction error
     \frac{|s_{\mathrm{exact}}-s_{\mathrm{recon}}|}
          {|s_{\mathrm{exact}}|+0.5}.
 \]
-The additive constant keeps \(\rho\) finite at near-tie scores and changes what
-the gate measures there: at large \(|s_{\mathrm{exact}}|\) the criterion is
-relative, while as the score approaches zero it tightens to an absolute bound
-(reconstruction error below \(0.25\) logit units at the \(\rho<0.5\) gate), so
-near-tie decompositions pass only with small absolute error. Single-score
-identity checks, the case-study displays, and the baseline-comparison
-protocol instead report the unfloored ratio
-\(|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/|s_{\mathrm{exact}}|\), marked
-where used; the unfloored ratio upper-bounds the floored \(\rho\), so a
-threshold passed unfloored also passes the gate.
+The additive constant keeps \(\rho\) finite at near-tie scores, where the
+criterion tightens from a relative to an absolute bound (reconstruction
+error below \(0.25\) logit units at the \(\rho<0.5\) gate). Identity
+checks, case-study displays, and every baseline comparison instead report
+the unfloored ratio
+\(\tilde\rho(h,\alpha)=
+|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/|s_{\mathrm{exact}}|\);
+the two are never mixed in one table, and \(\tilde\rho\) upper-bounds the
+floored \(\rho\), so a threshold passed under \(\tilde\rho\) also passes
+the gate.
 The \emph{score} and \emph{residual} checks read feature bars only when
 \(\rho<0.5\); the \emph{sign check} additionally requires \(s_{\mathrm{exact}}\)
 and \(s_{\mathrm{recon}}\) to share sign before support or opposition is read,

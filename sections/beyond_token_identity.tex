@@ -1,0 +1,128 @@
+\section{Beyond Token Identity}
+\label{sec:beyond-token}
+\label{sec:readout-analyses}
+
+The validated feature space now pays for itself on the two ambiguities
+that token identity cannot express: one token supported by different
+feature structure in different contexts
+(\S\ref{subsec:same-token-analysis}), and different surface tokens---here,
+the outputs of differently fitted vocabulary lenses---supported by the
+same feature structure (\S\ref{subsec:cross-lens}). The first is
+presented as worked, audited case analyses; the second is a controlled
+quantitative study.
+
+\subsection{Same Token, Different Feature Structure}
+\label{subsec:same-token-analysis}
+\label{subsec:feature-competition}
+\label{subsec:lens-to-sparse-account}
+
+These analyses use Qwen3.5-2B, whose readout clears the interpretation
+checks by a wide margin; they are illustrative worked analyses rather
+than a systematic sense-disambiguation evaluation, and every label-level
+reading is backed by the audit of \S\ref{subsec:label-audit}. In
+\Cref{fig:main-lens-prism-comparison}, SRP holds the
+\texttt{bug}-minus-\texttt{insect} score fixed and decomposes it into
+signed readout terms plus an explicit residual, in logit units.
+\Cref{fig:selected-readout-prism-examples}
+(Appendix~\ref{app:additional-margin-case-studies}) sets it beside its
+insect-context counterpart, where the competitor becomes the
+software-sense anchor (\texttt{bug}-vs-\texttt{error}), and two further
+polysemous-token differences (\texttt{bark}-vs-\texttt{dog},
+\texttt{bass}-vs-\texttt{trout}), where a faithful account must reassign
+signed terms across senses. In the insect context, \texttt{bug} draws
+positive contributions from mosquito-, bee-, and beetle-labeled rows and
+negative contributions from error-token rows (\(\tilde\rho=0.185\)); in
+the software context, positive contributions shift to defect, crash, and
+debug rows (\(\tilde\rho=0.003\)); \texttt{bark} and \texttt{bass} show
+the same reassignment (\(\tilde\rho=0.126\) and \(0.097\); all four
+within the reading gate).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/proto_token_lens/qwen2b_32x_domain_features_main3/qwen2b_32x_polysemy_delta_row_onecol.pdf}
+    \caption{\textbf{Same selected token, different prompt contexts.}
+    Qwen3.5-2B (\(D=65536\), \(k=256\)). Each panel fixes the output token
+    and plots the first-minus-second change in feature contribution to
+    \(h^\top(w_t-\mu)\); teal: more in first context, orange: more in second.
+    \textbf{A.} \texttt{bug}: insect\,\(-\)\,software.
+    \textbf{B.} \texttt{bridge}: structure\,\(-\)\,network.
+    \texttt{ring} companion: Appendix Figure~\ref{fig:app-qwen2b-ring-context-delta}.}
+    \label{fig:same-token-polysemy}
+\end{figure}
+
+Holding the token fixed isolates the context effect: the row-side
+coefficients \(z_{t,i}\) are frozen by the token, and only the
+projections \(p_i(h)\) vary across prompts
+(\Cref{sec:method-local-score}).\label{subsec:context-reweighting} In
+\Cref{fig:same-token-polysemy}, prompt context reweights \texttt{bug},
+\texttt{ring}, and \texttt{bridge} toward features whose row labels match
+the setting (each token score, after subtracting the shared offset, has
+\(\tilde\rho<0.05\)): \texttt{bug} shifts from mosquito/bee to
+defect/crash/debug labels, \texttt{bridge} from river/crossing to
+networking labels. Context redistributes mass across a fixed token-row
+decomposition without changing its row-side coefficients---a
+reorganization the scalar token score cannot display. Additional views
+are in Appendix~\ref{app:additional-qwen-display-examples}.
+
+\subsection{Different Surface Tokens, Shared Feature Structure}
+\label{subsec:cross-lens}
+
+Fitted vocabulary lenses read intermediate hidden states by learning a
+map into the space the LM head consumes and reporting the resulting
+tokens; the fit uses a text corpus. The Jacobian lens is a recent,
+contemporaneous instance \citep{gurnee2026workspace}, transporting states
+through an averaged Jacobian before decoding through the unembedding.
+Because the lens output is a selected readout score on the transported
+state, SRP decomposes it in the shared weight-only basis
+(\S\ref{sec:method-comparing-accounts})---and can therefore ask whether
+two lenses that report \emph{different} tokens on the \emph{same} state
+are reading different structure or the same structure.
+
+\paragraph{Design.}
+On Qwen3.5-9B we fit two Jacobian lenses that differ only in fitting
+corpus: 100 English against 100 Chinese C4 prompts, same seeds, layers,
+and procedure. Both lenses then read the same frozen hidden states from
+80 evaluation prompts in seven families (Chinese antonym, English and
+Chinese cloze, Chinese exemplar and factual recall, and translation in
+both directions), plus 12 control prompts (digits and proper nouns) whose
+surface form should not depend on language. For each prompt we compare,
+across the mid-band layers, the dominant SRP feature of the score each
+lens reports. The SRP basis is fitted to LM-head rows only: no
+translation pairs, language labels, or lens-fitting corpora enter it.
+Full protocol, per-family tables, and per-case results are in
+Appendix~\ref{app:cross-lens}.
+
+\paragraph{Result.}
+The token readings diverge exactly as a corpus-following account
+predicts: on factual-recall prompts, for example, the English-fitted lens
+reports Latin-script top-1 tokens while the Chinese-fitted lens reports
+CJK top-1 tokens on 9 of 10 prompts---a lens-only analysis stops here,
+with two lenses apparently disagreeing about the model's intermediate
+language. The decomposition says otherwise: the same SRP feature is
+dominant under both lenses' readings on 77 of 80 prompts (96\%, 95\% CI
+[0.90, 0.99]). On the Chinese antonym prompt asking for the opposite of
+\begin{CJK*}{UTF8}{gbsn}小\end{CJK*}~(``small''), the English lens
+reports \texttt{large}/\texttt{big} at the upper mid-band while the
+Chinese lens reports
+\begin{CJK*}{UTF8}{gbsn}大的/大\end{CJK*}; both readings ride one
+readout feature whose top rows are the
+\begin{CJK*}{UTF8}{gbsn}大\end{CJK*}-family. Within a single lens, one
+feature carries both surface forms on 61/80 (English lens) and 62/80
+(Chinese lens) prompts. The agreement is not an artifact of loose
+matching: the dominant feature matches an unrelated token's decomposition
+in 0/159 within-lens comparisons, and re-pairing lenses across shuffled
+prompts matches in 0/240. The controls behave: digit and proper-noun
+prompts, where no language flip is expected, agree at 5/6 and 5/6.
+
+\paragraph{Reading.}
+In this controlled setting, the reported surface language follows the
+lens's fitting corpus even when both readings are supported by the same
+dominant LM-head feature. An English surface reading from a fitted lens
+is therefore not, by itself, evidence of an English intermediate
+computation---a distinction that matters wherever lens token readings
+feed working-language audits or monitoring. We do not claim that models
+never privilege one language, nor that the shared feature is a
+language-neutral causal representation; the claim is scoped to the tested
+lens construction, model, and language pair, and the lens-only baseline
+is reported beside the decomposition throughout
+(Appendix~\ref{app:cross-lens}).

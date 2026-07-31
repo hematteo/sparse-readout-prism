@@ -39,9 +39,8 @@ two separate gaps: the DLA additivity error between \(h^\top q\) and
 \(\sum_c h_c^\top q\), and the readout SAE residual \(h^\top r_q\) (or its
 componentized version \(\sum_c R_c(q)\) under the same DLA approximation).
 Because these identity checks sit on well-separated margins, the relative
-residuals quoted in this appendix and in the corresponding main-text figures
-are the unfloored ratio
-\(|s_{\mathrm{exact}}-s_{\mathrm{recon}}|/|s_{\mathrm{exact}}|\)
+residuals quoted in this appendix and in the corresponding main-text
+paragraph are the unfloored ratio \(\tilde\rho\)
 (\S\ref{sec:method-reading-local-accounts}), computed on full-precision
 margins before display rounding.
 The difference between \(h^\top q\) and a componentized feature-only sum
@@ -57,10 +56,27 @@ across residual-stream components. The component view is an additive
 decomposition over a realized forward pass; separate interventions complement
 it for circuit analysis \citep{geiger2023causalabstraction}.
 
+\Cref{fig:qwen-prism-dla-verify-assume-main} shows the grouped-semantics
+view of the \texttt{verify}-minus-\texttt{assume} margin discussed in the
+main text.
+
+\begin{figure}[!tbp]
+    \centering
+    \includegraphics[width=0.74\columnwidth]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_semantic_table.pdf}
+    \caption{\textbf{Feature-resolved component attribution.}
+    Qwen3.5-2B \texttt{verify}-\texttt{assume} margin on the
+    source-verification prompt (``The source has not been checked yet. The
+    appropriate next action is to''). Rows are embedding and
+    per-layer post-norm contributions; columns group verify/check, assume,
+    other sparse, LM-head residual, and ordinary DLA terms. Red supports
+    \texttt{verify}; blue supports \texttt{assume}.}
+    \label{fig:qwen-prism-dla-verify-assume-main}
+\end{figure}
+
 \Cref{fig:qwen-prism-dla-feature-heatmap} resolves the
 \texttt{verify}-minus-\texttt{assume} margin to individual readout features
-across residual-stream stages, rather than to the grouped semantics of the
-main-text figure. The margin is carried by several distinct same-family
+across residual-stream stages, rather than to the grouped semantics of
+\Cref{fig:qwen-prism-dla-verify-assume-main}. The margin is carried by several distinct same-family
 directions rather than a single one: verification and checking features supply
 the positive mass, concentrated in the later layers, against a smaller
 assumption-family group. The exact margin is \(+4.31\), the component

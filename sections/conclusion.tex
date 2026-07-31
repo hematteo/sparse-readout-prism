@@ -1,43 +1,21 @@
 \section{Conclusion}
 
-Lens-style methods score hidden states against LM-head rows but say nothing
-about which readout directions produce the score. Sparse Readout Prism
-factorizes the rows into a shared overcomplete basis: each row becomes sparse
-coefficients over \emph{readout features}---features of LM-head rows, not of
-hidden-state activations---plus a residual. Once a token logit, logit
-difference, or other fixed row combination is selected, the basis returns
-signed per-feature contributions, an offset, and a residual that sum to the
-original score in logit units.
-
-Across eight models, SRP reconstructs centered LM-head rows at explained
-variance \(0.83\)--\(0.89\), tracks the dense LM head on six of eight readouts,
-and preserves contrast sign on at least \(91\%\) of held-out logit differences.
-These diagnostics define a low-error regime (\(\rho<0.5\)) for term-level
-reading. Inside that regime, SRP turns each lens score into a sparse
-account with an explicit residual: polysemous logit differences expose
-competing readout features, prompt context reweights a fixed token-row
-decomposition, direct logit attribution refines into
-component-by-feature terms, and decoder directions selected from a small
-discovery set
-drive constrained lexical edits that transfer to held-out tokens, at a
-measured distribution-shift cost. The same
-checks mark where term-level reading stops, most often at near-tie margins
-and the lower-fidelity Gemma and R1-distilled readouts.
-
-Readout-side decomposition is complementary to hidden-state decomposition;
-together they close the additive loop on lens scores.
-
-\paragraph{Future work.}
-Future work can extend SRP from the final LM head to the effective linear
-readouts used by tuned lenses, logit-prism variants, and future-token lenses,
-so lens methods can be compared by sparse signed feature terms as well as
-decoded tokens. The same basis also supports a layerwise census of
-readout-feature projections before score selection: when features become
-readout-readable, which residual components supply them, and when they become
-specific to a token, contrast, or competitor set. SRP-nominated terms then give
-targets for causal patching, ablation, and generation-level evaluation, the
-next tests for moving beyond additive readout decomposition. A further
-extension factorizes both sides of a selected margin at once, pairing an
-activation dictionary for \(h\) with the readout factorizer for \(q\) so that
-each term records the alignment between an activation-side feature and a
-readout-side feature.
+Token identity is too coarse a unit for interpreting vocabulary
+readouts: one token can combine different sense-related readout
+structure, and different surface tokens or fitted lenses can express the
+same structure. Sparse Readout Prism replaces the token-only account
+with a shared, compositional feature account whose error is explicit:
+any selected token logit, logit difference, or fixed row combination
+separates into query-side feature coefficients, context-dependent state
+projections, and a query-specific residual in original logit units. The
+representation earns its use---it reconstructs selected scores where
+direct row geometry does not, reproduces its explanations across
+independent training runs, and predicts realized local readout-side
+changes---and it exposes what token rankings cannot: contexts recruiting
+different features for one token, and English- and Chinese-fitted lenses
+reporting different surface languages on identical states while the same
+readout feature stays dominant in 77 of 80 controlled prompts. The
+interpretation boundary is equally explicit: accounts are local to a
+selected score and a declared operating regime, and a surface-token
+reading---from any lens---should be trusted only as far as the feature
+account beneath it.

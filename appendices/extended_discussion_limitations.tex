@@ -96,9 +96,17 @@ terms. Interventions are the natural next step for circuit-level claims.
 \paragraph{Extensions.}
 Natural extensions include controlled interventions on SAE decoder directions,
 cross-model feature-alignment analyses, distributional decompositions of local
-top-\(k\) frontiers, and broader model-family sweeps. All depend on the
-reliability condition used in the main text: feature terms are read when the
-selected readout score has a small reported residual.
+top-\(k\) frontiers, and broader model-family sweeps. The basis also
+extends to the effective linear readouts used by tuned lenses,
+logit-prism variants, and future-token lenses, so lens methods can be
+compared by sparse signed feature terms as well as decoded tokens;
+SRP-nominated terms give targets for causal patching, ablation, and
+generation-level evaluation. A further extension factorizes both sides
+of a selected margin at once, pairing an activation dictionary for
+\(h\) with the readout factorizer for \(q\), so that each term records
+the alignment between an activation-side and a readout-side feature. All
+depend on the reliability condition used in the main text: feature terms
+are read when the selected readout score has a small reported residual.
 
 \paragraph{Residual-stream census.}
 SRP also measures what is readout-readable before a hidden state is reduced

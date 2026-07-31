@@ -1,0 +1,112 @@
+\section{Cross-Lens Study: Protocol, Controls, and Per-Family Results}
+\label{app:cross-lens}
+
+This appendix documents the corpus-conditionality study of
+\S\ref{subsec:cross-lens}.
+
+\paragraph{Lenses.}
+We use the reference implementation of the Jacobian lens
+\citep{gurnee2026workspace}, which reads an intermediate hidden state by
+transporting it through an averaged Jacobian into the space consumed by
+the unembedding and decoding through the LM head. On Qwen3.5-9B we fit
+two lenses that differ \emph{only} in fitting corpus: 100 seeded English
+C4 prompts versus 100 seeded Chinese C4 prompts, with identical seeds,
+positions, and procedure. Transport is evaluated at layers
+\(\{2,5,7,10,12,14,17,19,21,24,26,29\}\) of 31 at the final prompt
+position; the \emph{mid-band} refers to the middle layers of this set,
+where the two lenses' token readings can diverge (both lenses converge
+and agree at the final band). Composition is validated numerically:
+transported and normalized states reproduce the lens's own output scores
+to within 0.2\%.
+
+\paragraph{SRP basis and comparison operation.}
+Because the implemented lens feeds the unembedding directly, the score
+each lens reports is a selected readout score on the transported state,
+and SRP decomposes it in the shared weight-only basis
+(\S\ref{sec:method-comparing-accounts}). The dictionary is an
+independently trained \(k{=}128\) (seed 0) readout factorizer for
+Qwen3.5-9B---a different operating point from the main-table
+\(16\times\)/\(k{=}256\) configuration, disclosed here per the
+cross-recipe rule of Appendix~\ref{app:basis-stability}. No translation
+pairs, language labels, or lens-fitting corpora enter the basis: it is
+fitted to LM-head rows only. For each prompt, each lens's reported score
+is decomposed at every mid-band layer, and the two lenses \emph{agree}
+when the same feature id is dominant under both on a majority of the
+mid-band layers.
+
+\paragraph{Prompts.}
+Eighty evaluation prompts span seven families---Chinese antonym (14),
+English cloze (10), Chinese cloze (18), Chinese exemplar (8), Chinese
+factual recall (10), and translation in both directions (10 each)---plus
+12 control prompts (6 digit, 6 proper-noun) whose expected surface form
+is language-invariant. Two null comparisons price in loose matching:
+(a) \emph{within-lens unrelated token}: the dominant feature of each
+reading is compared against the decomposition of an unrelated token on
+the same state (159 comparisons); (b) \emph{shuffled pairing}: the two
+lenses' readings are re-paired across different prompts
+(240 comparisons).
+
+\begin{table}[!tbp]
+\caption{\textbf{Cross-lens dominant-feature agreement by prompt
+family.} Agreement = same SRP feature dominant under the English- and
+Chinese-fitted lens on a majority of mid-band layers; 95\% binomial CIs.
+``Lens-only'' is the surface baseline: prompts where the English lens
+reports Latin-script and the Chinese lens CJK-script top-1 tokens
+(mid-band vote), i.e.\ where token readings alone suggest disagreement.
+Control families (below the rule) are excluded from the 77/80 headline.}
+\label{tab:app-cross-lens-families}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Family & Agreement & 95\% CI & Lens-only split \\
+\midrule
+Antonym (ZH) & 14/14 & [0.78, 1.00] & 4/14 \\
+Cloze (EN) & 10/10 & [0.72, 1.00] & 7/10 \\
+Cloze (ZH) & 16/18 & [0.67, 0.97] & 6/18 \\
+Exemplar (ZH) & 8/8 & [0.68, 1.00] & 7/8 \\
+Factual recall (ZH) & 9/10 & [0.60, 0.98] & 9/10 \\
+Translation EN\(\to\)ZH & 10/10 & [0.72, 1.00] & 6/10 \\
+Translation ZH\(\to\)EN & 10/10 & [0.72, 1.00] & 0/10 \\
+\midrule
+All cross-lens & 77/80 & [0.90, 0.99] & --- \\
+\midrule
+Control: digits & 5/6 & [0.44, 0.97] & 0/6 \\
+Control: proper nouns & 5/6 & [0.44, 0.97] & 0/6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Results.}
+The same SRP feature is dominant under both lenses on 77 of 80
+cross-lens prompts (96\%, CI [0.90, 0.99]), uniformly across families
+(\Cref{tab:app-cross-lens-families}). Within a single lens, one feature
+carries both surface forms (e.g.\ the English and Chinese realizations
+of the same concept) on 61/80 (English lens) and 62/80 (Chinese lens)
+prompts. Both null floors are empty: 0/159 within-lens unrelated-token
+matches and 0/240 shuffled-pairing matches, so the headline agreement is
+not an artifact of a permissive matching criterion. The lens-only
+column shows the surface picture the decomposition corrects: on
+factual-recall prompts the two lenses report different scripts on 9/10
+prompts while the dominant feature agrees on 9/10. Worked example: on
+the antonym prompt asking for the opposite of
+\begin{CJK*}{UTF8}{gbsn}小\end{CJK*}, the English-fitted lens reports
+\texttt{large}/\texttt{big} across the upper mid-band while the
+Chinese-fitted lens reports
+\begin{CJK*}{UTF8}{gbsn}大的/大\end{CJK*}; both readings are carried by
+the same readout feature, whose top unembedding rows are the
+\begin{CJK*}{UTF8}{gbsn}大\end{CJK*}~family.
+
+\paragraph{Caveats and scope.}
+The Chinese C4 fitting corpus contains incidental English text, which
+biases the two lenses toward each other and makes the token-level
+divergence conservative. The study covers one model, one language pair,
+and one lens family at one fitting scale; the released per-case records
+include every prompt, layer, dominant-feature id, and top-token reading.
+The conclusion licensed is the narrow one stated in the main text: in
+this controlled setting the reported surface language follows the
+fitting corpus even when both readings share a dominant LM-head feature,
+so a surface-language reading alone does not identify the language of an
+intermediate computation.

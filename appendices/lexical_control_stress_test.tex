@@ -143,7 +143,7 @@ flips 20 of the 23 against the SAE edit's 11 (intersection 10), and the
 oracle saturates by scale 6 while the SAE edit reaches the ceiling
 at scale 12. KL summaries cluster at the prompt level, since
 the 16 prompts are shared across both splits. The KL column records
-the distributional cost of each edit. Across the dose-response sweep, the
+the distributional cost of each edit. Across the intervention-scale sweep, the
 discovery flip rate under the
 readout SAE direction edit increases monotonically from \(0.038\) to
 \(0.450\), and the held-out flip rate tracks it within about \(0.04\)
@@ -198,9 +198,9 @@ held-out effect because those token ids were not in its bias set. The Ministral
 row provides a discovery-side cross-family comparison because its tokenizer leaves
 too few held-out single-token terms for the held-out split.
 
-The takeaway is narrow but positive: SAE decoder directions can move
-constrained lexical logit differences when edited at the readout: the intended
-scores move under intervention, held-out templates and dose-response measurements
+The takeaway is positive: SAE decoder directions move constrained
+lexical logit differences when edited at the readout; the intended
+scores move under intervention, held-out templates and scale-sweep measurements
 provide supporting evidence, and the two Qwen-family rows show the same
 held-out lexical transfer pattern. The Ministral row is a discovery-side
 cross-family comparison because too few held-out terms pass the tokenizer filter.
@@ -209,3 +209,60 @@ scores: the Qwen3.5-2B off-target top-1 regression of \(0.444\)
 (\Cref{tab:lexical-control-cross-model-results}) is the candidate-scoring
 counterpart of the median-KL distributional cost, and marks the edit as
 constrained in construction rather than in downstream effect.
+
+\subsection{Matched-KL Frontier and Cross-Model Outcome}
+\label{app:lexical-matched-kl}
+
+The comparison above matches intervention scale; a stricter comparison
+matches distributional cost. The upgraded protocol enlarges the held-out
+lexicon from 64 to 240 candidates (12 held-out pairs \(\times\) 20
+prompts), extends scales to 64 so that baseline frontiers reach SRP's KL
+range, and adds three label-free control directions: the mean row of the
+five discovery tokens, PCA rank-1, and PCA rank-4 (the full rank of the
+discovery rows, hence capacity-fair); the oracle, discovery-bias, and
+random brackets are retained. The frontier plots held-out suppression
+(\(\Delta p_{\mathrm{bad}}\) primary, flip rate secondary) against
+median next-token KL, and paired cluster bootstraps (same candidates
+across methods; clustered conservatively by the 12 held-out terms and,
+separately, by the 20 prompts; 10{,}000 resamples) test differences at
+matched KL.
+
+\begin{figure*}[!tbp]
+    \centering
+    \includegraphics[width=0.86\textwidth]{figures/rebuttal/matched_kl_frontier_two_panel.pdf}
+    \caption{\textbf{Held-out suppression versus distributional cost at
+    matched KL (Qwen3.5-2B).} Held-out
+    \(\Delta p_{\mathrm{bad}}\) (left) and flip rate (right) against
+    median next-token KL for the SRP direction edit, mean-row, PCA
+    rank-1/rank-4, and the oracle and random brackets. SRP dominates
+    every label-free baseline at every matched KL on this model and
+    reaches the oracle ceiling at scale 12; trivial directions reach it
+    only at 1.3--5\(\times\) the KL.}
+    \label{fig:lexical-matched-kl-frontier}
+\end{figure*}
+
+On the display model the outcome is decisive: SRP beats every label-free
+baseline at every matched KL, with all 12 paired comparisons significant
+(term-clustered CIs exclude zero). Against the strongest baseline, the
+mean-row direction, the paired \(\Delta p_{\mathrm{bad}}\) advantage is
+\(+0.032\) [\(+0.014\), \(+0.054\)] at KL 0.02, \(+0.087\)
+[\(+0.065\), \(+0.115\)] at 0.05, \(+0.085\) [\(+0.062\), \(+0.109\)]
+at 0.10, and \(+0.074\) [\(+0.048\), \(+0.103\)] at 0.20; against PCA
+rank-4 the advantages span \(+0.036\) to \(+0.097\), all significant.
+
+The advantage is model-specific, and we print the losses. At matched KL,
+Qwen3.5-0.8B loses to the mean-row direction (\(\Delta\) \(-0.030\) to
+\(-0.094\), significant) and Qwen3.5-9B loses more clearly (\(-0.086\)
+to \(-0.135\), significant); R1-Distill-Qwen-7B is mixed (loses to
+mean-row at two of four matched-KL points, beats PCA rank-4); Ministral
+is excluded because the Tekken tokenizer leaves too few single-token
+terms for feature discovery (the dictionary itself is validated in
+Appendix~\ref{app:causal-validation}), and R1-Distill-Llama-8B is
+excluded with one tokenizable pair and no held-out terms. Two candidate
+explanations for the losses were tested and rejected: replacement
+fidelity (the 9B readout is high-fidelity and still loses) and
+dictionary width (a registered prediction that the narrower 0.8B
+dictionary should win; it lost). The supported claim is therefore
+scoped: on the display model, dictionary-direction edits beat trivial
+category directions at matched distributional cost; the advantage is not
+general across models, and mean-row is a strong label-free baseline.

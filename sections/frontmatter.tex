@@ -1,28 +1,34 @@
 \begin{abstract}
-Logit-lens-style methods inspect hidden states by projecting them through
-the LM head and reading vocabulary logits, rankings, or logit differences.
-Once a token or contrast is selected, the inspected quantity is a dense dot
-product with an LM-head row or row combination, so the lens reports which
-token a context prefers but not which readout directions carry that
-preference. We introduce Sparse Readout Prism (SRP), which factorizes the
-LM head into shared \emph{readout features} with sparse output-token row
-coefficients. Hidden states are projected onto this basis once; any
-selected token logit, logit difference, or fixed row combination then
-decomposes into signed per-feature contributions plus an explicit
-residual, in original logit units.
-
-Across eight models, SRP reconstructs centered unembedding rows at
-explained variance \(0.83\)--\(0.89\) and preserves held-out contrast
-signs on at least \(91\%\) of logit differences; on Qwen3.5-2B it improves
-over nearest-row ridge, dense PCA references including a
-compactness-matched point, and shuffled/random sparse-code
-controls in median reconstruction error and sign-preserved low-error
-coverage. Fidelity varies by score family and falls as a contrast
-approaches a near-tie, so the reported diagnostics gate which feature
-terms are read. Within that regime, the basis turns lens scores into
-readout-level analyses: polysemous contrasts decompose into competing
-sense features reweighted by prompt context, direct logit attribution
-refines into component-by-feature terms, and discovery-selected decoder
-directions drive constrained lexical edits that transfer to held-out
-tokens at a measured distribution-shift cost.
+Lens-style interpretability methods read hidden states through the LM
+head and report tokens: logits, rankings, or logit differences. The
+token is a coarse unit for that report. One token can be supported by
+different readout structure in different contexts, while different
+surface tokens---or differently fitted vocabulary lenses---can be
+supported by the same structure. We introduce Sparse Readout Prism
+(SRP), a weight-only sparse factorization of the LM head that turns any
+selected token logit, logit difference, or fixed vocabulary-row
+combination into signed contributions from shared \emph{readout
+features} plus an explicit residual in original logit units, separating
+what the selected score asks (sparse row coefficients) from what the
+hidden state supplies (feature projections). On the six models passing a
+declared interpretation gate, SRP reconstructs selected scores more
+reliably than k-means, hard-clustering, nearest-row kNN, ridge, and PCA
+alternatives (sign-preserved low-error coverage 0.72--0.81, leading the
+strongest alternative by 9--17 points); held-out dictionaries recover
+feature groupings that direct row geometry misses; explanations
+reproduce across independent training runs; and feature contributions
+predict realized local readout-side changes (\(r^2=0.83\)--\(0.93\),
+versus at most 0.06 for random directions). Using this feature space, we
+find that English- and Chinese-fitted Jacobian lenses can report
+different surface languages on identical hidden states while the same
+SRP feature stays dominant in 77 of 80 controlled prompts: a
+surface-language reading is not, by itself, evidence of a matching
+intermediate computation.
+\ifpreprintmode
+Code and trained SRP dictionaries for all eight models are available at
+\href{https://github.com/hematteo/sparse-readout-prism}{github.com/hematteo/sparse-readout-prism}.
+\else
+Code and trained SRP dictionaries for all eight models are publicly
+released; links are withheld for anonymous review.
+\fi
 \end{abstract}

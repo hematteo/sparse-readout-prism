@@ -21,18 +21,36 @@ NVIDIA A40
 (Appendix~\ref{app:readout-factorizer-diagnostics-reproducibility}).
 Selected-score decompositions on new hidden states are forward-pass only.
 
-\paragraph{Hyperparameter dependence.}
+\paragraph{Hyperparameter dependence and non-uniqueness.}
 As in other sparse dictionary settings, the learned basis depends on
 dictionary size, sparsity \(k\), and recipe choices
-\citep{elhage2022superposition,karvonen2025saebench,makelov2024principled}.
-Operating points reported in the main text are selected from sweeps in
+\citep{elhage2022superposition,karvonen2025saebench,makelov2024principled},
+and individual atoms are not unique across training seeds
+\citep{paulo2025stability}. The stability analysis of
+\S\ref{subsec:stability} and Appendix~\ref{app:basis-stability} shows
+that the interpretive unit---the decomposition of a selected score and
+its feature-group structure---reproduces within a fixed recipe, but
+cross-recipe variation is larger than within-recipe seed variation and is
+disclosed there. Operating points are selected from sweeps in
 Appendices~\ref{app:readout-factorizer-sweeps}
 and~\ref{app:readout-factorizer-qwen-sweeps}; the reported basis should be
 read as an audited operating point rather than a unique factorization.
 
+\paragraph{Scope of the cross-lens study.}
+The corpus-conditionality result of \S\ref{subsec:cross-lens} is
+established for one model (Qwen3.5-9B), one language pair
+(English--Chinese), and one fitted-lens construction, with the feature
+comparison defined operationally
+(\S\ref{sec:method-comparing-accounts}). It licenses a negative
+conclusion---a surface-language reading is not by itself evidence of a
+matching intermediate computation---not a general claim that models never
+privilege a language, and the readout-side edit advantage of
+Appendix~\ref{app:lexical-control-stress-test} is likewise
+display-model-scoped, with cross-model losses printed.
+
 \paragraph{Fidelity and labels.}
-SRP keeps the measured coordinate objects --- feature ids, signed terms, and
-residual errors --- separate from label summaries of high-scoring unembedding
+SRP keeps the measured coordinate objects---feature ids, signed terms, and
+residual errors---separate from label summaries of high-scoring unembedding
 rows. Reconstruction error, sign agreement, replacement fidelity, and stability
 checks accompany contribution terms, so interpretation follows the measured
 objects.
@@ -58,11 +76,12 @@ readout reconstruction and make no social-validity claims about individual
 tokens, labels, or generated outputs. We use public model checkpoints and
 C4-derived hidden states under the licenses or terms published with their
 release pages and model or data cards. We do not redistribute the original
-checkpoints or raw C4 text; any released SRP artifacts will include
-artifact-specific license and usage notes.
+checkpoints or raw C4 text; the released SRP dictionaries%
+\ifpreprintmode\ (\href{https://huggingface.co/hematteo/sparse-readout-prism}{\texttt{hematteo/sparse-readout-prism}})\fi\
+carry artifact-specific license and usage notes.
 
 SRP makes lexical readout directions and row-level labels easier to inspect,
-and in the readout-edit stress test moves specified lexical scores --- a
+and in the readout-edit stress test moves specified lexical scores---a
 dual-use property of auditing tools. We report the edit with
 distribution-shift and off-target probes, and keep claims tied to measured
 coordinate objects. Safety-filter, moderation, and deployment-control

@@ -13,6 +13,42 @@ model's raw readout space. If training used centering or row normalization, the
 SAE coefficients, reconstructed rows, and residual terms are first mapped back
 to that space.
 
+\begin{table}[!tbp]
+\caption{\textbf{Selected scores and their sparse-feature coefficients.}
+Rows instantiate the selected readout direction \(q_\alpha\) and corresponding
+direction coefficient \(\beta_i(\alpha)\). Barred \(w\) and \(z\) denote
+uniform token-set averages; for top-competitor margins,
+\(\bar{w}_{\pi,\mathcal{R}}=\sum_r\pi_r w_r\) and
+\(\bar{z}_{\pi,\mathcal{R},i}=\sum_r\pi_r z_{r,i}\), where \(\pi_r\) are the
+nonnegative competitor weights summing to one over the competitor set
+\(\mathcal{R}\).}
+\label{tab:method-special-cases}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.14}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{0.34\linewidth}Z Z@{}}
+\toprule
+Selected score family & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
+\midrule
+\textbf{Token logit} & \(w_A\) & \(z_{A,i}\) \\
+\addlinespace[1pt]
+\textbf{Vocabulary-mean contrast} & \(w_A-\bar{w}_{\mathcal{V}}\) &
+\(z_{A,i}-\bar{z}_{\mathcal{V},i}\) \\
+\addlinespace[1pt]
+\textbf{Logit difference} & \(w_A-w_B\) & \(z_{A,i}-z_{B,i}\) \\
+\addlinespace[1pt]
+\textbf{Group contrast} &
+\(\bar{w}_{\mathcal{A}}-\bar{w}_{\mathcal{B}}\) &
+\(\bar{z}_{\mathcal{A},i}-\bar{z}_{\mathcal{B},i}\) \\
+\addlinespace[1pt]
+\textbf{Top-competitor margin} &
+\(w_u-\bar{w}_{\pi,\mathcal{R}}\) &
+\(z_{u,i}-\bar{z}_{\pi,\mathcal{R},i}\) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \subsection{Raw-Space Row Decomposition}
 \label{app:score-decomposition-row-factorization}
 
@@ -113,7 +149,11 @@ and aggregate summaries use
 \]
 with \(\delta=0.5\) logit. The floor prevents arbitrarily small margins from
 dominating median error summaries; near the decision boundary, sign agreement and
-margin-binned flip rates are the primary reliability checks. For signed
+margin-binned flip rates are the primary reliability checks. The unfloored
+variant \(\tilde\rho(h,\alpha)=|\epsilon(h,\alpha)|/|s_{\mathrm{exact}}|\)
+(\(\delta=0\)) is used for identity checks, case-study displays, and all
+baseline comparisons; it upper-bounds \(\rho\), and the two symbols are
+never mixed within one table. For signed
 contrasts, side-specific feature support is evidence-bearing when
 \[
     \operatorname{sign}(s_{\mathrm{exact}})

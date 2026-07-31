@@ -1,26 +1,32 @@
-\section{Evaluation Setup}
+\section{Evaluation Design}
 \label{sec:experimental-setup}
 
-We evaluate SRP in two stages. \emph{Calibration} measures row, replacement,
-and selected-score fidelity for the learned readout basis. \emph{Analyses} use
-the calibrated operating regime to ask what SRP adds beyond logit-lens scores:
-how the basis responds to varied inputs (score choice, token preference, prompt
-context), and how it supports attribution and constrained readout-side edits.
-The constrained-edit experiment (\Cref{subsec:constrained-readout-edits}) also
-intervenes on the final hidden state and reports distribution-shift diagnostics.
+Each metric family tests one claim about the factorization:
+\emph{faithfulness} (selected-score residual, sign preservation, and
+replacement behavior), \emph{distinctness} (comparison against direct
+row geometry and dense low-rank alternatives),
+\emph{reproducibility} (independently trained dictionaries and held-out
+group recovery), \emph{intervention relevance} (predicted versus
+realized local readout-side changes), and \emph{utility} (feature-level
+analyses that token rankings cannot express,
+\Cref{sec:beyond-token}).
 
-\paragraph{Models and held-out sets.}
+\paragraph{Models, gate, and held-out sets.}
 The suite spans Qwen3.5~\citep{qwen35collection}, Gemma-4
 \citep{gemma4official,gemma4collection}, Ministral~\citep{liu2026ministral3},
 and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1};
 identifiers and selection criteria appear in
 Appendix~\ref{app:model-suite-selection}. Because decomposing a fixed readout
 needs only the final weights, the suite is chosen by recency and spans three
-model families with base, instruction-tuned, and reasoning-distilled variants. We fit one readout factorizer per
-model to the rows of its final LM head and evaluate it on 10{,}000
-held-out C4 continuations per model
+model families with base, instruction-tuned, and reasoning-distilled variants.
+We fit one readout factorizer per model to the rows of its final LM head and
+evaluate it on 10{,}000 held-out C4 continuations per model
 \citep{raffel2020exploring,dodge2021documenting} together with a fixed
-prompt-and-score set.
+prompt-and-score set. The model split is fixed once: all eight models enter
+the reconstruction analysis, and the six whose readouts pass the
+interpretation gate (held-out replacement top-1 agreement \(\ge 0.75\);
+both Gemma-4 variants fall below it) enter the baseline, reproducibility,
+and intervention comparisons.
 
 \paragraph{Contrast banks.}
 Selected scores come from fixed, model-agnostic banks
@@ -40,19 +46,8 @@ factorizers are trained on LM-head rows and selected on
 row-reconstruction, replacement, and code-usage metrics, with the
 contrast set reserved for post-selection evaluation.
 Aggregates cluster items by base case (one prompt--score template with
-its variants), the resampling unit for bootstrap intervals; the Qwen3.5-2B
-baseline comparison uses the full 1{,}348-item set over 848 base cases. A
-separate benchmark-derived bank contributes 300 fixed row combinations
-for each of two Qwen models
+its variants), the resampling unit for bootstrap intervals; the baseline
+comparisons use the full \(\sim\)1{,}350-item set per model over
+\(\sim\)850 base cases. A separate benchmark-derived bank contributes 300
+fixed row combinations for each of two Qwen models
 (\Cref{subsec:selected-score-reconstruction}).
-
-\paragraph{Calibration metrics and baselines.}
-Calibration has three components. \emph{Basis} metrics measure held-out
-row reconstruction and LM-head replacement. \emph{Score} metrics measure
-sign preservation and relative error for selected logits, contrasts, and
-margins. \emph{Baselines} are nearest-row ridge, dense PCA references
-(including a point matched to SRP's realized per-score compactness),
-shuffled sparse codes, and random sparse patterns. Feature contributions are
-reported for sign-preserved, low-error accounts; feature labels serve as
-descriptive aids, while the measured objects are feature ids, signed
-contributions, and residuals.

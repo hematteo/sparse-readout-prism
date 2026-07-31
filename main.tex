@@ -3,7 +3,10 @@
 % ACL style modes: "review" anonymizes authors and adds line numbers;
 % "preprint" shows authors with page numbers and no line numbers (arXiv);
 % "final" is the camera-ready copy.
-\usepackage[preprint]{acl}
+% ANONYMITY: for the ARR build, keep "review" here AND \preprintmodefalse in
+% style/preamble.tex. For the arXiv build, switch to "preprint" and
+% \preprintmodetrue. The two switches must move together.
+\usepackage[review]{acl}
 
 \usepackage{times}
 \usepackage{latexsym}
@@ -18,12 +21,17 @@
 
 \begin{document}
 \maketitle
+\ifpreprintmode
+\thispagestyle{preprintfirst}
+\blfootnote{\textsuperscript{\dag}Corresponding author: \texttt{mh2274@cam.ac.uk}. All authors: University of Cambridge. \textsuperscript{*}Also at Meta.}
+\fi
 
 \input{sections/frontmatter.tex}
 \input{sections/introduction.tex}
 \input{sections/method.tex}
 \input{sections/experimental_setup.tex}
 \input{sections/results_and_analysis.tex}
+\input{sections/beyond_token_identity.tex}
 \input{sections/related_work.tex}
 \input{sections/conclusion.tex}
 \input{sections/limitations.tex}
@@ -42,6 +50,9 @@
 \input{appendices/readout_sae_transfer_comparisons.tex}
 \input{appendices/readout_sae_diagnostics_reproducibility.tex}
 \input{appendices/robustness_controls.tex}
+\input{appendices/basis_stability.tex}
+\input{appendices/intervention_validation.tex}
+\input{appendices/cross_lens_study.tex}
 \input{appendices/additional_qwen_display_examples.tex}
 \input{appendices/feature_resolved_dla.tex}
 \input{appendices/lexical_control_stress_test.tex}

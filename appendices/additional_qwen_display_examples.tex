@@ -37,25 +37,32 @@ summaries for the feature ids.
 \subsection{Additional Logit-Difference Case Studies}
 \label{app:additional-margin-case-studies}
 
-Figure~\ref{fig:app-selected-readout-prism-extra-examples} gives standalone
-displays of the \texttt{bark} and \texttt{bass} logit differences shown as
-panels of the main-text
-Figure~\ref{fig:selected-readout-prism-examples}. In the tree
+Figure~\ref{fig:selected-readout-prism-examples} collects the four curated
+pairwise logit differences read in \Cref{subsec:same-token-analysis}: the two \texttt{bug}
+contrasts, and the \texttt{bark} and \texttt{bass} differences. In the tree
 context, \texttt{bark} draws on bark/wood SAE features against dog/cat
 features; in the music context, \texttt{bass} draws on music/percussion-related
-features against trout/salmon features. The relative reconstruction errors
-match the main-text values, \(0.126\) and \(0.097\).
+features against trout/salmon features (relative reconstruction errors
+\(0.126\) and \(0.097\)).
 
 \begin{figure*}[!tbp]
     \centering
-    \AppendixWideGraphic[height=0.22\textheight]{figures/proto_token_lens/qwen2b_32x_section43_polysemy_margin_curated_examples/qwen2b_32x_margin_examples_appendix2_with_tokens.pdf}
-    \caption{\textbf{Additional Sparse Readout Prism case studies.}
-    Positive bars support the first token in each contrast; negative bars
-    support the competitor; the horizontal axis is signed contribution. These
-    panels use the same Qwen3.5-2B
-    \(D=65536\), \(k=256\) SAE trained on unembedding rows as
-    Figure~\ref{fig:selected-readout-prism-examples}.}
-    \label{fig:app-selected-readout-prism-extra-examples}
+    \includegraphics[width=0.92\textwidth]{figures/proto_token_lens/qwen2b_selected_four_panel/wu_prism_qwen2b_selected_paper_examples_with_tokens.pdf}
+    \caption{\textbf{Sparse Readout Prism case studies.}
+    Four selected Qwen3.5-2B (\(D=65536\), \(k=256\)) pairwise logit
+    differences. Positive terms support the first token in each contrast;
+    negative terms support the competitor. The examples are
+    \texttt{bug}-vs-\texttt{error} in an insect context,
+    \texttt{bug}-vs-\texttt{insect} in a software context,
+    \texttt{bark}-vs-\texttt{dog} in a tree context, and
+    \texttt{bass}-vs-\texttt{trout} in a music context. Small bars are
+    suppressed for readability. All four panels satisfy the residual
+    threshold (quoted as the unfloored \(\tilde\rho<0.5\)) and preserve the
+    sign of the logit difference
+    (display rules in Appendix~\ref{app:display-taxonomy});
+    \cref{tab:app-main-case-study-feature-audit} lists the
+    \texttt{bug}-panel feature rows.}
+    \label{fig:selected-readout-prism-examples}
 \end{figure*}
 
 \subsection{Additional Selected Readout Score Examples}
@@ -105,7 +112,8 @@ examples appear in Figure~\ref{fig:app-benchmark-task-group-examples}.
 \begin{table}[!tbp]
 \caption{\textbf{Benchmark-derived readout-contrast reconstruction.}
 Rows evaluate answer-vs-distractor, abstention-vs-entity, label, or
-safe-vs-unsafe readout contrasts. Last column: sign agreement with \(\rho<0.5\).
+safe-vs-unsafe readout contrasts. \(\rho\) columns use the unfloored
+\(\tilde\rho\); last column: sign agreement with \(\tilde\rho<0.5\).
 All aggregate rows use 300 contrasts; family rows break down Qwen3.5-2B.}
 \label{tab:benchmark-derived-readout-contrasts}
 \centering
@@ -310,6 +318,21 @@ the earlier three-way coherent/ambiguous/token-form classification, which
 the binary scheme above refines by folding ambiguous labels into the
 coherent count and adding the on-target test.
 
+\paragraph{Blinded rater runs.}
+The author audit is complemented by the blinded audit quoted in
+\S\ref{subsec:label-audit}: three independent rater runs of a frontier
+language model, each in a fresh context with a frozen prompt, rating only
+the top-20 unembedding rows of each claim-bearing feature (no access to
+panel claims, signed terms, or the author classification). The three runs
+agree unanimously on 93.4\% of items (Fleiss' \(\kappa=0.87\)); their
+majority-rule consensus over the 99 display occurrences is 76 coherent, 4
+mixed or ambiguous, and 19 token-form, agreeing with the author audit on
+81.8\% of items, with disagreements skewing toward rating labels
+\emph{more} coherent than the author did. We report this as a
+same-model reproducibility audit under a fixed protocol---three runs of
+one model are not three independent annotators---and retain the frozen
+prompt, per-run outputs, and aggregation rule in the released artifacts.
+
 \begin{table*}[!tbp]
 \caption{\textbf{Qualitative feature-label audit for claim-bearing Qwen displays.}
 Rows count displayed feature labels, not all dictionary features. Coherent
@@ -329,7 +352,7 @@ signed contribution points to the claimed side.}
 Feature set & Labels & Coherent & Token-form & On-target & Scope \\
 \midrule
 Main \texttt{bug} panels & 11 & 8 & 3 & 8 & Figure~\ref{fig:selected-readout-prism-examples}; detailed rows in Table~\ref{tab:app-main-case-study-feature-audit}. \\
-\texttt{bark}/\texttt{bass} margins & 12 & 9 & 3 & 7 & Figures~\ref{fig:selected-readout-prism-examples} and~\ref{fig:app-selected-readout-prism-extra-examples}. \\
+\texttt{bark}/\texttt{bass} margins & 12 & 9 & 3 & 7 & Figure~\ref{fig:selected-readout-prism-examples}. \\
 Fixed-token context panels & 12 & 12 & 0 & 9 & Figure~\ref{fig:same-token-polysemy}. \\
 Technical context stress & 32 & 31 & 1 & 24 & Figure~\ref{fig:app-qwen2b-technical-domain-delta}. \\
 \texttt{verify}/\texttt{assume} DLA & 8 & 8 & 0 & 7 & Feature heatmap Figure~\ref{fig:qwen-prism-dla-feature-heatmap}; also Figures~\ref{fig:qwen-prism-dla-verify-assume-main} and~\ref{fig:qwen-prism-dla-verify-assume-app}. \\

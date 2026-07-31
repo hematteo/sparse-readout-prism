@@ -3,17 +3,19 @@
 This repo is a **LaTeX research manuscript** targeted at a top-tier venue. It is *not* a software codebase. Treat `.tex` files as formal scientific prose.
 
 Companion docs:
+- `RESUBMISSION_PLAN.md` — **the active plan** for the post-metareview revision (ARR 2026-May → next cycle). Workstreams, cut list, landmines. Start here for any revision task.
+- `REBUTTAL_RESULTS.md` — source of truth for every rebuttal-campaign number, including the **do-not-quote list** (§3, §7). Never import a rebuttal number into the paper from anywhere else — superseded drafts with invalid numbers exist under `../rebuttal/drafts/`.
 - `CORE_CLAIM.md` — what this paper argues (claim core, two-contribution split, target taxonomy, diagnostic suite). Treat as source-of-truth for *scope*, not for headline numbers.
 - `glossary_and_terminology.md` — canonical names for methods, models, datasets, metrics. Do not rename.
 - `AGENTS.md` — generic prose-style and editing-policy rubric (not a project-specific structural doc). Useful for "how to phrase claims"; not useful as repo onboarding.
-- `notes/archive/reviewer_clarity_pass_2026-05-25.md` — archived working log from a past clarity pass; almost entirely superseded by subsequent commits. Do not consult unless explicitly asked.
+
+Review-cycle record (reviews, metareview, posted responses, old plans): `../rebuttal/` — see its README.
 
 # Context discipline
 
 These rules exist to keep the context window clean for prose work. Future agents working in this repo should follow them.
 
 - **Consult companion docs on demand, not preemptively.** `glossary_and_terminology.md` is 76 KB / 463 lines and must NOT be `Read` whole — use `Grep` to look up specific terms. `CORE_CLAIM.md` and `AGENTS.md` are smaller; read them only when the task actually requires them (e.g. claim/scope decisions, structural questions).
-- **`reviewer_clarity_pass.md` is a working log, not a source of truth.** Do not treat its proposed edits as canonical without verifying against the current paper. Prefer to ignore unless the user points at it.
 - **Do NOT read build artifacts** under any circumstances — they are large and useless for prose work:
   - `main.aux`, `main.bbl`, `main.fls`, `main.fdb_latexmk`, `main.out` — generated, never edit, never read
   - `main.pdf` — open in a viewer, never `Read` (binary)

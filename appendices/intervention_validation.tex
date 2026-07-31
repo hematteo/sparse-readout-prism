@@ -1,0 +1,48 @@
+\section{Predicted Versus Realized Local Readout-Side Changes}
+\label{app:causal-validation}
+
+This appendix documents the intervention-validation protocol behind
+\Cref{tab:causal-validation-summary}.
+
+\paragraph{Claim under test.}
+For a selected contrast direction \(q\) and hidden state \(h\), SRP
+asserts that feature \(i\) contributes
+\(c_i=\beta_i(q)\,p_i(h)\) to the realized score. If this attribution is
+correct, removing the \(d_i\)-component of the hidden state should
+change the exact score by \(-c_i\). We therefore ablate
+\(h' = h - (h^\top d_i)\,d_i\) for unit-norm decoder direction \(d_i\)
+and measure the realized change \(s_\alpha(h')-s_\alpha(h)\) with the
+\emph{dense} LM head---the prediction uses the factorization, the
+measurement does not. The claim is falsifiable in three independent
+ways: sparse-code misattribution (a contribution assigned to the wrong
+feature), decoder non-orthogonality (overlapping features absorbing the
+ablated mass), and the row residual (score mass outside the fitted
+basis) each break the predicted--realized agreement. Random unit
+directions supply the control.
+
+\paragraph{Protocol.}
+Per model: approximately 260 contrasts from the main bank; for each, the
+top-10 features by absolute contribution plus 10 random-direction
+controls, giving 1{,}210--2{,}050 prediction--realization pairs per
+model. We report \(r^2\) and the regression slope over pairs passing the
+main reading rule (\S\ref{sec:method-reading-local-accounts}), with
+bootstrap 95\% CIs; ungated results differ by less than 0.02 in
+\(r^2\) throughout. A harness self-test on a residual-free synthetic
+factorization recovers \(r^2=1.000\) (slope 1.04) with zero-scoring
+controls, confirming that the pipeline itself does not manufacture
+agreement.
+
+\paragraph{Results and reading.}
+All six gated models give \(r^2=0.83\)--\(0.93\) against random-control
+\(r^2\le 0.06\) (\Cref{tab:causal-validation-summary}). Slopes are
+close to 1 on the 7--8B readouts (0.96--1.13) and rise to 1.34--1.69 on
+the Qwen3.5-0.8B/2B/9B readouts: predicted magnitudes there overstate
+realized changes while preserving sign and rank. A candidate
+explanation is feature interference---overlapping decoder directions
+sharing ablated mass---but we have not isolated it and report slopes as
+measured. The scope of the validated claim is deliberately local:
+ablations act on the readout side of a realized forward pass (linear in
+\(h\), no re-forward), so the result licenses ``feature contributions
+predict local readout-side changes,'' not circuit-level necessity,
+sufficiency, or generation-level effects
+\citep{conmy2023acdc,geiger2023causalabstraction}.
