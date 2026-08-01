@@ -37,14 +37,6 @@ summaries for the feature ids.
 \subsection{Additional Logit-Difference Case Studies}
 \label{app:additional-margin-case-studies}
 
-Figure~\ref{fig:selected-readout-prism-examples} collects the four curated
-pairwise logit differences read in \Cref{subsec:same-token-analysis}: the two \texttt{bug}
-contrasts, and the \texttt{bark} and \texttt{bass} differences. In the tree
-context, \texttt{bark} draws on bark/wood SAE features against dog/cat
-features; in the music context, \texttt{bass} draws on music/percussion-related
-features against trout/salmon features (relative reconstruction errors
-\(0.126\) and \(0.097\)).
-
 \begin{figure*}[!tbp]
     \centering
     \includegraphics[width=0.92\textwidth]{figures/proto_token_lens/qwen2b_selected_four_panel/wu_prism_qwen2b_selected_paper_examples_with_tokens.pdf}
@@ -64,6 +56,15 @@ features against trout/salmon features (relative reconstruction errors
     \texttt{bug}-panel feature rows.}
     \label{fig:selected-readout-prism-examples}
 \end{figure*}
+
+Figure~\ref{fig:selected-readout-prism-examples} collects the four curated
+pairwise logit differences read in \Cref{subsec:same-token-analysis}: the two \texttt{bug}
+contrasts, and the \texttt{bark} and \texttt{bass} differences. In the tree
+context, \texttt{bark} draws on bark/wood SAE features against dog/cat
+features; in the music context, \texttt{bass} draws on music/percussion-related
+features against trout/salmon features (relative reconstruction errors
+\(0.126\) and \(0.097\)).
+
 
 \subsection{Additional Selected Readout Score Examples}
 \label{app:selected-readout-score-family-display-example}
@@ -149,9 +150,24 @@ Q-2B & SecurityEval & 50 & 0.393 & 0.880 & 0.600 \\
 \subsection{Fixed-Token Context Comparisons}
 \label{app:same-token-context-splits}
 
-The main-text fixed-token examples subtract two prompt contexts for the same
-selected token. Figure~\ref{fig:app-qwen2b-ring-context-delta} gives the
-additional \texttt{ring} example omitted from the main figure.
+The fixed-token analyses of \S\ref{subsec:context-reweighting} subtract two
+prompt contexts for the same selected token.
+Figure~\ref{fig:same-token-polysemy} shows the \texttt{bug} and
+\texttt{bridge} cases; Figure~\ref{fig:app-qwen2b-ring-context-delta} gives
+the additional \texttt{ring} example.
+
+\begin{figure}[!tbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/proto_token_lens/qwen2b_32x_domain_features_main3/qwen2b_32x_polysemy_delta_row_onecol.pdf}
+    \caption{\textbf{Same selected token, different prompt contexts.}
+    Qwen3.5-2B (\(D=65536\), \(k=256\)). Each panel fixes the output token
+    and plots the first-minus-second change in feature contribution to
+    \(h^\top(w_t-\mu)\); teal: more in first context, orange: more in second.
+    \textbf{A.} \texttt{bug}: insect\,\(-\)\,software.
+    \textbf{B.} \texttt{bridge}: structure\,\(-\)\,network.
+    \texttt{ring} companion: Figure~\ref{fig:app-qwen2b-ring-context-delta}.}
+    \label{fig:same-token-polysemy}
+\end{figure}
 Figure~\ref{fig:app-qwen2b-domain-main-prompt} gives the companion
 prompt-support view for the fixed-token cases, retaining shared positive support
 that the signed difference plot subtracts away.

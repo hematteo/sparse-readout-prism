@@ -152,6 +152,29 @@ only where SRP uses a specialized readout version.
     A cluster of variants derived from the same prompt/score template. Base
     cases are the bootstrap units for confidence intervals.
 
+    \item[Contrast bank]
+    A fixed, model-agnostic collection of prompts and selected scores
+    reserved for post-selection evaluation
+    (\Cref{sec:experimental-setup}). Factorizer training and selection
+    never see the banks.
+
+    \item[Interpretation gate (model-level)]
+    The criterion admitting a whole readout into the baseline,
+    reproducibility, and intervention comparisons: held-out replacement
+    top-1 agreement \(\ge 0.75\). Six of the eight models pass; the two
+    Gemma-4 variants do not. Distinct from the per-score reading-rule
+    gate \(\rho<0.5\) (\S\ref{sec:method-reading-local-accounts}).
+
+    \item[Sign-preserved low-error coverage]
+    The fraction of contrasts whose reconstructed score keeps the exact
+    score's sign with unfloored relative error \(\tilde\rho<0.5\). The
+    headline score-reconstruction metric of the baseline comparisons.
+
+    \item[Reproducible grouping core]
+    The feature-group structure that recurs across independently trained
+    same-recipe dictionaries; the target of the held-out group-recovery
+    comparison (Appendix~\ref{app:basis-stability}).
+
     \item[rowEV]
     Row-centered explained variance for reconstructed unembedding
     rows. It is a capacity metric paired with replacement and score-reconstruction
@@ -214,4 +237,21 @@ only where SRP uses a specialized readout version.
     A case where tokenization makes the intended lexical contrast brittle or
     ambiguous. Such cases are handled through token audits or converted
     to explicit group contrasts.
+
+    \item[Jacobian lens]
+    A fitted vocabulary lens \citep{gurnee2026workspace} that transports
+    an intermediate hidden state through an averaged Jacobian before
+    decoding through the unembedding. Used as the tested lens
+    construction in the cross-lens study (\S\ref{subsec:cross-lens}).
+
+    \item[Corpus conditionality]
+    The cross-lens finding that a fitted lens's reported surface language
+    follows its fitting corpus even when both lenses' readings are
+    supported by the same dominant readout feature
+    (\S\ref{subsec:cross-lens}).
+
+    \item[Unrelated-token / shuffled-pairing controls]
+    Cross-lens negative controls: dominant-feature matches against an
+    unrelated token's decomposition within one lens (0/159), and against
+    re-paired lens readings across shuffled prompts (0/240).
 \end{description}

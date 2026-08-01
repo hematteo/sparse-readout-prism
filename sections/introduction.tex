@@ -1,88 +1,117 @@
 \section{Introduction}
 
-Transformer language models map a final hidden state \(h\in\R^d\) to next-token logits through an unembedding matrix \(\WU\in\R^{|\mathcal{V}|\times d}\)---the \emph{LM head}, or \emph{readout}. Row \(w_t\) is the learned direction whose dot product with \(h\) scores token \(t\). Lens-style methods~\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes} reuse this map on intermediate hidden states, exposing vocabulary logits, token rankings, or distributions. Once a token or contrast is selected, the inspected object is a dense dot product \(h^\top q\), where \(q\) is an LM-head row or row combination. Throughout, a \emph{readout score} is any such fixed combination \(h^\top q\), and a \emph{contrast} is the zero-sum case comparing alternatives, such as the logit difference \(h^\top(w_A-w_B)\).
-
-A token, however, is a surface unit of the report, not of the readout,
-and the mismatch runs in both directions. One token can be supported by
-different readout structure in different contexts: every sense of
-\texttt{bug} shares one unembedding row, so the row's score conflates
-readings that the readout geometry keeps apart. Conversely, different
-surface tokens can be supported by the same structure: near-synonyms and
-translation-equivalent tokens score through rows that share dominant
-directions, so two vocabulary lenses fitted on different corpora can
-report different tokens on the same hidden state while reading the same
-underlying support. Token identity is too coarse a unit for interpreting
-vocabulary readouts.
-
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/proto_token_lens/qwen2b_lens_prism_comparison_bug_insect/qwen2b_lens_prism_comparison_bug_insect.pdf}
-    \caption{\textbf{From lens output to a local score decomposition.}
-    Qwen3.5-2B, software-context prompt (``The programmer reproduced the
-    crash and filed a''), comparing the continuation \texttt{bug} against
-    \texttt{insect}. \textbf{Top:} ordinary logit-lens margin, \texttt{bug}
-    over \texttt{insect}, \(+20.37\). \textbf{Bottom:} Sparse Readout Prism
-    decomposition of that margin in logit units; the leading terms are
-    software-defect features (defect, crash, debug, bug, issue, fix), all
-    supporting \texttt{bug}, with no insect-sense feature among the leading
-    displayed terms. Sparse feature sum \(+20.43\), residual \(-0.06\).
-    Small and token-form terms are suppressed for readability; the sum and
-    residual are computed from the full decomposition.}
+    \caption{\textbf{A logit-lens margin and its decomposition into
+    readout features.} \textbf{(A)} The logit lens scores the
+    continuations \texttt{bug} and \texttt{insect} for Qwen3.5-2B on the
+    prompt ``The programmer reproduced the crash and
+    filed a'', giving a margin of \(+20.37\) in favor of \texttt{bug}.
+    \textbf{(B)} SRP decomposes that same margin into signed
+    readout-feature contributions, in logit units. The leading features
+    all support \texttt{bug} and all concern software defects, with no
+    insect-sense feature among them. Each bar is labeled with its
+    feature id and that feature's three top-scoring LM-head rows, with
+    lower-ranked rows in gray: the defect and bug
+    features carry Chinese equivalents among their top rows, and the
+    gray rows reach Russian, French, Korean, and Vietnamese;
+    \Cref{sec:beyond-token} quantifies this cross-script structure.
+    Small and token-form terms are hidden for readability; the sum and
+    residual reported in the panel use the full decomposition.}
     \label{fig:main-lens-prism-comparison}
 \end{figure}
 
+Transformer language models score each vocabulary token by a dot product
+between a final hidden state \(h\in\R^d\) and a row \(w_t\) of the
+unembedding matrix \(\WU\in\R^{|\mathcal{V}|\times d}\)---the \emph{LM
+head}, or \emph{readout}. Lens-style
+methods~\citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}
+reuse this map on intermediate hidden states and report what it yields:
+vocabulary logits, token rankings, or distributions. The token, however,
+is an ambiguous unit for that report: it is a surface unit of the
+report, not of the readout,
+and the mismatch runs both ways. Every sense of \texttt{bug}
+shares one unembedding row, so the row's score conflates readings the
+readout geometry keeps apart. Conversely, near-synonyms and
+translation-equivalent tokens score through rows that share dominant
+directions, so distinct tokens can stand in for one another as reports
+of the same structure. Token identity is too coarse for the first
+mismatch, too fine for the second. Lens methods supply much of the
+evidence behind interpretability claims about intermediate computation:
+which distinctions a hidden state carries, where in the stack a behavior
+appears, how two models differ. Such claims are what auditing,
+debugging, and targeted intervention are built on, and each is stated in
+the unit the lens reports. A reported token that changes while the
+structure it reads stays put is therefore not, by itself, evidence about
+the computation.
+
 Consider one hidden state from a software-context prompt: does the readout
-favor the continuation \texttt{bug} over \texttt{insect}? The ordinary
-logit lens reports the signed margin
+favor the continuation \texttt{bug} over \texttt{insect}? The
+logit lens reports the margin
 (Figure~\ref{fig:main-lens-prism-comparison}, top) and stops there. Sparse
 Readout Prism (SRP) asks how the margin is composed on the readout side:
 which readout directions support it, which oppose it, and how much remains
 unexplained (Figure~\ref{fig:main-lens-prism-comparison}, bottom). The
 answer moves with the context: in an insect-context prompt the same
 token's support reassembles around insect-sense readout directions
-(\Cref{fig:selected-readout-prism-examples}), a reorganization invisible
-to the scalar margin. The converse ambiguity is just as concrete: in
-\Cref{sec:beyond-token} two Jacobian lenses fitted on English and Chinese
-corpora report different surface languages on identical hidden states,
-while the decomposition shows the same readout feature carrying both
-readings.
+(\Cref{fig:selected-readout-prism-examples}). The converse ambiguity is
+just as concrete: two Jacobian lenses \citep{gurnee2026workspace} that
+differ only in their fitting corpora report different surface languages
+on identical hidden states, while the decomposition shows the same
+readout feature carrying both readings
+(\S\ref{subsec:cross-lens}, \Cref{sec:beyond-token}). In both
+directions, the shared feature account distinguishes a change in the
+reported token from a change in the structure behind it.
 
-SRP applies dictionary learning directly to LM-head rows: each row is written as sparse coefficients over a shared overcomplete basis, plus a residual. We call the shared directions \emph{readout features}---features of LM-head rows, in contrast to SAE features trained on hidden-state activations. Once a readout score is fixed, the row-side coefficients combine with hidden-state projections \(p_i(h)=h^\top d_i\) to give signed per-feature contributions in original logit units: the score's coefficient \(\beta_i(\alpha)\) records what the selected query asks about, the projection \(p_i(h)\) what the current state supplies, and the residual what the fitted basis leaves unexplained for that exact query and state. TopK dictionary fitting is a standard primitive~\citep{makhzani2013ksparse,gao2024scaling}; the contribution is the factorized readout object, the selected-score interface it induces, and the analyses that interface enables. Unlike activation SAEs, which learn corpus- and layer-specific bases for \(h\)~\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}, the SRP basis is learned from the weights alone---it exists before any prompt---and unlike direct LM-head geometry (row neighborhoods, clusters, or principal subspaces), it is judged by whether it reproduces selected scores with an explicit, per-query error.
+SRP applies dictionary learning directly to LM-head rows: each row is
+written as sparse coefficients over a shared overcomplete basis, plus a
+residual. We call the shared directions \emph{readout
+features}---features of LM-head rows rather than of hidden-state
+activations. Selecting a token or contrast fixes a dense dot product
+\(h^\top q\), where \(q\) is an LM-head row or row combination; we call
+any such fixed combination a \emph{readout score}, and a \emph{contrast}
+is the zero-sum case comparing alternatives, such as the logit
+difference \(h^\top(w_A-w_B)\). Once a readout score is fixed, the
+row-side coefficients combine with hidden-state projections
+\(p_i(h)=h^\top d_i\) to give signed per-feature contributions in
+original logit units, plus an explicit residual---readout features,
+rather than tokens, are the unit in which SRP reads the score. TopK
+dictionary fitting is a standard
+primitive~\citep{makhzani2013ksparse,gao2024scaling}; the contribution
+is the factorized readout and the selected-score interface it induces.
 
-This paper makes three contributions:
+Nearby accounts differ in what they decompose. Activation SAEs decompose
+the hidden state itself, learning corpus- and layer-specific bases for
+\(h\)~\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling};
+the SRP basis instead comes from the weights alone and exists before any
+prompt. Residual-stream attribution decomposes how components wrote the
+hidden state, SRP which directions a selected score reads from it---the
+two are complementary. Direct LM-head geometry works on the same rows
+SRP factorizes, but is not held to reproducing any particular score;
+SRP is judged by whether it does, with an explicit error for each.
+
+This paper makes three contributions, each supplying one property the
+alternative unit needs:
 \begin{itemize}
     \item \emph{A compositional readout-feature interface.} A weight-only
     sparse factorization of the LM head that turns any selected token
     logit, logit difference, or fixed vocabulary-row combination into
-    signed readout-feature contributions plus an explicit residual in
-    original logit units, separating query-side coefficients from
-    state-side projections without prompt-, task-, or layer-specific
+    readout-feature contributions plus an explicit residual in
+    logit units, without prompt-, task-, or layer-specific
     training (\Cref{sec:method}).
-    \item \emph{Feature-level analysis beyond token identity.} SRP
-    separates the context-dependent feature accounts behind one surface
-    token and aligns the shared feature structure behind different surface
-    tokens or differently fitted vocabulary lenses, distinguishing a
-    change in token realization from a change in the readout structure
-    supporting it (\Cref{sec:beyond-token}).
-    \item \emph{Structural characterization and a cross-lens finding.}
-    Across six gated models, SRP reconstructs selected scores more
-    reliably than k-means, hard-clustering, kNN, ridge, and PCA
-    alternatives; held-out dictionaries recover feature groupings that
-    direct row geometry misses; explanations reproduce across independent
-    training runs; and contributions predict realized local readout-side
-    changes (\Cref{sec:results}). Using this validated space, we find
-    that English- and Chinese-fitted Jacobian lenses can report different
-    surface languages on identical states while the same SRP feature
-    stays dominant in 77 of 80 controlled prompts
-    (\Cref{sec:beyond-token}).
+    \item \emph{Distinct, reproducible, causally predictive structure.}
+    On the six of eight models whose factorized head passes a
+    replacement check on held-out states, SRP reconstructs selected
+    scores more reliably than methods built directly on LM-head row
+    geometry, and recovers token groupings those methods miss. Its
+    explanations reproduce across independent training runs, and its
+    feature contributions predict the measured effect of deleting
+    individual features from the readout (\Cref{sec:results}).
+    \item \emph{A cross-lens finding: corpus conditionality.}
+    English- and Chinese-fitted Jacobian lenses report different
+    surface languages on identical hidden states while the same SRP
+    feature stays dominant on 77 of 80 prompts: the reported language
+    follows the lens's fitting corpus, not a change in the structure
+    being read (\Cref{sec:beyond-token}).
 \end{itemize}
-
-Concretely: SRP's sign-preserved low-error coverage is 0.72--0.81 on the
-six gated models, leading the strongest direct-geometry alternative by
-8.9--17.3 points; held-out dictionaries recover 72--75\% of the
-reproducible grouping core, against 43--49\% for row-kNN and 21--25\% for
-row clustering; predicted feature contributions match realized local
-ablation effects at \(r^2=0.83\)--\(0.93\), versus at most 0.06 for
-random directions; and the cross-lens dominant-feature agreement of 77/80
-comes with unrelated-token and shuffled-prompt controls at 0/159 and
-0/240.

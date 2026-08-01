@@ -1,61 +1,44 @@
 \section{Related Work}
 
 \paragraph{Lens-style readout interfaces.}
-The logit lens maps hidden states through the model's unembedding
-\citep{nostalgebraist2020}; the tuned lens learns layerwise translators to
-calibrate those predictions \citep{belrose2023tuned}. Future Lens asks whether
-a single hidden state predicts later tokens \citep{pal2023future},
-Patchscopes elicits continuations or descriptions by patching representations
-into prompted contexts \citep{ghandeharioun2024patchscopes}, and the
-contemporaneous Jacobian lens transports states through an averaged Jacobian
-before decoding \citep{gurnee2026workspace}. These methods vary how the
-hidden state is read out, but each reports tokens, and the fitted variants
-inherit a fitting corpus; SRP keeps the readout interface, decomposes the
-selected LM-head direction into sparse readout features, and thereby
-compares what differently fitted lenses read on the same state
-(\Cref{subsec:cross-lens}).
+The logit lens decodes hidden states through the model's unembedding
+\citep{nostalgebraist2020}; tuned, Future-Lens, Patchscopes, and
+Jacobian-lens variants learn or transport the map before decoding
+\citep{belrose2023tuned,pal2023future,ghandeharioun2024patchscopes,gurnee2026workspace}.
+All report tokens, and the fitted variants inherit a fitting corpus. SRP
+keeps the readout interface but decomposes the selected LM-head
+direction into sparse readout features, so differently fitted lenses can
+be compared on the same state (\Cref{subsec:cross-lens}).
 
 \paragraph{Output geometry and sparse row dictionaries.}
-Output-embedding work studies how weight tying
+Weight tying
 \citep{press2017outputembedding,inan2017tying,lopardo2026weighttying},
-softmax rank and next-token target geometry
+softmax rank and target geometry
 \citep{yang2018softmaxbottleneck,zhao2024implicit}, and tokenizer
-segmentation \citep{bostrom2020bpe} shape the rows used for vocabulary
-scoring. Sparse coding of type-level embedding matrices is an established
-NLP tool: non-negative sparse embeddings \citep{murphy2012nnse}, sparse
-overcomplete word vectors \citep{faruqui2015sparse}, SPINE
-\citep{subramanian2018spine}, and sparse sense-atom decompositions of
-polysemous vectors \citep{arora2018polysemy} all recover interpretable
-sparse codes from static word-embedding rows. SRP carries this row-side
-approach to the LM head of a trained transformer and ties it to the
-lens-score interface, where the dictionary is judged by replacement and
-selected-score reconstruction. A
-parallel sparse-dictionary line targets the hidden-state factor \(h\) of a
-lens score \(h^\top q\): activation-SAEs learn overcomplete bases for \(h\)
-\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,templeton2024scaling},
-with standardized diagnostics
-\citep{karvonen2025saebench,makelov2024principled} and known caveats about
-unit canonicity \citep{leask2025canonical}. SRP applies the same
-machinery to the complementary factor \(q\), fitting it directly to LM-head
-rows. The rationale transfers: a logit is a dot product of two superposed
-vectors, so the structure that warrants decomposing \(h\) warrants
-examining \(q\), and the readout rows in fact carry the same shared
-structure (\S\ref{sec:results}). Parameter-space decompositions share the
-weight-side target \citep{braun2025parameter,gao2025weightsparse}; SRP
-keeps the trained model fixed and factorizes only its readout rows, so
-the dictionary remains tied to the lens-score interface.
+segmentation \citep{bostrom2020bpe} shape the vocabulary rows, and
+sparse coding of static word embeddings recovers
+interpretable codes from type-level rows
+\citep{murphy2012nnse,faruqui2015sparse,subramanian2018spine,arora2018polysemy}.
+SRP carries this row-side approach to the LM head of a trained
+transformer, judging the dictionary by replacement and selected-score
+reconstruction. Activation SAEs learn overcomplete bases for the
+hidden-state factor \(h\) of a lens score \(h^\top q\)
+\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,templeton2024scaling};
+SRP applies the same machinery to the complementary factor \(q\), whose
+rows carry the same structure (\S\ref{sec:results}).
+Parameter-space decompositions likewise factorize weights
+\citep{braun2025parameter,gao2025weightsparse}; SRP keeps the model
+fixed and ties the factorization to the lens-score interface.
 
 \paragraph{Additive attribution and mechanisms.}
-Direct logit attribution splits a token logit or logit-difference direction
-into contributions from residual-stream components
-\citep{elhage2021framework,wang2022ioi}, and logit-prism methods extend this
-across transformer components \citep{nguyen2024logitprisms}. Composing the
-row-side basis with DLA yields feature-resolved attributions on a realized
-forward pass, refining each component's scalar contribution into signed
-per-feature terms that lens-style methods leave as a single dense score.
-The combined view remains additive; interventions \citep{conmy2023acdc}, causal
+Direct logit attribution splits a token logit or logit-difference
+direction into contributions from residual-stream components
+\citep{elhage2021framework,wang2022ioi}, extended across components by
+logit prisms \citep{nguyen2024logitprisms}; composing the
+row-side basis with DLA refines each component's scalar into signed
+per-feature terms. Interventions \citep{conmy2023acdc}, causal
 abstraction \citep{geiger2023causalabstraction}, and transcoder or
 attribution-graph approaches
-\citep{dunefsky2024transcoders,ameisen2025circuittracing} address the
-complementary circuit- and mechanism-level questions. Broader positioning
-appears in Appendix~\ref{app:extended-related-work}.
+\citep{dunefsky2024transcoders,ameisen2025circuittracing} address
+complementary mechanism-level questions. Broader
+positioning: Appendix~\ref{app:extended-related-work}.

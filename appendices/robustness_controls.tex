@@ -64,6 +64,22 @@ metrics. \\
 \subsection{Key Quantitative Results}
 \label{app:robustness-key-quantitative}
 
+\paragraph{Metric definitions for \Cref{tab:readout-score-fidelity-summary}.}
+\label{app:fidelity-table-notes}
+Dictionary width is the cfg multiplier times the hidden dimension (width
+selection:
+Appendices~\ref{app:readout-factorizer-sweeps}--\ref{app:readout-factorizer-qwen-sweeps}).
+rowEV (row-centered explained variance) is the fraction of variance in
+row-centered unembedding rows captured by the sparse reconstruction;
+top1 is the fraction of held-out hidden states where SRP and the dense
+LM head agree on the argmax token; KL is the median KL divergence
+between dense and SRP-reconstructed next-token distributions; Sign is
+the fraction of contrasts where the SRP-reconstructed margin shares
+sign with the exact margin. Replacement uses held-out hidden states;
+score metrics use the main held-out logit-difference set at each
+model's \(k=256\) operating point. Med.\ \(\rho\) and \(\rho<0.5\) use
+the floored \(\rho\) of \S\ref{sec:method-reading-local-accounts}.
+
 Selected-score fidelity is the central quantitative check: across the
 eight \(k=256\) readout factorizers (\(32\times\) width, \(16\times\) for
 Qwen3.5-9B), the sparse
@@ -375,7 +391,11 @@ Rank & Token & cos & Token & cos \\
 
 \subsection{Operating-Regime Cases}
 \label{app:robustness-operating-regime}
+\label{subsec:interpretation-boundary}
 
+A faithful decomposition is a local reading of the readout side, tied to
+this dictionary and its active-feature budget: a different dictionary or
+budget could split the same contribution across other features.
 Operating-regime cases define when a compact local score decomposition is
 evidence-bearing. Qualitative interpretation uses cases where the selected readout score is
 larger than the reconstruction error, the reconstructed contrast preserves sign,
@@ -395,7 +415,10 @@ individual terms; and when a single-token contrast turns on token-boundary,
 special-token, row-norm, frequency, or tokenization-collision effects, the
 reading falls back to the safer token-family contrast. Naming the constraint
 and the reading it leaves in place is what gives the promoted displays their
-weight.
+weight: where the residual dominates or terms repeatedly change sign, the
+score is reported as uninterpretable rather than silently dropped. The
+Qwen3.5-2B readout used for the main-paper displays clears these checks by a
+wide margin.
 
 \subsection{Selected-Score Bank Provenance}
 \label{app:query-bank-provenance}

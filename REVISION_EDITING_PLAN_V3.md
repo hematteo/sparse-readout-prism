@@ -185,7 +185,7 @@ The Introduction should establish the complete story on page 1:
 3. Introduce the two-sided ambiguity:
    - one token can combine multiple readout structures;
    - different tokens or lenses can express shared readout structure.
-4. Show the motivating dual example in Figure 1.
+4. Show the motivating example in Figure 1.
 5. Introduce SRP and the query-side/state-side separation.
 6. Distinguish SRP from activation SAEs and direct LM-head geometry.
 7. Preview the structural evidence and cross-lens finding.
@@ -298,14 +298,11 @@ Limit the main paper to four high-value visual objects.
 
 ### Figure 1 — Beyond token identity
 
-Use a dual-panel motivating/result figure:
-
-- **Panel A: same token, different feature accounts.** `bug` in software and
-  insect contexts, or the aggregate WSD result if available.
-- **Panel B: different tokens, shared feature.** English- and Chinese-fitted
-  J-lens outputs on the same hidden state converging on one SRP feature.
-
-This figure should communicate the entire reason for the paper.
+Single figure: the `bug`-vs-`insect` lens-versus-prism comparison
+(logit-lens margin on top, SRP decomposition below). It motivates the
+same-token half directly; the cross-lens half is carried by the worked
+CJK example and controls in §5.2. (Dual-panel idea dropped 2026-08-01;
+`figures/cross_lens/fig1_cross_lens_butterfly.pdf` is unused.)
 
 ### Figure 2 — Method
 
@@ -587,7 +584,7 @@ remain current.
 ### Phase 1 — Rewrite the spine
 
 - Rewrite abstract, introduction, contribution list, and conclusion together.
-- Build the dual-panel Figure 1.
+- Figure 1: keep the bug/insect lens-versus-prism comparison.
 - Rewrite the Method around the query/state identity and explicit residual.
 
 ### Phase 2 — Build structural evidence
@@ -706,11 +703,102 @@ direct-geometry grid in robustness_controls, matched-KL subsection in
 lexical appendix, blinded-audit paragraph in audit appendix; appendix
 roadmap updated; builds clean (51 pp, zero LaTeX warnings).
 
-**Still open:** (a) dual-panel Figure 1 (panel B cross-lens visual) —
-current Figure 1 is the bug/insect lens-vs-prism figure; (b) main text
-runs ~1.2–1.5 pp over the 8-page budget — cut per §10 order;
+**Still open:** (a) DROPPED 2026-08-01 — dual-panel Figure 1 abandoned;
+Figure 1 stays the bug/insect lens-vs-prism figure and §5.2 carries the
+cross-lens result in prose; (b) RESOLVED 2026-08-01 by Option-A
+restructure (below) — Conclusion now ends p. 8, Limitations starts p. 9;
 (c) `sections/worked_example.tex` remains orphaned (not \input);
 (d) verify `gurnee2026workspace` author list and `paulo2025stability`
 title against the actual publications before submission;
 (e) B8 aggregate non-cherry-picked audit still unrun;
-(f) resubmission changelog (§12) not yet drafted.
+(f) resubmission changelog (§12) drafted
+(`RESUBMISSION_CHANGE_SUMMARY.md`), section numbers updated 2026-08-01;
+appendix letters ⟨X⟩ still pending the Phase-6 pass.
+
+---
+
+## Option-A restructure — EXECUTED 2026-08-01 (supervisor-approved)
+
+Supervisor approved massive restructuring for cleaner contributions.
+Decisions (user-confirmed): full re-center (Option A); negative WSD
+result NOT disclosed anywhere in the manuscript; compressed same-token
+worked cases open the cross-lens section.
+
+- **Contributions 4 → 3:** interface; distinct/reproducible/causally
+  predictive structure; cross-lens corpus-conditionality finding. The
+  beyond-token-identity capability moved from a contribution bullet into
+  the intro thesis prose ("In both directions, the shared feature
+  account distinguishes …").
+- **§5 → §4, retitled "The Reported Token Can Follow the Lens
+  Corpus".** Old §5.1 compressed to one scoped opening paragraph (all
+  ρ̃ numbers and appendix refs kept; labels
+  `subsec:same-token-analysis`/`subsec:context-reweighting` etc. kept
+  for appendix cross-refs); cross-lens study is the section body,
+  subsection heads removed.
+- **Evaluation Design (§3) deleted as a section**; its Models/Contrast-
+  banks paragraphs moved verbatim into §3 (results) opening;
+  `sections/experimental_setup.tex` removed from disk and `main.tex`;
+  label `sec:experimental-setup` now on the results section.
+- New numbering: 1 Intro, 2 Method, 3 Results, 4 Cross-lens, 5 Related
+  Work, 6 Conclusion. Build clean (54 pp, zero reference warnings);
+  main text within the 8-page budget.
+
+---
+
+## Presentation pass — 2026-08-01 (benchmark: Shen et al., arXiv 2506.14387)
+
+- **Abstract:** tightened; dropped the activation-SAE aside; "Crucially,
+  fit from the weights alone" promoted to its own sentence; headline
+  numbers **0.72–0.81** and **77 of 80** bolded; closes on monitoring
+  significance. Rebuilt and visually verified.
+- **Figure 2 schematic:** assessed as already on the design language
+  (blue = side A, orange = side B, hatched residual) — no change.
+- **Figure 1 restyle: DONE (no SSD needed).** Renderer:
+  `readout_prism_workspace/scripts/figures/render_bug_insect_paper_v2.py`
+  (true one-column size, panel tags A/B, direct value labels, gray
+  feature ids, Figure-2 color pair). Data derived from the committed
+  figure's vector geometry, calibrated on its axis ticks (bug logit
+  18.87, insect −1.49, margin +20.37 ✓; six contributions cross-checked
+  against the `benchmark_probe_qwen35_2b_smoke_paper` run, agreement
+  ≤0.005). Headline exact/sparse/resid quoted verbatim from the
+  committed title, so caption and the quoted ρ̃=0.003 are untouched.
+  Old figure backed up in the session scratchpad. `\includegraphics`
+  width set to `\columnwidth`; caption Top/Bottom → (A)/(B). If the
+  case is ever recomputed from the checkpoint, verify +20.37/+20.43/
+  −0.06 reproduce before replacing (the smoke-paper CSV run gives
+  +20.42/−0.05 — do not quote those).
+- **Figure 1 labels verified on CaMLSys 2026-08-01**
+  (`scripts/figures/verify_fig1_top_tokens.py` against
+  `exp_dicts/qwen35_2b_32x_k256_s0`, confirmed to be the paper dict —
+  all six features return the expected token families). True top-3
+  display tokens now shown: f21804 = defect/defects/缺陷 (flaw was
+  rank 5), f39674 = 漏洞/bug/Bug (漏洞 is rank 1, 0.61 vs 0.23);
+  other four unchanged. Caption notes the cross-script rows and points
+  to §4. CJK in matplotlib needs an explicit per-text
+  `fontfamily=[DejaVu Sans, Hiragino Sans GB, ...]` chain (rcParams
+  alone silently falls back to tofu-less DejaVu-only).
+- **Figure 1 label depth (user request 2026-08-01):** each bar now has
+  the feature id inside the bar (white) and a gray sub-line with a
+  SELECTION of verified lower-ranked rows (deep verification run,
+  top-24 display tokens per feature): f21804 дефек·flaw·défaut;
+  f43419 crashed·Panic·smash; f5680 debugger·调试·verbose;
+  f39674 vulnerability·loophole; f52267 이슈·isu·vấn;
+  f63433 fixes·固定·fixé. Caption says "a selection of lower-ranked
+  rows" (curated, disclosed) and names the scripts in words —
+  non-Chinese scripts stay out of the LaTeX (pdflatex lacks
+  T2A/Hangul/Vietnamese setup; the figure PDF carries them fine).
+  Crash's CJK tail is noise (地质灾害, 融资融券 — no 崩溃) and f63433's
+  固定 is the fasten sense — do not caption these as translation
+  equivalents. Title decision RESOLVED by user: "Sparse Readout Prism:
+  Readout Features as an Alternative Unit for Interpreting Vocabulary
+  Lenses".
+- **Appendix letters** in `RESUBMISSION_CHANGE_SUMMARY.md` finalized
+  against the compiled PDF (robustness→H, stability→I, interventions→J,
+  cross-lens→K, audit→L, edits→N, sweeps→E, repro→G).
+- **Citations:** `paulo2025stability` verified correct.
+  `gurnee2026workspace` bib says "Gurnee, Wes and others" but the
+  article has 16 authors, co-first Gurnee*/Sofroniew*/Lindsey* —
+  references.bib edit pending user approval.
+- **Open:** title decision (keep conservative vs "From Tokens to
+  Features…"); widow-line sweep last, after all text settles; B8
+  aggregate audit.

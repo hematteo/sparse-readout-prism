@@ -1,20 +1,22 @@
 \section*{Limitations}
 
 \paragraph{Scope of claims.}
-SRP's claim object is local: a selected readout score (a token logit, logit
-difference, group contrast, or other fixed linear combination of LM-head rows).
-Feature-resolved DLA and readout-side edits use this object to nominate
-directions and measure induced score shifts plus distributional side-effects.
+SRP's claims are local to a selected readout score (a token logit,
+logit difference, group contrast, or other fixed linear combination of
+LM-head rows).
+Feature-resolved DLA and readout-side edits use this score to nominate
+directions and measure the induced score shifts and distributional
+side effects.
 Causal necessity, sufficiency, and downstream generation effects are separate
-evaluation targets: the readout-side edit is constrained in construction
-rather than in downstream effect, and circuit-level necessity and
+evaluation targets: the readout-side edit is constrained by how it is
+built, not by its downstream effect, and circuit-level necessity and
 sufficiency require interventional evaluation
 \citep{conmy2023acdc,geiger2023causalabstraction,ameisen2025circuittracing}.
 
 \paragraph{Training cost.}
 Logit lens and standard direct logit attribution require no fitting; SRP
-requires training a sparse autoencoder over the rows of \(\WU\). The fit is
-one-time per model and amortizes across downstream readout analyses, and
+requires training a sparse autoencoder over the rows of \(\WU\). The fit runs
+once per model and amortizes across downstream readout analyses, and
 because the target is a fixed \(|V|\)-row matrix rather than a hidden-state
 distribution, the cost is roughly 6--12 GPU-hours per model on a single
 NVIDIA A40
@@ -38,18 +40,21 @@ read as an audited operating point rather than a unique factorization.
 
 \paragraph{Scope of the cross-lens study.}
 The corpus-conditionality result of \S\ref{subsec:cross-lens} is
-established for one model (Qwen3.5-9B), one language pair
-(English--Chinese), and one fitted-lens construction, with the feature
-comparison defined operationally
+established for one model (Qwen3.5-9B) across two language pairs
+(English--Chinese and same-script English--German) and two fitted-lens
+constructions (the Jacobian lens and a tuned-lens-style ridge
+translator), with cross-construction agreement measured on identical
+states; it remains a single-model result at a single fitting scale,
+with the feature comparison defined operationally
 (\S\ref{sec:method-comparing-accounts}). It licenses a negative
 conclusion---a surface-language reading is not by itself evidence of a
-matching intermediate computation---not a general claim that models never
+matching intermediate computation---not a claim that models never
 privilege a language, and the readout-side edit advantage of
-Appendix~\ref{app:lexical-control-stress-test} is likewise
-display-model-scoped, with cross-model losses printed.
+Appendix~\ref{app:lexical-control-stress-test} likewise holds only on
+the display model, with the other models' losses printed.
 
 \paragraph{Fidelity and labels.}
-SRP keeps the measured coordinate objects---feature ids, signed terms, and
+SRP keeps the measured quantities---feature ids, signed terms, and
 residual errors---separate from label summaries of high-scoring unembedding
 rows. Reconstruction error, sign agreement, replacement fidelity, and stability
 checks accompany contribution terms, so interpretation follows the measured
@@ -69,20 +74,20 @@ Appendix~\ref{app:extended-discussion-limitations}.
 
 This work studies pretrained language-model readouts, collects no new
 human-subject data, and evaluates no deployed systems. Experiments use public
-checkpoints and held-out text-derived hidden states, including C4 continuations,
+checkpoints and held-out hidden states, including C4 continuations,
 which may contain offensive, private, copyrighted, or sensitive text
 \citep{raffel2020exploring,dodge2021documenting}. We use C4 only to measure
 readout reconstruction and make no social-validity claims about individual
 tokens, labels, or generated outputs. We use public model checkpoints and
 C4-derived hidden states under the licenses or terms published with their
-release pages and model or data cards. We do not redistribute the original
+release pages and model cards. We do not redistribute the
 checkpoints or raw C4 text; the released SRP dictionaries%
 \ifpreprintmode\ (\href{https://huggingface.co/hematteo/sparse-readout-prism}{\texttt{hematteo/sparse-readout-prism}})\fi\
 carry artifact-specific license and usage notes.
 
-SRP makes lexical readout directions and row-level labels easier to inspect,
-and in the readout-edit stress test moves specified lexical scores---a
+SRP makes lexical readout directions and row labels easier to inspect,
+and its readout-edit stress test moves specified lexical scores---a
 dual-use property of auditing tools. We report the edit with
-distribution-shift and off-target probes, and keep claims tied to measured
-coordinate objects. Safety-filter, moderation, and deployment-control
-evaluation are system-level questions beyond this experiment.
+distribution-shift and off-target probes and keep claims tied to
+measured quantities. Safety-filter, moderation, and deployment-control
+evaluation are system-level questions beyond this work.

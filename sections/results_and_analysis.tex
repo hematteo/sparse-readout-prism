@@ -1,36 +1,75 @@
-\section{Sparse Readout Features Capture Nontrivial Structure}
+\section{The Factorized Readout Is Faithful, Reproducible, and Predictive}
 \label{sec:results}
 \label{subsec:calibration}
+\label{sec:experimental-setup}
 
-This section builds one cumulative argument: selected-score
-reconstruction is accurate in a declared operating regime; simpler
+This section builds one cumulative argument: selected scores are
+reconstructed accurately; simpler
 geometry recovers neither the same score fidelity nor the same
-groupings; the explanation-level structure reproduces across independent
-training runs; and feature contributions predict realized local
-intervention effects. Feature decompositions are read only when
-reconstructed and exact signed scores agree and satisfy \(\rho<0.5\)
-(\Cref{sec:method-reading-local-accounts}).
+groupings; a decomposition's claims reproduce across independent
+training runs; and feature contributions predict the measured effects
+of local interventions. Each stage tests one claim about the
+factorization---\emph{faithfulness}, \emph{distinctness},
+\emph{reproducibility}, and \emph{intervention relevance}---and the
+utility of the validated space is the subject of
+\Cref{sec:beyond-token}. Decompositions are read under the reading rule of
+\Cref{sec:method-reading-local-accounts}.
+
+\paragraph{Models and held-out sets.}
+The suite spans Qwen3.5~\citep{qwen35collection}, Gemma-4
+\citep{gemma4official,gemma4collection}, Ministral~\citep{liu2026ministral3},
+and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1};
+identifiers and selection criteria:
+Appendix~\ref{app:model-suite-selection}. Because SRP needs only the final weights, any open-weights model
+qualifies; we choose eight recent models spanning base, instruction-tuned,
+and reasoning-distilled variants at 0.8B--9B scale.
+We fit one readout SAE per model to the rows of its final LM head and
+evaluate it on 10{,}000 held-out C4 continuations
+\citep{raffel2020exploring,dodge2021documenting} plus a fixed
+prompt-and-score set. The model split is fixed once: all eight models enter
+the reconstruction analysis, and the six whose readouts pass the
+interpretation gate (held-out replacement top-1 agreement \(\ge 0.75\);
+both Gemma-4 variants fall below it) enter the baseline, reproducibility,
+and intervention comparisons.
+
+\paragraph{Contrast banks.}
+Selected scores come from fixed, model-agnostic banks
+(Appendix~\ref{app:query-bank-provenance}). A hand-written set of 301
+prompts spanning factual QA, instruction, paragraph, code, dialogue,
+retrieval-update, and safety/tool settings supplies model-native contrasts
+built from each model's own ranking: top-1 against the vocabulary mean, a
+row-norm-matched distractor, a sampled competitor, and the rank-5 and
+rank-2 tokens. A curated A/B bank of 320 template-expanded records,
+plus 40 case-candidate records of the same types,
+supplies the current-vs-stale, source-vs-prior, action/tool, and
+abstention families; per-tokenizer single-token filters
+(Appendix~\ref{app:query-bank-provenance})
+leave 82--96 cases per family. The banks are held out by construction:
+the readout SAEs are trained on LM-head rows and selected on
+row-reconstruction, replacement, and code-usage metrics, with the
+contrast set used only after selection.
+Aggregates cluster items by base case (one prompt--score template with
+its variants), which is the resampling unit for bootstrap intervals; baseline
+comparisons use the full \(\sim\)1{,}350-item set per model over
+\(\sim\)850 base cases. A separate benchmark-derived bank contributes 300
+fixed row combinations for each of two Qwen models
+(\Cref{subsec:selected-score-reconstruction}).
 
 \paragraph{Readout and Score Fidelity}\label{subsec:readout-replacement-fidelity}
 \begin{table}[t]
 \caption{\textbf{Readout replacement and selected-score reconstruction.}
 Q/G/Min/R1-Q/R1-L \(=\) Qwen3.5 / Gemma-4 / Ministral-3 /
-R1-Distill-Qwen / R1-Distill-Llama (suffix is parameter count).
-cfg: width multiplier / TopK budget. rowEV (row-centered explained variance):
-fraction of variance in row-centered unembedding rows captured by the sparse
-reconstruction. top1: fraction of held-out hidden states where SRP and the
-dense LM head agree on the argmax token. KL: median KL divergence between
-dense and SRP-reconstructed next-token distributions. Sign: fraction of
-contrasts where the SRP-reconstructed margin shares sign with the exact
-margin. Replacement uses held-out hidden states; score metrics use the main
-held-out logit-difference set at each model's \(k=256\) operating point.
-Med.\ \(\rho\) and \(\rho<0.5\) use the floored \(\rho\) of
-\S\ref{sec:method-reading-local-accounts}; cluster-bootstrap 95\% CIs are
-in \Cref{tab:app-fidelity-cis}. Models above the rule pass the
-interpretation gate (top1 \(\ge 0.75\)); the two Gemma variants below it
-do not. Higher is better for rowEV, top1, Sign, and
-\(\rho<0.5\); lower is better for KL and median \(\rho\). Full names:
-Appendix~\ref{app:model-suite-selection}.}
+R1-Distill-Qwen / R1-Distill-Llama (suffix is parameter count); cfg:
+dictionary width multiplier / TopK budget \(k\). Models above the rule
+meet the replacement criterion (top1 \(\ge 0.75\)); the two Gemma variants
+below it do not. Higher is better except for KL and median \(\rho\).
+rowEV is row-centered explained variance for the reconstructed rows;
+top1 and KL compare the reconstructed readout with the original on
+held-out hidden states.
+Metric definitions and evaluation sets:
+Appendix~\ref{app:fidelity-table-notes}; 95\% CIs:
+\Cref{tab:app-fidelity-cis}; full model
+names: Appendix~\ref{app:model-suite-selection}.}
 \label{tab:readout-score-fidelity-summary}
 \centering
 \scriptsize
@@ -63,46 +102,37 @@ G-E4B  & 32/256 & 0.827 & 0.736 & 1.22  & 0.940 & 0.155 & 0.807 \\
 
 \label{subsec:selected-score-reconstruction}%
 The factorization preserves both the readout and the selected scores
-(\Cref{tab:readout-score-fidelity-summary}). Replacement fidelity, not
-aggregate row capacity, licenses interpretation: each readout is certified
-by top-token agreement and KL on held-out hidden states before any local
-decomposition, since rows with large residual norms can dominate the
+(\Cref{tab:readout-score-fidelity-summary}). What licenses interpretation
+is replacement fidelity, not aggregate row reconstruction: we check each
+readout by top-token agreement and KL on held-out hidden states before any
+local decomposition, since rows with large residual norms can dominate the
 softmax even when reconstruction is accurate in aggregate
 (Appendix~\ref{app:readout-norm-tails}). At the score level, sign
 agreement is at least \(0.91\) across the suite and the low-error fraction
 (\(\rho<0.5\)) covers \(0.71\)--\(0.89\) of contrasts per model, with
 residual error and the few sign flips confined to near-tie margins
-(Appendix Figure~\ref{fig:readout-score-fidelity-result}); the case
-studies in later sections are drawn from the passing subset, and
-small-margin scores remain in the aggregate
-statistics.\label{subsec:score-family-fidelity} Fidelity is predictable
-from the score family---difficulty tracks how close the competitor sits
-to the selected token, from perfect sign agreement on vocabulary-mean
-contrasts down to \(0.824\) on near-tie top1-vs-top2 margins---because
-the contrast residual \(h^\top(r_A-r_B)\) contains no term that scales
-with the margin, so near ties are read under the absolute bound of
-\S\ref{sec:method-reading-local-accounts}
-(Appendix Table~\ref{tab:readout-score-families}). The same fidelity
-extends beyond hand-picked token pairs: 300 benchmark-derived contrasts
-from SQuAD2, HotpotQA, LegalBench (ContractNLI), and SecurityEval
-\citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}
-reach median \(\tilde\rho=0.129\) at sign agreement \(0.943\) on Qwen3.5-2B
+(Appendix Figure~\ref{fig:readout-score-fidelity-result}); case
+studies below are drawn from the passing subset, and
+small-margin scores remain in the
+aggregates.\label{subsec:score-family-fidelity} Fidelity varies
+predictably by score family---near-tie margins are hardest, since
+the contrast residual does not scale with the margin (Appendix
+Table~\ref{tab:readout-score-families})---and extends beyond
+hand-picked pairs to 300 benchmark-derived contrasts
 (Appendix~\ref{app:benchmark-derived-display-examples},
 Table~\ref{tab:benchmark-derived-readout-contrasts}).
 
 \paragraph{Simpler Geometry Does Not Recover the Scores}\label{subsec:baseline-comparisons}
 \begin{table}[t]
-\caption{\textbf{Direct-geometry alternatives across the six gated
-models.} Sign-preserved low-error coverage (sign agreement and unfloored
+\caption{\textbf{Direct-geometry alternatives across six models.} Sign-preserved low-error coverage (sign agreement and unfloored
 \(\tilde\rho<0.5\); \S\ref{sec:method-reading-local-accounts}) on the
 full logit-difference bank (\(\sim\)1{,}350 items per model), with
 cluster-bootstrap 95\% CIs. ``Best alternative'' is the strongest, per
-model, of six methods: nearest-row ridge, weighted row-kNN, k-means
+model, of six methods---nearest-row ridge, weighted row-kNN, k-means
 centroid dictionaries at \(D{=}65{,}536\) and \(D{=}16{,}384\) (both
-\(k{=}256\), sparsity-matched), hard cluster assignment, and PCA-256;
-full grids in Appendix~\ref{app:direct-geometry-grid}. The best
-alternative is nearest-row ridge everywhere except R1-L-8B (k-means
-centroid dictionary, \(D{=}65{,}536\)). Lead in percentage points.}
+\(k{=}256\), sparsity-matched), hard cluster assignment, and PCA-256
+(full grids: Appendix~\ref{app:direct-geometry-grid}). Lead in
+percentage points.}
 \label{tab:main-baseline-null-comparison}
 \centering
 \scriptsize
@@ -124,17 +154,21 @@ R1-L-8B & 0.751 [.728, .772] & 0.624 [.606, .642] & +12.7 \\
 
 If SRP's codes merely repackaged \(\WU\) geometry, methods built directly
 from that geometry should reconstruct selected scores equally well. They
-do not (\Cref{tab:main-baseline-null-comparison}): across the six gated
-models, SRP's sign-preserved low-error coverage is 0.72--0.81, leading
-the strongest of six alternatives by 8.9--17.3 points with
-non-overlapping intervals. The comparison is capacity-fair: the k-means
+do not (\Cref{tab:main-baseline-null-comparison}): across all six
+models, SRP reconstructs 0.72--0.81 of contrasts with the correct sign
+and error below half the score's magnitude (sign-preserved low-error
+coverage), leading the strongest of six alternatives by 8.9--17.3
+points with non-overlapping intervals. The comparison controls for capacity: the k-means
 centroid dictionary at \(D{=}65{,}536\), \(k{=}256\) matches SRP's width
-and sparsity exactly and still trails by 18 points on the display model,
+and sparsity exactly and still trails by 18 points on the display model
+(Qwen3.5-2B),
 and shuffled-code and random-pattern nulls collapse entirely
 (\Cref{tab:app-cross-model-nulls}). The gap holds at the grouping level
-as well: on the cores of feature-group structure that reproduce across
-training seeds, a held-out same-recipe SRP dictionary recovers 72--75\%
-of the core, against 43--49\% for row-kNN and 21--25\% for hard
+as well---a \emph{grouping} being the set of vocabulary rows that one
+feature ties together. Of the groupings that reproduce across training
+seeds (\S\ref{subsec:stability}), a second SRP dictionary trained with the
+same recipe (same width, sparsity, and preprocessing) recovers
+72--75\%, against 43--49\% for row-kNN and 21--25\% for hard
 clustering, with ratio CIs excluding parity
 (Appendix~\ref{app:basis-stability}). Learned sparse row--code structure,
 not generic row proximity, carries the reconstruction.
@@ -143,19 +177,25 @@ not generic row proximity, carries the reconstruction.
 Individual decoder directions are not canonical: across three
 independently trained dictionaries per width (equal held-out
 reconstruction verified), matched decoder cosines for used features
-average only \(\sim\)0.33 at the 32\(\times\) width, consistent with the
-reported seed-sensitivity of TopK dictionaries
-\citep{paulo2025stability}. The interpretive unit, however, reproduces.
-Over 63 curated contrasts, the side token-sets of the decomposition
-reproduce across every seed pair at \(\sim\)15\(\times\) the
-cross-contrast null (100\% of contrasts above the null's 90th percentile
-at both widths, cross-side leakage \(\le 0.005\)), and 87--91\% of used
-feature groups have an above-chance counterpart in an independently
-trained dictionary, the median group 83--90\% covered by a union of at
-most three features. Structure reproduces, indexing does not, and the
-residual instability is feature splitting rather than noise. These
-statements are within-recipe (fixed width, sparsity, and preprocessing);
-cross-recipe variation is larger and is disclosed in
+(those active on the evaluation set)
+average only \(\sim\)0.33 at the 32\(\times\) width, consistent with
+reported TopK seed-sensitivity \citep{paulo2025stability}. What a
+decomposition says, however, does reproduce.
+Over 63 curated contrasts, the side token-sets (the tokens each seed's
+decomposition places on each side) reproduce across every
+seed pair at \(\sim\)15\(\times\) the cross-contrast null: 100\% of
+contrasts sit above the null's 90th percentile at both widths, and
+cross-side leakage, the overlap with the opposing side's set, stays at
+or below 0.005. Further, 87--91\% of used feature groups (groups active
+in these decompositions) have an above-chance counterpart in an
+independently trained dictionary, with the median group 83--90\%
+covered by a union of at most three features. Structure reproduces, indexing does not, and the
+residual instability is feature splitting---one seed's feature reappearing
+as several in another---not noise: seed-sensitivity
+of individual directions does not preclude reproducible
+explanations. These
+statements are within-recipe (fixed width, sparsity, preprocessing);
+cross-recipe variation is larger and disclosed in
 Appendix~\ref{app:basis-stability}.
 
 \paragraph{Contributions Predict Local Intervention Effects}\label{subsec:causal-validation}
@@ -164,11 +204,10 @@ Appendix~\ref{app:basis-stability}.
 For each contrast, the predicted per-feature contribution
 \(c_i=\beta_i(q)\,p_i(h)\) is compared with the realized margin change
 when \(h\) is ablated along the unit decoder direction \(d_i\)
-(readout-side, linear in \(h\); no re-forward). Per model:
+(readout-side; no re-forward). Per model:
 \(\sim\)260 bank contrasts, top-10 features plus 10 random-direction
-controls each; \(r^2\) over reading-rule-gated pairs with bootstrap
-95\% CIs; slope from the same fit; Random: \(r^2\) for the
-random-direction controls. Protocol:
+controls each; \(r^2\) over pairs passing the reading rule, with bootstrap
+95\% CIs; slope from the same fit; Random: control \(r^2\). Protocol:
 Appendix~\ref{app:causal-validation}.}
 \label{tab:causal-validation-summary}
 \centering
@@ -189,64 +228,37 @@ R1-L-8B & 0.934 [.920, .947] & 1.126 & 0.034 & 1210 \\
 \end{tabular}
 \end{table}
 
-The decomposition is not merely descriptive bookkeeping: on all six gated
-models, predicted feature contributions match the realized margin change
-under readout-side ablation at \(r^2=0.83\)--\(0.93\), while random
+The decomposition is more than bookkeeping: on all six
+models, predicted feature contributions match the margin change measured
+when the feature's direction is deleted from the hidden state
+(readout-side ablation) at \(r^2=0.83\)--\(0.93\), while random
 directions explain at most 0.06
 (\Cref{tab:causal-validation-summary}). Sparse-code misattribution,
 decoder non-orthogonality, and the row residual would each break this
-agreement; none does. Magnitudes are calibrated (slope \(\approx\)1) on
-the 7--8B models and overstated by up to \(\sim\)1.7\(\times\) on the
-small Qwen readouts with sign and rank preserved---consistent with
-greater feature interference in narrower readouts; we report slopes as
-measured and leave the diagnosis open. Gating changes \(r^2\) by less
-than 0.02. The scope is deliberate: these are local, readout-side
-predictions on realized forward passes, not circuit-level necessity or
-generation-level effects.
+agreement; none does. Slopes are near 1 on the 7--8B readouts and
+overstate magnitudes on the three Qwen readouts, with sign and rank
+preserved throughout (Appendix~\ref{app:causal-validation}). These are
+local, readout-side predictions on realized forward passes, not
+circuit-level necessity or generation-level effects.
 
 \paragraph{Feature Labels Survive a Blinded Audit}\label{subsec:label-audit}
 Feature labels are readability summaries of top unembedding rows, audited
-separately from the measured feature ids and signed terms. Three
-independent blinded rater runs of a frontier language model (frozen
-prompt, top-20 rows only, fresh contexts) agree unanimously on 93.4\% of
-items (Fleiss' \(\kappa=0.87\)); by consensus, 76 of the 99 claim-bearing
-display labels name a coherent lexical family, 4 are mixed or ambiguous,
-and 19 are token-form surface artifacts, in 81.8\% agreement with an
-independent author audit
-(Appendix~\ref{app:main-case-study-feature-audit}). We describe this as a
-same-model reproducibility audit rather than human annotation; claims are
-tied to feature ids, signed contributions, and residuals, with labels
-used only where audited
-\citep{karvonen2025saebench,makelov2024principled}.
-
-\paragraph{The Operating Regime for Term-Level Reading}\label{subsec:interpretation-boundary}
-A faithful decomposition is a local reading of the readout side: a
-different factorizer or active budget could split the same contribution
-across other features, so the fidelity checks tie the reading to
-this factorizer and active budget. Appendix~\ref{app:robustness-operating-regime}
-routes each gated condition (residual-dominated, sign-flipped,
-model-unsupported, diffuse, or token-confounded scores) to the part that
-still holds; where the residual dominates a decomposition or its terms
-repeatedly change sign, the score is reported as uninterpretable rather
-than silently dropped. These conditions bind most often where replacement
-fidelity is lowest (\Cref{tab:readout-score-fidelity-summary}); the
-Qwen3.5-2B readout used for the displays clears the interpretation checks
-by a wide margin.
+separately from the measured feature ids and signed terms. Under three blinded runs of a frontier language model acting as rater,
+76 of the 99 claim-bearing display labels name a coherent lexical
+family, 4 are mixed, and 19 are token-form artifacts; rater agreement,
+the protocol, and an independent author audit are reported in
+Appendix~\ref{app:main-case-study-feature-audit}. This is a same-model
+reproducibility audit, not human annotation; claims are tied to feature
+ids, signed contributions, and residuals, with labels used only where
+audited \citep{karvonen2025saebench,makelov2024principled}.
 
 \paragraph{Further Uses of the Basis}\label{sec:feature-resolved-component-decomposition}\label{subsec:constrained-readout-edits}
-Two supporting applications live in appendices. Because signed readout
-terms are linear in \(h\), direct logit attribution composes with the
-fixed basis, refining each residual-stream component's contribution into
-per-feature terms; Appendix~\ref{app:feature-resolved-dla} states the
-identity and gives worked displays. The learned decoder directions also
-serve as constrained edit directions: on Qwen3.5-2B, dictionary
-directions suppress held-out lexical variants more strongly than mean-row
-and PCA control directions at every matched level of next-token
-distribution shift (12 of 12 paired comparisons significant), but the
-advantage is not universal---the 0.8B and 9B Qwen readouts lose to the
-mean-row direction, and two candidate explanations (replacement fidelity
-and dictionary width) were tested and rejected. Protocol, frontiers, all
-cross-model losses, and per-tokenizer exclusions are in
-Appendix~\ref{app:lexical-control-stress-test}.
+Two further uses are developed in the appendices: the basis composes with
+residual-stream attribution, splitting each component's scalar
+contribution into per-feature terms in the same logit units
+(Appendix~\ref{app:feature-resolved-dla}), and its decoder directions
+serve as constrained readout-side edit directions, with an advantage
+over mean-row and PCA controls on the display model but not on the 0.8B
+and 9B variants (Appendix~\ref{app:lexical-control-stress-test}).
 
 \FloatBarrier

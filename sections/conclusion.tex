@@ -1,21 +1,17 @@
 \section{Conclusion}
 
-Token identity is too coarse a unit for interpreting vocabulary
-readouts: one token can combine different sense-related readout
-structure, and different surface tokens or fitted lenses can express the
-same structure. Sparse Readout Prism replaces the token-only account
-with a shared, compositional feature account whose error is explicit:
-any selected token logit, logit difference, or fixed row combination
-separates into query-side feature coefficients, context-dependent state
-projections, and a query-specific residual in original logit units. The
-representation earns its use---it reconstructs selected scores where
-direct row geometry does not, reproduces its explanations across
-independent training runs, and predicts realized local readout-side
-changes---and it exposes what token rankings cannot: contexts recruiting
-different features for one token, and English- and Chinese-fitted lenses
-reporting different surface languages on identical states while the same
-readout feature stays dominant in 77 of 80 controlled prompts. The
-interpretation boundary is equally explicit: accounts are local to a
-selected score and a declared operating regime, and a surface-token
-reading---from any lens---should be trusted only as far as the feature
-account beneath it.
+Sparse Readout Prism offers an alternative unit for logit-lens-style
+interpretation of vocabulary readouts. Token identity can be too coarse
+where one token draws on several structures and too fine where several
+tokens share one; SRP complements the token-only account with a
+shared, compositional one in readout features, separating what any selected readout score
+asks about from what the hidden state supplies, with an explicit
+residual in original logit units. The representation
+reconstructs selected scores where direct row geometry does not,
+reproduces across independent runs, predicts the measured effects of
+local readout-side edits, and exposes what token rankings cannot---contexts
+recruiting different features for one token, and differently fitted
+lenses reporting different surface languages while one readout feature
+stays dominant (corpus conditionality). Accounts remain local to a selected score; a surface-token
+reading, from any lens, is only as trustworthy as the feature account
+beneath it.

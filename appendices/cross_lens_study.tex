@@ -99,11 +99,79 @@ Chinese-fitted lens reports
 the same readout feature, whose top unembedding rows are the
 \begin{CJK*}{UTF8}{gbsn}大\end{CJK*}~family.
 
+\paragraph{Extension: a second language pair.}
+The English--German bank removes the script confound: both languages are
+Latin-script, so agreement cannot come from a script-level cue. Ninety
+cross-lens prompts in seven families mirror the English--Chinese bank
+(German antonym, cloze in both languages, German exemplar and factual
+recall, translation in both directions), plus the same 12 controls.
+Every decomposed surface is validated single-token under the Qwen
+tokenizer, cognate pairs are excluded at normalized edit distance
+\(\le 2\) after diacritic folding (30 of 132 candidates excluded; the
+exclusion report ships with the bank), and surface-language calls are
+lexical rather than script-based. English- and German-fitted Jacobian
+lenses (identical recipe, seeds, and 100-prompt fitting budget) diverge
+in their top-1 token readings on 73/90 prompts while the same SRP
+feature stays dominant on 84/90 (0.93, CI [0.86, 0.97]); floors are
+1/204 (within-lens unrelated token) and 0/270 (shuffled pairing).
+Per family: German antonym 7/9, German cloze 14/14, English cloze
+15/15, exemplar 7/10, factual recall 8/8, translation DE\(\to\)EN
+17/17 and EN\(\to\)DE 16/17; controls 5/6 (digits) and 6/6 (proper
+nouns). Within-lens cross-form carrying is 62/90 (English lens) and
+53/90 (German lens), weaker than in the English--Chinese study and
+reported as measured.
+
+\paragraph{Extension: a second lens family.}
+To test whether corpus conditionality is specific to the Jacobian
+construction, we fit a second corpus-conditioned family: per-layer
+bias-free ridge translators \citep{hoerl1970ridge} into the final-layer
+residual basis, in the tuned-lens style \citep{belrose2023tuned} but
+solved in closed form in state space, on exactly the same 100-prompt
+English and Chinese corpora and layer set as the Jacobian lenses.
+Ridge strength is selected per layer on a held-out 10-prompt tail;
+holdout \(R^2\) rises monotonically with depth (0.46--0.92 English,
+0.46--0.86 Chinese), and transported states match the model's top-1
+token on 61--75\% of positions at the two deepest fitted layers. Under
+this family the corpus-conditionality pattern reproduces (e.g.\
+EN\(\to\)ZH translation prompts read Latin under the English-fitted and
+CJK under the Chinese-fitted translator on 9/10), while the same SRP
+feature stays dominant on 67/80 prompts (floors 3/159 and 1/240).
+Finally, holding the fitting corpus fixed (English) and varying only
+the construction, the Jacobian and ridge lenses read the same dominant
+feature on 76/80 prompts with both floors empty (0/159, 0/240): the
+feature account is transport-invariant across the two families.
+
+\begin{table}[!tbp]
+\caption{\textbf{Cross-lens extension matrix.} Dominant-feature
+agreement (majority of mid-band layers) with 95\% binomial CIs and the
+two null floors (within-lens unrelated token / shuffled pairing). Row 1
+is the main study; rows 2--3 vary one axis each; row 4 holds the corpus
+fixed and varies only the lens construction.}
+\label{tab:app-cross-lens-extension}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4.0pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Comparison & Agreement & 95\% CI & Floors \\
+\midrule
+EN--ZH, Jacobian & 77/80 & [0.90, 0.99] & 0/159 \(\cdot\) 0/240 \\
+EN--DE, Jacobian & 84/90 & [0.86, 0.97] & 1/204 \(\cdot\) 0/270 \\
+EN--ZH, ridge translator & 67/80 & [0.74, 0.90] & 3/159 \(\cdot\) 1/240 \\
+Jacobian vs ridge, EN & 76/80 & [0.88, 0.98] & 0/159 \(\cdot\) 0/240 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{Caveats and scope.}
-The Chinese C4 fitting corpus contains incidental English text, which
-biases the two lenses toward each other and makes the token-level
-divergence conservative. The study covers one model, one language pair,
-and one lens family at one fitting scale; the released per-case records
+The Chinese and German C4 fitting corpora contain incidental English
+text, which biases the lens pairs toward each other and makes the
+token-level divergence conservative. The study covers one model at one
+fitting scale, now across two language pairs and two fitted-lens
+constructions; the ridge translator is our minimal tuned-lens-style
+instantiation, not the exact construction of
+\citet{belrose2023tuned}. The released per-case records
 include every prompt, layer, dominant-feature id, and top-token reading.
 The conclusion licensed is the narrow one stated in the main text: in
 this controlled setting the reported surface language follows the
