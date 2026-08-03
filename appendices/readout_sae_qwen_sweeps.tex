@@ -14,7 +14,7 @@ selects a no-PCA recipe. A 5k screening sweep identified the recipe family, a
 20k continuation evaluated convergence of the selected recipe, and the older 50k
 matryoshka run \citep{bussmann2025matryoshka} anchored the comparison against
 the previous long-trained baseline. The selected TopK recipe's own convergence ladder provides the
-step-count evidence, while the previous recipe serves as an architectural
+step-count evidence, while the previous recipe is an architectural
 reference point.
 
 \begin{table*}[!tbp]
@@ -26,7 +26,7 @@ Figure~\ref{fig:app-k-qwen-recipe-selection-frontier}.}
 \footnotesize
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.12}
-\begin{tabular}{@{}p{0.20\linewidth}p{0.35\linewidth}p{0.35\linewidth}@{}}
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{0.20\linewidth}>{\RaggedRight\arraybackslash}p{0.35\linewidth}>{\RaggedRight\arraybackslash}p{0.35\linewidth}@{}}
 \toprule
 Evidence role & Run or run family & What it establishes \\
 \midrule
@@ -119,8 +119,8 @@ stop rule.
     \caption{
         Convergence ladder for the selected Qwen3.5-9B fixed-$k=128$ recipe.
         The final 15k$\rightarrow$20k rowEV gain is small while
-        decision-fidelity and usage metrics remain stable, supporting the 20k
-        stop rule.
+        decision-fidelity and usage metrics remain stable, which is why we
+        stop at 20k.
     }
     \label{fig:app-k-qwen-convergence-ladder}
 \end{figure}
@@ -139,7 +139,7 @@ $D=32768$ width choice.
 After recipe selection, we vary capacity along dictionary width and active
 sparsity budget. This targeted sweep separates two questions that rowEV alone
 can blur: which native $k=128$ readout SAE should be used for fixed-budget
-comparisons, and which native $k=256$ readout SAE should serve as the
+comparisons, and which native $k=256$ readout SAE should be the
 high-fidelity operating point. Short screening runs selected the larger-budget cells that received
 20k training.
 
@@ -159,7 +159,7 @@ regimes.}
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabularx}{\textwidth}{@{}p{0.24\textwidth}ccrrrrY@{}}
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.24\textwidth}ccrrrrY@{}}
 \toprule
 Run & Width & Eval $k$ & rowEV & top1 & KL & rare & Interpretation \\
 \midrule
@@ -204,6 +204,55 @@ $0.719\rightarrow0.749\rightarrow0.758\rightarrow0.761$, and its
 rare feature rate falls from $0.100$ to $0.061$.
 
 \ReadoutSAEFloatBarrier
+\subsection{Lower Sparsity Budgets on the Display Model}
+\label{app:readout-factorizer-low-k}
+
+Activation SAEs are often trained at smaller absolute budgets than ours,
+which raises the question of whether a readout SAE would also work at
+$k=64$. We retrained Qwen3.5-2B under an otherwise identical recipe
+(20{,}000 steps, batch $4{,}096$, same data, schedule, and
+initialization family; only width, $k$, and seed differ) and measured
+how much of each dictionary is ever used
+(Table~\ref{tab:app-low-k-dead-features}).
+
+\begin{table*}[!tbp]
+\caption{Sparsity budget versus dictionary usage on Qwen3.5-2B. Ranges
+are over independently seeded runs at otherwise identical settings
+(20{,}000 steps each). Dead: features never active on the evaluation
+rows; rare: evaluation firing rate below $10^{-3}$
+(Appendix~\ref{app:readout-factorizer-sweeps}). Width multipliers are
+relative to $d_{\mathrm{model}}=2048$.}
+\label{tab:app-low-k-dead-features}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Setting & Seeds & Dead & Rare & rowEV & top1 & KL \\
+\midrule
+16$\times$ ($D=32768$), $k=64$ & 2 & $0.491$--$0.512$ & $0.632$--$0.645$ & $0.683$--$0.684$ & $0.783$--$0.816$ & $0.367$--$0.370$ \\
+16$\times$ ($D=32768$), $k=256$ & 2 & $0.036$--$0.037$ & $0.213$--$0.218$ & $0.801$ & $0.807$--$0.848$ & $0.226$--$0.243$ \\
+32$\times$ ($D=65536$), $k=128$ & 3 & $0.336$--$0.352$ & $0.628$--$0.637$ & $0.769$--$0.771$ & $0.816$--$0.826$ & $0.241$--$0.253$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+At matched width, lowering the budget does not buy a sparser usable
+dictionary; it strands capacity. Going from $k=256$ to $k=64$ at
+16$\times$ raises the dead-feature rate from under $4\%$ to about half
+the dictionary ($0.491$--$0.512$), while reconstruction and replacement
+both degrade (rowEV $0.80\rightarrow0.68$, KL
+$0.23\rightarrow0.37$). The comparison is between budgets at a fixed
+width: the $k=128$ rows sit at twice the width, where the same budget
+leaves about a third of the dictionary dead. What governs usage is the
+budget relative to width rather than $k$ alone, which is why we report
+sparsity as $k/D$ and as the number of features a score actually
+recruits (\Cref{app:readout-factorizer-operating-point-claims}). Seed
+spread at each setting is small compared with the differences between
+settings, so the ordering does not depend on the seed.
+
+\ReadoutSAEFloatBarrier
 \subsection{Operating-Point Claims}
 \label{app:readout-factorizer-operating-point-claims}
 
@@ -218,6 +267,20 @@ a compact fidelity comparison point with rowEV
 $0.761$, top1 $0.874$, KL $0.167$, and rare $0.061$; the 32$\times$, $k=256$
 run is the high-capacity Qwen3.5-9B fidelity point with rowEV $0.857$, top1
 $0.900$, KL $0.105$, and rare $0.292$.
+
+\paragraph{How sparse are these operating points?}
+Activation SAEs are often reported at smaller absolute $k$, but $k$ is
+comparable across dictionaries only relative to width. At $D=65{,}536$,
+$k=128$ and $k=256$ activate $0.20\%$ and $0.39\%$ of the dictionary per
+row. What a reader inspects is sparser still, because a selected score
+concentrates its mass on a few features: across the six gated models, a
+median of $65$--$107$ features carries $80\%$ of a score's absolute
+contribution mass ($76$ on the display model), against dictionaries of
+tens of thousands. The two operating points therefore differ in budget,
+not in regime: $k=128$ is the stricter interpretability budget and
+$k=256$ prioritizes reconstruction fidelity. Budgets below this range
+are not simply sparser: they leave much of the dictionary unused
+(Appendix~\ref{app:readout-factorizer-low-k}).
 
 \begin{figure}[!tbp]
     \centering

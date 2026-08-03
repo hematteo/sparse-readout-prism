@@ -5,6 +5,22 @@
 \label{app:interpreting-sparse-readout-prism-figures}
 \label{app:additional-diagnostics}
 
+\begin{figure}[!tbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/schematic_tikz/readout_query_one_column.pdf}
+    \vspace{-0.8\baselineskip}
+    \caption{\textbf{Sparse Readout Prism, schematically.}
+    \emph{Left:} a selected readout direction \(q\) built from LM-head
+    rows (e.g.\ \(q=w_A-w_B\)) factorizes into signed feature
+    directions \(\beta_i(q)\,d_i\) plus a residual \(r_q\).
+    \emph{Right:} at hidden state \(h\), the score \(h^\top q\) splits
+    into per-feature contributions \(\beta_i(q)\,h^\top d_i\) plus
+    \(h^\top r_q\), in logit units; blue supports side \(A\), orange
+    side \(B\), hatching the residual
+    (\S\ref{sec:method-local-score}).}
+    \label{fig:method-schematic}
+\end{figure}
+
 This appendix states the decomposition identities used by the figures and control
 tables and fixes the bookkeeping conventions for displaying a trained readout
 SAE. The identities are the same local score decomposition introduced in

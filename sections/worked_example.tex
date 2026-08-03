@@ -5,7 +5,7 @@
 \section{Readout Features Behind a Lens Score}
 \label{sec:worked-example}
 
-We open with the result the rest of the paper calibrates and generalizes.
+The rest of the paper calibrates and generalizes the result below.
 Lens-style readouts name a favored token or contrast but leave it as a dense
 LM-head dot product; SRP holds that score fixed and decomposes it into signed
 readout-feature terms plus an explicit residual, in logit units. The opening
@@ -24,14 +24,14 @@ the positive contributions shift to defect, crash, and debug rows
 \texttt{bass}-vs-\texttt{trout} cases show the same reassignment
 (\(\rho=0.126\) and \(0.097\); all four unfloored), with residuals reported
 because they bound the interpretation. The same surface token recruits different
-row-labeled feature groups as score and context change---a reorganization
-invisible to the scalar margin.
+row-labeled feature groups as score and context change, a reorganization
+the scalar margin cannot show.
 
 Two questions decide whether such readings can be trusted and what they buy.
 Whether the feature terms can be read at all turns on the fidelity of the
 factorization on the selected score: \Cref{sec:results} settles this across
-eight models and the score families that arise in practice, fixing the
+eight models and the score families that arise in practice, and fixes the
 low-error regime (\(\rho<0.5\)) the readings require.
 \Cref{sec:readout-analyses} then treats this competition finding
-systematically---with a label audit---next to context reweighting, composition
+systematically, with a label audit, next to context reweighting, composition
 with component attribution, and constrained readout-side edits.

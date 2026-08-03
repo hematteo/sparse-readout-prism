@@ -75,7 +75,17 @@
 \newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
 \newcolumntype{Z}{>{\Centering\arraybackslash}X}
 
+\makeatletter
 \newcommand{\AppendixFloatSetup}{%
+  % Float-only pages: pack floats to the top and collect the slack at the
+  % bottom, instead of the default \@fpsep stretch that opens a hole in the
+  % middle of the page. Placement itself is unchanged.
+  \setlength{\@fptop}{0pt}%
+  \setlength{\@fpsep}{10pt plus 1fil}%
+  \setlength{\@fpbot}{0pt plus 1fil}%
+  \setlength{\@dblfptop}{0pt}%
+  \setlength{\@dblfpsep}{10pt plus 1fil}%
+  \setlength{\@dblfpbot}{0pt plus 1fil}%
   \setlength{\textfloatsep}{0.52\baselineskip plus 2pt minus 2pt}%
   \setlength{\dbltextfloatsep}{0.58\baselineskip plus 2pt minus 2pt}%
   \setlength{\floatsep}{0.45\baselineskip plus 2pt minus 2pt}%
@@ -94,6 +104,7 @@
   \renewcommand{\floatpagefraction}{0.80}%
   \renewcommand{\dblfloatpagefraction}{0.80}%
 }
+\makeatother
 
 \newcommand{\AppendixCompactGraphic}[2][]{%
   \includegraphics[width=\linewidth,height=0.32\textheight,keepaspectratio,#1]{#2}%

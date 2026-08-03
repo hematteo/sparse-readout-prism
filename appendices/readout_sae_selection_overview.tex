@@ -28,7 +28,12 @@
       \ReadoutSAE@fb@topbarrier
     }
   }
-  {\newcommand{\ReadoutSAEFloatBarrier}{\FloatBarrier}}
+  % Inert by design. placeins' \FloatBarrier issues a \clearpage, which in
+  % two-column mode abandons the rest of the current page and leaves empty
+  % columns (it cost three of them, and two extra appendix pages). The tuned
+  % float parameters below keep floats with their text without it. Restore
+  % \FloatBarrier here to re-enable hard barriers.
+  {\newcommand{\ReadoutSAEFloatBarrier}{}}
 \makeatother
 \setcounter{topnumber}{5}
 \setcounter{bottomnumber}{3}
@@ -62,9 +67,11 @@ original top logit.
 
 \paragraph{Qwen3.5-9B unembedding object.}
 The Qwen3.5-9B experiments factorize the final unembedding matrix
-$\WU\in\R^{248320\times4096}$. Hidden states used for prism loss and
-evaluation are the final RMSNorm outputs immediately before the language-model
-head. An \texttt{lm\_head} pre-hook confirms this: the captured input
+$\WU\in\R^{248320\times4096}$. The prism loss is the auxiliary training
+term, weighted $\lambda_{\mathrm{prism}}$, that scores reconstruction in
+logit space on hidden states rather than on rows alone. Hidden states used
+for it and for evaluation are the final RMSNorm outputs immediately before
+the language-model head. An \texttt{lm\_head} pre-hook confirms this: the captured input
 reproduces the model readout with no additional post-readout transform. The
 remaining reconstruction-vs-readout discrepancy is consistent with the model's
 bf16 LM-head precision floor as the relevant limit.
@@ -96,7 +103,7 @@ high-fidelity regime. Gemma top1/KL are softcap-correct.}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabularx}{\textwidth}{@{}p{0.14\textwidth}p{0.13\textwidth}rrrrY@{}}
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.14\textwidth}>{\RaggedRight\arraybackslash}p{0.13\textwidth}rrrrY@{}}
 \toprule
 Model & Setting & rowEV & top1 & KL & rare & Role \\
 \midrule
@@ -138,7 +145,7 @@ families and the decision each supports, without listing every cell.}
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabularx}{\textwidth}{@{}p{0.18\textwidth}Yp{0.17\textwidth}Y@{}}
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.18\textwidth}Y>{\RaggedRight\arraybackslash}p{0.17\textwidth}Y@{}}
 \toprule
 Sweep family & Coverage & Axes varied & Selection use \\
 \midrule

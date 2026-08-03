@@ -70,7 +70,7 @@ are the trained-encoder rows.
         Left: strict-budget $k=128$ recipe and high-fidelity
         32$\times$, $k=256$ capacity run. Right: 32$\times$, $k=256$ EV-ceiling
         numbers with 95\% bootstrap CIs. OMP (orthogonal matching pursuit)
-        serves as an achieved sparse-reconstruction comparison.
+        is an achieved sparse-reconstruction comparison.
     }
     \label{fig:app-k-omp-diagnostic}
 \end{figure*}
@@ -88,7 +88,7 @@ checkpoints to isolate the source of the remaining reconstruction gap with the
 learned dictionary fixed; the converged transfer metrics are reported in
 Appendix~\ref{app:readout-factorizer-small-model-transfer}. Across all four models, refitting
 coefficients on the encoder's own support gives a much smaller gain than
-changing the support, indicating that support selection is the dominant
+changing the support, so support selection is the dominant
 remaining recipe-side bottleneck. The signed-OMP gaps are $+0.158$ for
 Qwen3.5-0.8B, $+0.099$ for Qwen3.5-2B, $+0.182$ for Gemma-4-E2B, and
 $+0.125$ for Gemma-4-E4B.
@@ -166,7 +166,7 @@ seed-variation snapshot above.
 For Qwen3.5-9B, tokenizer-free denominator controls replace tokenizer-aligned
 text-token-only EV and frequency-stratified fidelity: the tokenizer row
 count did not cleanly align with the $\WU$ rows, and no vocab-aligned unigram
-table was available. The tokenizer-free non-token-row audit therefore serves as
+table was available. The tokenizer-free non-token-row audit is therefore
 the denominator-control result for that model. Gemma rowEV is measured on the
 linear pre-softcap unembedding rows and is cap-independent; Gemma top1/KL are
 evaluated under the model's $30\tanh(\cdot/30)$
@@ -208,7 +208,7 @@ Readout-SAE training and the headline evaluations ran on a single NVIDIA
 A40 per job on an academic Slurm cluster; a 24\,GB-class GPU
 suffices for inference and evaluation, and training the larger readouts
 (e.g.\ Qwen3.5-9B) wants roughly 40\,GB. One
-readout factorizer costs about 6--12 A40 GPU-hours depending on vocabulary
+readout SAE costs about 6--12 A40 GPU-hours depending on vocabulary
 size and dictionary width (the Ministral-3-8B \(131072\times4096\) head
 takes 12.2\,h at \(32\times\), \(k=256\), and 6.3\,h at \(16\times\),
 \(k=128\), for 20k steps); the three-model constrained-edit evaluation

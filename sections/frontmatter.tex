@@ -1,24 +1,27 @@
 \begin{abstract}
 Vocabulary lenses read hidden states through the LM head and report
-tokens. The token is an ambiguous unit for that report: one token can be
-supported by different structure in different contexts, and different
-tokens by the same structure, so a lens reading can change without the
-computation behind it changing. We present Sparse Readout Prism (SRP), a
+tokens. One token can be supported by different structure in different
+contexts, and different tokens by the same structure, so a lens reading
+can change while the computation behind it does not. The token is
+therefore an ambiguous unit for that report. We present Sparse Readout Prism (SRP), a
 sparse factorization of the LM head that reads any selected token logit
 or logit difference as signed contributions over shared \emph{readout
 features}, plus an explicit residual, in logit units. The basis is fit
-from the weights alone, so unlike activation dictionaries it exists
-before any prompt and one dictionary serves every layer and lens. On the
-six of eight models that pass a head-replacement check, SRP reconstructs
-selected scores faithfully on \textbf{0.72--0.81} of contrasts, ahead of
-every baseline built on LM-head row geometry, and predicts the effect of
-deleting single features (\(r^2=0.83\)--\(0.93\)). The payoff is a
-reading that survives the surface: English- and Chinese-fitted Jacobian
-lenses report different languages on identical hidden states, yet the
-same SRP feature stays dominant on \textbf{77 of 80} prompts. What a
-lens reports follows its fitting corpus---\emph{corpus
-conditionality}---and is not, by itself, evidence of a matching
-intermediate computation.
+from the weights alone, so, unlike activation dictionaries, it exists
+before any prompt, and one dictionary covers every layer and lens. Six of
+eight models pass a head-replacement check. On those six, SRP
+reconstructs selected scores faithfully on \textbf{0.72--0.81} of
+contrasts, better than any baseline built on LM-head row geometry, and
+its per-feature contributions track the measured effect of removing
+those features from the hidden state (\(r^2=0.83\)--\(0.93\)). The
+reading also holds up under surface change: English- and
+Chinese-fitted Jacobian lenses report different languages on identical
+hidden states, yet the same SRP feature stays dominant on \textbf{77 of
+80} prompts, and the pattern holds for a same-script language pair and for a
+second lens construction. What a fitted lens reports thus follows the corpus
+it was fitted on, a dependence we call \emph{corpus conditionality}. On
+its own, a lens reading does not establish a matching intermediate
+computation.
 \ifpreprintmode
 Code and trained SRP dictionaries for all eight models are available at
 \href{https://github.com/hematteo/sparse-readout-prism}{github.com/hematteo/sparse-readout-prism}.

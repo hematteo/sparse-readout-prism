@@ -4,6 +4,18 @@
 This appendix documents the corpus-conditionality study of
 \S\ref{subsec:cross-lens}.
 
+\begin{figure}[!tbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/cross_lens/cross_lens_extension_matrix.pdf}
+    \caption{\textbf{The cross-lens result across pairs and
+    constructions.} Dominant-feature agreement (majority of mid-band
+    layers; points are the rates, intervals are 95\% binomial CIs, counts
+    at right) for the main study and its three extensions. Baseline
+    markers show each cell's two matched null floors; all eight lie at or
+    below 3/159. Per-family tables and construction rules: below.}
+    \label{fig:cross-lens-extension}
+\end{figure}
+
 \paragraph{Lenses.}
 We use the reference implementation of the Jacobian lens
 \citep{gurnee2026workspace}, which reads an intermediate hidden state by
@@ -24,8 +36,8 @@ Because the implemented lens feeds the unembedding directly, the score
 each lens reports is a selected readout score on the transported state,
 and SRP decomposes it in the shared weight-only basis
 (\S\ref{sec:method-comparing-accounts}). The dictionary is an
-independently trained \(k{=}128\) (seed 0) readout factorizer for
-Qwen3.5-9B---a different operating point from the main-table
+independently trained \(k{=}128\) (seed 0) readout SAE for
+Qwen3.5-9B, a different operating point from the main-table
 \(16\times\)/\(k{=}256\) configuration, disclosed here per the
 cross-recipe rule of Appendix~\ref{app:basis-stability}. No translation
 pairs, language labels, or lens-fitting corpora enter the basis: it is
@@ -35,11 +47,11 @@ when the same feature id is dominant under both on a majority of the
 mid-band layers.
 
 \paragraph{Prompts.}
-Eighty evaluation prompts span seven families---Chinese antonym (14),
+Eighty evaluation prompts span seven families: Chinese antonym (14),
 English cloze (10), Chinese cloze (18), Chinese exemplar (8), Chinese
-factual recall (10), and translation in both directions (10 each)---plus
-12 control prompts (6 digit, 6 proper-noun) whose expected surface form
-is language-invariant. Two null comparisons price in loose matching:
+factual recall (10), and translation in both directions (10 each). A
+further 12 control prompts (6 digit, 6 proper-noun) have an expected
+surface form that is language-invariant. Two null comparisons price in loose matching:
 (a) \emph{within-lens unrelated token}: the dominant feature of each
 reading is compared against the decomposition of an unrelated token on
 the same state (159 comparisons); (b) \emph{shuffled pairing}: the two
@@ -56,10 +68,10 @@ reports Latin-script and the Chinese lens CJK-script top-1 tokens
 Control families (below the rule) are excluded from the 77/80 headline.}
 \label{tab:app-cross-lens-families}
 \centering
-\footnotesize
+\scriptsize
 \setlength{\tabcolsep}{4.5pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{@{}lccc@{}}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}Xccc@{}}
 \toprule
 Family & Agreement & 95\% CI & Lens-only split \\
 \midrule
@@ -76,7 +88,7 @@ All cross-lens & 77/80 & [0.90, 0.99] & --- \\
 Control: digits & 5/6 & [0.44, 0.97] & 0/6 \\
 Control: proper nouns & 5/6 & [0.44, 0.97] & 0/6 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \paragraph{Results.}
@@ -90,14 +102,55 @@ matches and 0/240 shuffled-pairing matches, so the headline agreement is
 not an artifact of a permissive matching criterion. The lens-only
 column shows the surface picture the decomposition corrects: on
 factual-recall prompts the two lenses report different scripts on 9/10
-prompts while the dominant feature agrees on 9/10. Worked example: on
-the antonym prompt asking for the opposite of
-\begin{CJK*}{UTF8}{gbsn}小\end{CJK*}, the English-fitted lens reports
+prompts while the dominant feature agrees on 9/10. Worked example, on
+the prompt \citet{gurnee2026workspace} use for their multilingual
+illustration, ``the opposite of
+\begin{CJK*}{UTF8}{gbsn}小\end{CJK*}'': the English-fitted lens reports
 \texttt{large}/\texttt{big} across the upper mid-band while the
 Chinese-fitted lens reports
 \begin{CJK*}{UTF8}{gbsn}大的/大\end{CJK*}; both readings are carried by
 the same readout feature, whose top unembedding rows are the
 \begin{CJK*}{UTF8}{gbsn}大\end{CJK*}~family.
+\Cref{tab:app-cross-lens-antonym-layers} gives that case layer by layer
+with the unfitted logit lens as a third arm. The logit lens has no
+fitting corpus, and on this prompt it reads a Chinese form at every
+mid-band layer; the English mid-band reading is produced only by the
+English-fitted transport. It is not a neutral arbiter, since applying the
+readout unchanged biases it toward the model's own final token, but no
+corpus choice can shape it, so it bounds how much of the English
+reading can be attributed to the state. The shared feature f112 is the
+top contributor to \begin{CJK*}{UTF8}{gbsn}大\end{CJK*} under both
+fitted lenses at every mid-band layer (\(+12.5\) and \(+13.4\) at layer
+24, \(+14.5\) and \(+17.6\) at layer 29) and is also the top
+contributor to \texttt{big} under both, so the two surface forms are
+carried by one coordinate within each lens as well as across the pair.
+
+\begin{table}[!tbp]
+\caption{\textbf{The published antonym case, layer by layer.} Top-1
+token and its softmax share under each lens on identical Qwen3.5-9B
+hidden states for the prompt of \citet{gurnee2026workspace}
+(\begin{CJK*}{UTF8}{gbsn}``小''的反义词是\end{CJK*}; the model answers
+\begin{CJK*}{UTF8}{gbsn}大\end{CJK*}). The two Jacobian lenses differ
+only in fitting corpus; the logit lens is unfitted and identical by
+construction across the pair.}
+\label{tab:app-cross-lens-antonym-layers}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{CJK*}{UTF8}{gbsn}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Layer & EN-fitted & ZH-fitted & Logit lens \\
+\midrule
+24 & \texttt{large} 40\% & 大的 36\% & 大的 9\% \\
+26 & \texttt{large} 26\% & 大的 73\% & 大 21\% \\
+29 & \texttt{big} 58\% & 大 93\% & 大 97\% \\
+final & 大 98\% & 大 98\% & 大 98\% \\
+\bottomrule
+\end{tabular}
+\end{CJK*}
+\end{table}
 
 \paragraph{Extension: a second language pair.}
 The English--German bank removes the script confound: both languages are
@@ -108,7 +161,7 @@ recall, translation in both directions), plus the same 12 controls.
 Every decomposed surface is validated single-token under the Qwen
 tokenizer, cognate pairs are excluded at normalized edit distance
 \(\le 2\) after diacritic folding (30 of 132 candidates excluded; the
-exclusion report ships with the bank), and surface-language calls are
+exclusion report is released with the bank), and surface-language calls are
 lexical rather than script-based. English- and German-fitted Jacobian
 lenses (identical recipe, seeds, and 100-prompt fitting budget) diverge
 in their top-1 token readings on 73/90 prompts while the same SRP
@@ -139,7 +192,7 @@ feature stays dominant on 67/80 prompts (floors 3/159 and 1/240).
 Finally, holding the fitting corpus fixed (English) and varying only
 the construction, the Jacobian and ridge lenses read the same dominant
 feature on 76/80 prompts with both floors empty (0/159, 0/240): the
-feature account is transport-invariant across the two families.
+decomposition is transport-invariant across the two families.
 
 \begin{table}[!tbp]
 \caption{\textbf{Cross-lens extension matrix.} Dominant-feature
@@ -149,10 +202,10 @@ is the main study; rows 2--3 vary one axis each; row 4 holds the corpus
 fixed and varies only the lens construction.}
 \label{tab:app-cross-lens-extension}
 \centering
-\footnotesize
+\scriptsize
 \setlength{\tabcolsep}{4.0pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{@{}lccc@{}}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}Xccc@{}}
 \toprule
 Comparison & Agreement & 95\% CI & Floors \\
 \midrule
@@ -161,7 +214,7 @@ EN--DE, Jacobian & 84/90 & [0.86, 0.97] & 1/204 \(\cdot\) 0/270 \\
 EN--ZH, ridge translator & 67/80 & [0.74, 0.90] & 3/159 \(\cdot\) 1/240 \\
 Jacobian vs ridge, EN & 76/80 & [0.88, 0.98] & 0/159 \(\cdot\) 0/240 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \paragraph{Caveats and scope.}

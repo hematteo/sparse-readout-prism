@@ -30,9 +30,9 @@ the identical pipeline.}
 \label{tab:app-cross-seed-stability}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{5pt}
+\setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{@{}lcc@{}}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}Xcc@{}}
 \toprule
 Metric & \(32\times\)/\(k{=}256\) & \(16\times\)/\(k{=}128\) \\
 \midrule
@@ -41,13 +41,13 @@ Cross-side leakage & 0.003 & 0.005 \\
 Cross-contrast null & 0.014 & 0.018 \\
 Contrasts above null p90 & 100\% & 100\% \\
 Matched-projection correlation & 0.53--0.54 & 0.63--0.66 \\
-Matched decoder cosine (used features) & 0.31--0.34 & 0.52--0.55 \\
+Matched decoder cosine \mbox{(used features)} & 0.31--0.34 & 0.52--0.55 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
-Individual atoms do not recur across seeds---matched decoder cosines
-average \(\sim\)0.33 at \(32\times\)---consistent with the documented
+Individual decoder directions do not recur across seeds (matched decoder cosines
+average \(\sim\)0.33 at \(32\times\)), consistent with the documented
 seed-dependence of TopK dictionaries at scale
 \citep{paulo2025stability}. Yet every tested contrast reproduces its
 explanation above the null's 90th percentile, at
@@ -80,7 +80,7 @@ pseudo-groups through the identical search (best-single Jaccard median
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{@{}lcc@{}}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}p{0.52\columnwidth}ZZ@{}}
 \toprule
 Metric (range over pairs) & \(32\times\) & \(16\times\) \\
 \midrule
@@ -89,19 +89,20 @@ Groups above null p99 & 89--90\% & 87--91\% \\
 Strong equivalence (\(J\ge0.5\)) & 36--41\% & 40--47\% \\
 Recall@3, median & 0.83--0.90 & 0.86--0.88 \\
 Recall@3 above null p99 & 91--93\% & 92\% \\
-Matched decoder cosine, med / p90 & 0.20--0.26 / 0.80--0.89 & 0.40--0.42 / 0.90--0.94 \\
+Matched decoder cosine, \mbox{med / p90} & 0.20--0.26 / 0.80--0.89 & 0.40--0.42 / 0.90--0.94 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 About 90\% of used feature groups have an above-chance counterpart in an
 independently trained dictionary, roughly 40\% a near-exact single
 match, and the median group is 83--90\% covered by a union of at most
 three features (\Cref{tab:app-feature-group-matching}): token-group
-structure reproduces, indexing does not, and the residual instability is
+structure survives retraining even though feature indices are reassigned,
+and the residual instability is
 feature \emph{splitting} rather than noise. The decoder-cosine
-distribution is bimodal---a stable core recurs almost exactly while the
-rest recombine---and the narrower \(16\times\) atoms are more stable,
+distribution is bimodal, with a stable core recurring almost exactly
+while the rest recombine, and the narrower \(16\times\) directions are more stable,
 consistent with \citet{paulo2025stability}. For the below-null tail
 (32/300 and 33/300 groups at the two widths), a direction-level check
 finds decoder counterparts at cosine \(\ge 0.5\) for 5/32 and 10/33; a
@@ -129,20 +130,20 @@ operative anchor: recall should be read against it, not against 1.0.}
 \label{tab:app-loo-core-recovery}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{5pt}
+\setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{@{}lcc@{}}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}Xcc@{}}
 \toprule
 Method & \(32\times\) & \(16\times\) \\
 \midrule
-Held-out SRP (same recipe) & 0.749 [.73, .77] & 0.720 [.70, .74] \\
+Held-out SRP \mbox{(same recipe)} & 0.749 [.73, .77] & 0.720 [.70, .74] \\
 Weighted row-kNN & 0.493 [.44, .54] & 0.432 [.38, .48] \\
 Hard clustering & 0.249 [.21, .29] & 0.206 [.17, .24] \\
 \midrule
 SRP/kNN ratio & 1.52 & 1.67 \\
 Cross-contrast null & 0.014 & 0.018 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 Held-out SRP recovers 72--75\% of the stable core; row-kNN recovers
@@ -156,9 +157,9 @@ recovers.
 \label{app:basis-stability-cross-recipe}
 
 The stability results above hold the training recipe fixed. Across
-recipes the picture is weaker: the released paper dictionary---trained
+recipes the agreement is weaker: the released paper dictionary, trained
 under an earlier preprocessing recipe than the seed-variation
-family---shares only 36\% of the seed-stable core and recovers 0.444 of
+family, shares only 36\% of the seed-stable core and recovers 0.444 of
 the leave-one-out cores, below row-kNN on that comparison. Cross-recipe
 variation therefore exceeds within-recipe seed variation, and every
 stability claim in this paper is scoped within-recipe. Comparisons in

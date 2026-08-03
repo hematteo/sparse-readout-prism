@@ -94,7 +94,7 @@ and a top-competitor margin.
     \AppendixWideGraphic{figures/proto_token_lens/qwen2b_general_readout_queries_jury_top5/qwen2b_general_readout_queries_1x2.pdf}
     \caption{\textbf{Additional Qwen examples of group contrasts and top-competitor margins.}
     Left: abstention-group versus forced-color-group contrast. Right: how
-    strongly the \texttt{guilty} winner beats its rank-5 competitor. Bars
+    far the top-ranked \texttt{guilty} row leads its rank-5 competitor. Bars
     increase or reduce the selected readout score by sign; labels give feature ids and
     token summaries.}
     \label{fig:app-qwen-general-readout-scores-extra}
@@ -345,8 +345,8 @@ majority-rule consensus over the 99 display occurrences is 76 coherent, 4
 mixed or ambiguous, and 19 token-form, agreeing with the author audit on
 81.8\% of items, with disagreements skewing toward rating labels
 \emph{more} coherent than the author did. We report this as a
-same-model reproducibility audit under a fixed protocol---three runs of
-one model are not three independent annotators---and retain the frozen
+same-model reproducibility audit under a fixed protocol, since three runs of
+one model are not three independent annotators, and retain the frozen
 prompt, per-run outputs, and aggregation rule in the released artifacts.
 
 \begin{table*}[!tbp]
@@ -427,4 +427,3 @@ Feature & Top associated rows, shortened & Interpretation & Confidence \\
 \end{tabularx}
 \end{table*}
 
-\FloatBarrier

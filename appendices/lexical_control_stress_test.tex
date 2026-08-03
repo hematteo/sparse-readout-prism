@@ -18,7 +18,7 @@ with off-target lexical probes.}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabularx}{\textwidth}{@{}p{0.18\textwidth}Y Y@{}}
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.18\textwidth}Y Y@{}}
 \toprule
 Measurement & What it measures & Setting \\
 \midrule
@@ -26,7 +26,7 @@ Lexical specificity &
 Degree to which the selected features and token summaries are associated with
 the profanity-related lexical family instead of generic high-scoring rows. &
 Supports feature selection for this edit test; feature ids remain the
-stable objects and labels serve as token summary aids. \\
+stable objects and labels are token summary aids. \\
 \addlinespace
 Score-level intervention effect &
 Whether editing along the selected SAE decoder directions changes the
@@ -165,7 +165,7 @@ single-token threshold, so that row reports the discovery-side comparison.}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabularx}{\textwidth}{@{}p{0.18\textwidth}p{0.19\textwidth}rrrrY@{}}
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.18\textwidth}>{\RaggedRight\arraybackslash}p{0.19\textwidth}rrrrY@{}}
 \toprule
 Model & SAE used & \makecell{Feature\\discovery flip} &
 \makecell{Feature\\held-out flip} & \makecell{Discovery-token\\bias held-out} &
@@ -241,7 +241,7 @@ matched KL.
     \label{fig:lexical-matched-kl-frontier}
 \end{figure*}
 
-On the display model the outcome is decisive: SRP beats every label-free
+On the display model the outcome is decisive: SRP outperforms every label-free
 baseline at every matched KL, with all 12 paired comparisons significant
 (term-clustered CIs exclude zero). Against the strongest baseline, the
 mean-row direction, the paired \(\Delta p_{\mathrm{bad}}\) advantage is
@@ -250,11 +250,11 @@ mean-row direction, the paired \(\Delta p_{\mathrm{bad}}\) advantage is
 at 0.10, and \(+0.074\) [\(+0.048\), \(+0.103\)] at 0.20; against PCA
 rank-4 the advantages span \(+0.036\) to \(+0.097\), all significant.
 
-The advantage is model-specific, and we print the losses. At matched KL,
-Qwen3.5-0.8B loses to the mean-row direction (\(\Delta\) \(-0.030\) to
-\(-0.094\), significant) and Qwen3.5-9B loses more clearly (\(-0.086\)
-to \(-0.135\), significant); R1-Distill-Qwen-7B is mixed (loses to
-mean-row at two of four matched-KL points, beats PCA rank-4); Ministral
+The advantage is model-specific, and we report the losses. At matched KL,
+Qwen3.5-0.8B underperforms the mean-row direction (\(\Delta\) \(-0.030\) to
+\(-0.094\), significant) and Qwen3.5-9B underperforms it more clearly (\(-0.086\)
+to \(-0.135\), significant); R1-Distill-Qwen-7B is mixed (underperforms
+mean-row at two of four matched-KL points, outperforms PCA rank-4); Ministral
 is excluded because the Tekken tokenizer leaves too few single-token
 terms for feature discovery (the dictionary itself is validated in
 Appendix~\ref{app:causal-validation}), and R1-Distill-Llama-8B is
@@ -262,7 +262,7 @@ excluded with one tokenizable pair and no held-out terms. Two candidate
 explanations for the losses were tested and rejected: replacement
 fidelity (the 9B readout is high-fidelity and still loses) and
 dictionary width (a registered prediction that the narrower 0.8B
-dictionary should win; it lost). The supported claim is therefore
-scoped: on the display model, dictionary-direction edits beat trivial
+dictionary should do better; it did not). The supported claim is therefore
+scoped: on the display model, dictionary-direction edits outperform trivial
 category directions at matched distributional cost; the advantage is not
 general across models, and mean-row is a strong label-free baseline.

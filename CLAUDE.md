@@ -30,7 +30,7 @@ These rules exist to keep the context window clean for prose work. Future agents
   - Math inside `$...$`, `$$...$$`, `\(...\)`, `\[...\]`, or `equation`/`align`/`gather` environments
   - `references.bib` entries or bibliography keys
   - Method, model, dataset, or metric names defined in `glossary_and_terminology.md`
-- **Float pinning is intentional.** Keep `\begin{figure}[H]` / `\begin{table}[H]`. Never relax to `[h]` / `[htbp]` — figures must stay next to the prose that describes them.
+- **Float placement is tuned; leave it alone.** This repo overrides the global `[H]` rule — `[H]` cannot be applied to `figure*`/`table*` at all, and in ACL two-column it paginates badly. The working convention is `[t]` in the body (6 floats) and `[!tbp]` in the appendices (61 floats), held in place by `style/preamble.tex`: `stfloats`, `placeins`, tightened `\textfloatsep`/`\floatsep`, `\floatpagefraction` at 0.82, and `\AppendixFloatSetup`. Do not "restore" `[H]`, and do not change a float specifier to fix a placement complaint — adjust the preamble lengths or move the float's source position instead.
 - **No fabricated citations or numbers.** If prose needs a citation that isn't there, flag it in chat. Never paste a plausible-looking `\cite{...}`.
 
 # Editing style

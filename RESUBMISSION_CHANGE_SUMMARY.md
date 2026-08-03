@@ -60,10 +60,10 @@ abstract and Table 1/2 captions.
 | Direct W_U clustering/kNN might match (e1hF W1) | Table 2 + grouping recovery above; capacity-matched k-means (same D, k) included. |
 | Seed stability of explanations (e1hF W2) | §3 stability paragraph + Appendix I: 100% of contrasts reproduce above the null's p90 at both widths; 87–91% of used feature groups have counterparts; instability is feature splitting; claims scoped within-recipe with cross-recipe variation disclosed. |
 | Edit controls at matched KL (e1hF W3) | §3: SRP beats mean-row and PCA controls at every matched KL on Qwen3.5-2B (12/12 paired, significant); 0.8B/9B losses printed; both candidate explanations reported as tested and rejected (Appendix N). |
-| k=128/256 not sparse enough (e1hF) | Appendix E: k=32/64 retraining leaves 64–69% of features dead; k=256 = 0.4% active fraction. |
+| k=128/256 not sparse enough (e1hF) | Appendix E.3 (new): retraining Qwen3.5-2B at k=64 under an identical recipe leaves 49–51% of the dictionary dead against 3.6–3.7% at k=256 and matched width, with rowEV and KL both worse; E.4 adds the fraction-active framing (k=128/256 = 0.20%/0.39% of a D=65,536 dictionary; a median of 65–107 features carries 80% of a score's contribution mass). |
 | Label subjectivity / ambiguous labels (pZ3j W2) | Blinded three-run audit, κ=0.87, 93.4% unanimity; 76/99 coherent, 19 token-form, 4 mixed; 81.8% agreement with the author audit; protocol in Appendix L. |
 | Hyperparameter sensitivity (pZ3j W3) | Two widths × three seeds throughout the stability analyses + Appendix E. |
-| Median hides tails (j4yY Q7) | Mean/p95/max and margin-stratified errors in Appendix H; near-tie behavior explained structurally in §3. |
+| Median hides tails (j4yY Q7) | Appendix H.4: mean, p95, and maximum absolute error for SRP and all six direct-geometry alternatives, plus a margin-stratified table; one-sentence pointer in §3. |
 | Offset and residual roles (j4yY Q4) | Method §2: offset cancellation for zero-sum contrasts; residual is exact but not orthogonal (overcomplete basis), stated with the reading rule. |
 | Contrast selection vs task correctness (j4yY Q5) | §3 (Contrast banks): diagnostic vs task-grounded contrast split; benchmark-derived contrasts summarized in §3. |
 | Definitions arrive late (j4yY, AC) | Page-1 definitions; notation split (floored ρ vs unfloored ρ̃) with distinct symbols. |
@@ -77,6 +77,24 @@ abstract and Table 1/2 captions.
 - Code, trained dictionaries, contrast banks, and the audit protocol
   accompany the submission (links withheld for review).
 
+## Discussion-phase claims not carried into the manuscript
+
+Two figures quoted in our May-cycle response are not reproduced here,
+and we flag them rather than leave the difference for a reader of the
+thread to find.
+
+- **Low-sparsity retraining.** The response reported dead-feature rates
+  at `k ∈ {32, 64}` on Qwen3.5-0.8B and Qwen3.5-2B. Only the `k=64` /
+  Qwen3.5-2B cells were run under the stated recipe. Appendix E.3
+  reports those measured cells and nothing else; the `k=32` and 0.8B
+  figures should be disregarded.
+- **Grouping recovery** is reported here under the leave-one-out
+  construction (Appendix I.3), which supersedes the held-out-dictionary
+  numbers quoted in the response. Appendix I.4 additionally discloses
+  that the released paper dictionary, trained under an earlier recipe,
+  recovers 0.444 of the leave-one-out cores — below row-kNN — and every
+  stability claim is scoped within-recipe accordingly.
+
 ## Verification note (internal; drop before posting)
 
 All main-text numbers re-verified 2026-07-31 against
@@ -84,3 +102,19 @@ All main-text numbers re-verified 2026-07-31 against
 `exp4v2_*/baseline_by_method.csv`, `cross_lens_v2_summary.{json,txt}`,
 stability JSONs). fact-recall 9/10 script divergence and 9/10 feature
 agreement are distinct quantities, both correct per the artifact.
+
+2026-08-02: Appendix H.4 (error tails) computed fresh from
+`results/rebuttal_j4yy_inputs_20260711/exp4v2_*/baseline_query_rows.csv`
+(8,009 contrasts per method over the six gated models); the posted
+rebuttal's 0.54 / 1.78 / 5.0 table is the Qwen3.5-2B row of that same
+artifact and reproduces exactly.
+
+The sparsity grid behind Appendix E.3 was recovered from the cluster on
+2026-08-02 (`pz3j_hparam_grid_20260712`, run 12 Jul, never synced);
+metrics logged in `REBUTTAL_RESULTS.md` §4c. Note the mismatch recorded
+there: the posted replies claimed k ∈ {32,64} on Qwen3.5-0.8B **and**
+2B, but only the k=64 / 2B cells were ever run. The manuscript reports
+only the measured cells, so nothing unsupported is in the paper — but a
+reviewer rereading the thread may notice the k=32 claim has no
+counterpart. Either run k=32 (2 seeds ≈ 3 A40-hours under the same
+recipe) or leave it; do not restate the 64–69% figure.

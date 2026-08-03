@@ -28,7 +28,7 @@ SRP provides local additive accounting for a selected readout score. For that
 score, the displayed terms express the exact value as SAE feature terms plus
 preprocessing and reconstruction error terms under the conventions in
 Appendix~\ref{app:score-decomposition}. Contribution terms are reported with
-those error terms, tying the local score decomposition to its reconstruction
+those error terms, so the local score decomposition is tied to its reconstruction
 quality.
 
 \subsection{Relation to Activation SAEs}
@@ -103,7 +103,7 @@ compared by sparse signed feature terms as well as decoded tokens;
 SRP-nominated terms give targets for causal patching, ablation, and
 generation-level evaluation. A further extension factorizes both sides
 of a selected margin at once, pairing an activation dictionary for
-\(h\) with the readout factorizer for \(q\), so that each term records
+\(h\) with the readout SAE for \(q\), so that each term records
 the alignment between an activation-side and a readout-side feature. All
 depend on the reliability condition used in the main text: feature terms
 are read when the selected readout score has a small reported residual.

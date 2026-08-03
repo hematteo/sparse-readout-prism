@@ -47,7 +47,7 @@ softcap-correct.}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabularx}{\textwidth}{@{}p{0.14\textwidth}p{0.12\textwidth}rrrrY@{}}
+\begin{tabularx}{\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.14\textwidth}>{\RaggedRight\arraybackslash}p{0.12\textwidth}rrrrY@{}}
 \toprule
 Model & Dictionary setting & rowEV & top1 & KL & dead/rare & Role \\
 \midrule
@@ -139,7 +139,7 @@ Qwen3.5-0.8B 16$\times$, $k=128$; the selected high-fidelity
 small-model point is Qwen3.5-0.8B 32$\times$, $k=256$, with Qwen3.5-2B giving
 the same qualitative pattern. The scaling figure focuses on Qwen so that model
 size is varied within a single family; the surrounding tables evaluate the same
-recipe under additional readout geometries. Rare feature rate serves as a
+recipe under additional readout geometries. Rare feature rate is a
 usage statistic: it stays low for
 the smaller Qwen 32$\times$, $k=256$ rows and rises to $0.292$ for the 9B
 32$\times$, $k=256$ capacity point.
@@ -195,7 +195,7 @@ denotes native $k=256$.}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.00}
-\begin{tabularx}{0.96\textwidth}{@{}p{0.18\textwidth}p{0.15\textwidth}p{0.12\textwidth}rrrrrY@{}}
+\begin{tabularx}{0.96\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.18\textwidth}>{\RaggedRight\arraybackslash}p{0.15\textwidth}>{\RaggedRight\arraybackslash}p{0.12\textwidth}rrrrrY@{}}
 \toprule
 Model & Dictionary setting & Width / $k$ & rowEV & top1 & KL & dead & rare & Role \\
 \midrule
@@ -241,7 +241,7 @@ Model & Dictionary setting & Width / $k$ & rowEV & top1 & KL & dead & rare & Rol
 Both Ministral dictionary settings have healthy usage and decision-fidelity
 metrics (dead $< 0.03$, KL $< 0.14$ bits).
 Decision fidelity (top1, KL) falls in the high-fidelity range of the matched
-32$\times$, $k=256$ comparison rows, supporting the claim that the
+32$\times$, $k=256$ comparison rows, which supports the claim that the
 row-factorization recipe transfers beyond the Qwen family when the readout is
 geometrically clean (untied, softcap-free). The rare feature rate
 is high at both points; we report it as a usage statistic, following the same
@@ -252,9 +252,9 @@ convention as the Qwen3.5-9B
 \subsection{R1-Distilled Comparison Rows}
 \label{app:readout-factorizer-r1-distill-comparison}
 
-R1-Distill-Qwen-7B is included as a post-training comparison row for comparing
+R1-Distill-Qwen-7B is included as a post-training comparison row for
 rowEV and decision fidelity. It is a Qwen-derived 7B readout with an untied
-\texttt{lm\_head} and no post-readout softcap, giving a clean comparison under the same
+\texttt{lm\_head} and no post-readout softcap, which gives a clean comparison under the same
 transferred TopK recipe family at the strict-budget and high-fidelity dictionary
 settings in
 Table~\ref{tab:app-k-cross-family-stress-converged}.
@@ -330,7 +330,7 @@ Model & \makecell[l]{Setting\\(cfg)} & sign & \makecell{median\\resid.} & \makec
 The TopK recipe operates on row-centered, row-normalized $\WU$ rows, which
 treats all rows uniformly in $L_2$. When the underlying row-norm distribution
 is heavy-tailed, however, a small per-row reconstruction error is amplified
-disproportionately on the high-norm rows — and those are precisely the rows
+disproportionately on the high-norm rows, and those are the rows
 that disproportionately affect top1 / KL after the softmax. We therefore
 report row-norm summary statistics for the base-model and reasoning-distilled
 checkpoints as a usage analysis for the separation between rowEV and fidelity

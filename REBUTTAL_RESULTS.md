@@ -242,6 +242,38 @@ includes `max_decoder_cosine` for below-null groups), scripts
 
 ---
 
+## 4c. Sparsity/width grid (pZ3j W3, e1hF k comment)  ✅ run 2026-07-12, logged 2026-08-02
+
+Qwen3.5-2B, identical recipe per cell (20k steps, batch 4,096, same data and
+schedule; only width, k, and seed differ). Dead = never active on the
+evaluation rows; rare = firing rate < 1e-3.
+
+| Setting | seeds | dead | rare | rowEV | top1 | KL |
+|---|---|---|---|---|---|---|
+| 16x (D=32,768), k=64 | 2 | 0.491–0.512 | 0.632–0.645 | 0.683–0.684 | 0.783–0.816 | 0.367–0.370 |
+| 16x (D=32,768), k=256 | 2 | 0.036–0.037 | 0.213–0.218 | 0.801 | 0.807–0.848 | 0.226–0.243 |
+| 32x (D=65,536), k=128 | 3 | 0.336–0.352 | 0.628–0.637 | 0.769–0.771 | 0.816–0.826 | 0.241–0.253 |
+
+**Reading:** at matched 16x width, dropping k=256 → k=64 strands half the
+dictionary (dead 0.04 → 0.50) and costs fidelity (rowEV 0.80 → 0.68, KL 0.23 →
+0.37). Dead rate tracks budget-relative-to-width, not k alone. Seed spread
+within a setting is far smaller than between settings.
+
+**Correction to the posted rebuttal.** The e1hF and pZ3j replies state
+"k ∈ {32,64} on Qwen3.5-0.8B and Qwen3.5-2B" and "at k=32, 64–69% of features
+are never used." Only the k=64 half exists, and only on Qwen3.5-2B: the
+`k=64`/2B figure is confirmed (0.491/0.512, i.e. the posted "50.5%"), but
+**no k=32 run and no 0.8B low-k run exists on the cluster or locally**
+(searched 2026-08-02). Do not quote the k=32 numbers. The manuscript
+(App. E.3) reports only the measured cells.
+
+Artifacts: `CLUSTER/pz3j_hparam_grid_20260712/qwen2b_{d32768_k64_s{1,2},
+d32768_k256_s{0,2}, d65536_k128_s{0,1,2}}/metrics.json`; metrics + configs
+mirrored to `LOCAL/../pz3j_hparam_grid_20260712/` (checkpoints left on the
+cluster). `qwen2b_d32768_k256_s1` never finished (no `DONE`).
+
+---
+
 ## 5. Scope findings (report as boundaries, not failures)
 
 - **Tokenizer gate on the edit task:** the single-token profanity lexicon does
