@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Emit the W_U row-norm tail statistics table (Appendix K, ``tab:app-k-row-norm-tail``).
+"""Emit the W_U row-norm tail statistics table (Appendix E.4, ``tab:app-k-row-norm-tail``).
 
 The TopK recipe operates on row-centred, row-normalised W_U rows, so the
 *row-norm distribution* is the set of per-row centred norms ``||W_U[v] - mu||``

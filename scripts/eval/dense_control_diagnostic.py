@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dense and negative-control row-reconstruction diagnostic (Appendix K).
+"""Dense and negative-control row-reconstruction diagnostic (Appendix F.1).
 
 Reproduces the "Dense and Negative-Control Results Omitted from Section 5"
 numbers (recorded literals in ``data/appendix/appendix_k_sweep_tables.json`` under

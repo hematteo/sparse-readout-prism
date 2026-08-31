@@ -2,7 +2,7 @@
 """Paired cluster bootstrap for the matched-KL edit frontier.
 
 Backs the paired differences quoted with ``fig:lexical-matched-kl-frontier``
-(Appendix J, "Matched-KL Frontier and Cross-Model Outcome"): the readout SAE
+(Appendix N.1, "Matched-KL Frontier and Cross-Model Outcome"): the readout SAE
 direction edit minus each label-free category-direction baseline in held-out
 suppression, compared at matched distributional cost.
 

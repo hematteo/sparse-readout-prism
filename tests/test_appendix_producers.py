@@ -1,7 +1,7 @@
 """CI-safe tests for the Appendix producer scripts added to close reproduction gaps:
 
 * scripts/analyze/compute_row_norm_tail_stats.py  (tab:app-k-row-norm-tail)
-* scripts/eval/dense_control_diagnostic.py         (Appendix K omp_diagnostic)
+* scripts/eval/dense_control_diagnostic.py         (Appendix F.1 omp_diagnostic)
 * scripts/analyze/audit_feature_labels.py          (Appendix L feature-label audit)
 
 No GPU, no model load, no network: row-norm and dense-control run on synthetic

@@ -23,7 +23,7 @@ DeepSeek-R1-Distill-Qwen-7B at 32x/k256; Ministral-3-8B at 16x/k128 -- the
 checkpoints enumerated in ``configs/registries/result1_query_fidelity_cluster.yaml``)
 for ``tab:lexical-control-cross-model-results``. See ``docs/REPRODUCE.md``.
 
-Matched-KL frontier (``fig:lexical-matched-kl-frontier``, Appendix J
+Matched-KL frontier (``fig:lexical-matched-kl-frontier``, Appendix N.1
 "Matched-KL Frontier and Cross-Model Outcome"). The candidate grid is 20
 prompts x 17 profane-to-reference pairs (5 discovery + up to 12 held-out pairs;
 pairs whose terms fail the single-token filter are dropped per tokenizer) x 14
@@ -1248,7 +1248,7 @@ def main() -> int:
     write_summary_md(args.out_dir / "summary.md", manifest, operating, cand_summary, benign)
 
     # Tables (baseline_comparison.csv / candidate_constrained_summary.csv) are the
-    # only paper-facing outputs (Appendix J tab:lexical-control-*); the eval emits
+    # only paper-facing outputs (Appendix N tab:lexical-control-*); the eval emits
     # no paper figure, so it does not render or copy any plots.
     log(f"done: {args.out_dir}")
     return 0

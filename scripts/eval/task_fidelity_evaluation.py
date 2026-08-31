@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Task-fidelity evaluation: per-task margin / query fidelity for the paper's fidelity gate.
+"""Task-fidelity evaluation: per-task margin / query fidelity for the paper's headline fidelity diagnostics.
 
 Scores a trained SAE checkpoint's RECONSTRUCTED W_U against task-level
 decisions (contrastive margins + linear readout queries), not row
