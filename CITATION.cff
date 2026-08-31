@@ -3,11 +3,11 @@ message: "If you use Sparse Readout Prism, please cite the paper."
 type: software
 title: "Sparse Readout Prism"
 abstract: >-
-  Sparse Readout Prism factorizes language-model unembedding rows into a
-  dictionary of reusable readout features, then decomposes selected
-  vocabulary logits and linear logit contrasts into signed feature
-  contributions plus an explicit residual, gated by a per-query fidelity
-  test.
+  Sparse Readout Prism decomposes a language model's readout (the
+  unembedding matrix) using only its weights, expressing any token logit
+  or logit difference as a sum of signed contributions from sparse readout
+  features plus an explicit residual, with fidelity diagnostics reported
+  for every decomposition.
 authors:
   - given-names: Matteo
     family-names: He
@@ -28,7 +28,7 @@ date-released: "2026-08-31"
 repository-code: "https://github.com/hematteo/sparse-readout-prism"
 preferred-citation:
   type: unpublished
-  title: "Sparse Readout Prism: Explaining Logit-Lens Scores in Features Rather Than Tokens"
+  title: "Sparse Readout Prism: Explaining Logit-Lens Scores in Features Instead of Tokens"
   authors:
     - given-names: Matteo
       family-names: He

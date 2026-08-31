@@ -63,7 +63,7 @@ C4 is distributed under ODC-BY 1.0 (subject to Common Crawl terms); see
 
 - **`scripts/data/build_query_banks.py`** — bank builder (writes the three banks from prompt templates; the large C4 slice with `--native-source c4`).
 - **`scripts/run/run_query_fidelity_bank.py`** — Result-1 five-model query-fidelity runner; reads these `.jsonl` banks directly (via `--bank-dir`), capturing hidden states with a forward hook.
-- **`scripts/eval/task_fidelity_evaluation.py`** — §4 main fidelity gate; consumes a separately-built `.pt` margin/query bank (`{h, margin_items, query_items}`) derived from these cases plus extracted hidden states — **not** the `.jsonl` directly (passing a `.jsonl` to its `--bank` raises `UnpicklingError`; see `docs/REPRODUCE.md` §1).
+- **`scripts/eval/task_fidelity_evaluation.py`** — the §4 headline fidelity diagnostics; consumes a separately-built `.pt` margin/query bank (`{h, margin_items, query_items}`) derived from these cases plus extracted hidden states — **not** the `.jsonl` directly (passing a `.jsonl` to its `--bank` raises `UnpicklingError`; see `docs/REPRODUCE.md` §1).
 - **`scripts/run/run_readout_baseline_comparisons.py`** — null-baseline runs against `curated_ab` + `case_candidates`.
 
 See [`docs/REPRODUCE.md`](../../docs/REPRODUCE.md) for the exact

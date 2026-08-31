@@ -32,8 +32,8 @@ Two kinds of file live here:
 | Config | Kind | Role |
 |---|---|---|
 | `paper_phase2_base.yaml` | run config | Complete headline recipe (TopK 32×/k256, Qwen-3.5-2B finalist); override `factorizer.d_features` per model. |
-| `paper_phase2_frontier.yaml` | grid template | `k` / width frontier sweep (Appendix K panels). Expand before running. |
-| `arch_frontier_160m.yaml` | grid template | Fine-`k` architecture frontier (Pythia-160m; Appendix K). Expand before running. |
+| `paper_phase2_frontier.yaml` | grid template | `k` / width frontier sweep (the sweep / selection appendix tables, App. B–E). Expand before running. |
+| `arch_frontier_160m.yaml` | grid template | Fine-`k` architecture frontier (Pythia-160m; same appendix tables). Expand before running. |
 | `deepseek_r1_distill_qwen_7b_paper.yaml`, `…_16x_k128.yaml` | run config | R1-Distill-Qwen-7B finalists (32×/k256 and strict-budget 16×/k128). |
 | `deepseek_r1_distill_llama_8b_paper.yaml`, `…_16x_k128.yaml` | run config | R1-Distill-Llama-8B finalists. |
 | `ministral3_8b_paper.yaml`, `…_16x_k128.yaml` | run config | Ministral-3-8B-Base finalists (32×/k256 and strict-budget 16×/k128). |
