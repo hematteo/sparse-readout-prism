@@ -1,7 +1,7 @@
 # Experiment 2 (Benchmark-Derived Contrastive Margin Benchmark)
-# Registry of the selected readout-factorizer checkpoints from Appendix K.
+# Registry of the selected readout-factorizer checkpoints from Appendix C.
 #
-# Selection source: Appendix K (Table tab:app-k-model-finalists + K.9 reproducibility notes)
+# Selection source: Appendix C (Table tab:app-k-model-finalists) + the Appendix F reproducibility notes
 # Extraction space (all Qwen/Gemma): final RMSNorm output immediately before the
 #   LM head (validated by lm_head pre-hook; bf16 readout precision floor noted).
 #   logit = h @ W_U.T ; W_U is the model's final readout matrix.
