@@ -223,9 +223,10 @@ choose, and matching our corpora would mean retraining it in any case. A
 closed-form translator keeps that retraining cheap, and because it shares
 no fitting procedure with the Jacobian lens, agreement between the two
 families cannot be an artifact of a common construction.
-We select the ridge strength per layer, the selection lands on its
-largest candidate value at every layer, and the fits behave as
-unregularised least squares.
+We tune the ridge strength per layer, and at every layer the tuning
+picks the largest value we allow. Even that value contributes
+negligibly to the fit, so the translators are effectively ordinary
+least squares.
 Holdout \(R^2\) on a 10-prompt tail rises monotonically with depth
 (0.46--0.92 English, 0.46--0.86 Chinese), and the resulting decoded
 states match the model's top-1
