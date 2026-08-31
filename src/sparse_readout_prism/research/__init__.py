@@ -10,7 +10,11 @@ rule is:
     the Qwen readout toolkit (``qwen_readout``), the query-decomposition
     toolkit (``query_decompose``), the static example-prompt banks
     (``qwen_example_prompts``), cell metrics (``cell_metrics``), run IO
-    (``run_io``), and the multi-model run-script registry (``registry``).
+    (``run_io``), the multi-model run-script registry (``registry``), the
+    seed-stability contrast pipeline (``seed_stability``), row-geometry
+    helpers shared by the baselines and stability scripts (``row_geometry``),
+    the cross-lens study toolkit (``cross_lens``), and the CoarseWSD-20
+    bundle/statistics helpers (``wsd``).
 
 So ``research/`` is not a mirror of ``scripts/``: every module here backs at
 least two consumers (enforced by ``tests/test_research_layout.py``), and no

@@ -1,6 +1,6 @@
 [project]
 name = "sparse-readout-prism"
-version = "0.2.0"
+version = "0.2.1"
 description = "Sparse Readout Prism: a sparse LM-head basis that factorizes language-model unembedding rows into reusable readout features and decomposes selected logits into signed feature contributions plus an explicit residual."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -39,7 +39,7 @@ dependencies = [
     "scipy>=1.15.3,<2",  # scripts/eval/dense_control_diagnostic.py (scipy.optimize.nnls)
     "datasets>=4.8.4,<5",  # scripts/data/extract_model_readout.py + build_query_banks.py
     "pyyaml>=6,<7",  # config loading in utils.py + research/registry.py (was only transitive)
-    "pandas>=2.2,<3",  # scripts/eval/analyze_error_tails.py + analyze_task_grounded_fidelity.py (CSV aggregation)
+    "pandas>=2.2,<3",  # scripts/eval/analyze_error_tails.py (CSV aggregation)
     "scikit-learn>=1.5,<2",  # scripts/run/run_wsd_feature_alignment.py + scripts/analyze/analyze_wsd_*.py
 ]
 

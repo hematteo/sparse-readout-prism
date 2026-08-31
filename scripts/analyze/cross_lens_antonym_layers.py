@@ -11,18 +11,25 @@ feature contributions itemised. It is run once per lens. ``table`` then assemble
 the layer x lens table of top-1 token and softmax share (and the dominant feature
 of each probed form under each lens) from the per-lens JSON files.
 
-Decomposition basis: the k=128 seed-0 readout dictionary for Qwen3.5-9B (8x,
-D=32768), Hugging Face ``hematteo/sparse-readout-prism`` file
-``qwen3.5-9b/k128_8x/checkpoint.pt``. ``jlens`` is imported lazily
-(``uv sync --extra lens``).
+Decomposition basis: ``--checkpoint``, the k=128 seed-0 readout dictionary for
+Qwen3.5-9B (8x, D=32768), Hugging Face ``hematteo/sparse-readout-prism`` file
+``qwen3.5-9b/k128_8x/checkpoint.pt``, read with ``research.qwen_readout.load_sae``;
+``--k`` defaults to the checkpoint's trained k (a different explicit value
+warns) and ``--centering`` selects the centering mean (``live`` = full-vocabulary
+mean of the live head, the paper; ``trained`` = the checkpoint's ``row_mean`` or
+the tokenizer's text-token mean). ``jlens`` is imported lazily
+(``uv sync --extra lens``); the model is loaded through
+``research.cross_lens.load_lens_model`` on ``--device`` (default ``cuda``).
+``run`` writes ``<out stem>.manifest.json`` (resolved k, centering, provenance)
+next to its JSON; ``table`` writes ``<out-csv stem>.manifest.json`` next to its CSVs.
 
 Paper runs::
 
   cross_lens_antonym_layers.py run --model-id Qwen/Qwen3.5-9B \
-      --lens <out>/qwen35_9b_jlens_en_seed0_n100.pt --sae <checkpoint.pt> --k 128 \
+      --lens <out>/qwen35_9b_jlens_en_seed0_n100.pt --checkpoint <checkpoint.pt> --k 128 \
       --out <out>/antonym_layers_en.json
   cross_lens_antonym_layers.py run --model-id Qwen/Qwen3.5-9B \
-      --lens <out>/qwen35_9b_jlens_zh_seed0_n100.pt --sae <checkpoint.pt> --k 128 \
+      --lens <out>/qwen35_9b_jlens_zh_seed0_n100.pt --checkpoint <checkpoint.pt> --k 128 \
       --out <out>/antonym_layers_zh.json
   cross_lens_antonym_layers.py table --dump EN=<out>/antonym_layers_en.json \
       --dump ZH=<out>/antonym_layers_zh.json --layers 24,26,29,final \
@@ -34,65 +41,56 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from functools import partial
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
 
-from sparse_readout_prism.utils import write_csv
+from sparse_readout_prism.research.cross_lens import (
+    CENTERING_MODES,
+    centering_row_mean,
+    decompose_token,
+    feature_top_tokens,
+    import_jlens,
+    load_lens_model,
+    parse_dump_args,
+    resolve_k,
+    write_manifest,
+)
+from sparse_readout_prism.research.qwen_readout import load_sae
+from sparse_readout_prism.utils import resolve_device, write_csv
 
 
 def log(msg):
     print(f"[antonym] {msg}", flush=True)
 
 
-def _import_jlens():
-    try:
-        import jlens
-    except ImportError as e:
-        raise ImportError(
-            "jlens (the Jacobian-lens reference implementation, Apache-2.0, "
-            "github.com/anthropics/jacobian-lens) is not installed; install it with `uv sync --extra lens`"
-        ) from e
-    return jlens
-
-
-def load_sae(checkpoint):
-    """Raw TopK dictionary tensors from a training checkpoint (decoder rows unit-normalised)."""
-    ckpt = torch.load(checkpoint, map_location="cpu", weights_only=True)
-    state = ckpt["model_state_dict"]
-    decoder = state["decoder"].float().contiguous()  # (d_features, d_model)
-    encoder_w = state["encoder.weight"].float().contiguous()  # (d_features, d_model)
-    encoder_b = state["encoder.bias"].float().contiguous()  # (d_features,)
-    decoder = decoder / decoder.norm(dim=1, keepdim=True).clamp_min(1e-8)
-    return decoder, encoder_w, encoder_b
-
-
-def encode_topk(x, encoder_w, encoder_b, k):
-    acts = F.relu(x @ encoder_w.T + encoder_b)
-    values, indices = torch.topk(acts, k=min(k, acts.shape[-1]), dim=-1)
-    code = torch.zeros_like(acts)
-    code.scatter_(dim=-1, index=indices, src=values)
-    return code
-
-
 @torch.no_grad()
 def cmd_run(args) -> None:
-    import transformers
+    jlens = import_jlens()
 
-    jlens = _import_jlens()
-
-    hf = transformers.AutoModelForCausalLM.from_pretrained(args.model_id, dtype=torch.bfloat16).cuda().eval()
-    tok = transformers.AutoTokenizer.from_pretrained(args.model_id)
-    model = jlens.from_hf(hf, tok)
+    device = resolve_device(args.device)
+    loaded = load_lens_model(args.model_id, device=device)
+    tok, model = loaded.tok, loaded.lens_model
     lens = jlens.JacobianLens.load(args.lens)
     layers = sorted(lens.jacobians)
-    J = {l: lens.jacobians[l].float().cuda() for l in layers}
-    W = hf.get_output_embeddings().weight.detach().float().cuda()  # (vocab, d_model)
-    row_mean = W.mean(dim=0)
-    final_norm = hf.model.norm
-    decoder, encoder_w, encoder_b = load_sae(Path(args.sae))
-    decoder, encoder_w, encoder_b = decoder.cuda(), encoder_w.cuda(), encoder_b.cuda()
+    J = {l: lens.jacobians[l].float().to(device) for l in layers}
+    W = loaded.lm_head.weight.detach().float().to(device)  # (vocab, d_model)
+    final_norm = loaded.final_norm
+    decoder, encoder_w, encoder_b, config, ckpt_row_mean = load_sae(args.checkpoint)
+    k = resolve_k(args.k, config)
+    row_mean = centering_row_mean(W, args.centering, tok=tok, ckpt_row_mean=ckpt_row_mean)  # (d_model,)
+    decoder, encoder_w, encoder_b = decoder.to(device), encoder_w.to(device), encoder_b.to(device)
+    decompose = partial(
+        decompose_token,
+        W=W,
+        row_mean=row_mean,
+        decoder=decoder,
+        encoder_w=encoder_w,
+        encoder_b=encoder_b,
+        k=k,
+        top_feats=16,
+    )
 
     captured = {}
 
@@ -112,7 +110,7 @@ def cmd_run(args) -> None:
 
     per_layer, final_logits, _ = lens.apply(model, args.prompt, positions=[-1])
     h_ref = captured["final_norm_out"][0, -1].float().clone()
-    final_logits = final_logits.float().squeeze().cuda()
+    final_logits = final_logits.float().squeeze().to(device)
     greedy = tok.decode([int(final_logits.argmax())])
     log(f"prompt={args.prompt!r} greedy={greedy!r}")
 
@@ -131,22 +129,6 @@ def cmd_run(args) -> None:
 
     probes = probe_ids()
     log(f"single-token probes: {list(probes)}")
-
-    def decompose(h_state, token_id):
-        W_row = W[token_id]
-        centered = W_row - row_mean
-        norm = centered.norm().clamp_min(1e-8)
-        code = encode_topk((centered / norm)[None, :], encoder_w, encoder_b, args.k)[0]
-        contributions = norm * code * (h_state @ decoder.T)
-        active = torch.nonzero(contributions != 0).flatten()
-        top = active[contributions[active].abs().argsort(descending=True)[:16]]
-        return {
-            "original_logit": float(h_state @ W_row),
-            "base": float(h_state @ row_mean),
-            "feature_sum": float(contributions.sum()),
-            "residual": float(h_state @ W_row) - float(h_state @ row_mean) - float(contributions.sum()),
-            "top_features": [{"id": int(f), "contribution": float(contributions[f])} for f in top],
-        }
 
     rows, seen = {}, set()
     for l in layers:
@@ -171,30 +153,14 @@ def cmd_run(args) -> None:
     for h in handles:
         h.remove()
 
-    fids = torch.tensor(sorted(seen), dtype=torch.long)
-    enc, bias = encoder_w[fids], encoder_b[fids]
-    best_s = torch.full((len(fids), 10), -float("inf"), device=W.device)
-    best_i = torch.zeros((len(fids), 10), dtype=torch.long, device=W.device)
-    for s in range(0, W.shape[0], 8192):
-        rws = W[s : s + 8192]
-        c = rws - row_mean
-        x = c / c.norm(dim=1, keepdim=True).clamp_min(1e-8)
-        sc = F.relu(x @ enc.T + bias).T
-        m = torch.cat([best_s, sc], 1)
-        mi = torch.cat([best_i, torch.arange(s, s + rws.shape[0], device=W.device).expand(len(fids), -1)], 1)
-        best_s, keep = torch.topk(m, k=10, dim=1)
-        best_i = torch.gather(mi, 1, keep)
-    labels = {
-        int(f): [tok.decode([t]) for t, sc in zip(best_i[j].tolist(), best_s[j].tolist()) if sc > 0]
-        for j, f in enumerate(fids.tolist())
-    }
+    labels = feature_top_tokens(W, row_mean, seen, encoder_w, encoder_b, tok, top_tokens=10)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "model": args.model_id,
         "lens": args.lens,
-        "sae": args.sae,
+        "sae": args.checkpoint,
         "prompt": args.prompt,
         "greedy": greedy,
         "layers": layers,
@@ -204,23 +170,13 @@ def cmd_run(args) -> None:
     tmp = out.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False))
     os.replace(tmp, out)
+    write_manifest(out, args, prompt=args.prompt, greedy=greedy, layers=layers, k=k, centering=args.centering)
 
     for L in [str(l) for l in layers] + ["final"]:
         jl = " · ".join(f"{t}({p}%)" for t, p in rows[L]["jlens_top10"][:3])
         ll = " · ".join(f"{t}({p}%)" for t, p in rows[L]["logitlens_top10"][:3])
         log(f"L{L:>5}  lens: {jl}   |   logit-lens: {ll}")
     log(f"wrote -> {out}")
-
-
-def parse_dump_args(specs: list[str]) -> list[tuple[str, Path]]:
-    """Parse repeated ``LABEL=path`` arguments, preserving order."""
-    out = []
-    for spec in specs:
-        label, sep, path = spec.partition("=")
-        if not sep or not label or not path:
-            raise ValueError(f"--dump expects LABEL=path, got {spec!r}")
-        out.append((label, Path(path)))
-    return out
 
 
 def antonym_layer_table(dumps: dict[str, dict], layers: list[str]) -> tuple[list[dict], list[dict]]:
@@ -273,12 +229,17 @@ def cmd_table(args) -> None:
     for L in layers:
         cells = [t for t in table if t["layer"] == L]
         print(f"{L:>5s}  " + "".join(f"{c['top1_token']!r} {c['top1_softmax_pct']}%".rjust(28) for c in cells))
+    written = []
     if args.out_csv:
         write_csv(args.out_csv, table)
+        written.append(args.out_csv)
         print(f"wrote {args.out_csv}")
     if args.out_features_csv:
         write_csv(args.out_features_csv, features)
+        written.append(args.out_features_csv)
         print(f"wrote {args.out_features_csv}")
+    if written:
+        write_manifest(written[0], args, prompt=first["prompt"], layers=layers, lenses=labels)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -288,9 +249,24 @@ def main(argv: list[str] | None = None) -> int:
     sp = sub.add_parser("run", help="read the prompt through one fitted lens (GPU)")
     sp.add_argument("--model-id", default="Qwen/Qwen3.5-9B")
     sp.add_argument("--lens", required=True, help="fitted lens .pt (JacobianLens container)")
-    sp.add_argument("--sae", required=True, help="readout SAE checkpoint.pt (paper: Qwen3.5-9B k=128 seed 0, 8x)")
-    sp.add_argument("--k", type=int, default=128)
+    sp.add_argument(
+        "--checkpoint", required=True, help="readout dictionary checkpoint.pt (paper: Qwen3.5-9B k=128 seed 0, 8x)"
+    )
+    sp.add_argument(
+        "--k",
+        type=int,
+        default=None,
+        help="active features per row code (default: the checkpoint's trained k; a different value warns)",
+    )
+    sp.add_argument(
+        "--centering",
+        choices=CENTERING_MODES,
+        default="live",
+        help="centering mean: live = full-vocabulary mean of the live head (paper), "
+        "trained = the checkpoint's row_mean (else the tokenizer's text-token mean)",
+    )
     sp.add_argument("--prompt", default='"小"的反义词是"')
+    sp.add_argument("--device", default="cuda", help="torch device for the model and the dictionary (paper: cuda)")
     sp.add_argument("--out", required=True, help="output JSON")
     sp.set_defaults(fn=cmd_run)
 

@@ -38,6 +38,8 @@ The cross-lens scripts (`run/fit_jlens.py`, `run/fit_ridge_lens.py`,
 `run/run_cross_lens_readouts.py`, `analyze/cross_lens_antonym_layers.py run`)
 import the Jacobian-lens reference implementation lazily; install it with
 `uv sync --extra lens`. Every other script runs from the base environment.
+The four GPU cross-lens scripts take `--device` (default `cuda`) and `--centering`
+(default `live`, the paper's centering); see `docs/REPRODUCE.md`.
 
 The earlier exploratory families (causal / attention-head circuits,
 CoT-faithfulness and agentic-injection probes, the 160M transcoder/SAE lineage,

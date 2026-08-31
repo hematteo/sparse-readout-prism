@@ -1,29 +1,19 @@
 """Smoke test for scripts/eval/paired_matched_kl_bootstrap.py on a synthetic
 candidate_constrained_rows.csv: the matched scales are the log-nearest median
 KLs, the paired mean difference equals the direct per-candidate mean, both
-clusterings (held-out term and prompt) are reported, and the run is seeded.
+clusterings (held-out term and prompt) are reported, the run is seeded, and the
+output carries a ``provenance`` block next to the ``comparisons`` records.
 """
 
 from __future__ import annotations
 
 import csv
-import importlib.util
 import json
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+from conftest import load_script
 
-
-def _load(relpath: str, name: str):
-    spec = importlib.util.spec_from_file_location(name, ROOT / relpath)
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[name] = mod
-    spec.loader.exec_module(mod)
-    return mod
-
-
-boot = _load("scripts/eval/paired_matched_kl_bootstrap.py", "paired_matched_kl_bootstrap")
+boot = load_script("scripts/eval/paired_matched_kl_bootstrap.py")
 
 TERMS = ["damn", "crap", "bullshit"]
 PROMPTS = ["Oh", "Holy", "This is", "You are such a", "That really", "I am so", "You really"]
@@ -86,10 +76,29 @@ def test_paired_bootstrap_on_synthetic_rows(tmp_path: Path) -> None:
         ["--input", f"toy={csv_path}", "--out", str(out), "--n-boot", "50", "--seed", "0", "--target-kl", "0.05", "0.2"]
     )
     assert rc == 0
-    results = json.loads(out.read_text())
+    payload = json.loads(out.read_text())
+    assert set(payload) == {"comparisons", "provenance"}
+    prov = payload["provenance"]
+    assert {"command", "args", "git_commit", "package_version", "torch_version", "timestamp_unix"} <= set(prov)
+    assert prov["args"]["n_boot"] == 50 and prov["args"]["seed"] == 0
+    results = payload["comparisons"]
     # Only mean_row_direction is present -> 2 targets x 1 baseline x 2 outcomes.
     assert len(results) == 4
     assert {r["model"] for r in results} == {"toy"}
+    assert list(results[0]) == [
+        "model",
+        "target_kl",
+        "baseline",
+        "outcome",
+        "n",
+        "srp_scale",
+        "srp_kl",
+        "base_scale",
+        "base_kl",
+        "mean_diff",
+        "ci_term",
+        "ci_prompt",
+    ]
     by_key = {(r["target_kl"], r["outcome"]): r for r in results}
 
     r = by_key[(0.05, "dp")]
@@ -104,10 +113,10 @@ def test_paired_bootstrap_on_synthetic_rows(tmp_path: Path) -> None:
     assert by_key[(0.05, "flip")]["mean_diff"] == 1.0
     assert by_key[(0.2, "dp")]["srp_scale"] == 4.0 and by_key[(0.2, "dp")]["base_scale"] == 8.0
 
-    # Seeded: a second run reproduces the file byte for byte.
+    # Seeded: a second run reproduces the comparison records exactly (provenance carries a timestamp).
     out2 = tmp_path / "paired2.json"
     boot.main(["--input", f"toy={csv_path}", "--out", str(out2), "--n-boot", "50", "--target-kl", "0.05", "0.2"])
-    assert out2.read_text() == out.read_text()
+    assert json.loads(out2.read_text())["comparisons"] == results
 
 
 def test_scale_for_kl_respects_two_x_window() -> None:

@@ -24,12 +24,25 @@ Protocol:
   - lambda grid: g * tr(XtX) / (N * d) for g in {1e-3, 1e-2, 1e-1, 1, 10};
   - diagnostics reported, not enforced: per-layer holdout R^2, and top-1
     agreement between decode(transport(h_l)) and the model's final logits on the
-    last 5 holdout prompts at the two deepest fitted layers (written to
-    ``<out>.report.json``).
+    last (up to) 5 holdout prompts at the two deepest fitted layers (written to
+    ``<out>.report.json`` together with a ``provenance`` block).
 
-Resumable: the second-moment accumulators checkpoint every 10 prompts (atomic),
-and the script exits early if ``--out`` already exists. ``jlens`` is imported
-lazily (``uv sync --extra lens``).
+Lambda grid, as run. The multipliers ``g`` are scaled per token
+(``lambda = g * tr(XtX) / (N * d)``, ``N`` = tokens in the fit prompts) but the
+penalty is added to the N-token Gram sum ``XtX`` itself, so relative to the Gram
+matrix the effective shrinkage is ``g / N`` -- small at every grid point -- and
+both paper fits selected the grid's top value ``g = 10`` at all twelve layers
+(``lambda_mult`` in the shipped ``.report.json`` files). The math is kept
+exactly as the paper ran it; widening or rescaling the grid changes the fitted
+translators and is a paper decision, not a code fix.
+
+Resumable: the second-moment accumulators checkpoint every 10 prompts (atomic)
+under ``<ckpt-dir>/<tag>_{fit,hold}.ckpt``, guarded by ``<ckpt-dir>/<tag>.meta.json``
+(model id, prompt manifest, sha1 of the prompt list, ``n_prompts``, ``holdout``,
+``tag``, layers, ``max_seq_len``): existing checkpoints are refused when the
+sidecar differs. The script exits early if ``--out`` already exists. ``jlens``
+is imported lazily (``uv sync --extra lens``); the model is loaded through
+``research.cross_lens.load_lens_model`` on ``--device`` (default ``cuda``).
 
 Paper runs (Qwen3.5-9B, layer set copied from the English-fitted Jacobian lens)::
 
@@ -39,6 +52,17 @@ Paper runs (Qwen3.5-9B, layer set copied from the English-fitted Jacobian lens):
   fit_ridge_lens.py --model-id Qwen/Qwen3.5-9B --prompts-json <out>/c4_prompts_zh_seed0.json \
       --n-prompts 100 --holdout 10 --layers-from <out>/qwen35_9b_jlens_en_seed0_n100.pt \
       --ckpt-dir <ckpt> --tag ridge_zh --out <out>/qwen35_9b_ridgelens_zh_seed0_n100.pt
+
+Fixed in 0.2.1:
+  - ``--holdout`` must be >= 1 and leave at least one fit prompt (clear
+    ``SystemExit``): with 0 the holdout accumulator was empty and lambda
+    selection crashed after the full fit pass.
+  - The deep-layer top-1 agreement diagnostic sliced ``prompts[-5:]``, which
+    reads into the fit prompts whenever ``--holdout`` < 5; it now slices the
+    holdout tail, ``prompts[n_fit:][-5:]``. For the paper's ``--holdout 10`` the
+    two slices coincide, so the shipped ``deep_top1_agreement`` numbers stand.
+  - Accumulator resume is guarded by the ``<tag>.meta.json`` sidecar described
+    above; ``<out>.report.json`` gains a ``provenance`` block.
 """
 
 from __future__ import annotations
@@ -50,6 +74,16 @@ from pathlib import Path
 
 import torch
 
+from sparse_readout_prism.research.cross_lens import (
+    check_resume_meta,
+    import_jlens,
+    load_lens_model,
+    prompt_list_sha1,
+    write_resume_meta,
+)
+from sparse_readout_prism.research.run_io import run_provenance
+from sparse_readout_prism.utils import resolve_device
+
 LAMBDA_GRID = [1e-3, 1e-2, 1e-1, 1.0, 10.0]
 
 
@@ -57,41 +91,20 @@ def log(msg: str) -> None:
     print(f"[ridge_lens] {msg}", flush=True)
 
 
-def _import_jlens():
-    try:
-        import jlens
-    except ImportError as e:
-        raise ImportError(
-            "jlens (the Jacobian-lens reference implementation, Apache-2.0, "
-            "github.com/anthropics/jacobian-lens) is not installed; install it with `uv sync --extra lens`"
-        ) from e
-    return jlens
-
-
 def _activation_recorder():
-    _import_jlens()
+    import_jlens()
     from jlens.hooks import ActivationRecorder
 
     return ActivationRecorder
 
 
-def load_model(model_id: str):
-    import transformers
-
-    jlens = _import_jlens()
-    hf = (
-        transformers.AutoModelForCausalLM.from_pretrained(
-            model_id, torch_dtype=torch.bfloat16, attn_implementation="sdpa"
-        )
-        .cuda()
-        .eval()
-    )
-    tok = transformers.AutoTokenizer.from_pretrained(model_id)
-    return jlens.from_hf(hf, tok)
+def diagnostic_prompts(prompts: list[str], n_fit: int) -> list[str]:
+    """The (up to) five holdout prompts the deep top-1 agreement diagnostic scores."""
+    return prompts[n_fit:][-5:]
 
 
 @torch.no_grad()
-def accumulate(model, prompts, layers, final_layer, max_seq_len, ckpt_path, every=10):
+def accumulate(model, prompts, layers, final_layer, max_seq_len, ckpt_path, *, device, every=10):
     """One pass over prompts, accumulating XtX / XtY / YtY traces per layer."""
     ActivationRecorder = _activation_recorder()
 
@@ -105,7 +118,7 @@ def accumulate(model, prompts, layers, final_layer, max_seq_len, ckpt_path, ever
     acc = None
     start = 0
     if state is not None:
-        acc = {l: {k: v.cuda() for k, v in per.items()} for l, per in state["acc"].items()}
+        acc = {l: {k: v.to(device) for k, v in per.items()} for l, per in state["acc"].items()}
         start = state["next_prompt"]
 
     for pi in range(start, len(prompts)):
@@ -118,10 +131,10 @@ def accumulate(model, prompts, layers, final_layer, max_seq_len, ckpt_path, ever
             d = y.shape[1]
             acc = {
                 l: {
-                    "xtx": torch.zeros(d, d, device="cuda"),
-                    "xty": torch.zeros(d, d, device="cuda"),
-                    "ytr": torch.zeros((), device="cuda"),
-                    "n": torch.zeros((), device="cuda"),
+                    "xtx": torch.zeros(d, d, device=device),
+                    "xty": torch.zeros(d, d, device=device),
+                    "ytr": torch.zeros((), device=device),
+                    "n": torch.zeros((), device=device),
                 }
                 for l in layers
             }
@@ -163,13 +176,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--model-id", default="Qwen/Qwen3.5-9B")
     ap.add_argument("--prompts-json", required=True, help="seeded prompt dump from fit_jlens.py prompts")
     ap.add_argument("--n-prompts", type=int, default=100)
-    ap.add_argument("--holdout", type=int, default=10)
+    ap.add_argument("--holdout", type=int, default=10, help="holdout tail for lambda selection (>= 1)")
     ap.add_argument("--layers-from", required=True, help="reference Jacobian lens .pt (source layers, d_model)")
     ap.add_argument("--max-seq-len", type=int, default=512)
     ap.add_argument("--ckpt-dir", required=True, help="directory for the resumable accumulator checkpoints")
     ap.add_argument("--out", required=True, help="output lens .pt (JacobianLens container)")
     ap.add_argument("--tag", default="ridge", help="checkpoint file prefix inside --ckpt-dir")
+    ap.add_argument("--device", default="cuda", help="torch device for the model and accumulators (paper: cuda)")
     args = ap.parse_args(argv)
+    if args.holdout < 1:
+        raise SystemExit(f"--holdout must be >= 1 (got {args.holdout}): lambda is selected on the holdout prompts")
 
     out = Path(args.out)
     if out.exists():
@@ -184,29 +200,33 @@ def main(argv: list[str] | None = None) -> int:
     payload = json.loads(Path(args.prompts_json).read_text())
     prompts = payload["prompts"][: args.n_prompts]
     n_fit = len(prompts) - args.holdout
+    if n_fit < 1:
+        raise SystemExit(f"--holdout {args.holdout} leaves no fit prompts ({len(prompts)} prompts available)")
     log(f"{len(prompts)} prompts ({n_fit} fit + {args.holdout} holdout)")
 
-    model = load_model(args.model_id)
-    final_layer = model.n_layers - 1
     ckpt_dir = Path(args.ckpt_dir)
+    fit_ckpt, hold_ckpt = ckpt_dir / f"{args.tag}_fit.ckpt", ckpt_dir / f"{args.tag}_hold.ckpt"
+    meta = {
+        "model_id": args.model_id,
+        "prompts_json": args.prompts_json,
+        "prompts_sha1": prompt_list_sha1(prompts),
+        "n_prompts": len(prompts),
+        "holdout": args.holdout,
+        "tag": args.tag,
+        "layers": layers,
+        "max_seq_len": args.max_seq_len,
+    }
+    meta_path = ckpt_dir / f"{args.tag}.meta.json"
+    check_resume_meta(meta_path, meta, [fit_ckpt, hold_ckpt])
     ckpt_dir.mkdir(parents=True, exist_ok=True)
+    write_resume_meta(meta_path, meta)
 
-    acc_fit = accumulate(
-        model,
-        prompts[:n_fit],
-        layers,
-        final_layer,
-        args.max_seq_len,
-        ckpt_dir / f"{args.tag}_fit.ckpt",
-    )
-    acc_hold = accumulate(
-        model,
-        prompts[n_fit:],
-        layers,
-        final_layer,
-        args.max_seq_len,
-        ckpt_dir / f"{args.tag}_hold.ckpt",
-    )
+    device = resolve_device(args.device)
+    model = load_lens_model(args.model_id, device=device).lens_model
+    final_layer = model.n_layers - 1
+
+    acc_fit = accumulate(model, prompts[:n_fit], layers, final_layer, args.max_seq_len, fit_ckpt, device=device)
+    acc_hold = accumulate(model, prompts[n_fit:], layers, final_layer, args.max_seq_len, hold_ckpt, device=device)
 
     report, W_final = {}, {}
     for l in layers:
@@ -227,13 +247,13 @@ def main(argv: list[str] | None = None) -> int:
         log(f"layer {l}: g={g} holdout_R2={score:.4f}")
 
     # Diagnostic: top-1 agreement of decoded transported states vs model
-    # logits on the last 5 holdout prompts, two deepest fitted layers.
+    # logits on the last (up to) 5 holdout prompts, two deepest fitted layers.
     ActivationRecorder = _activation_recorder()
 
     deep = layers[-2:]
     agree = {l: [0, 0] for l in deep}
     with torch.no_grad():
-        for prompt in prompts[-5:]:
+        for prompt in diagnostic_prompts(prompts, n_fit):
             with ActivationRecorder(model.layers, at=sorted(set(deep) | {final_layer})) as rec:
                 input_ids = model.encode(prompt, max_length=args.max_seq_len)
                 model.forward(input_ids)
@@ -269,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
                 "holdout": args.holdout,
                 "lambda_grid": LAMBDA_GRID,
                 "layers": {str(l): report[l] for l in layers},
+                "provenance": run_provenance(args),
             },
             indent=1,
         )

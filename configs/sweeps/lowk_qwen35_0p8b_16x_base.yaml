@@ -23,6 +23,9 @@
 # data.path is the {W_U_orig, h_LN} extraction of Qwen3.5-0.8B
 # (scripts/data/extract_model_readout.py), the artifact
 # configs/registries/result1_query_fidelity_cluster.yaml resolves for this model.
+# training.log_every / training.checkpoint_every (250 / 5000) are logging and
+# checkpoint cadence only, added for parity with paper_phase2_base.yaml; they do
+# not change the trained dictionary.
 
 run:
   name: lowk_qwen35_0p8b_16x
@@ -54,6 +57,8 @@ training:
   prism_top_n: 1
   lambda_prism: 0.001
   row_sampling: hybrid_50freq_50uniform
+  log_every: 250          # cadence only: parity with paper_phase2_base.yaml
+  checkpoint_every: 5000  # cadence only: parity with paper_phase2_base.yaml
 
 evaluation:
   k: 64

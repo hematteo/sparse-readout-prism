@@ -66,6 +66,15 @@ script and command line in [`docs/REPRODUCE.md`](docs/REPRODUCE.md) §2):
   with the seed-variation and low-k training configs;
 - the sense-labelled evaluation on CoarseWSD-20.
 
+0.2.1 consolidates that code onto the repo's shared helpers (`research/cross_lens.py`,
+`research/wsd.py`, `research/row_geometry.py`; the library's checkpoint reader,
+top-k kernel and centering helper), fixes the small bugs found in review, records
+provenance in every result file, and exposes the choices the paper runs made
+implicitly as flags whose defaults reproduce the paper: `--centering {live,trained}`
+(full-vocabulary vs. training row mean), `--agreement-rule {half,strict}` and
+`--null-population {all,cross}` (cross-lens aggregators), and
+`--knn-exclude-self` (leave-one-out core recovery).
+
 ## Install
 
 Requires Python 3.11 or 3.12.
@@ -211,7 +220,8 @@ src/sparse_readout_prism/         core library
   research/                       flat helpers shared by several scripts/ entry
                                   points (Qwen readout + query-decomposition
                                   toolkits, prompt banks, registry, run IO,
-                                  seed-stability contrast pipeline);
+                                  seed-stability pipeline, row-geometry helpers,
+                                  cross-lens toolkit, CoarseWSD-20 helpers);
                                   logic used by a single script stays inline in
                                   that script
 
@@ -241,7 +251,6 @@ configs/
 data/
   query_banks/                    curated prompt banks (paper inputs)
   cross_lens/                     EN-ZH / EN-DE cross-lens prompt banks + exclusion report
-  wsd/                            optional sense-gloss anchors for the CoarseWSD-20 runs
   appendix/                       audited literals behind the Appendix K tables
   audit/                          feature-label audit annotations + counts (Appendix L)
 

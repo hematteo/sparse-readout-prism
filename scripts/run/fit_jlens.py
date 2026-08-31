@@ -21,11 +21,21 @@ The estimator is the reference implementation of the Jacobian lens (``jlens``,
 Apache-2.0, https://github.com/anthropics/jacobian-lens); this script only
 orchestrates sharding and storage. Jacobians accumulate in fp32 and are saved in
 fp16. Install the dependency with ``uv sync --extra lens``; the import is lazy so
-the rest of the repository installs and tests without it.
+the rest of the repository installs and tests without it. The model is loaded
+through ``research.cross_lens.load_lens_model`` (``utils.load_causal_lm`` on
+``--device``, default ``cuda``).
 
 Source layers are ``pick_source_layers(n_layers, --n-layers)``: evenly spaced over
 5-95% depth, excluding layer 0 and the final (target) layer. For Qwen3.5-9B and
 ``--n-layers 12`` this gives {2, 5, 7, 10, 12, 14, 17, 19, 21, 24, 26, 29}.
+
+Resume safety. ``fit`` writes ``shard{i}.meta.json`` next to the shard lens
+(model id, prompt manifest, sha1 of the prompt slice ``[start, start+n_prompts)``,
+``n_prompts``, ``start``, shard index and count, ``n_layers``) and refuses to
+reuse an existing ``shard{i}.lens.pt`` or ``shard{i}.ckpt.pt`` whose sidecar
+differs. ``merge`` requires the sidecars, checks that every shard agrees on
+them, and records the shared values (plus per-shard prompt counts and
+provenance) in ``<out stem>.meta.json``.
 
 Paper runs (Qwen3.5-9B, four shards on four GPUs, ``--dim-batch 8``)::
 
@@ -48,6 +58,14 @@ Paper runs (Qwen3.5-9B, four shards on four GPUs, ``--dim-batch 8``)::
 The same fit + merge with the zh / de dumps produce the Chinese- and German-fitted
 lenses (``qwen35_9b_jlens_zh_seed0_n100.pt``, ``qwen35_9b_jlens_de_seed0_n100.pt``),
 and with ``--n-prompts 300`` the three ``*_n300.pt`` refits.
+
+Fixed in 0.2.1:
+  - The out-of-memory fallback in ``fit`` stopped once ``dim_batch < 2``, so
+    ``--dim-batch 1`` was never attempted and ``2`` / ``3`` got no fallback; it
+    now tries the requested value and halves down to 1 (8 -> 8, 4, 2, 1; 3 -> 3, 1).
+  - Shard resume only checked that ``shard{i}.lens.pt`` existed, so a re-run
+    with a different prompt slice, budget or layer count reused a stale shard
+    or resumed jlens's checkpoint into a mixed fit; see "Resume safety" above.
 """
 
 from __future__ import annotations
@@ -61,37 +79,23 @@ from pathlib import Path
 
 import torch
 
-from sparse_readout_prism.utils import git_commit
+from sparse_readout_prism.research.cross_lens import (
+    check_resume_meta,
+    cli_args,
+    import_jlens,
+    load_lens_model,
+    prompt_list_sha1,
+    write_resume_meta,
+)
+from sparse_readout_prism.research.run_io import run_provenance
+from sparse_readout_prism.utils import git_commit, read_json, resolve_device, write_json
+
+# The fit parameters every shard of one lens must share (checked by ``merge``).
+SHARED_META_KEYS = ("model_id", "prompts_json", "prompts_sha1", "n_prompts", "start", "num_shards", "n_layers")
 
 
 def log(msg: str) -> None:
     print(f"[fit_jlens] {msg}", flush=True)
-
-
-def _import_jlens():
-    try:
-        import jlens
-    except ImportError as e:
-        raise ImportError(
-            "jlens (the Jacobian-lens reference implementation, Apache-2.0, "
-            "github.com/anthropics/jacobian-lens) is not installed; install it with `uv sync --extra lens`"
-        ) from e
-    return jlens
-
-
-def load_model(model_id: str):
-    import transformers
-
-    jlens = _import_jlens()
-    hf = (
-        transformers.AutoModelForCausalLM.from_pretrained(
-            model_id, torch_dtype=torch.bfloat16, attn_implementation="sdpa"
-        )
-        .cuda()
-        .eval()
-    )
-    tok = transformers.AutoTokenizer.from_pretrained(model_id)
-    return jlens.from_hf(hf, tok)
 
 
 def pick_source_layers(n_layers: int, n_pick: int) -> list[int]:
@@ -157,9 +161,9 @@ def read_prompts(path: str, n: int | None = None, start: int = 0) -> list[str]:
 
 
 def cmd_smoke(args) -> None:
-    jlens = _import_jlens()
+    jlens = import_jlens()
 
-    model = load_model(args.model_id)
+    model = load_lens_model(args.model_id, device=resolve_device(args.device)).lens_model
     prompts = read_prompts(args.prompts_json, 2)
     layers = pick_source_layers(model.n_layers, 4)
     t0 = time.time()
@@ -181,45 +185,76 @@ def cmd_smoke(args) -> None:
     )
 
 
+def dim_batch_schedule(dim_batch: int) -> list[int]:
+    """The requested ``dim_batch``, then halved down to 1: 8 -> [8, 4, 2, 1], 3 -> [3, 1], 1 -> [1]."""
+    if dim_batch < 1:
+        raise ValueError(f"--dim-batch must be >= 1, got {dim_batch}")
+    schedule = []
+    while dim_batch >= 1:
+        schedule.append(dim_batch)
+        dim_batch //= 2
+    return schedule
+
+
+def fit_with_fallback(fit, model, prompts: list[str], layers: list[int], dim_batch: int, ckpt: Path):
+    """``fit`` (``jlens.fit``) at each :func:`dim_batch_schedule` value until one does not OOM.
+
+    Every attempt resumes jlens's own checkpoint at ``ckpt``, so a fallback
+    continues from the prompts already accumulated. The retry happens after
+    the except block has closed: the exception traceback pins the failed
+    attempt's autograd graph, and an in-except retry OOMs against that ghost
+    memory.
+    """
+    for db in dim_batch_schedule(dim_batch):
+        try:
+            return fit(model, prompts, source_layers=layers, dim_batch=db, checkpoint_path=str(ckpt), resume=True)
+        except torch.cuda.OutOfMemoryError:
+            pass
+        log(f"OOM at dim_batch={db}; freeing and halving")
+        gc.collect()
+        torch.cuda.empty_cache()
+    raise RuntimeError("all dim_batch fallbacks OOMed")
+
+
+def shard_meta(args, prompts: list[str]) -> dict:
+    """The parameters that define one shard's fit, stored in ``shard{i}.meta.json``."""
+    return {
+        "model_id": args.model_id,
+        "prompts_json": args.prompts_json,
+        "prompts_sha1": prompt_list_sha1(prompts),
+        "n_prompts": args.n_prompts,
+        "start": args.start,
+        "shard": args.shard,
+        "num_shards": args.num_shards,
+        "n_layers": args.n_layers,
+    }
+
+
 def cmd_fit(args) -> None:
-    jlens = _import_jlens()
+    jlens = import_jlens()
 
     prompts = read_prompts(args.prompts_json, args.n_prompts, start=args.start)
     shard_prompts = prompts[args.shard :: args.num_shards]
-    model = load_model(args.model_id)
-    layers = pick_source_layers(model.n_layers, args.n_layers)
     ckpt = Path(args.ckpt_dir) / f"shard{args.shard}.ckpt.pt"
-    ckpt.parent.mkdir(parents=True, exist_ok=True)
     out = Path(args.out_dir) / f"shard{args.shard}.lens.pt"
+    meta_path = Path(args.out_dir) / f"shard{args.shard}.meta.json"
+    meta = shard_meta(args, prompts)
+    check_resume_meta(meta_path, meta, [out, ckpt])
     if out.exists():
         log(f"[resume] shard {args.shard} lens exists: {out}")
         return
+    ckpt.parent.mkdir(parents=True, exist_ok=True)
+    write_resume_meta(meta_path, meta)
+
+    model = load_lens_model(args.model_id, device=resolve_device(args.device)).lens_model
+    layers = pick_source_layers(model.n_layers, args.n_layers)
     log(
         f"git={git_commit()} model={args.model_id} shard={args.shard}/{args.num_shards} "
         f"prompt_slice=[{args.start},{args.start + args.n_prompts}) prompts={len(shard_prompts)} "
         f"layers={layers} dim_batch={args.dim_batch} ckpt={ckpt}"
     )
     t0 = time.time()
-    # Retry OUTSIDE the except block: the exception traceback pins the failed
-    # attempt's autograd graph, so an in-except retry OOMs against ghost memory.
-    lens = None
-    for dim_batch in (args.dim_batch, args.dim_batch // 2, args.dim_batch // 4):
-        if dim_batch < 2:
-            break
-        oom = False
-        try:
-            lens = jlens.fit(
-                model, shard_prompts, source_layers=layers, dim_batch=dim_batch, checkpoint_path=str(ckpt), resume=True
-            )
-        except torch.cuda.OutOfMemoryError:
-            oom = True
-        if not oom:
-            break
-        log(f"OOM at dim_batch={dim_batch}; freeing and halving")
-        gc.collect()
-        torch.cuda.empty_cache()
-    if lens is None:
-        raise RuntimeError("all dim_batch fallbacks OOMed")
+    lens = fit_with_fallback(jlens.fit, model, shard_prompts, layers, args.dim_batch, ckpt)
     for layer, J in lens.jacobians.items():
         assert torch.isfinite(J).all(), f"non-finite Jacobian at layer {layer}"
     tmp = str(out) + ".tmp"
@@ -228,14 +263,41 @@ def cmd_fit(args) -> None:
     log(f"shard {args.shard} done: {lens.n_prompts} prompts in {(time.time() - t0) / 3600:.2f} h -> {out}")
 
 
+def check_shard_metas_agree(metas: list[dict], *, num_shards: int) -> dict:
+    """The fit parameters shared by all shard sidecars; raises naming any they disagree on."""
+    diffs = []
+    for key in SHARED_META_KEYS:
+        vals = [m.get(key) for m in metas]
+        if any(v != vals[0] for v in vals):
+            diffs.append(f"{key}: {vals}")
+    if [m.get("shard") for m in metas] != list(range(len(metas))):
+        diffs.append(f"shard: {[m.get('shard') for m in metas]} (expected 0..{len(metas) - 1})")
+    if metas[0].get("num_shards") != num_shards:
+        diffs.append(f"num_shards: sidecars say {metas[0].get('num_shards')}, --num-shards is {num_shards}")
+    if diffs:
+        raise RuntimeError("shard sidecars disagree; these shards are not one fit\n  " + "\n  ".join(diffs))
+    return {k: metas[0].get(k) for k in SHARED_META_KEYS}
+
+
 def cmd_merge(args) -> None:
-    jlens = _import_jlens()
+    jlens = import_jlens()
 
     final = Path(args.out)
     if final.exists():
         log(f"[resume] merged lens exists: {final}")
         return
-    lenses = [jlens.JacobianLens.load(str(Path(args.shard_dir) / f"shard{i}.lens.pt")) for i in range(args.num_shards)]
+    shard_dir = Path(args.shard_dir)
+    metas = []
+    for i in range(args.num_shards):
+        meta_path = shard_dir / f"shard{i}.meta.json"
+        if not meta_path.exists():
+            raise FileNotFoundError(
+                f"{meta_path} missing: shards written before 0.2.1 carry no sidecar, so their fit cannot be "
+                "verified; refit the shard (or write the sidecar by hand from the run log)"
+            )
+        metas.append(read_json(meta_path))
+    shared = check_shard_metas_agree(metas, num_shards=args.num_shards)
+    lenses = [jlens.JacobianLens.load(str(shard_dir / f"shard{i}.lens.pt")) for i in range(args.num_shards)]
     merged = jlens.JacobianLens.merge(lenses)
     # Convergence report: first half of the shards vs all of them. Small
     # relative deltas mean the prompt budget has saturated.
@@ -248,6 +310,16 @@ def cmd_merge(args) -> None:
     tmp = str(final) + ".tmp"
     merged.save(tmp)
     os.replace(tmp, final)
+    write_json(
+        {
+            **shared,
+            "shard_n_prompts": [lens.n_prompts for lens in lenses],
+            "merged_n_prompts": merged.n_prompts,
+            "layers": merged.source_layers,
+            "provenance": run_provenance(cli_args(args)),
+        },
+        final.with_suffix(".meta.json"),
+    )
     log(f"merged {sum(lens.n_prompts for lens in lenses)} prompts, {len(merged.jacobians)} layers -> {final}")
 
 
@@ -273,6 +345,7 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--prompts-json", required=True)
     sp.add_argument("--out", required=True)
     sp.add_argument("--dim-batch", type=int, default=16)
+    sp.add_argument("--device", default="cuda", help="torch device for the model (paper: cuda)")
     sp.set_defaults(fn=cmd_smoke)
 
     sp = sub.add_parser("fit", help="fit one prompt shard on one GPU")
@@ -283,9 +356,10 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--shard", type=int, required=True)
     sp.add_argument("--num-shards", type=int, required=True)
     sp.add_argument("--n-layers", type=int, default=12)
-    sp.add_argument("--dim-batch", type=int, default=16)
+    sp.add_argument("--dim-batch", type=int, default=16, help="output dims per backward pass; halved on OOM down to 1")
     sp.add_argument("--ckpt-dir", required=True)
     sp.add_argument("--out-dir", required=True)
+    sp.add_argument("--device", default="cuda", help="torch device for the model (paper: cuda)")
     sp.set_defaults(fn=cmd_fit)
 
     sp = sub.add_parser("merge", help="merge shard lenses into one lens file")

@@ -24,6 +24,11 @@ plus the fraction of contrasts whose mean same-side Jaccard exceeds the
 cross-contrast null's 90th percentile. Everything is local to the extraction
 payload and the checkpoints; no model forward pass.
 
+``--centering {live,trained}`` selects the centering mean: ``live`` (default)
+is the full-vocabulary mean of the payload's ``W_U``, how the paper's runs were
+computed; ``trained`` is the dictionaries' stored training mean. The output
+JSON carries a ``provenance`` block (command line, args, git hash, versions).
+
 Dictionary-family discipline: pass dictionaries from ONE recipe (the
 seed-variation family trained from ``configs/sweeps/qwen35_2b_seedvar_base.yaml``).
 The script refuses dictionaries that differ in width or ``k``. Cross-recipe
@@ -54,6 +59,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from sparse_readout_prism.research.run_io import run_provenance
 from sparse_readout_prism.research.seed_stability import (
     center_rows,
     contrast_features,
@@ -62,17 +68,11 @@ from sparse_readout_prism.research.seed_stability import (
     load_contrast_pairs,
     load_dictionary,
     load_readout,
+    resolve_centering,
+    summary_stats,
+    unit_rows,
 )
 from sparse_readout_prism.utils import to_jsonable
-
-
-def _stats(v) -> dict:
-    v = np.asarray(v, dtype=float)
-    return dict(mean=float(v.mean()), median=float(np.median(v)), p10=float(np.percentile(v, 10)), n=int(len(v)))
-
-
-def _unit(d: torch.Tensor) -> torch.Tensor:
-    return d / d.norm(dim=1, keepdim=True).clamp_min(1e-8)
 
 
 def run(
@@ -84,13 +84,14 @@ def run(
     pairs: list[tuple],
     rng: np.random.Generator,
     *,
+    row_mean: torch.Tensor,
     top_m: int,
     top_r: int,
     n_sample: int,
     n_hidden: int,
     width_tag: str | None,
 ) -> dict:
-    W_c, rn, W_n = center_rows(W)
+    W_c, rn, W_n = center_rows(W, row_mean)
     n_seeds = len(dicts)
     cache: dict[int, str] = {}
 
@@ -98,7 +99,7 @@ def run(
     side_sets: list[list[tuple[set, set]]] = [[] for _ in dicts]  # [seed][ci] = (T_pos, T_neg)
     used_feats: list[set[int]] = [set() for _ in dicts]
     for si, d in enumerate(dicts):
-        dec = d[0]
+        dec = d.decoder
         for _a, _b, ia, ib in pairs:
             top_pos, top_neg = contrast_features(W_n, rn, d, ia, ib, top_m)
             used_feats[si].update(top_pos + top_neg)
@@ -133,14 +134,14 @@ def run(
     basis = {}
     for s1 in range(n_seeds):
         for s2 in range(s1 + 1, n_seeds):
-            d1, d2 = dicts[s1][0], dicts[s2][0]
-            d1n, d2n = _unit(d1), _unit(d2)
+            d1, d2 = dicts[s1].decoder, dicts[s2].decoder
+            d1n, d2n = unit_rows(d1), unit_rows(d2)
             samp = torch.tensor(rng.choice(d1.shape[0], min(n_sample, d1.shape[0]), replace=False))
             nn_rand = (d1n[samp] @ d2n.T).max(dim=1).values
             used = torch.tensor(sorted(used_feats[s1]))
             nn_used = (d1n[used] @ d2n.T).max(dim=1).values
             basis[f"s{labels[s1]}-s{labels[s2]}"] = dict(
-                nn_cos_random=_stats(nn_rand.tolist()), nn_cos_used=_stats(nn_used.tolist())
+                nn_cos_random=summary_stats(nn_rand.tolist(), (10,)), nn_cos_used=summary_stats(nn_used.tolist(), (10,))
             )
 
     # projection correlation on held-out hidden states
@@ -150,9 +151,9 @@ def run(
         H = H[torch.tensor(rng.choice(H.shape[0], min(n_hidden, H.shape[0]), replace=False))]
         for s1 in range(n_seeds):
             for s2 in range(s1 + 1, n_seeds):
-                d1, d2 = dicts[s1][0], dicts[s2][0]
+                d1, d2 = dicts[s1].decoder, dicts[s2].decoder
                 used = torch.tensor(sorted(used_feats[s1]))
-                match = (_unit(d1[used]) @ _unit(d2).T).argmax(dim=1)
+                match = (unit_rows(d1[used]) @ unit_rows(d2).T).argmax(dim=1)
                 p1 = H @ d1[used].T
                 p2 = H @ d2[match].T
                 r = torch.corrcoef(torch.stack([p1.flatten(), p2.flatten()]))[0, 1]
@@ -160,13 +161,13 @@ def run(
 
     return dict(
         width=width_tag,
-        k=int(dicts[0][3]),
+        k=int(dicts[0].k),
         n_contrasts=len(pairs),
         top_m=top_m,
         top_r=top_r,
-        same_side=_stats(same_side),
-        cross_side=_stats(cross_side),
-        cross_contrast_null=_stats(cross_contrast),
+        same_side=summary_stats(same_side, (10,)),
+        cross_side=summary_stats(cross_side, (10,)),
+        cross_contrast_null=summary_stats(cross_contrast, (10,)),
         null_p90=null90,
         frac_contrasts_above_null_p90=frac_above_null,
         basis_nn_cosine=basis,
@@ -184,9 +185,16 @@ def main() -> int:
         help="checkpoint.pt of each seed, one recipe (paper: seeds 0, 1, 2 of one width)",
     )
     ap.add_argument("--seed-labels", nargs="+", type=int, default=None, help="labels for output keys (default 0..n-1)")
-    ap.add_argument("--w-u", type=Path, required=True, help="extraction payload {W_U_orig, h_LN, ...}")
+    ap.add_argument("--w-u", type=Path, required=True, help="extraction payload {W_U_orig, h_LN, token_mask, ...}")
     ap.add_argument("--bank", type=Path, required=True, help="curated A/B JSONL bank (target_a / target_b)")
     ap.add_argument("--tokenizer", default="Qwen/Qwen3.5-2B", help="HF tokenizer id or local path")
+    ap.add_argument(
+        "--centering",
+        choices=("live", "trained"),
+        default="live",
+        help="centering mean: full-vocabulary mean of W_U (live, the paper's runs) or the dictionaries' stored "
+        "training mean (trained)",
+    )
     ap.add_argument("--width-tag", default=None, help='label stored in the output, e.g. "32x"')
     ap.add_argument("--max-contrasts", type=int, default=150)
     ap.add_argument("--seed", type=int, default=0)
@@ -204,16 +212,17 @@ def main() -> int:
         ap.error("--seed-labels must have one entry per dictionary")
 
     rng = np.random.default_rng(args.seed)
-    W, h_LN = load_readout(args.w_u)
+    W, h_LN, token_mask = load_readout(args.w_u)
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(args.tokenizer)
 
     dicts = [load_dictionary(p) for p in args.dictionaries]
     for lab, d in zip(labels, dicts):
-        print(f"seed {lab}: D={d[0].shape[0]} k={d[3]}")
-    if len({(d[0].shape[0], d[3]) for d in dicts}) != 1:
+        print(f"seed {lab}: D={d.decoder.shape[0]} k={d.k}")
+    if len({(d.decoder.shape[0], d.k) for d in dicts}) != 1:
         raise SystemExit("dictionaries differ in width or k; pass checkpoints from one dictionary family")
+    row_mean = resolve_centering(W, dicts, args.centering, token_mask, tok=tok)
 
     pairs = load_contrast_pairs(args.bank, tok, rng, args.max_contrasts)
     print(f"contrasts: {len(pairs)} unique single-token pairs")
@@ -226,19 +235,21 @@ def main() -> int:
         tok,
         pairs,
         rng,
+        row_mean=row_mean,
         top_m=args.top_m,
         top_r=args.top_r,
         n_sample=args.n_sample,
         n_hidden=args.n_hidden,
         width_tag=args.width_tag,
     )
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(to_jsonable(out), indent=2) + "\n")
     print(json.dumps({k: v for k, v in out.items() if k != "basis_nn_cosine"}, indent=2))
     print(
         "basis NN-cosine (used features):",
         {k: round(v["nn_cos_used"]["median"], 3) for k, v in out["basis_nn_cosine"].items()},
     )
+    out["provenance"] = run_provenance(args)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(to_jsonable(out), indent=2) + "\n")
     print(f"wrote {args.out}")
     return 0
 

@@ -30,12 +30,15 @@ rankings, provenance), ``nearest_rows.csv`` (long form: contrast, variant,
 rank, token_id, token, cosine) and ``nearest_rows_table.csv`` (the table
 layout: per rank the centered and raw token with cosines rounded to two
 decimals and glosses for the non-Latin tokens that occur in the paper's lists).
+
+Changed in 0.2.1: both CSVs are written through ``utils.write_csv`` with fixed
+column lists (same columns, same bytes); an empty result (``--top-n 0``) now
+gives 0-byte CSVs instead of crashing the table writer.
 """
 
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 from pathlib import Path
 
@@ -44,7 +47,7 @@ import torch
 from sparse_readout_prism.data import resolve_row_mean
 from sparse_readout_prism.research.qwen_readout import load_qwen_model
 from sparse_readout_prism.research.run_io import run_provenance
-from sparse_readout_prism.utils import find_lm_head_with_path
+from sparse_readout_prism.utils import find_lm_head_with_path, write_csv
 
 # Glosses for the non-Latin tokens that enter the paper's top-12 lists.
 GLOSS = {
@@ -57,6 +60,18 @@ GLOSS = {
     " насекомых": "insects (ru)",
     " ошибки": "errors (ru)",
 }
+
+LONG_FIELDS = ["contrast", "variant", "rank", "token_id", "token", "cosine"]
+TABLE_FIELDS = [
+    "contrast",
+    "rank",
+    "centered_cosine",
+    "centered_token",
+    "centered_gloss",
+    "raw_cosine",
+    "raw_token",
+    "raw_gloss",
+]
 
 
 def single_token_id(tokenizer, text: str) -> int | None:
@@ -166,6 +181,31 @@ def table_rows(contrast_results: dict[str, dict]) -> list[dict]:
     return rows
 
 
+def long_rows(contrast_results: dict[str, dict]) -> list[dict]:
+    """Long-form listing (contrast, variant, rank, token_id, token, cosine); the token column is ``repr``'d."""
+    return [
+        {
+            "contrast": name,
+            "variant": variant,
+            "rank": row["rank"],
+            "token_id": row["token_id"],
+            "token": repr(row["token"]),
+            "cosine": row["cosine"],
+        }
+        for name, c in contrast_results.items()
+        for variant in ("top_centered", "top_raw")
+        for row in c[variant]
+    ]
+
+
+def write_tables(out_dir: Path, contrast_results: dict[str, dict]) -> None:
+    """``nearest_rows.csv`` (long form) and ``nearest_rows_table.csv`` (table layout); empty results give 0-byte files."""
+    write_csv(out_dir / "nearest_rows.csv", long_rows(contrast_results), fieldnames=LONG_FIELDS, write_empty=True)
+    write_csv(
+        out_dir / "nearest_rows_table.csv", table_rows(contrast_results), fieldnames=TABLE_FIELDS, write_empty=True
+    )
+
+
 def parse_contrast(spec: str) -> tuple[str, str]:
     parts = [p.strip() for p in spec.split(",")]
     if len(parts) != 2 or not all(parts):
@@ -241,19 +281,7 @@ def main() -> int:
     }
     (args.out_dir / "nearest_rows.json").write_text(json.dumps(results, indent=2, ensure_ascii=False, default=str))
 
-    with (args.out_dir / "nearest_rows.csv").open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["contrast", "variant", "rank", "token_id", "token", "cosine"])
-        for name, c in contrast_results.items():
-            for variant in ("top_centered", "top_raw"):
-                for row in c[variant]:
-                    w.writerow([name, variant, row["rank"], row["token_id"], repr(row["token"]), row["cosine"]])
-
-    table = table_rows(contrast_results)
-    with (args.out_dir / "nearest_rows_table.csv").open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(table[0].keys()))
-        w.writeheader()
-        w.writerows(table)
+    write_tables(args.out_dir, contrast_results)
 
     for name, c in contrast_results.items():
         print(f"\n=== {name}  ({c['definition']}) ===")

@@ -211,6 +211,41 @@ def resolve_row_mean(
     return W_U.float().mean(dim=0).cpu()
 
 
+def centering_mean(
+    W_U: torch.Tensor,
+    *,
+    mode: str,
+    token_mask: torch.Tensor | None = None,
+    ckpt: dict[str, Any] | None = None,
+) -> torch.Tensor:
+    """Centering mean under an explicit policy.
+
+    ``mode="trained"`` is :func:`resolve_row_mean` (checkpoint value, else the
+    ``token_mask`` mean, else the full-vocabulary mean) and is what every
+    fidelity runner uses. ``mode="live"`` is the full-vocabulary mean of the
+    matrix handed in, which is how the paper's cross-lens, causal-validation,
+    stability and sense-labelled runs were computed; scripts that reproduce
+    those runs expose it as ``--centering live`` (their default) so the choice
+    is visible rather than implicit. On the released Qwen3.5-2B dictionary the
+    two means differ by ~0.04% of a centred row norm.
+    """
+    if mode == "trained":
+        return resolve_row_mean(W_U, token_mask=token_mask, ckpt=ckpt)
+    if mode == "live":
+        return W_U.float().mean(dim=0).cpu()
+    raise ValueError(f"unknown centering mode {mode!r} (expected 'trained' or 'live')")
+
+
+def token_mask_from_tokenizer(tok: Any, vocab: int) -> torch.Tensor:
+    """Text-token row mask, as the extraction builds it: rows past the tokenizer
+    vocabulary (padded/unused embedding rows) and every special id are False."""
+    token_mask = torch.zeros(int(vocab), dtype=torch.bool)
+    token_mask[: min(int(vocab), len(tok))] = True
+    special_ids = [i for i in (getattr(tok, "all_special_ids", None) or []) if 0 <= i < vocab]
+    token_mask[special_ids] = False
+    return token_mask
+
+
 def choose_row_subset(
     W_U: torch.Tensor,
     hidden: torch.Tensor,

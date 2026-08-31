@@ -36,6 +36,11 @@ summary per seed pair (counts above the direction null p99 and at cosine >= 0.5)
 Seed pairs are all ordered pairs (query, candidate) with query index below
 candidate index, so three dictionaries give s0->s1, s0->s2, s1->s2.
 
+``--centering {live,trained}`` selects the centering mean: ``live`` (default)
+is the full-vocabulary mean of the payload's ``W_U``, how the paper's runs were
+computed; ``trained`` is the dictionaries' stored training mean. The output
+JSON carries a ``provenance`` block (command line, args, git hash, versions).
+
 Dictionary-family discipline: pass dictionaries from ONE recipe (the
 seed-variation family trained from ``configs/sweeps/qwen35_2b_seedvar_base.yaml``);
 the script refuses dictionaries that differ in width or ``k``.
@@ -52,6 +57,25 @@ Paper runs (Qwen3.5-2B, three seeds per width, curated A/B bank, all defaults):
         --out results/seed_stability/feature_group_matching_32x.json
 
     (16x: the ``qwen2b_d32768_k128_s{0,1,2}`` checkpoints, ``--width-tag 16x``.)
+
+Fixed in 0.2.1:
+
+* The frequency-matched null pool is enumerated in sorted token order
+  (``null_token_pool``). It was enumerated in ``Counter`` insertion order,
+  which follows ``frozenset`` iteration and therefore ``PYTHONHASHSEED``: the
+  pseudo-groups drawn for the null changed from process to process, and,
+  because ``rng.choice(..., replace=False, p=...)`` consumes a data-dependent
+  amount of generator state, so did the query features sampled for every seed
+  pair after the first. The paper's runs were produced under an unrecorded
+  hash seed, so a rerun reproduces the protocol and the first seed pair's
+  query population exactly, while the null draws (hence ``null99``,
+  ``frac_above_null_p99``, ``null_best_jaccard``) and the later pairs' query
+  samples are a fresh, now reproducible, sample of the same distributions.
+* The below-null tail of ``--direction-check`` is selected with the unrounded
+  best Jaccard, the value ``frac_above_null_p99`` is computed from. The
+  per-query record's 4-decimal ``best_jaccard`` was compared before, so a
+  query within 5e-5 of ``null99`` could be counted on different sides by the
+  two summaries. On the paper's 16x/32x outputs the two counts already agree.
 """
 
 from __future__ import annotations
@@ -65,13 +89,17 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from sparse_readout_prism.research.run_io import run_provenance
 from sparse_readout_prism.research.seed_stability import (
     center_rows,
     contrast_features,
     load_contrast_pairs,
     load_dictionary,
     load_readout,
+    resolve_centering,
+    summary_stats,
     token_strings,
+    unit_rows,
 )
 from sparse_readout_prism.utils import resolve_device, to_jsonable
 
@@ -87,6 +115,19 @@ def all_feature_groups(dec: torch.Tensor, W_c: torch.Tensor, tok, device, cache:
         top_rows[lo : lo + 2048] = sims.topk(top_r, dim=1).indices.cpu()
         del sims, chunk
     return [frozenset(token_strings(tok, top_rows[f].tolist(), cache)) for f in range(D)]
+
+
+def null_token_pool(cand_groups: list[frozenset]) -> tuple[list[str], np.ndarray]:
+    """Frequency-matched null pool: tokens in sorted order and their group-frequency weights.
+
+    Sorted enumeration is what makes the null draws independent of the hash
+    seed (``Counter`` insertion order follows ``frozenset`` iteration).
+    """
+    tok_freq = Counter(t for g in cand_groups for t in g)
+    pool_toks = sorted(tok_freq)
+    pool_p = np.array([tok_freq[t] for t in pool_toks], dtype=float)
+    pool_p /= pool_p.sum()
+    return pool_toks, pool_p
 
 
 def best_matches(query: frozenset, inv_index: dict, groups: list[frozenset], greedy_pool: int, greedy_k: int):
@@ -118,21 +159,6 @@ def best_matches(query: frozenset, inv_index: dict, groups: list[frozenset], gre
     return best_j, best_f, recalls
 
 
-def _stats(v) -> dict:
-    v = np.asarray(v, dtype=float)
-    return dict(
-        mean=float(v.mean()),
-        median=float(np.median(v)),
-        p90=float(np.percentile(v, 90)),
-        p99=float(np.percentile(v, 99)),
-        n=int(len(v)),
-    )
-
-
-def _unit(d: torch.Tensor) -> torch.Tensor:
-    return d / d.norm(dim=1, keepdim=True).clamp_min(1e-8)
-
-
 def run(
     dicts: list,
     labels: list[int],
@@ -142,6 +168,7 @@ def run(
     rng: np.random.Generator,
     device,
     *,
+    row_mean: torch.Tensor,
     top_m: int,
     top_r: int,
     n_query: int,
@@ -154,11 +181,11 @@ def run(
     direction_null: int,
     direction_seed: int,
 ) -> dict:
-    W_c, rn, W_n = center_rows(W)
+    W_c, rn, W_n = center_rows(W, row_mean)
     cache: dict[int, str] = {}
 
     # token groups of every feature, every seed
-    groups = [all_feature_groups(d[0], W_c, tok, device, cache, top_r) for d in dicts]
+    groups = [all_feature_groups(d.decoder, W_c, tok, device, cache, top_r) for d in dicts]
     print("feature groups computed", flush=True)
 
     # used features per seed (same construction as cross_seed_stability.py)
@@ -171,8 +198,9 @@ def run(
     print("used features:", [len(u) for u in used])
 
     seed_pairs = list(itertools.combinations(range(len(dicts)), 2))  # (query seed, candidate seed)
-    unit_decs = [_unit(d[0]) for d in dicts]
+    unit_decs = [unit_rows(d.decoder) for d in dicts]
     results: dict[str, dict] = {}
+    unrounded_best: dict[str, list[float]] = {}  # per pair, the best Jaccards before 4-dp rounding
     for qs, cs in seed_pairs:
         cand_groups = groups[cs]
         inv: dict[str, list[int]] = {}
@@ -180,11 +208,7 @@ def run(
             for t in g:
                 inv.setdefault(t, []).append(f)
 
-        # frequency-matched null token pool
-        tok_freq = Counter(t for g in cand_groups for t in g)
-        pool_toks = list(tok_freq)
-        pool_p = np.array([tok_freq[t] for t in pool_toks], dtype=float)
-        pool_p /= pool_p.sum()
+        pool_toks, pool_p = null_token_pool(cand_groups)
 
         # queries: sampled used features of the query seed with large-enough groups
         cands = [f for f in sorted(used[qs]) if len(groups[qs][f]) >= min_group_size]
@@ -222,21 +246,22 @@ def run(
         n_rec3 = [r[-1] for r in n_rec]
         res = dict(
             n_query=int(len(qs_feats)),
-            best_jaccard=_stats(q_best),
-            null_best_jaccard=_stats(n_best),
+            best_jaccard=summary_stats(q_best, (90, 99)),
+            null_best_jaccard=summary_stats(n_best, (90, 99)),
             frac_above_null_p99=float((np.array(q_best) > null99).mean()),
             frac_jaccard_ge_050=float((np.array(q_best) >= 0.5).mean()),
             frac_jaccard_ge_025=float((np.array(q_best) >= 0.25).mean()),
-            recall_at_1=_stats([r[0] for r in q_rec]),
-            recall_at_3=_stats(rec3),
-            null_recall_at_3=_stats(n_rec3),
+            recall_at_1=summary_stats([r[0] for r in q_rec], (90, 99)),
+            recall_at_3=summary_stats(rec3, (90, 99)),
+            null_recall_at_3=summary_stats(n_rec3, (90, 99)),
             frac_recall3_above_null_p99=float((np.array(rec3) > np.percentile(n_rec3, 99)).mean()),
-            matched_decoder_cosine=_stats(q_cos),
+            matched_decoder_cosine=summary_stats(q_cos, (90, 99)),
             null99=null99,
             per_query=q_records,
         )
         key = f"s{labels[qs]}->s{labels[cs]}"
         results[key] = res
+        unrounded_best[key] = q_best
         print(
             f"{key}: best-J med {res['best_jaccard']['median']:.3f} "
             f"(null p99 {null99:.3f}), >null {res['frac_above_null_p99']:.2f}, "
@@ -247,11 +272,12 @@ def run(
 
     if direction_check:
         drng = np.random.default_rng(direction_seed)
-        d_model = dicts[0][0].shape[1]
+        d_model = dicts[0].decoder.shape[1]
         for qs, cs in seed_pairs:
             key = f"s{labels[qs]}->s{labels[cs]}"
             r = results[key]
-            fails = [q for q in r["per_query"] if q["best_jaccard"] <= r["null99"]]
+            # same comparison as frac_above_null_p99 (unrounded best Jaccard), so the two summaries agree
+            fails = [q for q, bj in zip(r["per_query"], unrounded_best[key]) if bj <= r["null99"]]
             dq, dc = unit_decs[qs], unit_decs[cs]
             g = torch.tensor(drng.standard_normal((direction_null, d_model)), dtype=torch.float32)
             g = g / g.norm(dim=1, keepdim=True)
@@ -294,9 +320,16 @@ def main() -> int:
         help="checkpoint.pt of each seed, one recipe (paper: seeds 0, 1, 2 of one width)",
     )
     ap.add_argument("--seed-labels", nargs="+", type=int, default=None, help="labels for output keys (default 0..n-1)")
-    ap.add_argument("--w-u", type=Path, required=True, help="extraction payload {W_U_orig, ...}")
+    ap.add_argument("--w-u", type=Path, required=True, help="extraction payload {W_U_orig, token_mask, ...}")
     ap.add_argument("--bank", type=Path, required=True, help="curated A/B JSONL bank (target_a / target_b)")
     ap.add_argument("--tokenizer", default="Qwen/Qwen3.5-2B", help="HF tokenizer id or local path")
+    ap.add_argument(
+        "--centering",
+        choices=("live", "trained"),
+        default="live",
+        help="centering mean: full-vocabulary mean of W_U (live, the paper's runs) or the dictionaries' stored "
+        "training mean (trained)",
+    )
     ap.add_argument("--width-tag", default=None, help='label stored in the output, e.g. "32x"')
     ap.add_argument("--max-contrasts", type=int, default=150)
     ap.add_argument("--seed", type=int, default=0)
@@ -323,16 +356,17 @@ def main() -> int:
     rng = np.random.default_rng(args.seed)
     device = resolve_device(args.device)
     print(f"device={device}")
-    W, _ = load_readout(args.w_u)
+    W, _, token_mask = load_readout(args.w_u)
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(args.tokenizer)
 
     dicts = [load_dictionary(p) for p in args.dictionaries]
     for lab, d in zip(labels, dicts):
-        print(f"seed {lab}: D={d[0].shape[0]} k={d[3]}")
-    if len({(d[0].shape[0], d[3]) for d in dicts}) != 1:
+        print(f"seed {lab}: D={d.decoder.shape[0]} k={d.k}")
+    if len({(d.decoder.shape[0], d.k) for d in dicts}) != 1:
         raise SystemExit("dictionaries differ in width or k; pass checkpoints from one dictionary family")
+    row_mean = resolve_centering(W, dicts, args.centering, token_mask, tok=tok)
 
     pairs = load_contrast_pairs(args.bank, tok, rng, args.max_contrasts)
     print(f"contrasts: {len(pairs)} unique single-token pairs")
@@ -345,6 +379,7 @@ def main() -> int:
         pairs,
         rng,
         device,
+        row_mean=row_mean,
         top_m=args.top_m,
         top_r=args.top_r,
         n_query=args.n_query,
@@ -357,6 +392,7 @@ def main() -> int:
         direction_null=args.direction_null,
         direction_seed=args.direction_seed,
     )
+    out["provenance"] = run_provenance(args)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(to_jsonable(out), indent=2) + "\n")
     print(f"wrote {args.out}")

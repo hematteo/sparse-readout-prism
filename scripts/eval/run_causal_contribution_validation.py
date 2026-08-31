@@ -36,6 +36,25 @@ change on the predicted contribution through the origin (y = s x), so the slope
 is realized-on-predicted. Slope > 1 means the realized change exceeds the
 prediction; slope < 1 means it falls short.
 
+Centering (row-mean convention). The codes z are TopK codes of rows centered
+against a row mean and per-row normalized (``data.center_normalize_rows``).
+``--centering live`` (the default, and how the paper's six runs were computed)
+centers against the full-vocabulary mean of the live float32 ``lm_head``
+weight, ``W_U.mean(0)`` over all V rows including special and padded rows.
+``--centering trained`` centers the way the dictionary was trained
+(``data.centering_mean(mode="trained")``): the checkpoint's stored ``row_mean``
+when it has one, else the mean over the tokenizer's text-token rows
+(``data.token_mask_from_tokenizer``). The max-abs gap between the checkpoint
+mean and the live mean is logged either way. On the released Qwen3.5-2B
+dictionary the two means differ by ~0.04% of a centered row norm.
+
+Token resolution uses ``research.row_geometry.resolve_single_token_bare_first``
+(the bare form first, then the space-prefixed form), as the paper run did. The
+fidelity runners use the space-first, special-rejecting
+``research.registry.resolve_single_token_strict``; the two orders can pick
+different rows for terms where both forms are single tokens, so the bare-first
+order is kept here to reproduce the paper's contrast set rather than unified.
+
 ``summary.json`` subsets: ``gated_predicted`` (covered contrasts, rho below
 ``--rho-gate`` with sign agreement; the table's r^2, CI, slope and n),
 ``ungated_predicted`` (all contrasts) and ``gated_random_control`` (the table's
@@ -54,7 +73,8 @@ rows) and ``case_candidates`` (36), minus targets that do not tokenize to a
 single token.
 
 Outputs: ``causal_rows.csv`` (one row per prediction-realization pair),
-``summary.json`` and ``manifest.json`` (run provenance).
+``summary.json`` and ``manifest.json`` (run provenance, including
+``--centering``).
 
 Paper run: six models, each at the fidelity operating point (32x width,
 k=256; Hub path ``<model>/k256_32x/checkpoint.pt``), every other flag at its
@@ -75,10 +95,18 @@ default::
 
 Defaults the paper run relied on: ``--banks curated_ab,case_candidates,model_native
 --max-native 300 --top-features 10 --random-per-case 10 --rho-gate 0.5
---n-boot 2000 --max-len 64``.
+--n-boot 2000 --max-len 64 --centering live``.
 
 ``--self-test`` runs the synthetic residual-free check of the math core on CPU
-(no model, no checkpoint) and exits.
+(no model, no checkpoint) and exits. Its third check builds a dense two-row LM
+head W = [w_A; w_B] with w_A - w_B = q and re-reads the margin from W before
+and after ablating h, so the stored realized change is compared against an
+independent measurement rather than against the formula that produced it.
+
+Changed in 0.2.1: ``--centering {live,trained}`` (default ``live``, the paper's
+behaviour); the file-local resolver was replaced by the shared bare-first one
+(same variant order, same ids); the self-test's third check is the dense-head
+comparison described above (it used to re-evaluate (h . d_i)(q . d_i)).
 """
 
 from __future__ import annotations
@@ -91,9 +119,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from sparse_readout_prism.data import center_normalize_rows
+from sparse_readout_prism.data import center_normalize_rows, centering_mean, token_mask_from_tokenizer
 from sparse_readout_prism.factorizers import TopKSAE, load_factorizer
 from sparse_readout_prism.research.qwen_readout import encode_topk
+from sparse_readout_prism.research.row_geometry import resolve_single_token_bare_first
 from sparse_readout_prism.research.run_io import load_bank, run_provenance
 from sparse_readout_prism.utils import find_lm_head, load_causal_lm, resolve_device, set_seed, write_csv, write_json
 
@@ -110,7 +139,7 @@ def log(msg: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Banks and tokens
+# Banks, tokens and centering
 # --------------------------------------------------------------------------- #
 
 
@@ -131,13 +160,19 @@ def load_banks(bank_dir: Path, banks: list[str], caps: dict[str, int]) -> list[d
     return rows
 
 
-def single_token_id(tok, term: str):
-    """Token id of ``term`` if it (bare first, then space-prefixed) is a single token, else None."""
-    for variant in (term, " " + term):
-        ids = tok.encode(variant, add_special_tokens=False)
-        if len(ids) == 1:
-            return ids[0]
-    return None
+def select_row_mean(mode: str, W_U: torch.Tensor, *, ckpt: dict, tok) -> tuple[torch.Tensor, str]:
+    """Centering mean ``(d,)`` under ``--centering`` plus a label for the log line.
+
+    ``live`` is the full-vocabulary mean of ``W_U`` exactly as handed in (the
+    live float32 lm_head weight, reduced on its own device); ``trained`` is the
+    checkpoint's stored ``row_mean``, else the mean over the tokenizer's
+    text-token rows. Both go through ``data.centering_mean``.
+    """
+    if mode == "live":
+        return centering_mean(W_U, mode="live").to(W_U.device), "the live full-vocabulary mean"
+    token_mask = token_mask_from_tokenizer(tok, W_U.shape[0]).to(W_U.device)
+    source = "the checkpoint row_mean" if ckpt.get("row_mean") is not None else "the text-token mean of the live W_U"
+    return centering_mean(W_U, mode="trained", token_mask=token_mask, ckpt=ckpt).to(W_U.device), source
 
 
 # --------------------------------------------------------------------------- #
@@ -208,6 +243,12 @@ def cluster_bootstrap_r2(rows: list[dict], n_boot: int, seed: int) -> tuple[floa
     return float(np.percentile(stats, 2.5)), float(np.percentile(stats, 97.5))
 
 
+def dense_head_margin(W: torch.Tensor, state: torch.Tensor) -> float:
+    """Margin (W state)_0 - (W state)_1 read off a dense two-row LM head ``W`` ``(2, d)``."""
+    logits = W.double() @ state.double()  # (2,)
+    return float(logits[0] - logits[1])
+
+
 def self_test_metrics(seed: int = 0) -> dict:
     """Synthetic residual-free check of the math core (no model).
 
@@ -236,27 +277,34 @@ def self_test_metrics(seed: int = 0) -> dict:
     ctrl_pred = np.array([abs(p[1]) for p in pairs if p[3] == 1])
     ctrl_max_abs_pred = float(ctrl_pred.max(initial=0.0))
     ok2 = ctrl_max_abs_pred < 1e-6  # random features carry ~0 prediction
-    # Identity check: realized values equal the algebraic form
-    i0 = pairs[0][0]
-    lhs = pairs[0][2]
-    rhs = float((W_dec[i0] @ h) * (W_dec[i0] @ q))
-    identity_abs_err = abs(lhs - rhs)
-    ok3 = identity_abs_err < 1e-4
+    # Dense-head check: a two-row LM head W = [w_A; w_B] with w_A - w_B = q. The
+    # margin is read off W before and after ablating h along d_i; the stored
+    # delta_real must equal -(m(h') - m(h)) for every tested feature. The margin
+    # never sees the (h . d_i)(q . d_i) formula that produced delta_real.
+    w_b = torch.randn(d)
+    W_head = torch.stack([w_b + q, w_b])  # (2, d) dense LM head, rows A and B
+    m_base = dense_head_margin(W_head, h)
+    dense_head_abs_err = max(
+        abs((dense_head_margin(W_head, h - (h @ W_dec[fid]) * W_dec[fid]) - m_base) + delta_real)
+        for fid, _c_pred, delta_real, _is_random in pairs
+    )
+    ok3 = dense_head_abs_err < 1e-4
     return {
         "r2": r2,
         "slope": slope,
         "ctrl_max_abs_pred": ctrl_max_abs_pred,
-        "identity_abs_err": identity_abs_err,
+        "dense_head_abs_err": dense_head_abs_err,
         "checks": [
             ("r2/slope on span-constructed q", ok1),
             ("random controls predict ~0", ok2),
-            ("realized identity", ok3),
+            ("realized change matches the dense LM head", ok3),
         ],
         "pairs": pairs,
         "h": h,
         "q": q,
         "beta": beta,
         "W_dec": W_dec,
+        "W_head": W_head,
     }
 
 
@@ -283,6 +331,13 @@ def main() -> int:
     ap.add_argument("--out-dir", type=Path)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
+    ap.add_argument(
+        "--centering",
+        choices=["live", "trained"],
+        default="live",
+        help="row-centering mean: live = full-vocabulary mean of the live lm_head (paper); "
+        "trained = the checkpoint's row_mean, else the tokenizer text-token mean",
+    )
     ap.add_argument("--top-features", type=int, default=10)
     ap.add_argument("--random-per-case", type=int, default=10)
     ap.add_argument("--max-len", type=int, default=64)
@@ -312,7 +367,6 @@ def main() -> int:
     lm_head = find_lm_head(model)
     W_U = lm_head.weight.detach().float().to(device)  # (V, d)
     V, d = W_U.shape
-    row_mean = W_U.mean(dim=0)  # (d,) centering mean of the live readout
     log(f"W_U ({V}, {d}) from live lm_head")
 
     log(f"loading dictionary {args.checkpoint}")
@@ -326,10 +380,15 @@ def main() -> int:
     enc_b = sae.encoder.bias.detach().float()  # (D,)
     dec_norm = W_dec.norm(dim=1)
     W_dec_unit = W_dec / dec_norm[:, None].clamp_min(1e-8)  # (D, d) unit rows
+    row_mean, mean_source = select_row_mean(args.centering, W_U, ckpt=ckpt, tok=tok)  # (d,)
     ckpt_row_mean = ckpt.get("row_mean")
     if ckpt_row_mean is not None:
-        gap = float((ckpt_row_mean.float().to(device) - row_mean).abs().max())
-        log(f"checkpoint row_mean vs live W_U mean: max abs gap {gap:.3e} (the live mean is used)")
+        live_mean = row_mean if args.centering == "live" else centering_mean(W_U, mode="live").to(device)
+        gap = float((ckpt_row_mean.float().to(device) - live_mean).abs().max())
+        log(
+            f"checkpoint row_mean vs live W_U mean: max abs gap {gap:.3e} "
+            f"(--centering {args.centering}: {mean_source} is used)"
+        )
     log(f"dictionary D={W_dec.shape[0]} k={k} (decoder norms {dec_norm.min():.3f}-{dec_norm.max():.3f})")
 
     banks = [b.strip() for b in args.banks.split(",") if b.strip()]
@@ -373,7 +432,7 @@ def main() -> int:
         if not (a and b and prompt):
             n_skip += 1
             continue
-        a_id, b_id = single_token_id(tok, a), single_token_id(tok, b)
+        a_id, b_id = resolve_single_token_bare_first(tok, a), resolve_single_token_bare_first(tok, b)
         if a_id is None or b_id is None or a_id == b_id:
             n_skip += 1
             continue

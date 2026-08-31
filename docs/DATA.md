@@ -15,14 +15,12 @@ A record is one **case** — a prompt, a position to score, two targets
 (`A`, `B`), and an expected side. Every script that consumes a bank reads
 the same schema; the banks are model-agnostic.
 
-Two further paper-input sets live beside them. [`data/cross_lens/`](../data/cross_lens/)
+One further paper-input set lives beside them. [`data/cross_lens/`](../data/cross_lens/)
 holds the EN–ZH and EN–DE prompt banks of the cross-lens study (one record per
 prompt: two surface forms, an unrelated null target, family and control tags)
 together with the EN–DE cognate-exclusion report and the one-prompt bank of the
 three-lens worked example; schema and provenance are in
-[`data/cross_lens/README.md`](../data/cross_lens/README.md). [`data/wsd/`](../data/wsd/)
-holds the optional sense-gloss anchors that `scripts/run/run_wsd_feature_alignment.py`
-accepts through `--anchors`; the paper's CoarseWSD-20 runs did not use them.
+[`data/cross_lens/README.md`](../data/cross_lens/README.md).
 
 ## 2. Extracted readouts (per-model artifacts)
 

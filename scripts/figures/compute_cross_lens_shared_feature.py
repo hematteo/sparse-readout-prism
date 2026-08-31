@@ -10,7 +10,8 @@ the feature sum, and the largest contribution from any other feature. It then
 reports whether the dominant feature is shared across the lenses, each lens's
 share carried by the shared feature, and the feature's top unembedding rows from
 the dump's ``feature_top_tokens`` labels. No rendering; the figure is drawn in
-the paper source from these numbers.
+the paper source from these numbers. The metrics JSON carries a ``provenance``
+block; a CSV-only run writes ``<out-csv stem>.manifest.json`` instead.
 
 Paper run (factual-recall prompt ``fac_03``, "The capital of China is Beijing. The
 capital of the UK is", layer 26, English- and Chinese-fitted 100-prompt Jacobian
@@ -25,22 +26,10 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 
+from sparse_readout_prism.research.cross_lens import POS, parse_dump_args, write_manifest
+from sparse_readout_prism.research.run_io import run_provenance
 from sparse_readout_prism.utils import write_csv, write_json
-
-POS = "-1"
-
-
-def parse_dump_args(specs: list[str]) -> list[tuple[str, Path]]:
-    """Parse repeated ``LABEL=path`` arguments, preserving order."""
-    out = []
-    for spec in specs:
-        label, sep, path = spec.partition("=")
-        if not sep or not label or not path:
-            raise ValueError(f"--dump expects LABEL=path, got {spec!r}")
-        out.append((label, Path(path)))
-    return out
 
 
 def lens_top1_summary(record: dict, layer: str) -> dict:
@@ -134,8 +123,11 @@ def main(argv: list[str] | None = None) -> int:
         write_csv(args.out_csv, rows)
         print(f"wrote {args.out_csv}")
     if args.out_json:
+        metrics["provenance"] = run_provenance(args)
         write_json(metrics, args.out_json)
         print(f"wrote {args.out_json}")
+    elif args.out_csv:
+        write_manifest(args.out_csv, args, prompt_id=args.prompt_id, layer=args.layer)
     return 0
 
 
