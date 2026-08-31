@@ -1,0 +1,55 @@
+{
+ "note": "One-prompt-per-family bank for the worked example read by three fitted lenses at once (tab:app-cross-lens-de-antonym-layers). ant_01 and antonym_de_01 are copied from cross_lens_prompts_en_zh.json / cross_lens_prompts_en_de.json with extended target lists covering the English, Chinese and German answer forms plus the two nulls. Run scripts/run/run_cross_lens_readouts.py once per lens with --n-positions 1 --decompose-top1 --top-feats 10, then scripts/analyze/cross_lens_three_lens_prompt.py.",
+ "prompts": [
+  {
+   "id": "ant_01",
+   "group": "antonym_zh",
+   "concept": "big",
+   "prompt": "“高”的反义词是“低”。“小”的反义词是“",
+   "form_a": "大",
+   "form_b": " big",
+   "targets": [
+    "大",
+    "大的",
+    " big",
+    " large",
+    " groß",
+    " große",
+    " Groß",
+    "桌",
+    " chair"
+   ],
+   "null_targets": [
+    "桌",
+    " chair"
+   ],
+   "answer": "大"
+  },
+  {
+   "id": "antonym_de_01",
+   "group": "antonym_de",
+   "concept": "big",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"klein\" ist \"",
+   "form_a": " groß",
+   "form_b": " big",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " groß",
+    " große",
+    " Groß",
+    " big",
+    " large",
+    "大",
+    "大的",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "groß"
+  }
+ ]
+}

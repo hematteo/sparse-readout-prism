@@ -49,14 +49,23 @@ def test_baseline_methods_preserve_additive_identity() -> None:
     W, row_mean, sae = _make_sae_inputs()
     device = torch.device("cpu")
     h = torch.randn(8)
-    for spec in ("sparse_rp", "shuffled_row_code", "random_support_same_magnitudes"):
+    # spec -> expected number of active atoms (None = not checked).
+    expected_active = {
+        "sparse_rp": None,
+        "shuffled_row_code": 4,  # nulls keep the SAE's k-sparsity, only the support/assignment changes
+        "random_support_same_magnitudes": 4,
+        "knn_basis_top4": 4,  # the four nearest rows
+        "row_cluster_d16_k4": 4,  # top-4 of 16 centroids
+        "row_cluster_hard_d16": 1,  # the row's own centroid
+    }
+    for spec, n_active in expected_active.items():
         method = baseline.build_method(spec, W=W, row_mean=row_mean, device=device, sae=sae, k=4, seed=0)
         dec = method.decompose_row(h, row_idx=3)
         # original_logit == base + feature_sum + residual to float precision.
         assert dec.identity_error.abs().item() < 1e-4, spec
-        if spec != "sparse_rp":
-            # nulls keep the SAE's k-sparsity, only the support/assignment changes.
-            assert dec.active_feature_indices.numel() == 4, spec
+        assert torch.isfinite(dec.reconstructed_logit), spec
+        if n_active is not None:
+            assert dec.active_feature_indices.numel() == n_active, spec
 
 
 def test_build_method_rejects_bad_specs() -> None:

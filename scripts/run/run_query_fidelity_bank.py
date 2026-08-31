@@ -522,18 +522,27 @@ def _group_metrics(rows: list[dict]) -> dict:
     rd = np.array([r["residual_direct"] for r in rows], float)
     ar = np.array([r["abs_residual"] for r in rows], float)
     sign = np.array([r["sign_match"] for r in rows], bool)
+    # Floored relative error rho_0.5 = |m_exact - m_sparse| / (|m_exact| + 0.5): the
+    # per-model reconstruction table with cluster-bootstrap intervals
+    # (tab:app-fidelity-cis) reports its median and its < 0.5 rate alongside sign.
+    ex_arr = np.array(ex, float)
+    sp_arr = np.array(sp, float)
+    rho5 = np.abs(ex_arr - sp_arr) / (np.abs(ex_arr) + 0.5)
     bases = sorted({r["base_case_id"] for r in rows})
-    # bootstrap by base_case_id
+    # bootstrap by base_case_id (one draw sequence; every statistic below is
+    # evaluated on the same resamples)
     rng = np.random.default_rng(0)
     by_base: dict[str, list[int]] = {}
     for i, r in enumerate(rows):
         by_base.setdefault(r["base_case_id"], []).append(i)
-    boot_sign, boot_med = [], []
+    boot_sign, boot_med, boot_med5, boot_pass5 = [], [], [], []
     for _ in range(400):
         pick = rng.choice(bases, size=len(bases), replace=True)
         idx = [i for b in pick for i in by_base[b]]
         boot_sign.append(sign[idx].mean())
         boot_med.append(np.median(rd[idx]))
+        boot_med5.append(np.median(rho5[idx]))
+        boot_pass5.append((rho5[idx] < 0.5).mean())
     return {
         "n_base_cases": len(bases),
         "n_rows": len(rows),
@@ -551,6 +560,12 @@ def _group_metrics(rows: list[dict]) -> dict:
         "pass_rd_lt_0.25": float((rd < 0.25).mean()),
         "pass_rd_lt_0.50": float((rd < 0.50).mean()),
         "pass_rd_lt_1.00": float((rd < 1.00).mean()),
+        "median_rho5": float(np.median(rho5)),
+        "median_rho5_ci_lo": float(np.percentile(boot_med5, 2.5)),
+        "median_rho5_ci_hi": float(np.percentile(boot_med5, 97.5)),
+        "pass_rho5_lt_0.50": float((rho5 < 0.5).mean()),
+        "pass_rho5_lt_0.50_ci_lo": float(np.percentile(boot_pass5, 2.5)),
+        "pass_rho5_lt_0.50_ci_hi": float(np.percentile(boot_pass5, 97.5)),
         "sign_flips": int((~sign).sum()),
         "tiny_margin_rows": int(sum(r["tiny_margin"] for r in rows)),
     }

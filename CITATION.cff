@@ -23,12 +23,12 @@ authors:
     family-names: Lane
     affiliation: University of Cambridge
 license: MIT
-version: "0.1.0"
-date-released: "2026-06-12"
+version: "0.2.0"
+date-released: "2026-08-31"
 repository-code: "https://github.com/hematteo/sparse-readout-prism"
 preferred-citation:
   type: unpublished
-  title: "Sparse Readout Prism: A Sparse LM-Head Basis for Logit-Lens Readouts"
+  title: "Sparse Readout Prism: Explaining Logit-Lens Scores in Features Rather Than Tokens"
   authors:
     - given-names: Matteo
       family-names: He
