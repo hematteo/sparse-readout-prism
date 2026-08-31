@@ -215,8 +215,7 @@ SAE decoder directions move constrained
 lexical logit differences when edited at the readout. The intended
 scores move under intervention, held-out templates and scale-sweep measurements
 provide supporting evidence, and the two Qwen-family rows show the same
-held-out lexical transfer pattern, with the Ministral row the
-cross-family comparison on the discovery side.
+held-out lexical transfer pattern.
 Off-target lexical probes map regressions beyond the intended candidate
 scores. The Qwen3.5-2B off-target top-1 regression of \(0.444\)
 (\Cref{tab:lexical-control-cross-model-results}) is the candidate-scoring
@@ -279,15 +278,14 @@ terms for feature discovery (the dictionary itself is validated in
 Appendix~\ref{app:causal-validation}), and R1-Distill-Llama-8B is
 excluded with one tokenizable pair and no held-out terms. We tested and
 rejected two candidate explanations for the losses, namely replacement
-fidelity (replacement fidelity on the 9B readout is high and the model
-still loses) and dictionary width (a registered prediction that the
+fidelity (high for the 9B readout, which still loses) and dictionary width (a registered prediction that the
 narrower 0.8B dictionary should do better, which it did not). The two
 comparisons separate, since against capacity-matched PCA rank-4 the
 dictionary directions match or lead on nearly every model and
 matched-KL point, while against the mean discovery row, the simplest
 label-free direction available, they lead decisively on the display
-model and lose on two others. The supported claim is therefore scoped,
-in that on the display model dictionary-direction edits outperform
-trivial category directions at matched distributional cost, the
-advantage is not general across models, and the mean row is
+model and lose on two others. The supported claim is therefore scoped
+to the display model, where dictionary-direction edits outperform
+trivial category directions at matched distributional cost, while the
+advantage is not general across models and the mean row is
 the strongest label-free baseline.

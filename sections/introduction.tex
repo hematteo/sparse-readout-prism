@@ -21,7 +21,7 @@
 
 In a transformer language model, each output logit is a dot product
 between one row of the unembedding matrix \(\WU\), also called the LM
-head, and the normalized final state presented to that head. We call this matrix the readout,
+head, and the normalized final state that the head receives. We call this matrix the readout,
 since the model reads out its prediction from the final state alone. Yet states at earlier layers already carry
 information about the eventual output. Methods in the lens style
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}
