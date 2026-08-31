@@ -74,7 +74,7 @@ logit space on decoded states, on top of the row-space objective. The states use
 for it and for evaluation are the final RMSNorm outputs immediately before
 the language-model head. An \texttt{lm\_head} pre-hook confirms this, since the captured input
 reproduces the model readout with no additional post-readout transform. The
-remaining discrepancy between reconstruction and readout is consistent with the model's
+remaining discrepancy between reconstruction and readout is consistent with the
 bf16 precision floor of the LM head as the relevant limit.
 
 \paragraph{Selection rule.}
@@ -185,7 +185,7 @@ shared metric suite \\
 \end{tabularx}
 \end{table*}
 
-The following readout SAE appendices follow this evidence map, taking first the
+The remaining readout SAE appendices follow this evidence map, taking first the
 Qwen3.5-9B recipe, then the capacity and operating-point comparisons, then
 smaller-model transfer and additional metric analyses.
 

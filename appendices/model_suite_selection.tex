@@ -3,8 +3,8 @@
 \label{sec:app-model-suite-selection}
 
 This appendix explains the model suite used to evaluate Sparse Readout Prism,
-which spans the Qwen model suite \citep{qwen3technical,qwen35collection}, the Gemma model
-suite \citep{gemma4official,gemma4collection}, Ministral
+which spans the Qwen family \citep{qwen3technical,qwen35collection}, the Gemma
+family \citep{gemma4official,gemma4collection}, Ministral
 \citep{liu2026ministral3}, and targeted DeepSeek-R1 distilled comparison rows
 \citep{deepseekai2025deepseekr1}.
 Appendices~\ref{app:readout-factorizer-sweeps}--%
@@ -93,8 +93,8 @@ Cross-family fidelity comparison. \\
 \end{table*}
 
 Qualitative feature analyses use a single low-error display setting so that
-examples share the same readout SAE and reporting convention. The choice is
-evidence-driven, since the additional rows show how the same metrics vary with
+examples share the same readout SAE and reporting convention. The choice
+follows the measurements, since the additional rows show how the same metrics vary with
 readout geometry and post-training regime.
 
 \subsection{Interpretation Details}
@@ -105,7 +105,7 @@ We report token frequency, length, special-token behavior, row norm, tied
 embedding status, softcap handling, and matched-score identity bias so
 single-token logit decompositions can be compared on the same footing.
 
-The evaluation makes three commitments. First, model-specific readout layers
+We make three commitments in the evaluation. First, model-specific readout layers
 are handled before reporting decision fidelity. Second, the SAE architecture,
 training recipe, seed convention, dictionary settings, and evaluation settings
 are reported with the sweep records in

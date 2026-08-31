@@ -40,8 +40,8 @@ Eighty evaluation prompts span seven families, namely Chinese antonym (14),
 English cloze (10), Chinese cloze (18), Chinese exemplar (8), Chinese
 factual recall (10), and translation in both directions (10 each). A
 further 12 control prompts (6 digit, 6 proper noun) have an expected
-surface form that is language-invariant. Two null comparisons price in loose
-matching. Under the unrelated token null, the dominant
+surface form that is language-invariant. Two null comparisons quantify
+what loose matching alone would produce. Under the unrelated token null, the dominant
 feature of each reading is compared against the decomposition of an unrelated
 token under the same lens on the same state (159 comparisons). Under the shuffled pairing
 null, the two lenses' readings are re-paired across different prompts
@@ -99,8 +99,8 @@ illustration, ``the opposite of
 \begin{CJK*}{UTF8}{gbsn}小\end{CJK*}''. The lens fitted on English reports
 \texttt{large}/\texttt{big} at layers 24, 26, and 29, while the lens
 fitted on Chinese reports
-\begin{CJK*}{UTF8}{gbsn}大的/大\end{CJK*}, and both readings are carried by
-the same readout feature, whose top unembedding rows are the
+\begin{CJK*}{UTF8}{gbsn}大的/大\end{CJK*}, and the same readout feature
+dominates both readings, its top unembedding rows the
 \begin{CJK*}{UTF8}{gbsn}大\end{CJK*}~family.
 \Cref{tab:app-cross-lens-antonym-layers} gives that case layer by layer.
 The shared feature f112 is the
@@ -168,9 +168,9 @@ tief. Das Gegenteil von klein ist'', model answer
 \texttt{groß}), and read its frozen states with the Jacobian lenses fitted on
 English, Chinese, and German
 (\Cref{tab:app-cross-lens-de-antonym-layers}). At layer 21 all three
-return formatting tokens, and at layer 24 each fills its ranking with its own
-fitting language. The English lens reads \texttt{large}, \texttt{
-large}, \texttt{-large}, \texttt{Large}, the German lens reads
+return formatting tokens, and at layer 24 each skews its ranking toward its own
+fitting language. The English lens reads \texttt{large}, \texttt{ large}
+(with leading space), \texttt{-large}, \texttt{Large}, the German lens reads
 \texttt{groß}, \texttt{große}, \texttt{large}, \texttt{großes}, and the Chinese
 lens reads \texttt{large} followed by
 \begin{CJK*}{UTF8}{gbsn}大了, 巨大, 大的\end{CJK*}. The same shift is
@@ -293,7 +293,7 @@ EN--DE, Jacobian, \(n{=}300\) & 85/90 & [0.88, 0.98] & 1/204 \(\cdot\) 0/270 \\
 \paragraph{Caveats and scope.}
 The Chinese and German C4 fitting corpora contain incidental English
 text, which biases the lens pairs toward each other and makes the
-token-level divergence conservative. The study covers one model, now
+token-level divergence conservative. The study covers one model
 across two language pairs, two constructions of fitted lenses, and two
 fitting scales, and the ridge translator is our minimal instantiation in
 the tuned-lens style, simpler than the exact construction of

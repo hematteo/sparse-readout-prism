@@ -141,9 +141,9 @@ We next test English and German, which share the Latin script, and
 exclude cognates from the evaluation set. The Jacobian lenses fitted on
 English and German report different top-1 tokens on 73/90 prompts. The
 same feature remains dominant on 84/90 prompts, compared with 1/204 and
-0/270 matches under the two null comparisons. The dissociation therefore
-does not depend on the distinct scripts used in the English--Chinese
-comparison.
+0/270 matches under the two null comparisons. This dissociation between
+token readings and the dominant feature therefore does not depend on
+the distinct scripts used in the English--Chinese comparison.
 
 \paragraph{Corpus size.}
 Finally, we triple each fitting corpus from 100 to 300 prompts to test
@@ -151,9 +151,8 @@ whether the original corpus size accounts for the disagreement. Feature
 agreement remains 77/80 for English--Chinese and increases from 84/90
 to 85/90 for English--German. Token disagreement moves in opposite
 directions, falling from 39/80 to 33/80 for English--Chinese and rising
-from 73/90 to 76/90 for English--German. Estimation noise that decreases
-with additional fitting data would predict a decrease for both language
-pairs. Across the two fitting scales, eleven English--Chinese prompts
+from 73/90 to 76/90 for English--German. An estimation-noise account
+would predict a decrease for both language pairs. Across the two fitting scales, eleven English--Chinese prompts
 change their reported language, and none changes its dominant feature.
 
 On Qwen3.5-9B, the token readings vary with the language and size of

@@ -8,7 +8,7 @@ report. All experiments use
 Qwen3.5-2B with three dictionaries per width configuration
 (\(32\times\)/\(k{=}256\) and \(16\times\)/\(k{=}128\)), trained from
 scratch with independent initialization, data-order, and sampling seeds.
-Held-out reconstruction is equal across seeds (validation
+Held-out reconstruction is closely matched across seeds (validation
 top-1 agreement 0.805--0.848), so
 differences below are not fidelity artifacts. All statements in this
 appendix hold within a recipe, meaning seeds vary while width, sparsity,
@@ -48,13 +48,13 @@ Matched decoder cosine \mbox{(used features)} & 0.31--0.34 & 0.52--0.55 \\
 \end{table}
 
 Individual decoder directions do not recur across seeds (matched decoder cosines
-average \(\sim\)0.33 at \(32\times\)), consistent with the documented
+have a median of \(\sim\)0.33 at \(32\times\)), consistent with the documented
 seed-dependence of TopK dictionaries at scale
 \citep{paulo2025stability}. Yet every tested contrast reproduces its
 explanation above the null's 90th percentile, at
-\(\sim\)15\(\times\) the null level and with negligible cross-side
+13--15\(\times\) the null level and with negligible cross-side
 leakage (\Cref{tab:app-cross-seed-stability}). The decomposition of a selected
-score is therefore the trustworthy unit of interpretation.
+score is therefore the reproducible unit of interpretation.
 
 \subsection{Feature-Group Matching}
 \label{app:basis-stability-groups}
@@ -65,8 +65,8 @@ re-shuffled. We sample 100 features
 per seed pair from the bank-used set. Each feature's group is its top-12
 centered-row token set, and the counterpart is the best-Jaccard match over
 the full candidate dictionary. The null passes 500 frequency-matched
-pseudo-groups through the identical best-of-\(D\) search, pricing in the
-inflation of searching 65{,}536 candidates, and recall@3 admits a greedy
+pseudo-groups through the identical best-of-\(D\) search, accounting for the
+inflation of searching the full dictionary at each width, and recall@3 admits a greedy
 union of at most three candidate features, testing whether instability
 is feature splitting.
 
@@ -95,7 +95,7 @@ Matched decoder cosine, \mbox{med / p90} & 0.20--0.26 / 0.80--0.89 & 0.40--0.42 
 \end{table}
 
 About 90\% of used feature groups have an above-chance counterpart in an
-independently trained dictionary, roughly 40\% a near-exact single
+independently trained dictionary, roughly 40\% a strong single
 match, and the median group is 83--90\% covered by a union of at most
 three features (\Cref{tab:app-feature-group-matching}), so token-group
 structure survives retraining even though feature indices are reassigned,
@@ -125,8 +125,8 @@ on identical cores, 95\% contrast-clustered bootstrap CIs).
 \caption{\textbf{Held-out recovery of the stable core.}
 Qwen3.5-2B, showing recovery of the leave-one-out core by the held-out
 SRP dictionary from the same recipe, weighted kNN on the rows, and hard clustering, on
-identical cores. The held-out SRP value (\(\approx\)0.75) is the
-operative anchor, and recall should be read against it.}
+identical cores. The held-out SRP recall (0.72--0.75) anchors the
+comparison for the other rows.}
 \label{tab:app-loo-core-recovery}
 \centering
 \footnotesize

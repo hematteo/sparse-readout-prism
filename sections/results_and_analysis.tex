@@ -49,7 +49,7 @@ provenance, and filters.
 against baselines built on row geometry.}
 Q/Min/R1-Q/R1-L \(=\) Qwen3.5 / Ministral-3 /
 R1-Distill-Qwen / R1-Distill-Llama.
-top-1 is the fraction of held-out decoded states whose reconstructed and
+top-1 is the fraction of held-out decoded states on which the reconstructed and
 original readouts agree on the argmax. The SRP and ``best alternative''
 columns give coverage, the fraction of the full bank of logit differences
 reconstructed with the correct sign and error below half the score's
@@ -186,8 +186,8 @@ dictionary trained from a new seed can fit the readout equally well
 with different decoder directions. At each of two widths,
 \(32\times\) and \(16\times\), we train three dictionaries for
 Qwen3.5-2B that differ only in their seed. All six replace the
-readout equally well, at a held-out top-1 agreement of 0.805--0.848,
-so the comparisons below are between dictionaries of equal fidelity.
+readout comparably well, at a held-out top-1 agreement of 0.805--0.848,
+so the comparisons below are between dictionaries of closely matched fidelity.
 What we compare is the tokens a dictionary groups with each token of
 a contrast. For a contrast between \(A\) and \(B\), pooling the top
 unembedding rows of the features whose coefficients most favor each
@@ -288,7 +288,7 @@ Qwen3.5-2B, while the mean wins on Qwen3.5-0.8B and Qwen3.5-9B
 (Appendices~\ref{app:lexical-control-stress-test}
 and~\ref{app:lexical-matched-kl}).
 
-With the basis read on its own evidence, the next section applies it to
-a question token readings leave open.
+With the basis validated on its own evidence, the next section applies it to
+a question that token readings leave open.
 
 \FloatBarrier

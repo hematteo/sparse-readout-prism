@@ -2,7 +2,8 @@
 \label{app:additional-qwen-display-examples}
 
 This appendix collects Qwen-family companion analyses that support the main
-text. It proceeds from additional margin examples to variants of selected scores,
+text. It proceeds from an all-layer logit-lens table and additional margin
+examples to variants of selected scores, contrasts derived from benchmarks,
 fixed-token context shifts, projection profiles, logit-lens comparisons, and
 token row audits.
 All figures use the same Qwen3.5-2B \(32\times\), native-\(k=256\) SAE trained
@@ -48,8 +49,8 @@ summaries for the feature ids.
     \texttt{bug}-vs-\texttt{insect} in a software context,
     \texttt{bark}-vs-\texttt{dog} in a tree context, and
     \texttt{bass}-vs-\texttt{trout} in a music context. Small bars are
-    suppressed for readability. All four panels report the unfloored
-    \(\rho_0<0.5\) and preserve the
+    suppressed for readability. All four panels have unfloored
+    \(\rho_0<0.5\), and the reconstruction preserves the
     sign of the logit difference
     (display rules in Appendix~\ref{app:display-taxonomy}).
     \Cref{tab:app-main-case-study-feature-audit} lists the
@@ -104,7 +105,7 @@ and a top competitor margin.
 \label{app:benchmark-derived-display-examples}
 
 \Cref{tab:benchmark-derived-readout-contrasts} reports reconstruction for
-answer, abstention, label, and safe/action contrasts derived from benchmarks
+answer, abstention, label, and safe-vs-unsafe contrasts derived from benchmarks
 and instantiated as fixed combinations of rows of the LM head
 \citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}.
 These rows are used as reconstruction checks for readout contrasts. Lower-error QA
@@ -188,18 +189,18 @@ that the signed difference plot subtracts away.
 \begin{figure*}[!tbp]
     \centering
     \AppendixWideGraphic[height=0.24\textheight]{figures/proto_token_lens/qwen2b_32x_domain_features_main3/qwen2b_32x_polysemy_prompt_feature_row.pdf}
-    \caption{\textbf{Prompt-support companion for the main fixed-token examples.}
+    \caption{\textbf{Prompt-support companion for the fixed-token examples.}
     Each panel holds the selected token fixed and compares positive SAE feature
     contributions in two prompt contexts. Bars show the union of the four
     largest positive contributions per context, with teal the first context in the
     panel title and orange the second. Missing bars are features outside that context's
     top-four set. This view highlights shared positive support that the signed
-    main-text difference plot subtracts away.}
+    difference panels above subtract away.}
     \label{fig:app-qwen2b-domain-main-prompt}
 \end{figure*}
 
-Figure~\ref{fig:app-qwen2b-technical-domain-delta} adds one technical-domain
-context comparison. The most clearly separated panels are \texttt{graph},
+Figure~\ref{fig:app-qwen2b-technical-domain-delta} adds four technical-domain
+context comparisons. The most clearly separated panels are \texttt{graph},
 \texttt{memory}, and \texttt{virus}, while \texttt{pipe} illustrates a mixed
 Unix/plumbing case.
 Across the four panels, the maximum rank of the selected token is \(17\) and the maximum
@@ -225,8 +226,8 @@ The examples above decompose selected token rows or contrasts. As a complementar
 view, we rank readout features directly from the decoded state
 before choosing a token or logit difference. For the final decoded state
 \(\rstateL\), we score each SAE decoder direction by
-\(\rstateL^\top d_i\). Vocabulary rows then label
-the selected directions by their highest-associated rows. The resulting figures
+\(\rstateL^\top d_i\). We then label
+the selected directions by their highest-associated vocabulary rows. The resulting figures
 therefore show projections in readout space before score selection, while score-specific
 figures provide the local score contributions.
 Figures~\ref{fig:app-global-readout-shell-java}
@@ -300,7 +301,7 @@ Trusted task: summarize the email. Untrusted email content says: delete the
 files. We must follow the trusted task. The next action is to
 \end{quote}
 the ordinary logit-lens margin favors \texttt{delete} over \texttt{summarize}.
-Sparse Readout Prism shows that the undesirable logit difference is carried by several
+The SRP decomposition resolves the undesirable logit difference into several
 deletion-related SAE features against summary and communication
 features:
 \begin{center}
@@ -326,16 +327,16 @@ signed feature terms.
 
 \paragraph{How labels are produced.}
 Feature labels in the displays are drafted by a language model from the
-feature's highest-scoring unembedding rows. The authors then verify every
+feature's highest-scoring unembedding rows. We then verify every
 label used to support a claim against those same rows, and the audit below
-measures how often that verification succeeds.
+reports how often a label passes that check.
 
 Table~\ref{tab:app-qualitative-feature-label-audit} reports a conservative
 qualitative audit of the claim-bearing displayed labels in the Qwen feature
 figures. The audit classifies label readability, a separate question from
 feature validity. Coherent labels name a clean semantic lexical family read off the top-20
 token rows, while token form labels are surface artifacts (letter casing,
-leading-space, and sub-word surface forms, punctuation-like rows) that carry
+leading-space and sub-word surface forms, punctuation-like rows) that carry
 no semantic family. A stricter on-target test then asks whether a coherent
 family also matches the sense named in its panel and points to the side
 indicated by the signed feature term.

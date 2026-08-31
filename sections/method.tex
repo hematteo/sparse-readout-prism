@@ -59,7 +59,7 @@ lens changes only the decoded state the rows are scored against.
 \subsection{Factorizing the LM Head into Sparse Readout Features}
 \label{sec:method-factorization}
 
-SRP fits a sparse autoencoder to the rows of
+SRP fits a sparse autoencoder (SAE) to the rows of
 \(\WU\)~\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}.
 Each row then decomposes as
 \(w_v = \widehat{w}_v + r_v\) with

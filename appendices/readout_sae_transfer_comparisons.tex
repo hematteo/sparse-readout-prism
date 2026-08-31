@@ -9,8 +9,8 @@ smaller Qwen/Gemma suite and targeted cross-family or post-training rows.
 \subsection{Transfer to Smaller Models}
 \label{app:readout-factorizer-small-model-transfer}
 
-The fixed Qwen3.5-9B recipe transfers to four smaller models. The
-transfer tests both whether a fixed active budget reconstructs
+The fixed Qwen3.5-9B recipe transfers to four smaller models. We use the
+transfer to test both whether a fixed active budget reconstructs
 lower-dimensional unembedding rows more effectively, and whether the higher
 $k=256$ fidelity regime remains useful away from 9B. As above, native $k=128$
 and native $k=256$ rows are reported as separate operating regimes, and truncation
@@ -125,7 +125,7 @@ cap-independent / argmax-invariant.
     \ReadoutSAEGraphic[height=0.28\textheight]{appendix_k_cross_model_scaling.pdf}
     \caption{
         Qwen scaling summary. Panel A gives the Qwen rows used for the scaling
-        claim, and panel B the rare feature rate as a usage statistic. Additional
+        claim, and Panel B the rare feature rate as a usage statistic. Additional
         model-family rows appear in the surrounding tables.
     }
     \label{fig:app-k-cross-model-scaling}
@@ -142,10 +142,10 @@ the same qualitative pattern. The scaling figure focuses on Qwen so that model
 size is varied within a single family, and the surrounding tables evaluate the same
 recipe under additional readout geometries. Rare feature rate is a
 usage statistic, and it stays low for
-the smaller Qwen 32$\times$, $k=256$ rows and rises to $0.292$ for the 9B
+the smaller Qwen 32$\times$, $k=256$ archived rows and rises to $0.292$ for the 9B
 32$\times$, $k=256$ capacity point.
-Qwen3.5-2B has higher strict budget top-1, so the 0.8B selection is a
-joint reconstruction-and-fidelity dictionary setting with top-1 as one component.
+Qwen3.5-2B has higher strict budget top-1, so the 0.8B selection reflects
+the joint reconstruction-and-fidelity criterion rather than top-1 alone.
 Table~\ref{tab:app-k-qwen08b-seed-window} repeats that 0.8B setting across
 three seeds.
 
@@ -241,8 +241,8 @@ Model & Dictionary setting & Width / $k$ & rowEV & top-1 & KL & dead & rare & Ro
 \end{tabularx}
 \end{table*}
 
-Both Ministral dictionary settings have healthy usage and decision-fidelity
-metrics (dead $< 0.03$, KL $< 0.14$ bits).
+Both Ministral dictionary settings have dead feature rates below $0.03$
+and KL below $0.14$ bits.
 Decision fidelity (top-1, KL) falls in the high fidelity range of the matched
 32$\times$, $k=256$ comparison rows, which supports the claim that the
 row-factorization recipe transfers beyond the Qwen family when the readout is
@@ -256,7 +256,7 @@ convention as the Qwen3.5-9B
 \label{app:readout-factorizer-r1-distill-comparison}
 
 R1-Distill-Qwen-7B is included as a post-training comparison row for
-rowEV and decision fidelity. It is a Qwen-derived 7B readout with an untied
+rowEV and decision fidelity. It is a Qwen-derived 7B model with an untied
 \texttt{lm\_head} and no post-readout softcap, which gives a clean comparison under the same
 transferred TopK recipe family at the strict budget and high fidelity dictionary
 settings in
@@ -272,7 +272,7 @@ R1-Distill-Llama-8B adds a second reasoning-distilled checkpoint from a
 non-Qwen base family at both dictionary settings. At the strict budget, its
 rowEV is close to the Ministral strict budget row ($0.796$ vs.\ $0.806$), with
 different top-1/KL behavior ($0.725/0.536$ vs.\ $0.885/0.130$). At the fidelity
-setting row reconstruction matches the Ministral fidelity row to three decimals
+setting, row reconstruction matches the Ministral fidelity row to three decimals
 ($0.888$ vs.\ $0.888$), while top-1/KL remain separated ($0.754/0.434$ vs.\
 $0.904/0.087$). The pattern is consistent across both base families
 (Qwen2.5-Math-derived \citep{yang2024qwen25math} and Llama-3.1-derived
@@ -298,7 +298,8 @@ comparable in the fidelity setting and lower under the stricter setting.
 
 \begin{table}[!tbp]
 \caption{Held-out contrastive score-reconstruction metrics for the R1-distilled
-checkpoints under the same contrast-bank version as the five-model run.
+checkpoints under the same contrast-bank version as the five-model run, with
+the Ministral rows included as the base-model comparison.
 ``sign'' is contrastive sign agreement, ``median resid.'' the median relative
 residual $|\Delta\text{margin}|/|\text{exact margin}|$, and ``resid.\(<0.5\)''
 the fraction of held-out contrasts with relative residual below $0.5$.}
@@ -335,16 +336,16 @@ The TopK recipe operates on row-centered, row-normalized $\WU$ rows, which
 treats all rows uniformly in $L_2$. When the underlying row-norm distribution
 is heavy-tailed, however, a small per-row reconstruction error is amplified
 disproportionately on the high-norm rows, and those are the rows
-that disproportionately affect top-1 / KL after the softmax. We therefore
+that most affect top-1 / KL after the softmax. We therefore
 report row-norm summary statistics for the base-model and reasoning-distilled
-checkpoints as a usage analysis for the separation between rowEV and fidelity
+checkpoints as a supporting analysis for the separation between rowEV and fidelity
 observed in Appendix~\ref{app:readout-factorizer-r1-distill-comparison}.
 Table~\ref{tab:app-k-row-norm-tail} reports those statistics.
 
 \begin{table}[!tbp]
 \caption{$\WU$ row-norm statistics for the base-model and reasoning-distilled
 checkpoints, computed on the readout extraction artifacts used to train each
-SAE. ``CoV'' is the coefficient of variation $\sigma/\mu$. ``max/median''
+SAE. ``CoV'' is the coefficient of variation $\sigma/\mu$. ``max/med''
 summarizes the heavy-tail end.}
 \label{tab:app-k-row-norm-tail}
 \centering
@@ -366,13 +367,12 @@ R1-Distill-Llama-8B (sft) & $0.424$ & $0.897$ & $1.787$ & $0.904$ & $0.139$ & $1
 }
 \end{table}
 
-Two effects appear. First, the upper tail is heavier on the distilled
+The upper tail is heavier on the distilled
 checkpoints, with max/median at $1.5$--$1.6$ for the base-model rows and
 $1.7$--$2.0$ for the distilled rows, R1-Distill-Llama-8B the most
-extreme. Second, the lower tail is compressed, since minimum row norms rise
-from $0.25$--$0.38$ on the base-model rows to $0.42$--$0.57$ on the distilled
-rows. In these comparison rows, the row-norm distribution is wider for the
-reasoning-distilled checkpoints than for the base-model rows. The coefficient of
+extreme. In these comparison rows, the row-norm distribution is also wider
+overall for the reasoning-distilled checkpoints than for the base-model
+rows, and the coefficient of
 variation tracks this ($0.12$ on base models vs.\ $0.14$--$0.16$ on distilled
 models).
 

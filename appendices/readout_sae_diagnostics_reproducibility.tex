@@ -28,8 +28,8 @@ withheld for anonymous review.
 \label{app:readout-factorizer-diagnostics}
 
 These analyses ask whether the remaining error comes from coefficient fitting,
-support selection, low-rank structure, or a
-mismatch between reconstruction and readout metrics.
+support selection, or low-rank structure, and whether reconstruction and
+readout metrics can dissociate.
 
 \paragraph{Support selection.}
 On the Qwen3.5-9B $D=32768$, $k=128$ recipe, the trained encoder reaches rowEV
@@ -37,12 +37,12 @@ $0.621$. Nonnegative least-squares \citep{lawson1974solving} on the encoder's
 own support reaches $0.625$, nonnegative OMP \citep{pati1993orthogonal}
 $0.647$, and signed-OMP $0.655$. The coefficient gap is therefore small
 (about $0.004$), while support-selection headroom within the same
-coefficient class is about $0.026$. Dense rank-128 reconstruction reaches only $0.101$, far below the sparse
+coefficient class is about $0.022$. Dense rank-128 reconstruction reaches only $0.101$, far below the sparse
 dictionary, ruling out low-rank PCA structure
 \citep{jolliffe2002principal}.
 Figure~\ref{fig:app-k-omp-diagnostic} shows both the strict budget recipe and
-the high fidelity 32$\times$, $k=256$ run. The right-hand table labels the
-latter OMP numbers as sparse-reconstruction ceilings, while the deployed
+the high fidelity 32$\times$, $k=256$ run. The right-hand table gives the
+latter's support-selection comparison, while the deployed
 encoder's metrics are the trained-encoder rows.
 
 \begin{figure*}[!tbp]
@@ -58,7 +58,7 @@ encoder's metrics are the trained-encoder rows.
         \scriptsize
         \setlength{\tabcolsep}{4pt}
         \renewcommand{\arraystretch}{1.08}
-        \textbf{32$\times$, $k=256$ ceiling comparison}\par\vspace{2pt}
+        \textbf{32$\times$, $k=256$ support-selection comparison}\par\vspace{2pt}
         \begin{tabular}{@{}lcc@{}}
         \toprule
         Quantity & rowEV & 95\% CI \\
@@ -73,7 +73,7 @@ encoder's metrics are the trained-encoder rows.
         \textbf{Support-selection analyses for the Qwen3.5-9B readout SAE.}
         The left panel gives the strict budget $k=128$ recipe and the high fidelity
         32$\times$, $k=256$ capacity run, and the right panel the 32$\times$, $k=256$
-        EV-ceiling numbers with 95\% bootstrap CIs. OMP (orthogonal matching pursuit)
+        support-selection numbers with 95\% bootstrap CIs. OMP (orthogonal matching pursuit)
         is an achieved sparse-reconstruction comparison.
     }
     \label{fig:app-k-omp-diagnostic}
@@ -135,19 +135,19 @@ specify models, dictionary settings, seeds, row sampling, selection order,
 tokenization filters, score construction, and denominator controls. The
 remaining risks are computational cost, checkpoint and tokenizer versioning,
 and tokenizer-specific filtering for single-token scores. Local decompositions
-include explicit reconstruction errors, and we restrict qualitative
-interpretations to sufficiently reconstructed scores.
+include explicit reconstruction errors, and qualitative
+interpretations are reported alongside each score's reconstruction error.
 
 \paragraph{Artifact contents.}
 The artifact bundle has four components.
 First, the code artifact includes the readout-SAE training scripts,
 hidden-state capture and evaluation scripts, baseline implementations, and
 figure/table reproduction scripts. Second, the dictionary artifact includes
-the reported readout-SAE checkpoints when permitted by upstream model licenses,
+the reported readout-SAE checkpoints,
 covering decoder directions, sparse row codes, shared offsets, preprocessing metadata,
-configuration files, seeds, and model checkpoint revision identifiers. For any
-checkpoint that cannot be redistributed directly, we provide the exact
-recipe needed to regenerate it from the public model weights. Third, the prompt
+configuration files, seeds, and model checkpoint revision identifiers, together
+with the exact recipe needed to regenerate each checkpoint from the public
+model weights. Third, the prompt
 artifact includes the prompt templates and filled prompts used for
 reconstruction of selected scores, qualitative displays, feature-resolved DLA examples, and
 the constrained lexical-edit probes. Fourth, the score-set artifact includes
@@ -207,7 +207,7 @@ reconstruction error and sign agreement for selected scores defined above.
 \paragraph{Compute and software.}
 Readout-SAE training and the headline evaluations ran on a single NVIDIA
 A40 per job on an academic Slurm cluster. A 24\,GB-class GPU
-suffices for inference and evaluation, while training the larger readouts
+suffices for inference and evaluation, while training on the larger readouts
 (e.g.\ Qwen3.5-9B) needs roughly 40\,GB. One
 readout SAE costs about 6--12 A40 GPU-hours depending on vocabulary
 size and dictionary width (the Ministral-3-8B \(131072\times4096\) head

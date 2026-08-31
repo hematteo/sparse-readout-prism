@@ -20,8 +20,8 @@ the test reports and what each one establishes.
 \caption{\textbf{Readout SAE decoder-direction edit summary.}
 The constrained edit on the readout side supports an intervention result at the readout level, in that editing
 SAE decoder directions selected from discovery tokens can move constrained lexical logit
-differences. The table records the evidence used to pair intended margin shifts
-with off-target lexical probes.}
+differences. The table lists the reported checks and what each one
+establishes.}
 \label{tab:lexical-control-stress-test}
 \centering
 \footnotesize
@@ -29,7 +29,7 @@ with off-target lexical probes.}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabularx}{\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.18\textwidth}Y Y@{}}
 \toprule
-Measurement & What it measures & Setting \\
+Measurement & What it measures & What it establishes \\
 \midrule
 Lexical specificity &
 Degree to which the selected features and token summaries are specific to
@@ -63,11 +63,6 @@ Whether the intervention leaves unrelated lexical contrasts and neutral
 prompts stable. &
 These probes measure obvious off-target regressions alongside the intended
 margin movement. \\
-\addlinespace
-Open-generation probes &
-How the edit at the readout level propagates when the model is allowed to generate
-freely. &
-Complements the candidate-constrained lexical-score measurements. \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -87,7 +82,8 @@ for selected decoder directions \(d_i\), \(i\in F\), we add
 \(e=-\gamma\sum_{i\in F} d_i/\|d_i\|_2\). With this sign convention, positive
 \(\gamma\) suppresses the selected profanity-associated directions. The reported
 intervention scale is \(\gamma=16\). The primary candidate-constrained grid has
-16 prompts, 9 profane-to-reference candidate pairs, 10 intervention scales, and 5 methods
+16 prompts, 9 profane-to-reference candidate pairs (five discovery, four
+held-out), 10 intervention scales, and 5 methods
 (none, readout SAE direction edit, discovery token bias, oracle token bias, and
 norm-matched random feature edit), giving 7200 evaluated rows.
 
@@ -219,8 +215,8 @@ SAE decoder directions move constrained
 lexical logit differences when edited at the readout. The intended
 scores move under intervention, held-out templates and scale-sweep measurements
 provide supporting evidence, and the two Qwen-family rows show the same
-held-out lexical transfer pattern. The Ministral row is a cross-family
-comparison on the discovery side because too few held-out terms pass the tokenizer filter.
+held-out lexical transfer pattern, with the Ministral row the
+cross-family comparison on the discovery side.
 Off-target lexical probes map regressions beyond the intended candidate
 scores. The Qwen3.5-2B off-target top-1 regression of \(0.444\)
 (\Cref{tab:lexical-control-cross-model-results}) is the candidate-scoring
@@ -281,16 +277,17 @@ mean-row at two of four matched-KL points, outperforms PCA rank-4). Ministral
 is excluded because the Tekken tokenizer leaves too few single-token
 terms for feature discovery (the dictionary itself is validated in
 Appendix~\ref{app:causal-validation}), and R1-Distill-Llama-8B is
-excluded with one tokenizable pair and no held-out terms. Two candidate
-explanations for the losses were tested and rejected, namely replacement
-fidelity (the 9B readout has high fidelity and still loses) and
-dictionary width (a registered prediction that the narrower 0.8B
-dictionary should do better, which it did not). The two comparisons separate.
-Against capacity-matched PCA rank-4, the dictionary directions match or
-lead on nearly every model and matched-KL point. Against the mean
-discovery row, the simplest label-free direction available, they lead
-decisively on the display model and lose on two others. The supported
-claim is therefore scoped. On the display model, dictionary-direction
-edits outperform trivial category directions at matched distributional
-cost, the advantage is not general across models, and the mean row is
+excluded with one tokenizable pair and no held-out terms. We tested and
+rejected two candidate explanations for the losses, namely replacement
+fidelity (replacement fidelity on the 9B readout is high and the model
+still loses) and dictionary width (a registered prediction that the
+narrower 0.8B dictionary should do better, which it did not). The two
+comparisons separate, since against capacity-matched PCA rank-4 the
+dictionary directions match or lead on nearly every model and
+matched-KL point, while against the mean discovery row, the simplest
+label-free direction available, they lead decisively on the display
+model and lose on two others. The supported claim is therefore scoped,
+in that on the display model dictionary-direction edits outperform
+trivial category directions at matched distributional cost, the
+advantage is not general across models, and the mean row is
 the strongest label-free baseline.

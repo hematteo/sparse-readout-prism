@@ -7,7 +7,7 @@
 
 This appendix states the decomposition identities used by the figures and control
 tables and fixes the bookkeeping conventions for displaying a trained readout
-SAE. The identities are the same local score decomposition introduced in
+SAE. The identities restate the local score decomposition introduced in
 \S\ref{sec:method-local-score}. All reported scores are evaluated in the
 model's raw readout space. If training used centering or row normalization, the
 SAE coefficients, reconstructed rows, and residual terms are first mapped back
@@ -71,7 +71,7 @@ with \(a_v=1\) for unnormalized rows. The raw-space decomposition then uses
     r_v&=a_v r^{\mathrm{pre}}_v.
 \end{aligned}
 \]
-so that
+It follows that
 \[
     w_v=\mu+\sum_i z_{v,i}d_i+r_v .
 \]
@@ -117,8 +117,8 @@ feature contribution as
     c_i(\rstate,\alpha)&=\beta_i(\alpha)\,p_i(\rstate),
 \end{aligned}
 \]
-where \(p_i(\rstate)=\rstate^\top d_i\) is the readout feature
-projection of \S\ref{sec:method-factorization}.
+where \(p_i(\rstate)=\rstate^\top d_i\) is the projection
+introduced in \S\ref{sec:method-factorization}.
 Substituting the raw-space row decomposition gives the exact grouped identity
 \[
 \begin{aligned}
@@ -176,7 +176,7 @@ and aggregate summaries use the parameterized relative error
     =
     \frac{|\epsilon(\rstate,\alpha)|}{|\sexact|+\delta},
 \]
-with \(\delta=0.5\) logits, denoted \(\rho_{0.5}\), in aggregate summaries.
+with \(\delta=0.5\) logits, denoted \(\rho_{0.5}\).
 We drop the arguments of \(\epsilon\) and \(\rho_\delta\) where the state and
 coefficient vector are clear from context.
 The floor prevents arbitrarily small margins from
@@ -187,7 +187,7 @@ variant
 is used for identity checks, case-study displays, and all
 baseline comparisons. It upper-bounds \(\rho_{0.5}\), and the two subscripts are
 never mixed within one table. For signed
-contrasts, side-specific feature support is evidence-bearing when
+contrasts, side-specific feature support is reported together with the sign check
 \[
     \operatorname{sign}(\sexact)
     =

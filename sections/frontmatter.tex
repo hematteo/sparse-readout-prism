@@ -2,7 +2,7 @@
 A language model's prediction of its next token develops across layers,
 and lens methods track this process by decoding intermediate hidden states
 into tokens. But a lens reading reflects both the hidden state and the
-readout (the unembedding matrix) used to decode it. Many lenses are fit on
+readout (the unembedding matrix) used to decode it. Many lenses are fitted on
 a corpus, and we show that two lenses differing only in their fitting
 corpus can report different tokens for the same hidden states. We call
 this dependence corpus conditionality. To examine readout structure
@@ -18,8 +18,8 @@ differences than the strongest of six baselines built on geometric
 relations among readout rows. Ablating features shifts logit differences in proportion to their SRP
 contributions. Although token readings vary with the fitting
 corpus, the dominant readout feature remains stable. Because SRP uses no
-corpus in its construction, it provides a control independent of the
-fitting corpus for lens analyses.
+corpus in its construction, it gives lens analyses a control independent
+of the fitting corpus.
 % The preprint's code and dictionary links moved to the front panel's
 % metadata strip (style/preamble.tex); the review build never showed them.
 \end{abstract}

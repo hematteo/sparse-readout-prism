@@ -20,15 +20,15 @@
 \end{figure}
 
 In a transformer language model, each output logit is a dot product
-between the normalized final state presented to the language model head and one row of the unembedding matrix
-\(\WU\), also called the LM head. We call this matrix the readout,
+between one row of the unembedding matrix \(\WU\), also called the LM
+head, and the normalized final state presented to that head. We call this matrix the readout,
 since the model reads out its prediction from the final state alone. Yet states at earlier layers already carry
 information about the eventual output. Methods in the lens style
 \citep{nostalgebraist2020,belrose2023tuned,pal2023future,ghandeharioun2024patchscopes}
 exploit this, tracking how that information accumulates by decoding those states
 through the same readout. These readings are often taken as
 evidence about the computation behind them, as when predominantly English
-tokens are interpreted as an English intermediate working language
+tokens are taken to indicate an English intermediate working language
 \citep{wendler2024llamas,schut2025english}. The logit
 lens applies \(\WU\) unchanged, while fitted lenses such as the
 tuned lens \citep{belrose2023tuned} and the Jacobian lens
@@ -58,8 +58,8 @@ reported tokens to a working language is therefore underdetermined.
 
 We introduce Sparse Readout Prism (SRP), which changes what a lens
 reports, from token identities to readout features, while leaving how
-it transports the state unchanged. The features reveal a new unit of
-analysis for lens readings, exposing readout structure that token
+it transports the state unchanged. The features give lens readings a
+new unit of analysis, exposing readout structure that token
 identities can obscure. Because they are built from the readout shared
 by every lens, they also support comparisons across tokens, contexts,
 layers, and lenses.
@@ -94,11 +94,11 @@ differences than the strongest of six baselines built on row geometry, and ablat
 feature shifts the score in proportion to its contribution
 (\S\ref{sec:results}).
 \item We show that a fitted lens's report depends on the corpus it
-was fit on, a dependence we call corpus conditionality. Changing a
+was fitted on, a dependence we call corpus conditionality. Changing a
 Jacobian lens's fitting corpus changes the language it reports for
 identical hidden states, while the dominant readout feature remains
-stable across fitting languages, across two lens constructions, and
-when the compared languages share a script. The basis therefore
+stable across fitting languages and across two lens constructions, and
+the pattern persists when the compared languages share a script. The basis therefore
 separates a change in the state from a change in the instrument
 (\S\ref{sec:beyond-token}).
 \end{enumerate}

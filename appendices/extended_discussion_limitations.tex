@@ -58,8 +58,8 @@ since the row coefficients are fixed while the projection terms
 
 \paragraph{Qwen evidence.}
 Across Qwen sizes, the selected dictionary settings preserve held-out signed
-readout scores and readout-distribution behavior on decoded states with reconstruction errors
-small enough to support the reported local score decompositions. These rows provide
+readout scores and readout-distribution behavior on decoded states, with
+reconstruction errors reported alongside the local score decompositions. These rows provide
 the fixed display setting and Qwen-family companion analyses used for most
 qualitative figures.
 
@@ -105,7 +105,7 @@ terms read against the reported residual of the selected readout score.
 \paragraph{Residual-stream census.}
 SRP also exposes what the readout can express before a decoded state is reduced
 to a single score. The readout feature projections \(p_i(\rstate)\) can be spread widely,
-while the selected coefficients \(\alpha\) select the terms \(\beta_i(\alpha)\,p_i(\rstate)\).
+while the coefficients \(\alpha\) pick out the terms \(\beta_i(\alpha)\,p_i(\rstate)\).
 Future work could quantify projection mass used by the selected readout score, assigned to
 competitors, or active but unused. The unused category is local to the
 selected readout score, and it may support alternative tokens, later positions, or other

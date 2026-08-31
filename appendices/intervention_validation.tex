@@ -26,8 +26,8 @@ directions supply the control.
 \paragraph{Protocol.}
 Each model contributes approximately 260 contrasts from the main bank, and for
 each we take the top-10 features by absolute contribution plus 10
-random-direction controls, giving 1{,}210--2{,}050 prediction--realization pairs
-per model. We report \(r^2\) and the slope of realized change on
+random-direction controls, and the covered subset gives 1{,}210--2{,}050
+prediction--realization pairs per model. We report \(r^2\) and the slope of realized change on
 predicted contribution, fit through the origin, over covered
 pairs (\S\ref{sec:method-reading-local-accounts}), with
 bootstrap 95\% CIs, and results over all pairs differ by less than 0.02 in
@@ -48,7 +48,7 @@ explanation is feature interference, with overlapping decoder directions
 sharing ablated mass, but we have not isolated it and report slopes as
 measured. The validated claim is local, since
 ablations act on the readout side of a realized forward pass (linear in
-\(\rstate\), no re-forward), so the result licenses the claim that feature
+\(\rstate\), no re-forward), and the result supports the claim that feature
 contributions predict local changes on the readout side. Circuit-level necessity,
 sufficiency, and generation-level effects call for separate
 interventions \citep{conmy2023acdc,geiger2023causalabstraction}.

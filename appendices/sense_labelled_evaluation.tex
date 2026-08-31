@@ -15,7 +15,7 @@ for the ambiguous word. All 20 words resolve to a single token under
 the Qwen3.5 vocabularies. Seven do not under the R1-Llama-8B
 vocabulary, so that model is evaluated on 13 words and 16{,}785
 contexts and its column is not comparable item for item with the other
-two. Row-gate coverage is 1.00 on the Qwen models and 0.976 on
+two. Row coverage is 1.00 on the Qwen models and 0.976 on
 R1-Llama-8B. Sense distributions are skewed, so we report balanced
 accuracy throughout. Unbalanced accuracy gives the same ordering and is
 released with the run artifacts.
@@ -77,7 +77,7 @@ geometry has been studied directly \citep{arora2018polysemy}.
 \paragraph{Scope.}
 The evaluation covers one dataset, one sparsity setting per model, and
 one prompt template. No behavioral filter is applied, and the model
-ranks the ambiguous word at median rank 174, 10, and 1131 on the three
+ranks the ambiguous word at median rank 174, 10, and 1{,}131 on the three
 models, so a share of the scored contexts sits outside the operating
 regime of Appendix~\ref{subsec:interpretation-boundary}. Filtering on
 target rank would change the reported values in an untested direction.
@@ -104,7 +104,7 @@ Words above null p95 & 20/20 & 19/20 & 12/13 \\
 Words above majority & 20/20 & 20/20 & 13/13 \\
 \midrule
 Full account, no selection & 0.947 & 0.970 & 0.892 \\
-Hidden state & 0.958 & 0.971 & 0.920 \\
+Decoded state & 0.958 & 0.971 & 0.920 \\
 \bottomrule
 \end{tabularx}
 \end{table}

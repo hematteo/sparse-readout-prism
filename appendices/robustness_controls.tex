@@ -66,7 +66,7 @@ metrics. \\
 
 \paragraph{Metric definitions for \Cref{tab:readout-score-fidelity-summary}.}
 \label{app:fidelity-table-notes}
-Dictionary width is the cfg multiplier times the hidden dimension (width
+Dictionary width is the configured width multiplier times the hidden dimension (width
 selection in
 Appendices~\ref{app:readout-factorizer-sweeps}--\ref{app:readout-factorizer-qwen-sweeps}).
 rowEV (row-centered explained variance) is the fraction of variance in
@@ -194,7 +194,7 @@ fidelity (\(k=256\), \(32\times\) width),
 under the baseline harness's unfloored \(\rho_0\). The Qwen3.5-2B SRP
 row is computed on the same banks as the main-text baseline table, whose
 redesigned harness gives 0.780 for SRP on this model
-(Appendix~\ref{app:direct-geometry-grid}). Anchor sign
+(Appendix~\ref{app:direct-geometry-grid}). SRP sign
 agreement on this full set sits below the per-model values of
 \Cref{tab:app-fidelity-cis} (the main-text \(0.91\) sign floor refers to
 that evaluation).}
@@ -294,7 +294,7 @@ R1-Distill-Llama-8B & 0.926 (0.913, 0.938) & 0.134 (0.125, 0.143) & 0.830 (0.814
     \label{fig:app-robustness-baseline-comparisons}
 \end{figure*}
 
-\subsection{Direct-Geometry Alternatives Across the Primary Readouts}
+\subsection{Direct-Geometry Alternatives Across the Softcap-Free Readouts}
 \label{app:direct-geometry-grid}
 
 The main-text baseline table (\Cref{tab:readout-score-fidelity-summary})
@@ -396,7 +396,7 @@ is a denominator effect. It concentrates in the \(14\%\) of contrasts with
 and falls monotonically as the margin widens. On the \(61\%\) of
 contrasts with \(|\mexact|\ge2\), sign agreement is \(0.996\)
 and \(0.966\) of contrasts are covered. Nearest-row ridge shows the same
-shape with roughly double the absolute error in every bin
+shape at larger absolute error in every bin
 (\(1.30\)--\(2.39\) logits) and \(0.057\) coverage in the near-tie bin
 against SRP's \(0.227\). The diagnostics of
 \S\ref{sec:method-reading-local-accounts} make the near-tie regime
@@ -495,8 +495,8 @@ Rank & Token & cos & Token & cos \\
 A faithful decomposition is a local reading of the readout side, tied to
 this dictionary and its budget of active features, since a different dictionary or
 budget could split the same contribution across other features.
-Operating-regime cases define when a compact local score decomposition is
-evidence-bearing. Qualitative interpretation uses cases where the selected readout score is
+Operating-regime cases record the conditions under which we read a
+compact local score decomposition qualitatively. Qualitative interpretation uses cases where the selected readout score is
 larger than the reconstruction error, the reconstructed contrast preserves sign,
 the exact model readout supports the intended side of the contrast, contribution mass is
 compact enough to summarize, and token-boundary, special-token, row-norm,
@@ -515,7 +515,7 @@ reading falls back to the safer token-family contrast. Each promoted display
 names the constraint it met and the reading that constraint leaves in
 place. Where the residual dominates or terms repeatedly change sign, the
 score is reported without a feature-level reading and retained in the
-record. The Qwen3.5-2B readout used for the main-paper displays sits well
+record. The Qwen3.5-2B readout used for the main-text displays sits well
 within the operating regime on every one of these measurements.
 
 \subsection{Selected-Score Bank Provenance}
@@ -528,20 +528,20 @@ tokenizer-audit fields, and the exact and reconstructed scores used to compute
 \(\rho_{0.5}\). \Cref{tab:app-query-bank-provenance} lists the source banks. The
 controlled A/B banks are deterministic synthetic probes that build
 benchmark-like margin types, while the separate C4 bank is sampled from C4 validation and supports the
-model-native replacement and frontier diagnostics only. \Cref{tab:app-query-family-provenance} maps each main-text
-score family (\Cref{tab:readout-score-families}) to its source bank
+model-native replacement and frontier diagnostics only. \Cref{tab:app-query-family-provenance} maps each
+score family of \Cref{tab:readout-score-families} to its source bank
 and gives a one-line definition of the score object, and
 \Cref{tab:app-query-bank-examples} shows representative A/B records.
 A separate contrast bank derived from benchmarks builds answer-vs-distractor,
-abstention-vs-entity, label, and safe-vs-action readout contrasts from SQuAD2,
+abstention-vs-entity, label, and safe-vs-unsafe readout contrasts from SQuAD2,
 HotpotQA, LegalBench (ContractNLI), and SecurityEval formats. It tests
 reconstruction of fixed readout contrasts, with task accuracy out of scope, and its
 per-format results are in
 Table~\ref{tab:benchmark-derived-readout-contrasts}.
 
 \begin{table}[!tbp]
-\caption{\textbf{Source banks for the checks on selected scores.} The main-text
-score-family table uses the model-native, curated A/B, and case-candidate banks
+\caption{\textbf{Source banks for the checks on selected scores.} The
+score-family table above uses the model-native, curated A/B, and case-candidate banks
 at the operating point that prioritizes fidelity, while the C4 bank supports the separate
 model-facing replacement diagnostic.}
 \label{tab:app-query-bank-provenance}
@@ -585,7 +585,7 @@ control-character filters. \\
 \end{table}
 
 \begin{table}[!tbp]
-\caption{\textbf{How source banks map to the main-text score-family rows.}
+\caption{\textbf{How source banks map to the score-family rows.}
 Cases count distinct base cases after tokenization filters at the
 operating point that prioritizes fidelity, and rows count evaluated model--case cells
 across the five-model Qwen/Gemma suite.}
@@ -620,7 +620,7 @@ Exact top token against the rank-2 token. \\
 \end{table}
 
 \begin{table}[!tbp]
-\caption{\textbf{Representative A/B prompt records.} Representative rows from the
+\caption{\textbf{Representative A/B prompt records.} Rows from the
 synthetic controlled banks, used as controlled probes of readout margins.
 The full bank is machine-readable.}
 \label{tab:app-query-bank-examples}
