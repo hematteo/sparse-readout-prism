@@ -19,11 +19,11 @@ figure / table → script + config map; every script below appears in it.
 | Bucket       | Purpose                                                                                                          |
 |--------------|------------------------------------------------------------------------------------------------------------------|
 | `train/`     | Train readout-row factorizers (TopK, Matryoshka, JumpReLU, ...).                                                 |
-| `run/`       | End-to-end experiment suites (query-fidelity bank, baseline/null comparisons, lexical-edit / readout-side control stress test).    |
-| `eval/`      | Evaluate trained factorizers (task-fidelity evaluation; dense / negative-control row-reconstruction diagnostic). |
-| `analyze/`   | Inspect readout-feature projection directions at the final hidden state; W_U row-norm tail stats; feature-label audit. |
-| `figures/`   | Compute and persist the metrics behind the paper figures from `results/` artefacts (metric / eval tables, example panels, lens grids, decompositions). This repo is metrics-only: it persists those metrics as CSV/JSON/.pt; the figures themselves are rendered separately in the paper's LaTeX source from these artefacts. |
-| `data/`      | Extract readout + hidden states from a model, build query banks, mine same-token polysemy context pairs.         |
+| `run/`       | End-to-end experiment suites: query-fidelity bank, direct-geometry baseline / null comparisons, lexical-edit / readout-side control stress test (with the matched-KL frontier controls), Jacobian-lens and ridge-translator fitting, cross-lens readout dumps, CoarseWSD-20 representation bundles. |
+| `eval/`      | Evaluate trained factorizers and aggregate run outputs: task-fidelity evaluation; dense / negative-control row-reconstruction diagnostic; causal validation of feature contributions; pooled error tails; paired matched-KL bootstrap; EN–ZH / EN–DE cross-lens aggregators; cross-seed stability, feature-group matching and leave-one-out core recovery. |
+| `analyze/`   | Inspect readout-feature projection directions at the final hidden state; W_U row-norm tail stats; feature-label audit; nearest-rows reading of selected directions; cross-lens antonym-layer and three-lens tables; sense-group alignment and the classifier framing on CoarseWSD-20. |
+| `figures/`   | Compute and persist the metrics behind the paper figures from `results/` artefacts (metric / eval tables, example panels, lens grids, decompositions, the cross-lens shared-feature panel). This repo is metrics-only: it persists those metrics as CSV/JSON/.pt; the figures themselves are rendered separately in the paper's LaTeX source from these artefacts. |
+| `data/`      | Extract readout + hidden states from a model, build query banks, mine same-token polysemy context pairs, build the EN–DE cross-lens bank with its cognate-exclusion report. |
 
 ## Output conventions
 
@@ -33,6 +33,11 @@ tree in the working directory (their `--paper-dir`; both roots are
 gitignored). Pass `--paper-dir ''` to skip the mirror. Run manifests record
 provenance (command line, args, git commit, package/torch versions) via
 `sparse_readout_prism.research.run_io.run_provenance`.
+
+The cross-lens scripts (`run/fit_jlens.py`, `run/fit_ridge_lens.py`,
+`run/run_cross_lens_readouts.py`, `analyze/cross_lens_antonym_layers.py run`)
+import the Jacobian-lens reference implementation lazily; install it with
+`uv sync --extra lens`. Every other script runs from the base environment.
 
 The earlier exploratory families (causal / attention-head circuits,
 CoT-faithfulness and agentic-injection probes, the 160M transcoder/SAE lineage,

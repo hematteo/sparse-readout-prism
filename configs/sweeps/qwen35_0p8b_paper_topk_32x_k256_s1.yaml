@@ -1,0 +1,59 @@
+# Qwen3.5-0.8B readout SAE, 32x/k=256 recipe, seed 1 (tab:app-k-qwen08b-seed-window).
+# Repeats the archived seed-0 dictionary setting (qwen0p8b_k256_32x in
+# configs/registries/exp2_selected_sae_checkpoints.yaml) with only
+# run.seed / run.init_seed / data.data_seed changed. Sister file:
+# qwen35_0p8b_paper_topk_32x_k256_s2.yaml (seed 2).
+#
+# Launched as-is, no --set overrides:
+#   uv run python scripts/train/train_readout_sae_from_config.py \
+#     --config configs/sweeps/qwen35_0p8b_paper_topk_32x_k256_s1.yaml
+#
+# d_features 32768 = 32 x d_model (1024). data.path is the {W_U_orig, h_LN}
+# extraction of Qwen3.5-0.8B (scripts/data/extract_model_readout.py), the artifact
+# configs/registries/result1_query_fidelity_cluster.yaml resolves for this model.
+
+run:
+  name: qwen35_0p8b_paper_topk_32x_k256_s1
+  seed: 1
+  init_seed: 1
+  output_dir: results/experiments/proto_token_lens/qwen35_0p8b_sae/seedvar/topk_d32768_32x_k256_rowseeded_hybrid_lamramp_s1
+  device: auto
+
+data:
+  path: ${SRP_ARCHIVE_ROOT}/data/qwen35-0p8b/qwen35_0p8b.pt
+  fallback: error
+  max_rows: null
+  max_hidden: 2048
+  val_hidden: 512
+  data_seed: 1
+
+factorizer:
+  architecture: topk
+  d_features: 32768
+  k: 256
+  encoder_init_scale: 0.02
+
+training:
+  steps: 20000
+  batch_size: 4096
+  lr: 0.001
+  weight_decay: 0.0001
+  code_l2: 0.000001
+  prism_top_n: 1
+  lambda_prism: 0.001
+  row_sampling: hybrid_50freq_50uniform
+
+evaluation:
+  k: 256
+  max_eval_rows: 20000
+  max_eval_hidden: 1024
+  topk_overlap: 5
+  contribution_top_k: 8
+
+artifacts:
+  save_checkpoint: true
+
+autoresearch:
+  score_thresholds:
+    max_dead_feature_rate: 0.5
+    max_val_logit_kl_bits_mean: 20.0

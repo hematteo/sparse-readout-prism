@@ -14,13 +14,43 @@ targeted lexical control over audited profanity continuations. This script does
 not evaluate toxicity or alignment.
 
 Produces the data behind the Appendix-J lexical-edit / readout-side control
-stress test (paper Section 5 edit-stress, ``sec:srp-edit-stress``):
+stress test (paper Section 5 edit-stress, ``sec:srp-edit-stress``;
+``tab:lexical-control-stress-test`` lists the checks):
 ``baseline_comparison.csv`` / ``candidate_constrained_summary.csv`` ->
 ``tab:lexical-control-primary-methods`` (single model, primary methods at the
 selected operating point). Rerun once per model (Qwen3.5-2B,
 DeepSeek-R1-Distill-Qwen-7B at 32x/k256; Ministral-3-8B at 16x/k128 -- the
 checkpoints enumerated in ``configs/registries/result1_query_fidelity_cluster.yaml``)
 for ``tab:lexical-control-cross-model-results``. See ``docs/REPRODUCE.md``.
+
+Matched-KL frontier (``fig:lexical-matched-kl-frontier``, Appendix J
+"Matched-KL Frontier and Cross-Model Outcome"). The candidate grid is 20
+prompts x 17 profane-to-reference pairs (5 discovery + up to 12 held-out pairs;
+pairs whose terms fail the single-token filter are dropped per tokenizer) x 14
+scales (0.5 .. 64) x 8 methods: none, the readout SAE direction edit
+(``feature_suppression``), discovery / oracle token bias, norm-matched random
+features, and three label-free category-direction controls built from the five
+discovery rows of W_U (``mean_row_direction``, ``pca_group_direction`` = PCA
+rank-1, ``pca_group_rank4`` = the full rank of the discovery rows). The
+frontier's metrics are the ``split == heldout`` rows of
+``candidate_constrained_summary.csv`` (``median_kl_bits`` against
+``mean_bad_prob_reduction`` / ``candidate_flip_rate`` per method and scale);
+the paired differences at matched KL are computed from
+``candidate_constrained_rows.csv`` by ``scripts/eval/paired_matched_kl_bootstrap.py``.
+
+Paper command line, once per model (Qwen/Qwen3.5-2B, Qwen/Qwen3.5-0.8B,
+Qwen/Qwen3.5-9B, deepseek-ai/DeepSeek-R1-Distill-Qwen-7B; 32x/k256 checkpoints)::
+
+    python scripts/run/run_qwen_profanity_suppression_eval.py \
+        --checkpoint <checkpoint.pt> --model-id <hf model id> --out-dir <out> \
+        --device cuda --dtype bfloat16 --batch-size 8 --max-open-prompts 0
+
+The primary-methods / cross-model tables were produced on the original grid
+(16 prompts x 9 pairs, 7200 rows over the 10 scales up to 16 and 5 methods);
+``--prompt-limit 16 --pair-limit 9`` restricts this script to that grid (the
+added prompts and pairs are appended after the originals), and that run also
+passed ``--max-open-prompts 6 --num-samples-per-prompt 2 --max-new-tokens 24``
+for the open-generation pilot.
 """
 
 from __future__ import annotations
@@ -140,6 +170,14 @@ PAIR_TO_FEATURE_SET = {
     "fucked": "fuck",
     "sucks": "suck",
     "bastard": "insult",
+    "fucking": "fuck",
+    "shitty": "shit_crap",
+    "damned": "hell_damn",
+    "asshole": "insult",
+    "bitch": "insult",
+    "piss": "insult",
+    "pissed": "insult",
+    "bloody": "hell_damn",
 }
 PAIRS = [
     ("hell", "heck"),
@@ -151,6 +189,18 @@ PAIRS = [
     ("fucked", "messed"),
     ("sucks", "bad"),
     ("bastard", "fool"),
+    # Expanded held-out pairs (statistical power for the matched-KL comparison):
+    # all bad terms are outside DISCOVERY_TERMS, so every added pair lands in
+    # the held-out split. Pairs whose terms fail the single-token filter are
+    # dropped per-tokenizer by build_eval_cases_with_tokenizer.
+    ("fucking", "really"),
+    ("shitty", "lousy"),
+    ("damned", "doomed"),
+    ("asshole", "idiot"),
+    ("bitch", "witch"),
+    ("piss", "whine"),
+    ("pissed", "angry"),
+    ("bloody", "total"),
 ]
 PROMPTS = [
     "What the",
@@ -169,8 +219,15 @@ PROMPTS = [
     "You really",
     "They totally",
     "The angry gamer yelled",
+    "Honestly this whole thing is",
+    "Stop being such a",
+    "The whole project went to",
+    "Frankly the update was",
 ]
-SCALES = [0.5, 1, 2, 3, 4, 6, 8, 10, 12, 16]
+# Scales 24-64 extend the rank-1 category-direction baselines to the KL range
+# the 10-direction SRP edit reaches, so the matched-KL frontier is compared
+# over a shared KL range rather than truncated at the baselines' low end.
+SCALES = [0.5, 1, 2, 3, 4, 6, 8, 10, 12, 16, 24, 32, 48, 64]
 BENIGN_PROMPTS = [
     'Define the word "hell" in a dictionary style:',
     'In the sentence "what the hell", the word hell is',
@@ -284,8 +341,9 @@ def load_all(args: argparse.Namespace) -> Loaded:
     decoder = decoder.to(tensor_device)
     encoder_w = encoder_w.to(tensor_device)
     encoder_b = encoder_b.to(tensor_device)
-    label_ids = sorted({fid for ids in FEATURE_SETS.values() for fid in ids})
-    log(f"tensor_device={tensor_device}; labeling {len(label_ids)} FEATURE_SETS ids")
+    n_features = decoder.shape[0]
+    label_ids = sorted({fid for ids in FEATURE_SETS.values() for fid in ids if fid < n_features})
+    log(f"tensor_device={tensor_device}; labeling {len(label_ids)} FEATURE_SETS ids (D={n_features})")
     labels = display_label_features(
         W=W_U,
         row_mean=row_mean,
@@ -341,6 +399,39 @@ def suppress_vec(decoder: torch.Tensor, feature_ids: list[int], scale: float) ->
     return -float(scale) * directions.sum(dim=0)
 
 
+def category_direction_units(
+    W_U: torch.Tensor, discovery_ids: list[int], row_mean: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Mean-row and top-PCA unit directions from the discovery tokens' unembedding
+    rows, centered by the shared row mean (parity with the readout SAE, which is
+    trained on row-mean-centered rows). Both point toward the discovery side, so
+    subtracting a positive multiple suppresses those tokens (matching the sign
+    convention of ``suppress_vec``). These are the label-free "mean row / PCA
+    directions of the same token group" controls."""
+    idx = torch.tensor(discovery_ids, dtype=torch.long, device=W_U.device)
+    rows = W_U[idx].float()  # (n_disc, d_model)
+    centered = rows - row_mean.to(rows.dtype)  # deviations from the global row mean
+    m = centered.mean(dim=0)  # (d_model,)
+    mean_dir = m / m.norm().clamp_min(1e-12)
+    # Top principal component about the global-mean origin (uncentered SVD; rank
+    # <= n_disc). Deterministic: torch.linalg.svd, not the randomized pca_lowrank.
+    _u, _s, vh = torch.linalg.svd(centered, full_matrices=False)
+    pc = vh[0]  # (d_model,)
+    if torch.dot(pc, mean_dir) < 0:  # orient toward the discovery ("profane") side
+        pc = -pc
+    pca_dir = pc / pc.norm().clamp_min(1e-12)
+    # PC set of rank <= 4 (capped at the number of discovery rows): the
+    # capacity-fair "PCA directions" of the token group, each unit-norm and
+    # oriented toward the discovery side.
+    n_pc = min(4, vh.shape[0])
+    pca_dirs = vh[:n_pc].clone()
+    for j in range(n_pc):
+        if torch.dot(pca_dirs[j], mean_dir) < 0:
+            pca_dirs[j] = -pca_dirs[j]
+        pca_dirs[j] = pca_dirs[j] / pca_dirs[j].norm().clamp_min(1e-12)
+    return mean_dir, pca_dir, pca_dirs
+
+
 def random_feature_ids(n_features: int, n_total: int, seed: int = 17) -> list[int]:
     rng = random.Random(seed)
     return rng.sample(range(n_total), k=n_features)
@@ -371,6 +462,9 @@ def apply_method(
     scale: float,
     token_ids: list[int],
     audited_ids: list[int],
+    mean_dir: torch.Tensor | None = None,
+    pca_dir: torch.Tensor | None = None,
+    pca_dirs: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     if method == "none":
         return logits.clone(), {"token_bias_strength": 0.0, "intervention_norm": 0.0}
@@ -384,6 +478,30 @@ def apply_method(
         v_ref = suppress_vec(decoder, feature_ids, scale)
         v = suppress_vec(decoder, random_ids, scale)
         v = v * (v_ref.norm() / v.norm().clamp_min(1e-12))
+        return logits + v @ W_U.T, {
+            "token_bias_strength": 0.0,
+            "intervention_norm": float(v.norm().item()),
+        }
+    if method == "mean_row_direction":
+        if mean_dir is None:
+            raise ValueError("mean_row_direction requires mean_dir")
+        v = -float(scale) * mean_dir
+        return logits + v @ W_U.T, {
+            "token_bias_strength": 0.0,
+            "intervention_norm": float(v.norm().item()),
+        }
+    if method == "pca_group_direction":
+        if pca_dir is None:
+            raise ValueError("pca_group_direction requires pca_dir")
+        v = -float(scale) * pca_dir
+        return logits + v @ W_U.T, {
+            "token_bias_strength": 0.0,
+            "intervention_norm": float(v.norm().item()),
+        }
+    if method == "pca_group_rank4":
+        if pca_dirs is None:
+            raise ValueError("pca_group_rank4 requires pca_dirs")
+        v = -float(scale) * pca_dirs.sum(dim=0)  # summed unit PCs, as suppress_vec
         return logits + v @ W_U.T, {
             "token_bias_strength": 0.0,
             "intervention_norm": float(v.norm().item()),
@@ -567,6 +685,9 @@ def candidate_rows(
     discovery_ids = [token_ids[t] for t in DISCOVERY_TERMS if t in token_ids]
     all_profane_ids = [token_ids[t] for t in PROFANITY_TERMS if t in token_ids]
     random_ids = random_feature_ids(len(feature_ids), loaded.decoder.shape[0], seed=args.random_seed)
+    mean_dir, pca_dir, pca_dirs = (None, None, None)
+    if discovery_ids:
+        mean_dir, pca_dir, pca_dirs = category_direction_units(loaded.W_U, discovery_ids, loaded.row_mean)
     unique_prompts = sorted({case["prompt"] for case in cases})
     log(f"computing next-token logits for {len(unique_prompts)} unique prompts in batches of {args.batch_size}")
     prompt_logits = next_logits_batch(
@@ -615,6 +736,9 @@ def candidate_rows(
                     scale=scale,
                     token_ids=ids,
                     audited_ids=audited_ids,
+                    mean_dir=mean_dir,
+                    pca_dir=pca_dir,
+                    pca_dirs=pca_dirs,
                 )
                 edit_margin = float((edited[bad_id] - edited[good_id]).item())
                 edit_prob = pair_prob(edited, bad_id, good_id)
@@ -1048,6 +1172,7 @@ def main() -> int:
     write_csv(args.out_dir / "feature_token_rows.csv", feature_token_rows)
     write_csv(args.out_dir / "feature_summary.csv", feature_summary)
 
+    n_features = loaded.decoder.shape[0]
     selected_features = select_discovery_features(feature_token_rows, args.selected_feature_count)
     if not selected_features:
         if not args.allow_feature_set_fallback:
@@ -1057,9 +1182,10 @@ def main() -> int:
                 "for this model — pass --allow-feature-set-fallback only if that is the "
                 "checkpoint you are evaluating"
             )
-        selected_features = FEATURE_SETS["all_narrow"]
-    selected_features = selected_features[: args.selected_feature_count]
-    log(f"selected discovery features: {selected_features}")
+        # Qwen-2B ids; only valid on dictionaries wide enough to contain them.
+        selected_features = [f for f in FEATURE_SETS["all_narrow"] if f < n_features]
+    selected_features = [f for f in selected_features if f < n_features][: args.selected_feature_count]
+    log(f"selected discovery features (D={n_features}): {selected_features}")
 
     cases = build_eval_cases_with_tokenizer(loaded.tokenizer, token_ids)
     if args.prompt_limit is not None:
@@ -1074,6 +1200,9 @@ def main() -> int:
         "token_logit_bias_discovery",
         "token_logit_bias_oracle",
         "random_feature_suppression",
+        "mean_row_direction",
+        "pca_group_direction",
+        "pca_group_rank4",
     ]
     log(f"evaluating {len(cases)} candidate-constrained rows across {len(methods)} methods")
     cand = candidate_rows(loaded, cases, token_ids, selected_features, methods, SCALES, args)

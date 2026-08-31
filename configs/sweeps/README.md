@@ -37,6 +37,9 @@ Two kinds of file live here:
 | `deepseek_r1_distill_qwen_7b_paper.yaml`, `…_16x_k128.yaml` | run config | R1-Distill-Qwen-7B finalists (32×/k256 and strict-budget 16×/k128). |
 | `deepseek_r1_distill_llama_8b_paper.yaml`, `…_16x_k128.yaml` | run config | R1-Distill-Llama-8B finalists. |
 | `ministral3_8b_paper.yaml`, `…_16x_k128.yaml` | run config | Ministral-3-8B-Base finalists (32×/k256 and strict-budget 16×/k128). |
+| `qwen35_2b_seedvar_base.yaml` | run config | Qwen3.5-2B seed-variation base (32×/k256, seed 0). The stability appendix's three-seed families and the multi-seed rows of the low-k table are this file with `--set` overrides of `run.seed` / `run.init_seed` / `data.data_seed`, `factorizer.d_features` / `factorizer.k` / `evaluation.k`, and `run.name` / `run.output_dir` (cells listed in the file header). |
+| `qwen35_0p8b_paper_topk_32x_k256_s1.yaml`, `…_s2.yaml` | run config | Qwen3.5-0.8B 32×/k256 seed-window cells (seeds 1 and 2; seed 0 is the archived finalist). |
+| `lowk_qwen35_2b_16x_base.yaml`, `lowk_qwen35_0p8b_16x_base.yaml` | run config | Low activation-budget cells at 16× width (`k` in {32, 64} via `--set factorizer.k=… --set evaluation.k=…`), behind the sparsity-budget table. |
 
 The provisional Gemma operating points in the registries were trained with the
 same converge recipe as the Qwen models (`paper_phase2_base.yaml` protocol);
@@ -49,6 +52,14 @@ The run configs set `data.fallback: error` and a cluster `data.path`
 (`${SRP_ARCHIVE_ROOT}/...`); without the dataset synced they exit with a clean
 `FileNotFoundError` naming the path. (Grid templates are rejected earlier still,
 by the run-config guard, before any data is loaded.)
+
+The run files behind the paper's seed-variation and low-k cells carried a few
+extra keys (`data.row_preprocessing`, `training.init_mode`, `lr_schedule`,
+`lambda_mode`, `final_lr_frac`, `auxk_*`, `artifacts.make_figures`) that no
+code path in the shipped trainer reads, and did not read in the trainer that
+produced those cells either; they are omitted here rather than shipped as if
+they were live. Every value the trainer does read is identical to the paper
+files.
 
 The cross-model finalist configs (R1-Distill-Qwen-7B, R1-Distill-Llama-8B,
 Ministral) are launched with the generic trainer —

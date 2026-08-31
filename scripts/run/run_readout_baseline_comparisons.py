@@ -14,6 +14,37 @@ Methods evaluated:
     random_support_same_magnitudes  - support-randomization null
     pca_64, pca_256, pca_1024       - dense PCA references
     nearest_row_ridge_top128        - lexical / token-prototype reference
+    knn_basis_top128                - zero-fit weighted kNN over the nearest rows
+    row_cluster_d<D>_k<k>           - k-means centroid dictionary, top-k restricted LS code
+    row_cluster_hard_d<D>           - single-centroid (hard cluster assignment) variant
+
+The last three are the direct-geometry alternatives of the paper's baseline
+table (`tab:readout-score-fidelity-summary`, full grid
+`tab:app-direct-geometry-grid`, error tails `tab:app-error-tails` via
+`scripts/eval/analyze_error_tails.py`); the first seven form the Qwen3.5-2B
+reference panel (`fig:app-robustness-baseline-comparisons`) and the two nulls
+the cross-model null table (`tab:app-cross-model-nulls`).
+
+Paper runs (all with --bank-dir data/query_banks --banks curated_ab,case_candidates,model_native
+--model-native-file qwen_gemma_result1_model_native_prompts_c4.jsonl --operating-point fidelity
+--max-native 500 --max-curated 320 --max-cases 40 --max-len 64 --seed 0). The model-native bank of
+these runs is the C4-sampled slice (regenerate it as in data/query_banks/README.md; the first 500
+base cases in file order are kept), so each model's full logit-difference bank is ~1,350 rows over
+~850 base-case clusters (500 C4 prompts x 2 native queries + the curated and case-candidate rows):
+
+    # Qwen3.5-2B reference panel (fig:app-robustness-baseline-comparisons)
+    --model Qwen3.5-2B --methods sparse_rp,shuffled_row_code,random_support_same_magnitudes,\
+        pca_64,pca_256,pca_1024,nearest_row_ridge_top128
+    # Null controls, one run per model in Qwen3.5-0.8B/2B/9B, Gemma-4-E2B/E4B (tab:app-cross-model-nulls)
+    --model <model> --methods sparse_rp,shuffled_row_code,random_support_same_magnitudes
+    # Direct-geometry grid, one run per softcap-free readout: Qwen3.5-0.8B/2B/9B,
+    # Ministral-3-8B-Base, R1-Distill-Qwen-7B, R1-Distill-Llama-8B (tab:app-direct-geometry-grid)
+    --model <model> --methods sparse_rp,nearest_row_ridge_top128,knn_basis_top128,\
+        row_cluster_d16384_k256,row_cluster_d65536_k256,row_cluster_hard_d65536,pca_256
+
+An uncurated audit population (random base cases, top-20 signed SRP contributions
+per row) uses `--methods sparse_rp --max-native 50 --max-curated 80 --max-cases 20
+--seed 20260712 --sample-bases-random --audit-export-top 20`.
 
 Output schema:
     cells/<bank>__<method>/{rows.jsonl, summary_cell.json, done.json}
@@ -49,8 +80,9 @@ from sparse_readout_prism.decompose import decompose_token_logit
 from sparse_readout_prism.factorizers import TopKSAE, load_factorizer
 from sparse_readout_prism.research.cell_metrics import coverage_stats
 from sparse_readout_prism.research.run_io import (
+    EPS,
     group_rows as _by,
-    load_bank,
+    load_bank as _load_bank_prefix,
     margin_row_stats,
     resolve_ab_case,
     run_provenance,
@@ -519,6 +551,181 @@ class NearestRowRidgeMethod(BaselineMethod):
 
 
 # --------------------------------------------------------------------------- #
+# F. Zero-fit k-nearest-row basis
+# --------------------------------------------------------------------------- #
+
+
+class KNNBasisMethod(BaselineMethod):
+    """Top-K nearest centered-normalized vocabulary rows as a *zero-fit* basis:
+    reconstruct the target row from its neighbours weighted by their cosine
+    similarity, with no fitted regression. Probes the bare neighbourhood
+    structure (the top-k nearest rows of each token as a feature basis) rather
+    than a regression onto it -- the zero-fit counterpart of the fitted
+    NearestRowRidgeMethod.
+
+    Design note: a plain sum of cosine-weighted neighbours over 128 rows
+    over-reconstructs the target by an order of magnitude, so the zero-fit
+    estimate is the similarity-weighted neighbourhood mean rescaled by one
+    scalar, the target's projection onto that mean (no per-neighbour fit)."""
+
+    name = "knn_basis"
+
+    def __init__(self, *, top_k: int = 128, **kw) -> None:
+        super().__init__(**kw)
+        self.top_k = int(top_k)
+        self.name = f"knn_basis_top{self.top_k}"
+
+    @torch.no_grad()
+    def decompose_row(
+        self,
+        h: torch.Tensor,
+        row_idx: int,
+        exclude_ids: Optional[Iterable[int]] = None,
+    ) -> BaselineDecomposition:
+        x = self.row_normalized_all[row_idx]  # (d_model,)
+        sims = self.row_normalized_all @ x  # (V,)
+        excl = {int(row_idx)}
+        if exclude_ids is not None:
+            excl.update(int(i) for i in exclude_ids)
+        mask = torch.zeros_like(sims, dtype=torch.bool)
+        mask[list(excl)] = True
+        sims = sims.masked_fill(mask, -float("inf"))
+        top = torch.topk(sims, k=self.top_k)
+        nbr_ids = top.indices  # (top_k,)
+        w = top.values.clamp_min(0.0)
+        w = w / w.sum().clamp_min(1e-8)  # (top_k,) convex weights
+        X = self.row_normalized_all[nbr_ids]  # (top_k, d_model)
+        mean_nbr = w @ X  # (d_model,) weighted neighbourhood mean
+        gamma = (x @ mean_nbr) / (mean_nbr @ mean_nbr).clamp_min(1e-8)
+        coeffs = gamma * w  # per-neighbour coefficients; decoded = coeffs @ X
+        decoded = coeffs @ X  # (d_model,) rescaled neighbourhood estimate
+        W_row = self.W[row_idx].to(self.device)
+        row_norm = self.row_norm_all[row_idx]
+        reconstructed_row = self.row_mean + row_norm * decoded
+        residual_row = W_row - reconstructed_row
+        h_nbr = X @ h  # (top_k,)
+        feature_contributions = row_norm * coeffs * h_nbr  # (top_k,)
+        base_term = h @ self.row_mean
+        feature_sum = feature_contributions.sum()
+        residual_term = h @ residual_row
+        original_logit = h @ W_row
+        reconstructed_logit = base_term + feature_sum
+        identity_error = original_logit - (base_term + feature_sum + residual_term)
+        return BaselineDecomposition(
+            original_logit=original_logit,
+            base_term=base_term,
+            feature_contributions=feature_contributions,
+            feature_sum=feature_sum,
+            residual_term=residual_term,
+            reconstructed_logit=reconstructed_logit,
+            identity_error=identity_error,
+            active_feature_indices=nbr_ids.detach().cpu(),
+            method=self.name,
+        )
+
+
+# --------------------------------------------------------------------------- #
+# G. K-means row-cluster basis
+# --------------------------------------------------------------------------- #
+
+
+def _torch_kmeans_unit(X: torch.Tensor, n_clusters: int, seed: int, iters: int = 12, chunk: int = 4096) -> torch.Tensor:
+    """Lloyd's k-means on unit-norm rows (cosine assignment), on-device.
+    Returns unit-normalized centroids (n_clusters, d). Dead centroids are
+    reseeded from random rows each iteration. Deterministic given `seed`."""
+    V = X.shape[0]
+    g = torch.Generator().manual_seed(seed)
+    C = X[torch.randperm(V, generator=g)[:n_clusters].to(X.device)].clone()
+    ones = torch.ones(V, device=X.device)
+    for _ in range(iters):
+        assign = torch.empty(V, dtype=torch.long, device=X.device)
+        for s in range(0, V, chunk):
+            assign[s : s + chunk] = (X[s : s + chunk] @ C.T).argmax(dim=1)
+        C_new = torch.zeros_like(C)
+        count = torch.zeros(n_clusters, device=X.device)
+        C_new.index_add_(0, assign, X)
+        count.index_add_(0, assign, ones)
+        dead = count == 0
+        C = C_new / count.clamp_min(1.0)[:, None]
+        n_dead = int(dead.sum())
+        if n_dead:
+            ridx = torch.randperm(V, generator=g)[:n_dead].to(X.device)
+            C[dead] = X[ridx]
+        C = C / C.norm(dim=1, keepdim=True).clamp_min(1e-8)
+    return C
+
+
+class RowClusterMethod(BaselineMethod):
+    """Sparsity-matched k-means centroid dictionary: fit `n_clusters` unit
+    centroids on the centered/unit rows, then code each row over its
+    top-`code_k` centroids by |cosine| via a restricted least-squares solve --
+    the same dictionary size D and active budget k as the SRP factorizer, with
+    centroids in place of learned decoder directions. `hard=True` is the
+    literal clustering reading: the row's own single cluster centroid
+    reconstructs it.
+
+    Design note: an earlier version of this baseline solved a full
+    least-squares projection over n_clusters = d_model centroids, a full-rank
+    reprojection of the row space that reconstructs any row near-perfectly by
+    construction; it was redesigned so the active budget stays far below
+    d_model. Do not reintroduce the full-span variant."""
+
+    name = "row_cluster"
+
+    def __init__(self, *, n_clusters: int, code_k: int = 256, hard: bool = False, seed: int = 0, **kw) -> None:
+        super().__init__(**kw)
+        self.n_clusters = int(n_clusters)
+        self.hard = bool(hard)
+        self.code_k = 1 if hard else min(int(code_k), self.n_clusters)
+        self.name = f"row_cluster_hard_d{self.n_clusters}" if hard else f"row_cluster_d{self.n_clusters}_k{self.code_k}"
+        self.C = _torch_kmeans_unit(self.row_normalized_all, self.n_clusters, seed)
+        self._eye = torch.eye(self.code_k, device=self.device)
+
+    @torch.no_grad()
+    def decompose_row(
+        self,
+        h: torch.Tensor,
+        row_idx: int,
+        exclude_ids: Optional[Iterable[int]] = None,
+    ) -> BaselineDecomposition:
+        x = self.row_normalized_all[row_idx]  # (d_model,)
+        sims = self.C @ x  # (n_clusters,)
+        if self.hard:
+            sel = sims.argmax().unsqueeze(0)  # (1,) the row's own cluster
+            Ck = self.C[sel]  # (1, d_model)
+            coeffs = sims[sel]  # projection onto that centroid
+        else:
+            sel = torch.topk(sims.abs(), k=self.code_k).indices  # (code_k,)
+            Ck = self.C[sel]  # (code_k, d_model)
+            A = Ck @ Ck.T + 1e-4 * self._eye
+            coeffs = torch.linalg.solve(A, Ck @ x)  # (code_k,)
+        decoded = coeffs @ Ck  # (d_model,)
+        W_row = self.W[row_idx].to(self.device)
+        row_norm = self.row_norm_all[row_idx]
+        reconstructed_row = self.row_mean + row_norm * decoded
+        residual_row = W_row - reconstructed_row
+        h_c = Ck @ h  # (code_k,)
+        feature_contributions = row_norm * coeffs * h_c  # (code_k,)
+        base_term = h @ self.row_mean
+        feature_sum = feature_contributions.sum()
+        residual_term = h @ residual_row
+        original_logit = h @ W_row
+        reconstructed_logit = base_term + feature_sum
+        identity_error = original_logit - (base_term + feature_sum + residual_term)
+        return BaselineDecomposition(
+            original_logit=original_logit,
+            base_term=base_term,
+            feature_contributions=feature_contributions,
+            feature_sum=feature_sum,
+            residual_term=residual_term,
+            reconstructed_logit=reconstructed_logit,
+            identity_error=identity_error,
+            active_feature_indices=sel.detach().cpu(),
+            method=self.name,
+        )
+
+
+# --------------------------------------------------------------------------- #
 # Factory
 # --------------------------------------------------------------------------- #
 
@@ -541,6 +748,9 @@ def build_method(
     'random_support_same_magnitudes'
     'pca_64', 'pca_256', 'pca_1024'
     'nearest_row_ridge_top128'
+    'knn_basis_top128'
+    'row_cluster_d65536_k256', 'row_cluster_d16384_k256'
+    'row_cluster_hard_d65536'
     """
     common = dict(
         W=W,
@@ -567,6 +777,16 @@ def build_method(
     if spec.startswith("nearest_row_ridge_top"):
         top = int(spec.split("nearest_row_ridge_top", 1)[1])
         return NearestRowRidgeMethod(top_k=top, **common)
+    if spec.startswith("knn_basis_top"):
+        top = int(spec.split("knn_basis_top", 1)[1])
+        return KNNBasisMethod(top_k=top, **common)
+    if spec.startswith("row_cluster_hard_d"):
+        n = int(spec.split("row_cluster_hard_d", 1)[1])
+        return RowClusterMethod(n_clusters=n, hard=True, seed=seed, **common)
+    if spec.startswith("row_cluster_d"):
+        body = spec.split("row_cluster_d", 1)[1]  # "<D>_k<k>"
+        d_str, k_str = body.split("_k", 1)
+        return RowClusterMethod(n_clusters=int(d_str), code_k=int(k_str), seed=seed, **common)
     raise ValueError(f"unknown method spec: {spec}")
 
 
@@ -660,6 +880,23 @@ DEFAULT_METHODS = (
 
 def log(msg: str) -> None:
     print(f"[rbase {time.strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
+def load_bank(path: Path, cap: int | None, *, random_seed: int | None = None) -> list[dict]:
+    """Load a JSONL bank capped by *base case*. With ``random_seed`` None the cap
+    keeps the file-prefix base cases (the shared ``run_io.load_bank``); otherwise
+    it keeps a seeded random sample of base cases (``--sample-bases-random``),
+    rows staying in file order either way."""
+    if random_seed is None:
+        return _load_bank_prefix(path, cap)
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    if cap is not None and cap < len(rows):
+        bases = list(dict.fromkeys(r["base_case_id"] for r in rows))
+        rng = np.random.default_rng(random_seed)
+        indices = rng.choice(len(bases), size=min(cap, len(bases)), replace=False)
+        keep_bases = [bases[i] for i in indices]
+        rows = [r for r in rows if r["base_case_id"] in set(keep_bases)]
+    return rows
 
 
 def _group_metrics(rows: list[dict]) -> dict:
@@ -815,6 +1052,27 @@ def run_cell(
         row["expected_side"] = expected_side
         row["softcap"] = softcap
         row.update(coverage_stats(mr["feat_margin"], mr["sparse"]))
+        if args.audit_export_top > 0 and method_spec == "sparse_rp":
+            fm = mr["feat_margin"].detach().float().cpu()
+            order = torch.argsort(fm.abs(), descending=True)
+            total_abs = float(fm.abs().sum().item())
+            keep = order[: min(args.audit_export_top, len(order))]
+            cumulative = 0.0
+            features = []
+            for fid in keep.tolist():
+                contribution = float(fm[fid].item())
+                mass = abs(contribution) / total_abs if total_abs > EPS else 0.0
+                cumulative += mass
+                features.append(
+                    {
+                        "feature_id": int(fid),
+                        "contribution": contribution,
+                        "abs_mass_fraction": mass,
+                        "cumulative_abs_mass_fraction": cumulative,
+                    }
+                )
+            row["audit_features"] = features
+            row["audit_top_abs_mass_fraction"] = cumulative
         rows.append(row)
 
     # Process bank rows.
@@ -905,6 +1163,13 @@ def main() -> int:
         help="comma-separated method specs",
     )
     ap.add_argument("--banks", type=str, default="curated_ab,case_candidates,model_native")
+    ap.add_argument(
+        "--model-native-file",
+        type=str,
+        default="qwen_gemma_result1_model_native_prompts.jsonl",
+        help="model_native bank file name under --bank-dir (paper baseline runs: the C4 slice "
+        "qwen_gemma_result1_model_native_prompts_c4.jsonl)",
+    )
     ap.add_argument("--max-native", type=int, default=500)
     ap.add_argument("--max-curated", type=int, default=320)
     ap.add_argument("--max-cases", type=int, default=40)
@@ -912,6 +1177,17 @@ def main() -> int:
     ap.add_argument("--max-len", type=int, default=64)
     ap.add_argument("--wu-tol", type=float, default=0.05)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument(
+        "--sample-bases-random",
+        action="store_true",
+        help="apply each bank cap to a seeded random base-case sample instead of the file prefix",
+    )
+    ap.add_argument(
+        "--audit-export-top",
+        type=int,
+        default=0,
+        help="for sparse_rp, serialize this many largest-|contribution| features per decomposition",
+    )
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -931,7 +1207,7 @@ def main() -> int:
 
     bank_files = {
         "model_native": (
-            "qwen_gemma_result1_model_native_prompts.jsonl",
+            args.model_native_file,
             args.max_native,
         ),
         "curated_ab": (
@@ -956,7 +1232,9 @@ def main() -> int:
         if not path.exists():
             log(f"bank file missing, skipping {bname}: {path}")
             continue
-        banks[bname] = load_bank(path, cap)
+        bank_offsets = {"curated_ab": 11, "case_candidates": 23, "model_native": 37}
+        sample_seed = args.seed + bank_offsets[bname] if args.sample_bases_random else None
+        banks[bname] = load_bank(path, cap, random_seed=sample_seed)
     if not banks:
         log("no banks loaded; nothing to do")
         return 1

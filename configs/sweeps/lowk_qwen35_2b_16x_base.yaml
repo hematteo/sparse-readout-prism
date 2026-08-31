@@ -1,0 +1,74 @@
+# Qwen3.5-2B readout SAE, 16x width, low activation-budget cells
+# (tab:app-low-k-dead-features, the single-seed Q-2B k=32 row and seed 0 of the
+# k=64 row). Same recipe as qwen35_2b_seedvar_base.yaml (TopK, 20000 steps,
+# batch 4096, hybrid frequency/uniform row sampling); d_features fixed at 32768
+# (16 x d_model 2048), seed 0.
+#
+# A launch overrides per cell via --set
+#   factorizer.k / evaluation.k        the budget (evaluation.k = factorizer.k)
+#   run.name / run.output_dir          qwen35_2b_d32768_k<k>_s0
+# and nothing else.
+#
+# Paper cells (d_features, k, seed): (32768, 32, 0), (32768, 64, 0).
+# Seeds 1 and 2 of the k=64 row come from qwen35_2b_seedvar_base.yaml with
+# --set factorizer.d_features=32768 --set factorizer.k=64. The row-centred
+# explained variance (rowEV) was not recorded for the two seed-0 cells here;
+# the table's k=64 rowEV range is over the other two seeds and the k=32 row
+# enters it as ---.
+#
+# Example cell (k=32):
+#   uv run python scripts/train/train_readout_sae_from_config.py \
+#     --config configs/sweeps/lowk_qwen35_2b_16x_base.yaml \
+#     --set factorizer.k=32 --set evaluation.k=32 \
+#     --set run.output_dir=results/lowk_qwen35_2b_16x/qwen35_2b_d32768_k32_s0 \
+#     --set run.name=qwen35_2b_d32768_k32_s0
+#
+# data.path is the {W_U_orig, h_LN} extraction of Qwen3.5-2B
+# (scripts/data/extract_model_readout.py), the artifact
+# configs/registries/result1_query_fidelity_cluster.yaml resolves for this model.
+
+run:
+  name: lowk_qwen35_2b_16x
+  seed: 0
+  init_seed: 0
+  output_dir: results/lowk_qwen35_2b_16x/qwen35_2b_d32768_k64_s0
+  device: auto
+
+data:
+  path: ${SRP_ARCHIVE_ROOT}/data/qwen35-2b/qwen35_2b.pt
+  fallback: error
+  max_rows: null
+  max_hidden: 2048
+  val_hidden: 512
+  data_seed: 0
+
+factorizer:
+  architecture: topk
+  d_features: 32768
+  k: 64
+  encoder_init_scale: 0.02
+
+training:
+  steps: 20000
+  batch_size: 4096
+  lr: 0.001
+  weight_decay: 0.0001
+  code_l2: 0.000001
+  prism_top_n: 1
+  lambda_prism: 0.001
+  row_sampling: hybrid_50freq_50uniform
+
+evaluation:
+  k: 64
+  max_eval_rows: 20000
+  max_eval_hidden: 1024
+  topk_overlap: 5
+  contribution_top_k: 8
+
+artifacts:
+  save_checkpoint: true
+
+autoresearch:
+  score_thresholds:
+    max_dead_feature_rate: 0.5
+    max_val_logit_kl_bits_mean: 20.0

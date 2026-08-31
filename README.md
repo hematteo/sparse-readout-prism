@@ -6,7 +6,7 @@
 [![ruff](https://img.shields.io/badge/lint-ruff-261230)](https://docs.astral.sh/ruff/)
 
 Code and configs for the paper
-**"Sparse Readout Prism: A Sparse LM-Head Basis for Logit-Lens Readouts"**
+**"Sparse Readout Prism: Explaining Logit-Lens Scores in Features Rather Than Tokens"**
 (preprint forthcoming).
 
 Sparse Readout Prism factorizes language-model unembedding rows into a
@@ -37,8 +37,8 @@ after replacing `W_U` with its reconstruction, `KL` is the readout KL in bits:
 
 | Model | d_features | rowEV | top1 | KL (bits) |
 |---|---:|---:|---:|---:|
-| Qwen3.5-0.8B | 32768 | 0.877 | 0.891 | — |
-| Qwen3.5-2B | 65536 | 0.847 | 0.887 | — |
+| Qwen3.5-0.8B | 32768 | 0.877 | 0.891 | 0.135 |
+| Qwen3.5-2B | 65536 | 0.847 | 0.887 | 0.136 |
 | Qwen3.5-9B | 131072 | 0.857 | 0.900 | 0.105 |
 
 Full per-model / per-width / per-`k` numbers (including the fixed-budget k = 128
@@ -47,6 +47,24 @@ points and the provisional Gemma results) are in
 see Appendix K of the paper.
 
 ---
+
+## What 0.2.0 adds
+
+Code behind the experiments added in the paper's revision, ported from the
+research workspace with behaviour preserved (every artifact is mapped to its
+script and command line in [`docs/REPRODUCE.md`](docs/REPRODUCE.md) §2):
+
+- the cross-lens study: Jacobian-lens and ridge-translator fitting, per-layer
+  readout dumps, EN–ZH and EN–DE aggregators, prompt banks under `data/cross_lens/`;
+- causal validation of feature contributions
+  (`scripts/eval/run_causal_contribution_validation.py`);
+- the redesigned direct-geometry baselines (weighted row-kNN, k-means centroid
+  dictionaries) and the pooled error-tail analysis;
+- matched-KL frontier controls in the lexical-edit stress test and the paired
+  cluster bootstrap behind them;
+- cross-seed stability, feature-group matching and leave-one-out core recovery,
+  with the seed-variation and low-k training configs;
+- the sense-labelled evaluation on CoarseWSD-20.
 
 ## Install
 
@@ -58,6 +76,16 @@ uv sync                 # or: pip install -e .
 
 `uv sync` is recommended — it installs from the pinned `uv.lock` and picks
 the default PyTorch wheel for your platform (CPU/MPS on macOS, CUDA on Linux).
+
+The cross-lens study scripts (`scripts/run/fit_jlens.py` and the scripts that
+consume its lenses) additionally need the Jacobian-lens reference
+implementation, which is not on PyPI:
+
+```bash
+uv sync --extra lens    # adds jlens from github.com/anthropics/jacobian-lens (Apache-2.0)
+```
+
+Everything else installs and tests without it; those scripts import it lazily.
 If your GPU needs a specific CUDA build, pin `torch` to a `download.pytorch.org`
 index in `[tool.uv.sources]` locally and re-lock.
 
@@ -121,7 +149,7 @@ separately in the paper's LaTeX source from the committed metrics.
 The same call works on any HuggingFace causal LM — you just need a dictionary
 trained on **that model's** `W_U`. The selected paper dictionaries are published
 on the Hugging Face Hub at
-[`matteohe/sparse-readout-prism`](https://huggingface.co/matteohe/sparse-readout-prism)
+[`hematteo/sparse-readout-prism`](https://huggingface.co/hematteo/sparse-readout-prism)
 (`<model>/<operating_point>/checkpoint.pt`); download one with
 `huggingface_hub.hf_hub_download`, or train your own
 (`scripts/data/extract_model_readout.py` + the trainer — Pythia-160M is
@@ -150,7 +178,7 @@ row_mean, row_norms, rows_normalized = preprocess_rows(W_U)
 # 3. Load the matching trained dictionary and decompose.
 #    For a published model, pull the dictionary straight from the Hub, e.g.:
 #      from huggingface_hub import hf_hub_download
-#      ckpt = hf_hub_download("matteohe/sparse-readout-prism", "qwen3.5-2b/k256_32x/checkpoint.pt")
+#      ckpt = hf_hub_download("hematteo/sparse-readout-prism", "qwen3.5-2b/k256_32x/checkpoint.pt")
 #    For pythia-160m here, train one locally first (see docs/REPRODUCE.md).
 sae = load_factorizer("checkpoint.pt", freeze=True)       # trained on this model's W_U
 d = decompose_token_logit(
@@ -182,22 +210,38 @@ src/sparse_readout_prism/         core library
   token_display.py, utils.py      token/text display strings + shared IO / model-loader helpers
   research/                       flat helpers shared by several scripts/ entry
                                   points (Qwen readout + query-decomposition
-                                  toolkits, prompt banks, registry, run IO);
+                                  toolkits, prompt banks, registry, run IO,
+                                  seed-stability contrast pipeline);
                                   logic used by a single script stays inline in
                                   that script
 
 scripts/                          self-contained CLI entry points
-  train/, run/, eval/             SAE training, experiment suites, evaluation
-  analyze/, data/                 component inspection, data prep
+  train/                          SAE training from a run config
+  run/                            experiment suites: query-fidelity bank, direct-
+                                  geometry baselines, lexical-edit stress test,
+                                  Jacobian / ridge lens fitting + cross-lens
+                                  readout dumps, CoarseWSD-20 bundles
+  eval/                           task-fidelity evaluation, dense-control
+                                  diagnostic, causal validation, error tails,
+                                  matched-KL bootstrap, cross-lens aggregators,
+                                  cross-seed stability / group matching / LOO
+  analyze/                        feature directions, row-norm tails, label
+                                  audit, nearest-rows reading, antonym-layer
+                                  and three-lens tables, sense-group alignment
+  data/                           readout extraction, query banks, polysemy
+                                  pairs, the EN-DE cross-lens bank
   figures/                        compute + persist the metrics behind the paper
                                   figures (CSV/JSON example panels, lens grids,
-                                  decompositions); no figures are rendered here
+                                  decompositions, the shared-feature panel);
+                                  no figures are rendered here
 
 configs/
   models/, sweeps/, registries/   model configs, sweep grids, paper-selected SAEs
 
 data/
   query_banks/                    curated prompt banks (paper inputs)
+  cross_lens/                     EN-ZH / EN-DE cross-lens prompt banks + exclusion report
+  wsd/                            optional sense-gloss anchors for the CoarseWSD-20 runs
   appendix/                       audited literals behind the Appendix K tables
   audit/                          feature-label audit annotations + counts (Appendix L)
 
@@ -215,10 +259,12 @@ docs/                             REPRODUCE.md (figure → script + config map),
 | [`docs/REPRODUCE.md`](docs/REPRODUCE.md) | Figure / table → script + config map. Hardware budget. |
 | [`docs/DATA.md`](docs/DATA.md) | Where artefacts live, schema, how to adapt to a different model. |
 | [`data/query_banks/README.md`](data/query_banks/README.md) | Paper-input JSONL schema + per-file purpose. |
+| [`data/cross_lens/README.md`](data/cross_lens/README.md) | Cross-lens prompt-bank schema, families, controls, provenance. |
+| [`configs/sweeps/README.md`](configs/sweeps/README.md) | Training configs, including the seed-variation and low-k cells. |
 
 Pretrained readout-feature dictionaries (the selected SAEs cited in the
 paper) are published on the Hugging Face Hub at
-[`matteohe/sparse-readout-prism`](https://huggingface.co/matteohe/sparse-readout-prism)
+[`hematteo/sparse-readout-prism`](https://huggingface.co/hematteo/sparse-readout-prism)
 — 17 dictionaries across 8 base models, laid out as
 `<model>/<operating_point>/checkpoint.pt`.
 [`configs/registries/exp2_selected_sae_checkpoints.yaml`](configs/registries/exp2_selected_sae_checkpoints.yaml)
@@ -248,8 +294,11 @@ The suite is fast and CI-safe: identity correctness of the decomposition,
 schema invariants of the task-fidelity evaluator, checkpoint-registry
 resolution, the data-loading branches (token-mask filtering, val-split
 fallbacks), the trainer's L0 controller and resume path, the public-API
-surface, and layout guardrails for the `research/` sub-package. No GPU, no
-model loads, no figure rendering.
+surface, and layout guardrails for the `research/` sub-package. The
+experiment code added in 0.2.0 ships its own CPU tests (baseline identity for
+the row-kNN and k-means methods, the causal-validation self-test, the paired
+matched-KL bootstrap, the cross-lens aggregators, sense-group selection, and
+the seed-stability pipeline). No GPU, no model loads, no figure rendering.
 
 ## Related repository
 
@@ -263,7 +312,7 @@ analysis.
 
 ```bibtex
 @misc{he2026sparsereadoutprism,
-  title  = {Sparse Readout Prism: A Sparse LM-Head Basis for Logit-Lens Readouts},
+  title  = {Sparse Readout Prism: Explaining Logit-Lens Scores in Features Rather Than Tokens},
   author = {He, Matteo and Shen, William F. and Qiu, Xinchi and Lane, Nicholas D.},
   year   = {2026},
   note   = {Preprint forthcoming; see the repository for the up-to-date reference},

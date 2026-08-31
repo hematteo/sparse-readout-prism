@@ -1,0 +1,76 @@
+# Qwen3.5-2B readout SAE, seed-variation base recipe. Backs the Appendix I
+# stability analyses (tab:app-cross-seed-stability, tab:app-feature-group-matching,
+# tab:app-loo-core-recovery) and the multi-seed rows of tab:app-low-k-dead-features.
+# TopK, 20000 steps, batch 4096, hybrid frequency/uniform row sampling; the same
+# optimizer recipe as paper_phase2_base.yaml.
+#
+# One file, many cells. A launch overrides per cell via --set
+#   run.seed / run.init_seed / data.data_seed              all three = the cell's seed
+#   factorizer.d_features / factorizer.k / evaluation.k    width x budget (evaluation.k = factorizer.k)
+#   run.name / run.output_dir                              qwen2b_d<D>_k<k>_s<seed>
+# and leaves everything else untouched.
+#
+# Paper cells (d_features, k, seed) launched from this file:
+#   seed-variation family (Appendix I):  (65536, 256, 0|1|2) and (32768, 128, 0|1|2)
+#   width x budget grid (tab:app-low-k-dead-features, rows with 2-3 seeds):
+#     (32768, 256, 0|1|2)  [seed 1 did not finish; the table's row has two seeds]
+#     (65536, 128, 0|1|2)
+#     (32768,  64, 1|2)    [seed 0 of this row and the k=32 row come from lowk_qwen35_2b_16x_base.yaml]
+#
+# Example cell (seed 1 of the 32x/k256 family):
+#   uv run python scripts/train/train_readout_sae_from_config.py \
+#     --config configs/sweeps/qwen35_2b_seedvar_base.yaml \
+#     --set factorizer.d_features=65536 --set factorizer.k=256 --set evaluation.k=256 \
+#     --set run.seed=1 --set run.init_seed=1 --set data.data_seed=1 \
+#     --set run.output_dir=results/qwen35_2b_seedvar/qwen2b_d65536_k256_s1 \
+#     --set run.name=qwen2b_d65536_k256_s1
+#
+# d_features 65536 = 32 x d_model (2048). data.path is the {W_U_orig, h_LN}
+# extraction of Qwen3.5-2B (scripts/data/extract_model_readout.py), the artifact
+# configs/registries/result1_query_fidelity_cluster.yaml resolves for this model.
+
+run:
+  name: qwen35_2b_seedvar_base
+  seed: 0
+  init_seed: 0
+  output_dir: results/qwen35_2b_seedvar/qwen2b_d65536_k256_s0
+  device: auto
+
+data:
+  path: ${SRP_ARCHIVE_ROOT}/data/qwen35-2b/qwen35_2b.pt
+  fallback: error
+  max_rows: null
+  max_hidden: 2048
+  val_hidden: 512
+  data_seed: 0
+
+factorizer:
+  architecture: topk
+  d_features: 65536
+  k: 256
+  encoder_init_scale: 0.02
+
+training:
+  steps: 20000
+  batch_size: 4096
+  lr: 0.001
+  weight_decay: 0.0001
+  code_l2: 0.000001
+  prism_top_n: 1
+  lambda_prism: 0.001
+  row_sampling: hybrid_50freq_50uniform
+
+evaluation:
+  k: 256
+  max_eval_rows: 20000
+  max_eval_hidden: 1024
+  topk_overlap: 5
+  contribution_top_k: 8
+
+artifacts:
+  save_checkpoint: true
+
+autoresearch:
+  score_thresholds:
+    max_dead_feature_rate: 0.5
+    max_val_logit_kl_bits_mean: 20.0

@@ -18,7 +18,7 @@
 # (fidelity -> <model>/k256_32x, strict_budget -> <model>/k128_16x; qwen9b
 # strict_budget -> qwen3.5-9b/k128_8x). The `checkpoint:` paths below remain the
 # canonical on-cluster training locations.
-huggingface_repo: matteohe/sparse-readout-prism
+huggingface_repo: hematteo/sparse-readout-prism
 archive_root: ${SRP_ARCHIVE_ROOT}
 
 models:

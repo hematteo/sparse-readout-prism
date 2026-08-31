@@ -14,7 +14,7 @@
 # The Pythia-160M continuity anchor uses a legacy state-dict schema and is NOT
 # published on the Hub.
 
-huggingface_repo: matteohe/sparse-readout-prism
+huggingface_repo: hematteo/sparse-readout-prism
 archive_root: ${SRP_ARCHIVE_ROOT}
 
 headline:

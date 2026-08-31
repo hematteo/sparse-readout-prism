@@ -1,0 +1,101 @@
+{
+  "_meta": {
+    "purpose": "Frozen sense-anchor token sets for weights-only feature typing (CoarseWSD-20). Typing rule: beta_f(sense) = mean anchor code (one-vs-rest contrast); a feature is sense-typed when its max one-vs-rest beta exceeds tau from the random-anchor null.",
+    "rule": "Per sense: the class-map sense name plus curated common-word associates; the ambiguous target itself is never an anchor; no anchor is reused across senses of the same word; anchors are filtered per tokenizer to leading-space single tokens at runtime and the surviving counts are reported.",
+    "frozen": "2026-08-01, before any occurrence-mode run was executed",
+    "sense_ids": "match CoarseWSD-20 class_map.txt per word"
+  },
+  "apple": {
+    "0": ["iPhone", "Mac", "software", "computer", "technology", "company"],
+    "1": ["fruit", "orchard", "pear", "cherry", "juice", "ripe"]
+  },
+  "arm": {
+    "0": ["processor", "chip", "architecture", "Intel", "silicon", "computing"],
+    "1": ["shoulder", "elbow", "hand", "leg", "wrist", "limb"]
+  },
+  "bank": {
+    "0": ["money", "loan", "deposit", "financial", "credit", "account"],
+    "1": ["river", "shore", "stream", "flood", "water", "erosion"]
+  },
+  "bass": {
+    "0": ["guitar", "riff", "band", "rock", "amplifier"],
+    "1": ["singer", "tenor", "choir", "opera", "voice"],
+    "2": ["cello", "orchestra", "violin", "symphony", "concerto"]
+  },
+  "bow": {
+    "0": ["ship", "stern", "hull", "vessel", "sailors"],
+    "1": ["arrow", "archer", "quiver", "shooting", "hunting"],
+    "2": ["violin", "strings", "cello", "rosin", "instrument"]
+  },
+  "chair": {
+    "0": ["committee", "president", "board", "meeting", "elected"],
+    "1": ["table", "furniture", "seat", "cushion", "wooden"]
+  },
+  "club": {
+    "0": ["society", "members", "organization", "association", "founded"],
+    "1": ["nightclub", "dancing", "bar", "DJ", "party"],
+    "2": ["weapon", "stick", "bat", "blunt", "wielded"]
+  },
+  "crane": {
+    "0": ["machinery", "lifting", "construction", "tower", "load", "hoist"],
+    "1": ["bird", "heron", "stork", "wetland", "feathers", "migratory"]
+  },
+  "deck": {
+    "0": ["ship", "sailors", "hull", "aboard", "vessel"],
+    "1": ["porch", "patio", "balcony", "wooden", "backyard"]
+  },
+  "digit": {
+    "0": ["number", "numeral", "decimal", "integer", "arithmetic"],
+    "1": ["finger", "toe", "thumb", "hand", "limb"]
+  },
+  "hood": {
+    "0": ["villain", "comics", "Marvel", "superhero", "character"],
+    "1": ["car", "engine", "bonnet", "vehicle", "windshield"],
+    "2": ["cloak", "jacket", "head", "garment", "sweatshirt"]
+  },
+  "java": {
+    "0": ["Indonesia", "island", "coffee", "Jakarta", "volcano"],
+    "1": ["programming", "software", "code", "compiler", "language"]
+  },
+  "mole": {
+    "0": ["burrow", "rodent", "digging", "fur", "underground"],
+    "1": ["spy", "agent", "intelligence", "undercover", "espionage"],
+    "2": ["molar", "chemistry", "gram", "concentration", "atoms"],
+    "3": ["sauce", "Mexican", "chili", "chocolate", "cuisine"],
+    "4": ["pier", "harbor", "breakwater", "jetty", "seawall"]
+  },
+  "pitcher": {
+    "0": ["baseball", "innings", "strikeout", "mound", "batter"],
+    "1": ["jug", "water", "pour", "ceramic", "vessel"]
+  },
+  "pound": {
+    "0": ["kilogram", "weight", "ounce", "mass", "grams"],
+    "1": ["sterling", "currency", "pence", "British", "dollar"]
+  },
+  "seal": {
+    "0": ["marine", "whiskers", "blubber", "colony", "swimming"],
+    "1": ["singer", "album", "song", "Grammy", "vocalist"],
+    "2": ["emblem", "stamp", "official", "insignia", "wax"],
+    "3": ["gasket", "valve", "leak", "pressure", "rubber"]
+  },
+  "spring": {
+    "0": ["water", "geyser", "mineral", "well", "flowing"],
+    "1": ["summer", "winter", "autumn", "season", "blossom"],
+    "2": ["coil", "mechanical", "tension", "metal", "compression"]
+  },
+  "square": {
+    "0": ["rectangle", "triangle", "geometry", "shape", "sides"],
+    "1": ["company", "corporation", "payments", "games"],
+    "2": ["plaza", "town", "market", "city", "fountain"],
+    "3": ["squared", "multiplication", "integer", "root", "arithmetic"]
+  },
+  "trunk": {
+    "0": ["tree", "bark", "branches", "roots", "wood"],
+    "1": ["car", "luggage", "rear", "vehicle", "storage"],
+    "2": ["torso", "body", "abdomen", "muscles"]
+  },
+  "yard": {
+    "0": ["meter", "feet", "inches", "garden", "lawn"],
+    "1": ["mast", "sail", "rigging", "spar", "ship"]
+  }
+}

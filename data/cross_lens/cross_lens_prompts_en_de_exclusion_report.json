@@ -1,0 +1,230 @@
+{
+ "tokenizer": "Qwen/Qwen3.5-9B",
+ "n_candidates": 132,
+ "n_kept": 102,
+ "n_cross": 90,
+ "n_ctrl": 12,
+ "per_group": {
+  "antonym_de": 9,
+  "cloze_de": 14,
+  "cloze_en": 15,
+  "ctrl_digit": 6,
+  "ctrl_propn": 6,
+  "exemplar_de": 10,
+  "fact_de": 8,
+  "trans_de2en": 17,
+  "trans_en2de": 17
+ },
+ "excluded": [
+  {
+   "id": "antonym_de_05",
+   "concept": "light",
+   "de": "leicht",
+   "en": "light",
+   "reason": "cognate (lev=2)"
+  },
+  {
+   "id": "antonym_de_09",
+   "concept": "weak",
+   "de": "schwach",
+   "en": "weak",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "antonym_de_10",
+   "concept": "dark",
+   "de": "dunkel",
+   "en": "dark",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "antonym_de_13",
+   "concept": "new",
+   "de": "neu",
+   "en": "new",
+   "reason": "cognate (lev=1)"
+  },
+  {
+   "id": "antonym_de_14",
+   "concept": "quiet",
+   "de": "leise",
+   "en": "quiet",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "trans_de2en_04",
+   "concept": "chair",
+   "de": "Stuhl",
+   "en": "chair",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "trans_de2en_10",
+   "concept": "cheese",
+   "de": "Käse",
+   "en": "cheese",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "trans_de2en_11",
+   "concept": "egg",
+   "de": "Ei",
+   "en": "egg",
+   "reason": "cognate (lev=2)"
+  },
+  {
+   "id": "trans_de2en_13",
+   "concept": "flower",
+   "de": "Blume",
+   "en": "flower",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "trans_de2en_14",
+   "concept": "knife",
+   "de": "Messer",
+   "en": "knife",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "trans_en2de_04",
+   "concept": "chair",
+   "de": "Stuhl",
+   "en": "chair",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "trans_en2de_10",
+   "concept": "cheese",
+   "de": "Käse",
+   "en": "cheese",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "trans_en2de_11",
+   "concept": "egg",
+   "de": "Ei",
+   "en": "egg",
+   "reason": "cognate (lev=2)"
+  },
+  {
+   "id": "trans_en2de_13",
+   "concept": "flower",
+   "de": "Blume",
+   "en": "flower",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "trans_en2de_14",
+   "concept": "knife",
+   "de": "Messer",
+   "en": "knife",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "cloze_de_02",
+   "concept": "knife",
+   "de": "Messer",
+   "en": "knife",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "cloze_de_08",
+   "concept": "coffee",
+   "de": "Kaffee",
+   "en": "coffee",
+   "reason": "cognate (lev=2)"
+  },
+  {
+   "id": "cloze_de_11",
+   "concept": "cheese",
+   "de": "Käse",
+   "en": "cheese",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "cloze_de_12",
+   "concept": "flower",
+   "de": "Blume",
+   "en": "flower",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "cloze_en_08",
+   "concept": "cheese",
+   "de": "Käse",
+   "en": "cheese",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "cloze_en_09",
+   "concept": "egg",
+   "de": "Ei",
+   "en": "egg",
+   "reason": "cognate (lev=2)"
+  },
+  {
+   "id": "cloze_en_11",
+   "concept": "knife",
+   "de": "Messer",
+   "en": "knife",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "fact_de_01",
+   "concept": "lion",
+   "de": "Löwe",
+   "en": "lion",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "fact_de_03",
+   "concept": "bee",
+   "de": "Biene",
+   "en": "bee",
+   "reason": "cognate (lev=2)"
+  },
+  {
+   "id": "fact_de_04",
+   "concept": "moon",
+   "de": "Mond",
+   "en": "moon",
+   "reason": "cognate (lev=2)"
+  },
+  {
+   "id": "fact_de_06",
+   "concept": "egg",
+   "de": "Ei",
+   "en": "egg",
+   "reason": "cognate (lev=2)"
+  },
+  {
+   "id": "fact_de_08",
+   "concept": "cheese",
+   "de": "Käse",
+   "en": "cheese",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "exemplar_de_03",
+   "concept": "juice",
+   "de": "Saft",
+   "en": "juice",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "exemplar_de_06",
+   "concept": "coat",
+   "de": "Mantel",
+   "en": "coat",
+   "reason": "not single-token: de "
+  },
+  {
+   "id": "exemplar_de_07",
+   "concept": "shirt",
+   "de": "Hemd",
+   "en": "shirt",
+   "reason": "not single-token: de "
+  }
+ ]
+}

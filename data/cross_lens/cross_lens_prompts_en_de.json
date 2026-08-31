@@ -1,0 +1,2147 @@
+{
+ "note": "Cross-lens prompt bank EN-DE. Same schema and metrics as cross_lens_prompts_en_zh.json; both languages Latin-script, so the surface-language call is lexical and cognates (normalized Levenshtein <= 2) are excluded by construction. form_a = in-context answer form, form_b = other-language form; null_targets = [de, en] language-matched unrelated tokens. Built by scripts/data/build_cross_lens_de_bank.py; exclusions in the companion report cross_lens_prompts_en_de_exclusion_report.json.",
+ "prompts": [
+  {
+   "id": "antonym_de_01",
+   "group": "antonym_de",
+   "concept": "big",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"klein\" ist \"",
+   "form_a": " groß",
+   "form_b": " big",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " groß",
+    " big",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "groß"
+  },
+  {
+   "id": "antonym_de_02",
+   "group": "antonym_de",
+   "concept": "small",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"groß\" ist \"",
+   "form_a": " klein",
+   "form_b": " small",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " klein",
+    " small",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "klein"
+  },
+  {
+   "id": "antonym_de_03",
+   "group": "antonym_de",
+   "concept": "slow",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"schnell\" ist \"",
+   "form_a": " langsam",
+   "form_b": " slow",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " langsam",
+    " slow",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "langsam"
+  },
+  {
+   "id": "antonym_de_04",
+   "group": "antonym_de",
+   "concept": "bright",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"dunkel\" ist \"",
+   "form_a": "hell",
+   "form_b": " bright",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    "hell",
+    " bright",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "hell"
+  },
+  {
+   "id": "antonym_de_06",
+   "group": "antonym_de",
+   "concept": "bad",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"gut\" ist \"",
+   "form_a": " schlecht",
+   "form_b": " bad",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " schlecht",
+    " bad",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "schlecht"
+  },
+  {
+   "id": "antonym_de_07",
+   "group": "antonym_de",
+   "concept": "empty",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"voll\" ist \"",
+   "form_a": " leer",
+   "form_b": " empty",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " leer",
+    " empty",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "leer"
+  },
+  {
+   "id": "antonym_de_08",
+   "group": "antonym_de",
+   "concept": "dry",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"nass\" ist \"",
+   "form_a": " trocken",
+   "form_b": " dry",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " trocken",
+    " dry",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "trocken"
+  },
+  {
+   "id": "antonym_de_11",
+   "group": "antonym_de",
+   "concept": "late",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"früh\" ist \"",
+   "form_a": " spät",
+   "form_b": " late",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " spät",
+    " late",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "spät"
+  },
+  {
+   "id": "antonym_de_12",
+   "group": "antonym_de",
+   "concept": "cheap",
+   "prompt": "Das Gegenteil von \"hoch\" ist \"tief\". Das Gegenteil von \"teuer\" ist \"",
+   "form_a": " billig",
+   "form_b": " cheap",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " billig",
+    " cheap",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "billig"
+  },
+  {
+   "id": "trans_de2en_01",
+   "group": "trans_de2en",
+   "concept": "dog",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Hund\" ist \"",
+   "form_a": "dog",
+   "form_b": " Hund",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "dog",
+    " Hund",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "dog"
+  },
+  {
+   "id": "trans_de2en_02",
+   "group": "trans_de2en",
+   "concept": "tree",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Baum\" ist \"",
+   "form_a": "tree",
+   "form_b": " Baum",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "tree",
+    " Baum",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "tree"
+  },
+  {
+   "id": "trans_de2en_03",
+   "group": "trans_de2en",
+   "concept": "table",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Tisch\" ist \"",
+   "form_a": "table",
+   "form_b": " Tisch",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "table",
+    " Tisch",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "table"
+  },
+  {
+   "id": "trans_de2en_05",
+   "group": "trans_de2en",
+   "concept": "window",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Fenster\" ist \"",
+   "form_a": "window",
+   "form_b": " Fenster",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "window",
+    " Fenster",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "window"
+  },
+  {
+   "id": "trans_de2en_06",
+   "group": "trans_de2en",
+   "concept": "horse",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Pferd\" ist \"",
+   "form_a": "horse",
+   "form_b": " Pferd",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "horse",
+    " Pferd",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "horse"
+  },
+  {
+   "id": "trans_de2en_07",
+   "group": "trans_de2en",
+   "concept": "bird",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Vogel\" ist \"",
+   "form_a": "bird",
+   "form_b": " Vogel",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "bird",
+    " Vogel",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "bird"
+  },
+  {
+   "id": "trans_de2en_08",
+   "group": "trans_de2en",
+   "concept": "mountain",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Berg\" ist \"",
+   "form_a": " mountain",
+   "form_b": " Berg",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " mountain",
+    " Berg",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "mountain"
+  },
+  {
+   "id": "trans_de2en_09",
+   "group": "trans_de2en",
+   "concept": "rain",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Regen\" ist \"",
+   "form_a": "rain",
+   "form_b": " Regen",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "rain",
+    " Regen",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "rain"
+  },
+  {
+   "id": "trans_de2en_12",
+   "group": "trans_de2en",
+   "concept": "door",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Tür\" ist \"",
+   "form_a": "door",
+   "form_b": " Tür",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "door",
+    " Tür",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "door"
+  },
+  {
+   "id": "trans_en2de_01",
+   "group": "trans_en2de",
+   "concept": "dog",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"dog\" is \"",
+   "form_a": " Hund",
+   "form_b": " dog",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Hund",
+    " dog",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "Hund"
+  },
+  {
+   "id": "trans_en2de_02",
+   "group": "trans_en2de",
+   "concept": "tree",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"tree\" is \"",
+   "form_a": " Baum",
+   "form_b": " tree",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Baum",
+    " tree",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "Baum"
+  },
+  {
+   "id": "trans_en2de_03",
+   "group": "trans_en2de",
+   "concept": "table",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"table\" is \"",
+   "form_a": " Tisch",
+   "form_b": " table",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Tisch",
+    " table",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "Tisch"
+  },
+  {
+   "id": "trans_en2de_05",
+   "group": "trans_en2de",
+   "concept": "window",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"window\" is \"",
+   "form_a": " Fenster",
+   "form_b": " window",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Fenster",
+    " window",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "Fenster"
+  },
+  {
+   "id": "trans_en2de_06",
+   "group": "trans_en2de",
+   "concept": "horse",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"horse\" is \"",
+   "form_a": " Pferd",
+   "form_b": " horse",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Pferd",
+    " horse",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "Pferd"
+  },
+  {
+   "id": "trans_en2de_07",
+   "group": "trans_en2de",
+   "concept": "bird",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"bird\" is \"",
+   "form_a": " Vogel",
+   "form_b": " bird",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Vogel",
+    " bird",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "Vogel"
+  },
+  {
+   "id": "trans_en2de_08",
+   "group": "trans_en2de",
+   "concept": "mountain",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"mountain\" is \"",
+   "form_a": " Berg",
+   "form_b": " mountain",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Berg",
+    " mountain",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "Berg"
+  },
+  {
+   "id": "trans_en2de_09",
+   "group": "trans_en2de",
+   "concept": "rain",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"rain\" is \"",
+   "form_a": " Regen",
+   "form_b": " rain",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Regen",
+    " rain",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "Regen"
+  },
+  {
+   "id": "trans_en2de_12",
+   "group": "trans_en2de",
+   "concept": "door",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"door\" is \"",
+   "form_a": " Tür",
+   "form_b": " door",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Tür",
+    " door",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "Tür"
+  },
+  {
+   "id": "trans_de2en_15",
+   "group": "trans_de2en",
+   "concept": "train",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Zug\" ist \"",
+   "form_a": "train",
+   "form_b": " Zug",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "train",
+    " Zug",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "train"
+  },
+  {
+   "id": "trans_de2en_16",
+   "group": "trans_de2en",
+   "concept": "city",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Stadt\" ist \"",
+   "form_a": "city",
+   "form_b": " Stadt",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "city",
+    " Stadt",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "city"
+  },
+  {
+   "id": "trans_de2en_17",
+   "group": "trans_de2en",
+   "concept": "forest",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Wald\" ist \"",
+   "form_a": "forest",
+   "form_b": " Wald",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "forest",
+    " Wald",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "forest"
+  },
+  {
+   "id": "trans_de2en_18",
+   "group": "trans_de2en",
+   "concept": "sea",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Meer\" ist \"",
+   "form_a": "sea",
+   "form_b": " Meer",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "sea",
+    " Meer",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "sea"
+  },
+  {
+   "id": "trans_de2en_19",
+   "group": "trans_de2en",
+   "concept": "fire",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Feuer\" ist \"",
+   "form_a": "fire",
+   "form_b": " Feuer",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    "fire",
+    " Feuer",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "fire"
+  },
+  {
+   "id": "trans_de2en_20",
+   "group": "trans_de2en",
+   "concept": "newspaper",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Zeitung\" ist \"",
+   "form_a": " newspaper",
+   "form_b": " Zeitung",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " newspaper",
+    " Zeitung",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "newspaper"
+  },
+  {
+   "id": "trans_de2en_21",
+   "group": "trans_de2en",
+   "concept": "kitchen",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Küche\" ist \"",
+   "form_a": " kitchen",
+   "form_b": " Küche",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " kitchen",
+    " Küche",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "kitchen"
+  },
+  {
+   "id": "trans_de2en_22",
+   "group": "trans_de2en",
+   "concept": "sister",
+   "prompt": "Das englische Wort für \"Himmel\" ist \"sky\". Das englische Wort für \"Schwester\" ist \"",
+   "form_a": " sister",
+   "form_b": " Schwester",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " sister",
+    " Schwester",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "sister"
+  },
+  {
+   "id": "trans_en2de_15",
+   "group": "trans_en2de",
+   "concept": "train",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"train\" is \"",
+   "form_a": " Zug",
+   "form_b": " train",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Zug",
+    " train",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "Zug"
+  },
+  {
+   "id": "trans_en2de_16",
+   "group": "trans_en2de",
+   "concept": "city",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"city\" is \"",
+   "form_a": "Stadt",
+   "form_b": " city",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    "Stadt",
+    " city",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "Stadt"
+  },
+  {
+   "id": "trans_en2de_17",
+   "group": "trans_en2de",
+   "concept": "forest",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"forest\" is \"",
+   "form_a": " Wald",
+   "form_b": " forest",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Wald",
+    " forest",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "Wald"
+  },
+  {
+   "id": "trans_en2de_18",
+   "group": "trans_en2de",
+   "concept": "sea",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"sea\" is \"",
+   "form_a": " Meer",
+   "form_b": " sea",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Meer",
+    " sea",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "Meer"
+  },
+  {
+   "id": "trans_en2de_19",
+   "group": "trans_en2de",
+   "concept": "fire",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"fire\" is \"",
+   "form_a": " Feuer",
+   "form_b": " fire",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Feuer",
+    " fire",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "Feuer"
+  },
+  {
+   "id": "trans_en2de_20",
+   "group": "trans_en2de",
+   "concept": "newspaper",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"newspaper\" is \"",
+   "form_a": " Zeitung",
+   "form_b": " newspaper",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Zeitung",
+    " newspaper",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "Zeitung"
+  },
+  {
+   "id": "trans_en2de_21",
+   "group": "trans_en2de",
+   "concept": "kitchen",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"kitchen\" is \"",
+   "form_a": " Küche",
+   "form_b": " kitchen",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Küche",
+    " kitchen",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "Küche"
+  },
+  {
+   "id": "trans_en2de_22",
+   "group": "trans_en2de",
+   "concept": "sister",
+   "prompt": "The German word for \"sky\" is \"Himmel\". The German word for \"sister\" is \"",
+   "form_a": " Schwester",
+   "form_b": " sister",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Schwester",
+    " sister",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "Schwester"
+  },
+  {
+   "id": "cloze_de_01",
+   "group": "cloze_de",
+   "concept": "pen",
+   "prompt": "Zum Schreiben benutze ich einen",
+   "form_a": " Stift",
+   "form_b": " pen",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Stift",
+    " pen",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "Stift"
+  },
+  {
+   "id": "cloze_de_03",
+   "group": "cloze_de",
+   "concept": "station",
+   "prompt": "Der Zug hält pünktlich am",
+   "form_a": " Bahnhof",
+   "form_b": " station",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Bahnhof",
+    " station",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "Bahnhof"
+  },
+  {
+   "id": "cloze_de_04",
+   "group": "cloze_de",
+   "concept": "door",
+   "prompt": "Ich klopfe dreimal und öffne dann die",
+   "form_a": " Tür",
+   "form_b": " door",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Tür",
+    " door",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "Tür"
+  },
+  {
+   "id": "cloze_de_05",
+   "group": "cloze_de",
+   "concept": "book",
+   "prompt": "Vor dem Schlafen liest das Kind noch ein",
+   "form_a": " Buch",
+   "form_b": " book",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Buch",
+    " book",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "Buch"
+  },
+  {
+   "id": "cloze_de_06",
+   "group": "cloze_de",
+   "concept": "tree",
+   "prompt": "Der Vogel sitzt hoch oben auf dem",
+   "form_a": " Baum",
+   "form_b": " tree",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Baum",
+    " tree",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "Baum"
+  },
+  {
+   "id": "cloze_de_07",
+   "group": "cloze_de",
+   "concept": "snow",
+   "prompt": "Im Winter fällt auf den Bergen viel",
+   "form_a": " Schnee",
+   "form_b": " snow",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Schnee",
+    " snow",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "Schnee"
+  },
+  {
+   "id": "cloze_de_09",
+   "group": "cloze_de",
+   "concept": "key",
+   "prompt": "Ich schließe die Wohnung ab mit dem",
+   "form_a": " Schlüssel",
+   "form_b": " key",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Schlüssel",
+    " key",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "Schlüssel"
+  },
+  {
+   "id": "cloze_de_10",
+   "group": "cloze_de",
+   "concept": "horse",
+   "prompt": "Auf dem Bauernhof reitet das Mädchen ein",
+   "form_a": " Pferd",
+   "form_b": " horse",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Pferd",
+    " horse",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "Pferd"
+  },
+  {
+   "id": "cloze_de_13",
+   "group": "cloze_de",
+   "concept": "school",
+   "prompt": "Nach den Ferien gehen die Kinder wieder in die",
+   "form_a": " Schule",
+   "form_b": " school",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Schule",
+    " school",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "Schule"
+  },
+  {
+   "id": "cloze_de_14",
+   "group": "cloze_de",
+   "concept": "church",
+   "prompt": "Sonntags läuten die Glocken der alten",
+   "form_a": " Kirche",
+   "form_b": " church",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Kirche",
+    " church",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "Kirche"
+  },
+  {
+   "id": "cloze_de_15",
+   "group": "cloze_de",
+   "concept": "train",
+   "prompt": "Wir fahren in den Urlaub bequem mit dem",
+   "form_a": " Zug",
+   "form_b": " train",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Zug",
+    " train",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "Zug"
+  },
+  {
+   "id": "cloze_de_16",
+   "group": "cloze_de",
+   "concept": "forest",
+   "prompt": "Am Wochenende wandern wir stundenlang durch den",
+   "form_a": " Wald",
+   "form_b": " forest",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Wald",
+    " forest",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "Wald"
+  },
+  {
+   "id": "cloze_de_17",
+   "group": "cloze_de",
+   "concept": "ship",
+   "prompt": "Der Kapitän steuert das große",
+   "form_a": " Schiff",
+   "form_b": " ship",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Schiff",
+    " ship",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "Schiff"
+  },
+  {
+   "id": "cloze_de_18",
+   "group": "cloze_de",
+   "concept": "money",
+   "prompt": "Für die Fahrkarte brauche ich noch etwas",
+   "form_a": " Geld",
+   "form_b": " money",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Geld",
+    " money",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "Geld"
+  },
+  {
+   "id": "cloze_en_01",
+   "group": "cloze_en",
+   "concept": "key",
+   "prompt": "I unlock the front door with my",
+   "form_a": " key",
+   "form_b": " Schlüssel",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " key",
+    " Schlüssel",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "key"
+  },
+  {
+   "id": "cloze_en_02",
+   "group": "cloze_en",
+   "concept": "horse",
+   "prompt": "At the farm the girl rides a brown",
+   "form_a": " horse",
+   "form_b": " Pferd",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " horse",
+    " Pferd",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "horse"
+  },
+  {
+   "id": "cloze_en_03",
+   "group": "cloze_en",
+   "concept": "window",
+   "prompt": "She waved at us through the kitchen",
+   "form_a": " window",
+   "form_b": " Fenster",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " window",
+    " Fenster",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "window"
+  },
+  {
+   "id": "cloze_en_04",
+   "group": "cloze_en",
+   "concept": "tree",
+   "prompt": "The bird built its nest high up in the",
+   "form_a": " tree",
+   "form_b": " Baum",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " tree",
+    " Baum",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "tree"
+  },
+  {
+   "id": "cloze_en_05",
+   "group": "cloze_en",
+   "concept": "table",
+   "prompt": "He put the plates down on the wooden",
+   "form_a": " table",
+   "form_b": " Tisch",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " table",
+    " Tisch",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "table"
+  },
+  {
+   "id": "cloze_en_06",
+   "group": "cloze_en",
+   "concept": "dog",
+   "prompt": "The postman was chased down the street by a barking",
+   "form_a": " dog",
+   "form_b": " Hund",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " dog",
+    " Hund",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "dog"
+  },
+  {
+   "id": "cloze_en_07",
+   "group": "cloze_en",
+   "concept": "rain",
+   "prompt": "Take an umbrella, the forecast says heavy",
+   "form_a": " rain",
+   "form_b": " Regen",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " rain",
+    " Regen",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "rain"
+  },
+  {
+   "id": "cloze_en_10",
+   "group": "cloze_en",
+   "concept": "mountain",
+   "prompt": "They spent all summer climbing the highest",
+   "form_a": " mountain",
+   "form_b": " Berg",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " mountain",
+    " Berg",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "mountain"
+  },
+  {
+   "id": "cloze_en_12",
+   "group": "cloze_en",
+   "concept": "bird",
+   "prompt": "High above the field we watched a small",
+   "form_a": " bird",
+   "form_b": " Vogel",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " bird",
+    " Vogel",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "bird"
+  },
+  {
+   "id": "cloze_en_13",
+   "group": "cloze_en",
+   "concept": "train",
+   "prompt": "We traveled to the capital on a high-speed",
+   "form_a": " train",
+   "form_b": " Zug",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " train",
+    " Zug",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "train"
+  },
+  {
+   "id": "cloze_en_14",
+   "group": "cloze_en",
+   "concept": "money",
+   "prompt": "He paid for the tickets with borrowed",
+   "form_a": " money",
+   "form_b": " Geld",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " money",
+    " Geld",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "money"
+  },
+  {
+   "id": "cloze_en_15",
+   "group": "cloze_en",
+   "concept": "voice",
+   "prompt": "The choir admired her beautiful singing",
+   "form_a": " voice",
+   "form_b": " Stimme",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " voice",
+    " Stimme",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "voice"
+  },
+  {
+   "id": "cloze_en_16",
+   "group": "cloze_en",
+   "concept": "newspaper",
+   "prompt": "Every morning my grandfather reads the",
+   "form_a": " newspaper",
+   "form_b": " Zeitung",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " newspaper",
+    " Zeitung",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "newspaper"
+  },
+  {
+   "id": "cloze_en_17",
+   "group": "cloze_en",
+   "concept": "war",
+   "prompt": "After years of peace the country slid into",
+   "form_a": " war",
+   "form_b": " Krieg",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " war",
+    " Krieg",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "war"
+  },
+  {
+   "id": "cloze_en_18",
+   "group": "cloze_en",
+   "concept": "city",
+   "prompt": "From the hilltop you can see the whole",
+   "form_a": " city",
+   "form_b": " Stadt",
+   "lang_a": "en",
+   "lang_b": "de",
+   "targets": [
+    " city",
+    " Stadt",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "city"
+  },
+  {
+   "id": "fact_de_02",
+   "group": "fact_de",
+   "concept": "dog",
+   "prompt": "Der beste Freund des Menschen ist der",
+   "form_a": " Hund",
+   "form_b": " dog",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Hund",
+    " dog",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "Hund"
+  },
+  {
+   "id": "fact_de_05",
+   "group": "fact_de",
+   "concept": "snow",
+   "prompt": "Weiß und kalt fällt im Winter der",
+   "form_a": " Schnee",
+   "form_b": " snow",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Schnee",
+    " snow",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "Schnee"
+  },
+  {
+   "id": "fact_de_07",
+   "group": "fact_de",
+   "concept": "horse",
+   "prompt": "Vor die Kutsche spannt man ein",
+   "form_a": " Pferd",
+   "form_b": " horse",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Pferd",
+    " horse",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "Pferd"
+  },
+  {
+   "id": "fact_de_09",
+   "group": "fact_de",
+   "concept": "week",
+   "prompt": "Sieben Tage sind eine",
+   "form_a": " Woche",
+   "form_b": " week",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Woche",
+    " week",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "Woche"
+  },
+  {
+   "id": "fact_de_10",
+   "group": "fact_de",
+   "concept": "year",
+   "prompt": "Zwölf Monate sind ein",
+   "form_a": " Jahr",
+   "form_b": " year",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Jahr",
+    " year",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "Jahr"
+  },
+  {
+   "id": "fact_de_11",
+   "group": "fact_de",
+   "concept": "tooth",
+   "prompt": "Der Zahnarzt zieht den kranken",
+   "form_a": " Zahn",
+   "form_b": " tooth",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Zahn",
+    " tooth",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "Zahn"
+  },
+  {
+   "id": "fact_de_12",
+   "group": "fact_de",
+   "concept": "island",
+   "prompt": "Ein Stück Land mitten im Meer nennt man eine",
+   "form_a": " Insel",
+   "form_b": " island",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Insel",
+    " island",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "Insel"
+  },
+  {
+   "id": "fact_de_13",
+   "group": "fact_de",
+   "concept": "church",
+   "prompt": "Am Sonntag gehen viele Menschen in die",
+   "form_a": " Kirche",
+   "form_b": " church",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Kirche",
+    " church",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "Kirche"
+  },
+  {
+   "id": "exemplar_de_01",
+   "group": "exemplar_de",
+   "concept": "dog",
+   "prompt": "Ein Beispiel für ein Haustier ist der",
+   "form_a": " Hund",
+   "form_b": " dog",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Hund",
+    " dog",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "Hund"
+  },
+  {
+   "id": "exemplar_de_02",
+   "group": "exemplar_de",
+   "concept": "table",
+   "prompt": "Ein Beispiel für ein Möbelstück ist der",
+   "form_a": " Tisch",
+   "form_b": " table",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Tisch",
+    " table",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "Tisch"
+  },
+  {
+   "id": "exemplar_de_04",
+   "group": "exemplar_de",
+   "concept": "doctor",
+   "prompt": "Ein Beispiel für einen Beruf ist der",
+   "form_a": " Arzt",
+   "form_b": " doctor",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Arzt",
+    " doctor",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "Arzt"
+  },
+  {
+   "id": "exemplar_de_05",
+   "group": "exemplar_de",
+   "concept": "teacher",
+   "prompt": "Ein Beispiel für einen Beruf ist der",
+   "form_a": " Lehrer",
+   "form_b": " teacher",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Lehrer",
+    " teacher",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "Lehrer"
+  },
+  {
+   "id": "exemplar_de_08",
+   "group": "exemplar_de",
+   "concept": "bird",
+   "prompt": "Ein Beispiel für ein Tier mit Flügeln ist der",
+   "form_a": " Vogel",
+   "form_b": " bird",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Vogel",
+    " bird",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "Vogel"
+  },
+  {
+   "id": "exemplar_de_09",
+   "group": "exemplar_de",
+   "concept": "head",
+   "prompt": "Ein Beispiel für ein Körperteil ist der",
+   "form_a": " Kopf",
+   "form_b": " head",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Kopf",
+    " head",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "Kopf"
+  },
+  {
+   "id": "exemplar_de_10",
+   "group": "exemplar_de",
+   "concept": "sea",
+   "prompt": "Ein Beispiel für ein Gewässer ist das",
+   "form_a": " Meer",
+   "form_b": " sea",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Meer",
+    " sea",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "Meer"
+  },
+  {
+   "id": "exemplar_de_11",
+   "group": "exemplar_de",
+   "concept": "train",
+   "prompt": "Ein Beispiel für ein Verkehrsmittel ist der",
+   "form_a": " Zug",
+   "form_b": " train",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Zug",
+    " train",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "Zug"
+  },
+  {
+   "id": "exemplar_de_12",
+   "group": "exemplar_de",
+   "concept": "church",
+   "prompt": "Ein Beispiel für ein Gebäude ist die",
+   "form_a": " Kirche",
+   "form_b": " church",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Kirche",
+    " church",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "Kirche"
+  },
+  {
+   "id": "exemplar_de_13",
+   "group": "exemplar_de",
+   "concept": "sister",
+   "prompt": "Ein Beispiel für ein Familienmitglied ist die",
+   "form_a": " Schwester",
+   "form_b": " sister",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Schwester",
+    " sister",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "Schwester"
+  },
+  {
+   "id": "ctrl_digit_01",
+   "group": "ctrl_digit",
+   "concept": "seven",
+   "prompt": "3 + 4 =",
+   "form_a": "7",
+   "form_b": "7",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    "7",
+    "7",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "7"
+  },
+  {
+   "id": "ctrl_digit_02",
+   "group": "ctrl_digit",
+   "concept": "nine",
+   "prompt": "5 + 4 =",
+   "form_a": "9",
+   "form_b": "9",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    "9",
+    "9",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "9"
+  },
+  {
+   "id": "ctrl_digit_03",
+   "group": "ctrl_digit",
+   "concept": "eight",
+   "prompt": "6 + 2 =",
+   "form_a": "8",
+   "form_b": "8",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    "8",
+    "8",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "8"
+  },
+  {
+   "id": "ctrl_digit_04",
+   "group": "ctrl_digit",
+   "concept": "six",
+   "prompt": "2 + 4 =",
+   "form_a": "6",
+   "form_b": "6",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    "6",
+    "6",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "6"
+  },
+  {
+   "id": "ctrl_digit_05",
+   "group": "ctrl_digit",
+   "concept": "five",
+   "prompt": "1 + 4 =",
+   "form_a": "5",
+   "form_b": "5",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    "5",
+    "5",
+    " Salz",
+    " soap"
+   ],
+   "null_targets": [
+    " Salz",
+    " soap"
+   ],
+   "answer": "5"
+  },
+  {
+   "id": "ctrl_digit_06",
+   "group": "ctrl_digit",
+   "concept": "four",
+   "prompt": "1 + 3 =",
+   "form_a": "4",
+   "form_b": "4",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    "4",
+    "4",
+    " Salz",
+    " fork"
+   ],
+   "null_targets": [
+    " Salz",
+    " fork"
+   ],
+   "answer": "4"
+  },
+  {
+   "id": "ctrl_propn_01",
+   "group": "ctrl_propn",
+   "concept": "paris",
+   "prompt": "Die Hauptstadt von Frankreich heißt",
+   "form_a": " Paris",
+   "form_b": " Paris",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Paris",
+    " Paris",
+    " Salz",
+    " salt"
+   ],
+   "null_targets": [
+    " Salz",
+    " salt"
+   ],
+   "answer": "Paris"
+  },
+  {
+   "id": "ctrl_propn_02",
+   "group": "ctrl_propn",
+   "concept": "berlin",
+   "prompt": "Die Hauptstadt von Deutschland heißt",
+   "form_a": " Berlin",
+   "form_b": " Berlin",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Berlin",
+    " Berlin",
+    " Wand",
+    " wall"
+   ],
+   "null_targets": [
+    " Wand",
+    " wall"
+   ],
+   "answer": "Berlin"
+  },
+  {
+   "id": "ctrl_propn_03",
+   "group": "ctrl_propn",
+   "concept": "london",
+   "prompt": "Die Hauptstadt von England heißt",
+   "form_a": " London",
+   "form_b": " London",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " London",
+    " London",
+    " Schuh",
+    " shoe"
+   ],
+   "null_targets": [
+    " Schuh",
+    " shoe"
+   ],
+   "answer": "London"
+  },
+  {
+   "id": "ctrl_propn_04",
+   "group": "ctrl_propn",
+   "concept": "madrid",
+   "prompt": "Die Hauptstadt von Spanien heißt",
+   "form_a": " Madrid",
+   "form_b": " Madrid",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Madrid",
+    " Madrid",
+    " Karte",
+    " cup"
+   ],
+   "null_targets": [
+    " Karte",
+    " cup"
+   ],
+   "answer": "Madrid"
+  },
+  {
+   "id": "ctrl_propn_05",
+   "group": "ctrl_propn",
+   "concept": "oslo",
+   "prompt": "Die Hauptstadt von Norwegen heißt",
+   "form_a": " Oslo",
+   "form_b": " Oslo",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Oslo",
+    " Oslo",
+    " Karte",
+    " needle"
+   ],
+   "null_targets": [
+    " Karte",
+    " needle"
+   ],
+   "answer": "Oslo"
+  },
+  {
+   "id": "ctrl_propn_06",
+   "group": "ctrl_propn",
+   "concept": "lima",
+   "prompt": "Die Hauptstadt von Peru heißt",
+   "form_a": " Lima",
+   "form_b": " Lima",
+   "lang_a": "de",
+   "lang_b": "en",
+   "targets": [
+    " Lima",
+    " Lima",
+    " Karte",
+    " ticket"
+   ],
+   "null_targets": [
+    " Karte",
+    " ticket"
+   ],
+   "answer": "Lima"
+  }
+ ]
+}
