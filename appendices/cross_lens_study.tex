@@ -223,9 +223,11 @@ choose, and matching our corpora would mean retraining it in any case. A
 closed-form translator keeps that retraining cheap, and because it shares
 no fitting procedure with the Jacobian lens, agreement between the two
 families cannot be an artifact of a common construction.
-Ridge strength is selected per layer on a held-out 10-prompt tail, and
-holdout \(R^2\) rises monotonically with depth (0.46--0.92 English,
-0.46--0.86 Chinese), and the resulting decoded states match the model's top-1
+The per-layer ridge grid saturates at its largest value on every
+layer fit, leaving the translators effectively unregularised.
+Holdout \(R^2\) on a 10-prompt tail rises monotonically with depth
+(0.46--0.92 English, 0.46--0.86 Chinese), and the resulting decoded
+states match the model's top-1
 token on 61--75\% of positions at the two deepest fitted layers. Under
 this family the corpus conditionality pattern reproduces (e.g.\
 EN\(\to\)ZH translation prompts read Latin under the translator fitted on
