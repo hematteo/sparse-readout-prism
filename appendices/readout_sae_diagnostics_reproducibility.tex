@@ -3,7 +3,7 @@
 \section{Readout SAE Diagnostics and Reproducibility}
 \label{app:readout-factorizer-diagnostics-reproducibility}
 
-This appendix collects secondary diagnostics, alternative-recipe comparisons,
+This appendix collects secondary diagnostics, comparisons of alternative recipes,
 denominator controls, and reproducibility details for the selected readout SAEs.
 
 \paragraph{Artifact availability.}
@@ -13,33 +13,37 @@ All code, with per-model training and evaluation recipes, is released at
 (MIT). The selected readout SAE checkpoints for all eight models (both the
 $k{=}128$ and $k{=}256$ recipes per model) are released at
 \href{https://huggingface.co/hematteo/sparse-readout-prism}{\texttt{hematteo/sparse-readout-prism}}.
+The contrast banks, both the diagnostic bank and the bank derived from
+benchmarks, and the blinded label-audit protocol accompany the code release.
 \else
 All code, with per-model training and evaluation recipes, is publicly
 released under an MIT license, together with the selected readout SAE
 checkpoints for all eight models (both the $k{=}128$ and $k{=}256$ recipes
-per model); links are withheld for anonymous review.
+per model), the contrast banks, both the diagnostic bank and the bank
+derived from benchmarks, and the blinded label-audit protocol. Links are
+withheld for anonymous review.
 \fi
 
 \subsection{Additional Metric Analyses}
 \label{app:readout-factorizer-diagnostics}
 
 These analyses ask whether the remaining error comes from coefficient fitting,
-support selection, low-rank structure, or reconstruction-vs-readout metric
-mismatch.
+support selection, low-rank structure, or a
+mismatch between reconstruction and readout metrics.
 
 \paragraph{Support selection.}
 On the Qwen3.5-9B $D=32768$, $k=128$ recipe, the trained encoder reaches rowEV
 $0.621$. Nonnegative least-squares \citep{lawson1974solving} on the encoder's
 own support reaches $0.625$, nonnegative OMP \citep{pati1993orthogonal}
 $0.647$, and signed-OMP $0.655$. The coefficient gap is therefore small
-(about $0.004$), while same-coefficient-class support-selection headroom is
-about $0.026$. Dense rank-128 reconstruction reaches only $0.101$, far below the sparse
+(about $0.004$), while support-selection headroom within the same
+coefficient class is about $0.026$. Dense rank-128 reconstruction reaches only $0.101$, far below the sparse
 dictionary, ruling out low-rank PCA structure
 \citep{jolliffe2002principal}.
-Figure~\ref{fig:app-k-omp-diagnostic} shows both the strict-budget recipe and
-the high-fidelity 32$\times$, $k=256$ run. The right-hand table labels the
-latter OMP numbers as sparse-reconstruction ceilings; deployed-encoder metrics
-are the trained-encoder rows.
+Figure~\ref{fig:app-k-omp-diagnostic} shows both the strict budget recipe and
+the high fidelity 32$\times$, $k=256$ run. The right-hand table labels the
+latter OMP numbers as sparse-reconstruction ceilings, while the deployed
+encoder's metrics are the trained-encoder rows.
 
 \begin{figure*}[!tbp]
     \centering
@@ -67,9 +71,9 @@ are the trained-encoder rows.
     \end{minipage}
     \caption{
         \textbf{Support-selection analyses for the Qwen3.5-9B readout SAE.}
-        Left: strict-budget $k=128$ recipe and high-fidelity
-        32$\times$, $k=256$ capacity run. Right: 32$\times$, $k=256$ EV-ceiling
-        numbers with 95\% bootstrap CIs. OMP (orthogonal matching pursuit)
+        The left panel gives the strict budget $k=128$ recipe and the high fidelity
+        32$\times$, $k=256$ capacity run, and the right panel the 32$\times$, $k=256$
+        EV-ceiling numbers with 95\% bootstrap CIs. OMP (orthogonal matching pursuit)
         is an achieved sparse-reconstruction comparison.
     }
     \label{fig:app-k-omp-diagnostic}
@@ -85,24 +89,24 @@ dense reference, since \((1-0.155)/(1-0.858)\approx5.9\).
 \paragraph{Small-model support-selection analysis.}
 We repeat the analysis on the 16$\times$, $k=128$ small-model transfer 5k
 checkpoints to isolate the source of the remaining reconstruction gap with the
-learned dictionary fixed; the converged transfer metrics are reported in
+learned dictionary fixed, and the converged transfer metrics are reported in
 Appendix~\ref{app:readout-factorizer-small-model-transfer}. Across all four models, refitting
 coefficients on the encoder's own support gives a much smaller gain than
 changing the support, so support selection is the dominant
-remaining recipe-side bottleneck. The signed-OMP gaps are $+0.158$ for
+remaining bottleneck on the recipe side. The signed-OMP gaps are $+0.158$ for
 Qwen3.5-0.8B, $+0.099$ for Qwen3.5-2B, $+0.182$ for Gemma-4-E2B, and
 $+0.125$ for Gemma-4-E4B.
 
 \ReadoutSAEFloatBarrier
 
 \paragraph{Metric mismatch.}
-The capacity sweep motivates selecting readout SAEs with both row-level and
-readout-level metrics. The $D=65536$, $k=256$ model truncated to $k=128$ has
-higher rowEV than the fixed-$k=128$ recipe ($0.695>0.621$), while top1/KL favor
-the fixed-$k=128$ recipe ($0.721/0.469$ vs $0.846/0.296$). The $D=131072$
-truncation shows the same metric separation: rowEV/top1/KL are
-$0.816/0.738/0.425$. These truncated comparisons motivate the selection rule:
-use rowEV, top1, KL, reconstruction-error metrics, and usage statistics jointly.
+The capacity sweep motivates selecting readout SAEs with metrics at both the row level and
+the readout level. The $D=65536$, $k=256$ model truncated to $k=128$ has
+higher rowEV than the fixed-$k=128$ recipe ($0.695>0.621$), while top-1/KL favor
+the fixed-$k=128$ recipe ($0.721/0.469$ vs.\ $0.846/0.296$). The $D=131072$
+truncation shows the same metric separation, with rowEV/top-1/KL at
+$0.816/0.738/0.425$. These truncated comparisons motivate the selection rule,
+which uses rowEV, top-1, KL, reconstruction-error metrics, and usage statistics jointly.
 
 \ReadoutSAEFloatBarrier
 \subsection{Alternatives and Negative Controls}
@@ -117,63 +121,59 @@ Calibrated BatchTopK \citep{bussmann2024batchtopk} reached rowEV $0.531$ on the
 matched frontier cell. Qwen JumpReLU \citep{rajamanoharan2024jumprelu} missed
 the intended target $L_0=256$ (achieved about $38$--$68$), and step- or
 sparsity-matched TopK controls had higher rowEV ($0.42$--$0.44$ vs.\
-$0.26$--$0.31$), with mixed logit metrics. Finally, tokenizer/non-token-row
-audits support the denominator choice: structural non-token rows were $5.4\%$ of
-rows, and excluding non-token readout rows changed rowEV by $+0.0016$.
+$0.26$--$0.31$), with mixed logit metrics. Finally, tokenizer and non-token row
+audits support the denominator choice, since structural non-token rows were $5.4\%$ of
+rows and excluding non-token readout rows changed rowEV by $+0.0016$.
 
 \subsection{Reproducibility and Selection Details}
 \label{app:readout-factorizer-limitations}
 
-The main experiments report exact-versus-reconstructed scores, sign agreement,
+The main experiments report exact and reconstructed scores, sign agreement,
 relative error, and null/reference baselines for interpreted scores.
 Appendices~\ref{app:model-suite-selection}--\ref{app:robustness-controls}
 specify models, dictionary settings, seeds, row sampling, selection order,
-tokenization filters, score construction, and denominator controls. Dictionary
-selection uses row reconstruction, replacement fidelity, and sparse code usage;
-we reserve held-out logit differences for later checks. Remaining
-risks: computational cost, checkpoint/tokenizer versioning, and
-tokenizer-specific filtering for single-token scores. Local decompositions include
-explicit reconstruction errors, and we restrict qualitative interpretations
-to sufficiently reconstructed scores.
+tokenization filters, score construction, and denominator controls. The
+remaining risks are computational cost, checkpoint and tokenizer versioning,
+and tokenizer-specific filtering for single-token scores. Local decompositions
+include explicit reconstruction errors, and we restrict qualitative
+interpretations to sufficiently reconstructed scores.
 
-\paragraph{Planned artifacts.}
-The planned artifact bundle has four components.
-First, the code artifact will include the readout-SAE training scripts,
+\paragraph{Artifact contents.}
+The artifact bundle has four components.
+First, the code artifact includes the readout-SAE training scripts,
 hidden-state capture and evaluation scripts, baseline implementations, and
-figure/table reproduction scripts. Second, the dictionary artifact will include
-the reported readout-SAE checkpoints when permitted by upstream model licenses:
-decoder directions, sparse row codes, shared offsets, preprocessing metadata,
+figure/table reproduction scripts. Second, the dictionary artifact includes
+the reported readout-SAE checkpoints when permitted by upstream model licenses,
+covering decoder directions, sparse row codes, shared offsets, preprocessing metadata,
 configuration files, seeds, and model checkpoint revision identifiers. For any
-checkpoint that cannot be redistributed directly, we will provide the exact
+checkpoint that cannot be redistributed directly, we provide the exact
 recipe needed to regenerate it from the public model weights. Third, the prompt
-artifact will include the prompt templates and filled prompts used for selected
-score reconstruction, qualitative displays, feature-resolved DLA examples, and
-the constrained lexical-edit probes. Fourth, the score-set artifact will include
+artifact includes the prompt templates and filled prompts used for
+reconstruction of selected scores, qualitative displays, feature-resolved DLA examples, and
+the constrained lexical-edit probes. Fourth, the score-set artifact includes
 token ids or token groups, row-combination coefficients \(\alpha\),
 split/base-case identifiers, tokenization filters, bootstrap clusters, and the
 exact score-family metadata needed to recompute the reported sign and
-reconstruction metrics. We will not redistribute original model checkpoints or
-raw C4 text; C4-based evaluations are reproduced from public dataset/model
+reconstruction metrics. We do not redistribute original model checkpoints or
+raw C4 text, and C4-based evaluations are reproduced from public dataset/model
 identifiers and the artifact sampling, filtering, and scoring code.
 
-We selected the Qwen/Gemma readout SAEs before downstream qualitative
-interpretation, using row reconstruction, replacement-logit metrics, and
-sparse code usage statistics. We reserved the logit-difference contrast set
-for the later reconstruction checks, so selected-score reconstruction is
-evaluated after dictionary selection. Most reported dictionary settings use seed \(0\), with the
+Dictionary selection used row reconstruction, replacement-logit metrics, and
+feature usage statistics, and the logit difference contrast set enters only
+the reconstruction checks. Most reported dictionary settings use seed \(0\), with the
 Qwen3.5-0.8B 32$\times$, $k=256$ three-seed window providing the
 seed-variation snapshot above.
 For Qwen3.5-9B, tokenizer-free denominator controls replace tokenizer-aligned
-text-token-only EV and frequency-stratified fidelity: the tokenizer row
-count did not cleanly align with the $\WU$ rows, and no vocab-aligned unigram
-table was available. The tokenizer-free non-token-row audit is therefore
+text-token-only EV and frequency-stratified fidelity, since the tokenizer row
+count did not cleanly align with the $\WU$ rows and no vocab-aligned unigram
+table was available. The tokenizer-free non-token row audit is therefore
 the denominator-control result for that model. Gemma rowEV is measured on the
-linear pre-softcap unembedding rows and is cap-independent; Gemma top1/KL are
+linear pre-softcap unembedding rows and is cap-independent, while Gemma top-1/KL are
 evaluated under the model's $30\tanh(\cdot/30)$
-\texttt{final\_logit\_softcapping}. Since the cap is strictly monotone, top1 is
+\texttt{final\_logit\_softcapping}. Since the cap is strictly monotone, top-1 is
 cap-independent and the cap affects only KL.
 The selected operating points and reported claims come from the Qwen/Gemma
-sweeps and the targeted Ministral/R1 comparison rows above; earlier Pythia-160M
+sweeps and the targeted Ministral/R1 comparison rows above, and earlier Pythia-160M
 architecture and continuity sweeps \citep{biderman2023pythia} are
 design-history records.
 Exact replication depends on using the same model checkpoint revisions,
@@ -192,34 +192,35 @@ row-seeded initialization, \texttt{hybrid\_50freq\_50uniform} row sampling, a
 warmup-cosine learning-rate schedule from \(10^{-3}\) to \(10^{-4}\), and seed
 \(0\) unless stated otherwise. The Qwen3.5-9B recipe-selection run uses
 \(D=32768\), native \(k=128\), a delayed prism-loss ramp to \(10^{-3}\) after
-\(70\%\) of training, and 20k optimization steps; the capacity and transfer
+\(70\%\) of training, and 20k optimization steps, while the capacity and transfer
 runs keep the same recipe family while varying \(D\) and native \(k\) as
 reported in Tables~\ref{tab:app-k-model-finalists},
 \ref{tab:app-k-qwen-capacity}, and
-\ref{tab:app-k-small-model-converged-ledger}. Hidden-state evaluation uses the
+\ref{tab:app-k-small-model-converged-ledger}.
+Hidden-state evaluation uses the
 final readout after the relevant final normalization and, for Gemma, the
-model's monotone final-logit softcap for top1/KL evaluation. The reported
-metrics are rowEV, top-1 agreement, KL in bits, sparse code usage, and the
-selected-score reconstruction error and sign agreement defined above.
+model's monotone final-logit softcap for top-1/KL evaluation. The reported
+metrics are rowEV, top-1 agreement, KL in bits, feature usage, and the
+reconstruction error and sign agreement for selected scores defined above.
 \endgroup
 
 \paragraph{Compute and software.}
 Readout-SAE training and the headline evaluations ran on a single NVIDIA
-A40 per job on an academic Slurm cluster; a 24\,GB-class GPU
-suffices for inference and evaluation, and training the larger readouts
-(e.g.\ Qwen3.5-9B) wants roughly 40\,GB. One
+A40 per job on an academic Slurm cluster. A 24\,GB-class GPU
+suffices for inference and evaluation, while training the larger readouts
+(e.g.\ Qwen3.5-9B) needs roughly 40\,GB. One
 readout SAE costs about 6--12 A40 GPU-hours depending on vocabulary
 size and dictionary width (the Ministral-3-8B \(131072\times4096\) head
 takes 12.2\,h at \(32\times\), \(k=256\), and 6.3\,h at \(16\times\),
-\(k=128\), for 20k steps); the three-model constrained-edit evaluation
-totals about 2.5 GPU-hours. Selected-score fidelity evaluations for the
+\(k=128\), for 20k steps), and the three-model constrained-edit evaluation
+totals about 2.5 GPU-hours. Fidelity evaluations of selected scores for the
 three late-added models ran on a single rented cloud GPU, and some figure
 and analysis passes ran on Apple Silicon (PyTorch
 MPS, bfloat16). Experiments use Python 3.11--3.12 with pinned
 dependencies, including \texttt{torch} 2.7.1 (CUDA 11.8) on the cluster
 and \texttt{torch} 2.12.0 on Apple Silicon,
 \texttt{transformers} 5.9.0, \texttt{numpy} 2.4.6,
-\texttt{datasets} 4.8.5, and \texttt{safetensors} 0.7.0; the released
+\texttt{datasets} 4.8.5, and \texttt{safetensors} 0.7.0. The released
 code includes the full lockfile.
 
 \ReadoutSAEFloatBarrier

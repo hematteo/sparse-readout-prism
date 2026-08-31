@@ -1,180 +1,294 @@
-\section{Validating the Readout Basis}
+\section{The Decomposition Is Faithful, Predicts Intervention Effects, and Survives Retraining}
 \label{sec:results}
-\label{subsec:calibration}
-\label{sec:experimental-setup}
-
-The stages below test \emph{faithfulness}, \emph{distinctness},
-\emph{reproducibility}, and \emph{ablation consistency} in turn, and
-each could fail on its own evidence. Decompositions
-are read under the reading rule of
-\Cref{sec:method-reading-local-accounts}.
 
 \paragraph{Setup.}
 The suite spans Qwen3.5~\citep{qwen35collection}, Gemma-4
 \citep{gemma4official,gemma4collection}, Ministral~\citep{liu2026ministral3},
-and reasoning-distilled Qwen/Llama readouts \citep{deepseekai2025deepseekr1}
+and Qwen/Llama readouts distilled for reasoning \citep{deepseekai2025deepseekr1}
 at 0.8B--9B scale. We fit one readout SAE per model to the rows of its
-final LM head (selected on row-reconstruction, replacement, and
-code-usage metrics, before any contrast is seen) and evaluate it on
-10{,}000 held-out C4 continuations
-\citep{raffel2020exploring,dodge2021documenting} and on fixed,
-model-agnostic banks of selected scores (\(\sim\)1{,}350 items per model
-over \(\sim\)850 base cases, the resampling unit for bootstrap
-intervals). A positive
-margin says the readout favors \(A\) over \(B\), not that \(A\) is
-right. Only the separate benchmark-derived bank takes \(A\) from a gold
-label. The model split is fixed once. All eight models enter the
-reconstruction analysis, and the six whose readouts pass the replacement
-check (top-1 agreement between reconstructed and original argmax tokens
-on held-out states, \(\ge 0.75\); both Gemma-4 variants fall below it)
-enter the baseline, reproducibility, and intervention comparisons.
+final LM head and evaluate it on the decoded states of
+10{,}000 C4 continuations
+\citep{raffel2020exploring,dodge2021documenting}, none of which enter the
+fit, and on the same
+banks of selected scores for every model, \(\sim\)1{,}350 scores per model
+drawn from \(\sim\)850 contrasts with their prompts fixed. The rewordings
+and context variants of one contrast stay together when the bootstrap
+resamples. A positive margin
+says the readout favors \(A\) over \(B\), correctness is a separate
+question, and scores with small margins remain in the aggregates.
+
+All eight models
+enter the reconstruction and replacement analyses
+(Appendix~\ref{app:readout-norm-tails}). The baseline and
+intervention comparisons cover the six softcap-free readouts, whose scores
+are a plain linear map of the decoded state
+(\Cref{tab:readout-score-fidelity-summary}). The two Gemma-4 readouts
+sit behind a nonlinear logit softcap that SRP does not factorize, and
+the
+split was fixed on that ground before any contrast was scored.
+
+The retraining analysis of \S\ref{subsec:stability} trains several dictionaries per setting, so it
+is run on Qwen3.5-2B, the model the worked cases use throughout.
+In those cases the score exceeds its reconstruction error, the
+reconstruction keeps its sign, and the contribution mass is compact
+enough to list, the regime Appendix~\ref{subsec:interpretation-boundary}
+describes in full.
+
+The labels on the bars of the worked cases summarize each feature's
+top unembedding rows and stay separate from the measured feature ids
+and signed contributions. Three independent blinded audit runs
+\citep{karvonen2025saebench,makelov2024principled} rate the large
+majority of the labels that support a claim as coherent
+(Appendix~\ref{app:main-case-study-feature-audit}).
 Appendices~\ref{app:model-suite-selection}
 and~\ref{app:query-bank-provenance} describe the suite, bank families,
 provenance, and filters.
 
-\paragraph{The Factorization Preserves the Readout and the Scores}\label{subsec:readout-replacement-fidelity}
-\label{subsec:selected-score-reconstruction}%
-\Cref{tab:readout-score-fidelity-summary} reports fidelity at two levels,
-the readout as a whole and the individual selected scores. Interpretation rests on
-replacement fidelity rather than on aggregate row reconstruction. We check each
-readout by top-token agreement and KL on held-out hidden states before any
-local decomposition, since rows with large residual norms can dominate the
-softmax even when reconstruction is accurate in aggregate
-(Appendix~\ref{app:readout-norm-tails}). Row-centered explained variance
-is 0.83--0.89 across the suite, but replacement separates the models.
-The six passing readouts reach top-1 agreement 0.75--0.90 at KL
-\(\le 0.49\), while the two Gemma-4 variants reach 0.33 and 0.74 at KL
-6.37 and 1.22. At the score level, sign agreement is at least \(0.91\)
-across the suite, with residual error and the few sign flips confined to
-near-tie margins, which are hardest because the contrast residual does
-not scale with the margin (Appendix
+\begin{table}[t]
+\caption{\textbf{Readout replacement and reconstruction of selected scores
+against baselines built on row geometry.}
+Q/Min/R1-Q/R1-L \(=\) Qwen3.5 / Ministral-3 /
+R1-Distill-Qwen / R1-Distill-Llama.
+top-1 is the fraction of held-out decoded states whose reconstructed and
+original readouts agree on the argmax. The SRP and ``best alternative''
+columns give coverage, the fraction of the full bank of logit differences
+reconstructed with the correct sign and error below half the score's
+magnitude, with 95\% CIs from a cluster bootstrap. The best alternative
+is the strongest of six such baselines, and lead is the difference in
+percentage points.
+Metric definitions and the full method grid are in
+Appendix~\ref{app:fidelity-table-notes}, full model names in
+Appendix~\ref{app:model-suite-selection}.}
+\label{tab:readout-score-fidelity-summary}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.0pt}
+\renewcommand{\arraystretch}{1.06}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\toprule
+Model & top-1 & SRP & Best alternative & Lead \\
+\midrule
+Q-0.8B & 0.891 & 0.754 [.733, .773] & 0.665 [.645, .686] & +8.9 \\
+Q-2B   & 0.887 & 0.780 [.759, .798] & 0.625 [.606, .644] & +15.5 \\
+Q-9B   & 0.900 & 0.812 [.792, .831] & 0.639 [.618, .658] & +17.3 \\
+Min-8B & 0.904 & 0.777 [.759, .795] & 0.648 [.629, .665] & +12.9 \\
+R1-Q-7B & 0.760 & 0.716 [.694, .738] & 0.579 [.560, .598] & +13.7 \\
+R1-L-8B & 0.754 & 0.751 [.728, .772] & 0.624 [.606, .642] & +12.7 \\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+\subsection{The Sparse Head Replaces the Readout}\label{subsec:readout-replacement-fidelity}
+On the six softcap-free readouts a readout SAE fitted to the rows of an LM
+head reproduces that head as a predictor over the vocabulary, row by
+row, and on the selected scores.
+Replacing \(\WU\) with the reconstructed LM head preserves the held-out
+argmax on 0.89--0.90 of decoded states for the Qwen3.5 and Ministral
+readouts and on 0.75--0.76 for the two readouts distilled for reasoning
+(\Cref{tab:readout-score-fidelity-summary}). The median KL between the
+original and reconstructed readout distributions splits the same way, at
+0.09--0.14 bits for the Qwen3.5 and Ministral readouts and 0.43--0.49
+bits for the two distilled for reasoning. Row reconstruction alone does not predict
+replacement, since the two Gemma-4 readouts behind the softcap nearly match
+the six on explained variance over the centered rows while replacing
+far worse. Replacement metrics and row reconstruction for each
+readout are in
+\Cref{tab:app-k-model-finalists} and
+\Cref{tab:app-k-cross-family-stress-converged}.
+
+At the level of individual scores, sign agreement is at least \(0.91\)
+across all eight readouts, and the residual error and the few sign flips both
+concentrate on the scores whose margin sits nearest a tie
+(\Cref{tab:app-fidelity-cis}, Appendix
 Figure~\ref{fig:readout-score-fidelity-result}, Appendix
-Table~\ref{tab:readout-score-families}).\label{subsec:score-family-fidelity}
-Case studies below are drawn from the passing subset, small-margin
-scores remain in the aggregates, and fidelity extends beyond curated
-pairs to 300 benchmark-derived contrasts
+Table~\ref{tab:readout-score-families}).
+Contrasts built from benchmark formats hold up at least as well, and the
+bank of 300 such contrasts, the only bank whose \(A\) side comes from a
+gold label, reaches sign agreement 0.94 and coverage 0.84
+on Qwen3.5-2B
+\citep{rajpurkar2018squad2,yang2018hotpotqa,koreeda2021contractnli,guha2023legalbench,siddiq2022securityeval}
 (Appendix~\ref{app:benchmark-derived-display-examples},
 Table~\ref{tab:benchmark-derived-readout-contrasts}).
 
-\paragraph{Simpler Geometry Does Not Recover the Scores}\label{subsec:baseline-comparisons}
+\subsection{SRP Outperforms Every Baseline Built on Row Geometry}\label{subsec:baseline-comparisons}
+SRP is fitted to the rows of \(\WU\), so the test that matters is whether
+its codes add anything to the geometry those rows already carry. We
+compare against six baselines built directly on that geometry, from
+methods that use the rows with no dictionary at all to dictionaries
+fitted by clustering. They are nearest row ridge and
+weighted kNN on the 128 closest rows, k-means centroid dictionaries
+at two widths, hard assignment of each row to a single centroid, and PCA
+at 256 components, each scored for coverage on the same banks under the
+same harness (\S\ref{sec:method-reading-local-accounts},
+Appendix~\ref{app:direct-geometry-grid}). SRP
+outperforms all of them, reaching coverage 0.72--0.81 across the six
+softcap-free readouts, and the intervals do not overlap
+(\Cref{tab:readout-score-fidelity-summary}). It also has the lowest mean,
+95th-percentile, and maximum absolute error of the seven methods, so the
+ranking does not depend on how the error is summarized
+(Appendix~\ref{app:error-tails}). To remove capacity as a confound, we build the
+k-means dictionary at SRP's own width and sparsity, \(D{=}65{,}536\) with
+\(k{=}256\) active centroids per row, and it trails SRP by 18 points of
+coverage on Qwen3.5-2B. Shuffled codes and
+random support leave coverage below 0.10 on the three Qwen3.5 and both
+Gemma-4 readouts (\Cref{tab:app-cross-model-nulls}).
+
 \begin{table}[t]
-\caption{\textbf{Direct-geometry alternatives across six models.}
-Sign-preserved low-error coverage (sign agreement and unfloored
-\(\tilde\rho<0.5\); \S\ref{sec:method-reading-local-accounts}) on the
-full logit-difference bank, with cluster-bootstrap 95\% CIs. ``Best
-alternative'' is the strongest per model of six methods, with lead in
-percentage points. The k-means dictionaries match SRP's width and
-sparsity exactly, while ridge and row-kNN use the top-128 nearest rows
-against SRP's \(k{=}256\), and ridge additionally refits per selected
-direction. Full grids in
-Appendix~\ref{app:direct-geometry-grid}.}
-\label{tab:main-baseline-null-comparison}
+\caption{\textbf{Predicted versus measured local changes on the readout side.}
+For each contrast, a feature's predicted contribution
+\(c_i=\beta_i(\alpha)\,p_i(\rstate)\) is compared with the measured margin
+change when \(\rstate\) is ablated along the unit decoder direction \(d_i\),
+with no new forward pass.
+Per model, \(\sim\)260 bank contrasts, each with its top 10 features plus 10
+random directions as controls. We report \(r^2\) and the slope of the
+regression of measured change on predicted contribution through the
+origin, over covered pairs with bootstrap 95\% CIs,
+and random is the control \(r^2\).}
+\label{tab:causal-validation-summary}
 \centering
 \scriptsize
-\setlength{\tabcolsep}{2.6pt}
+\setlength{\tabcolsep}{3.2pt}
 \renewcommand{\arraystretch}{1.06}
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
-Model & SRP & Best alternative & Lead \\
+Model & \(r^2\) [95\% CI] & Slope & Random & \(n\) \\
 \midrule
-Q-0.8B & 0.754 [.733, .773] & 0.665 [.645, .686] & +8.9 \\
-Q-2B   & 0.780 [.759, .798] & 0.625 [.606, .644] & +15.5 \\
-Q-9B   & 0.812 [.792, .831] & 0.639 [.618, .658] & +17.3 \\
-Min-8B & 0.777 [.759, .795] & 0.648 [.629, .665] & +12.9 \\
-R1-Q-7B & 0.716 [.694, .738] & 0.579 [.560, .598] & +13.7 \\
-R1-L-8B & 0.751 [.728, .772] & 0.624 [.606, .642] & +12.7 \\
+Q-0.8B & 0.886 [.869, .903] & 1.661 & 0.010 & 1610 \\
+Q-2B   & 0.834 [.802, .862] & 1.338 & 0.007 & 1820 \\
+Q-9B   & 0.829 [.813, .845] & 1.686 & 0.058 & 1860 \\
+Min-8B & 0.926 [.913, .937] & 0.957 & 0.009 & 2050 \\
+R1-Q-7B & 0.918 [.899, .933] & 1.082 & 0.000 & 1500 \\
+R1-L-8B & 0.934 [.920, .947] & 1.126 & 0.034 & 1210 \\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
-If SRP's codes merely repackaged \(\WU\) geometry, methods built directly
-from that geometry should reconstruct selected scores equally well. They
-do not (\Cref{tab:main-baseline-null-comparison}). Across all six
-models, SRP reconstructs 0.72--0.81 of contrasts with the correct sign
-and error below half the score's magnitude (sign-preserved low-error
-coverage), leading the strongest of six alternatives by 8.9--17.3
-points with non-overlapping intervals. The lead does not depend on the
-choice of summary statistic, since SRP also has the lowest mean,
-95th-percentile, and maximum absolute error of the seven methods, and
-what error remains concentrates in the near-tie contrasts the reading
-rule already excludes (Appendix~\ref{app:error-tails}).
-The comparison controls for capacity. The k-means
-centroid dictionary at \(D{=}65{,}536\), \(k{=}256\) matches SRP's width
-and sparsity exactly and still trails by 18 points on the display model
-(Qwen3.5-2B), and shuffled-code and random-pattern nulls collapse
-entirely (\Cref{tab:app-cross-model-nulls}). Learned sparse row--code
-structure, not generic row proximity, carries the reconstruction. The
-lead persists one level up, at the scale of token \emph{groupings}, the
-sets of vocabulary rows one feature ties together. A held-out
-same-recipe dictionary recovers 72--75\% of the seed-stable grouping
-core against 43--49\% for row-kNN and 21--25\% for hard clustering, with
-cross-recipe agreement weaker and disclosed
-(Appendix~\ref{app:basis-stability}).
+\subsection{Removing a Feature Moves the Margin as the Decomposition Predicts}\label{subsec:causal-validation}
+A decomposition is meant to say how much of the margin each feature
+accounts for, so removing that feature's direction from the decoded
+state should shift the margin with the sign and roughly the size of
+its contribution. We test this by removing the direction, measuring
+the margin with the original readout,
+and comparing the measured change with the predicted one. The measured
+changes track the predicted ones at \(r^2=0.83\)--\(0.93\) on all six
+softcap-free readouts, against at most 0.06 when a random direction is
+removed instead, so the contributions say which features move the
+margin most and in which direction
+(\Cref{tab:causal-validation-summary},
+Appendix~\ref{app:causal-validation}). The size of the change matches
+as well on Ministral and the two readouts distilled for reasoning
+(slope 0.96--1.13), while on the three Qwen3.5 readouts the margin moves
+further than predicted (slope 1.34--1.69).
 
-\paragraph{Explanations Reproduce Across Independent Runs}\label{subsec:stability}
-Individual decoder directions are not canonical. Across three
-independently trained dictionaries per width, with equal held-out
-reconstruction verified, matched decoder cosines for used features
-average only \(\sim\)0.33 at the 32\(\times\) width, consistent with
-reported TopK seed-sensitivity \citep{paulo2025stability}. What a
-decomposition says, however, does reproduce. Over 63 curated contrasts,
-the tokens each seed's decomposition places on each side reproduce
-across every seed pair at \(\sim\)15\(\times\) the cross-contrast null,
-with 100\% of contrasts above the null's 90th percentile at both widths
-and cross-side leakage at or below 0.005. Further, 87--91\% of used
-feature groups have an above-chance counterpart in an independently
-trained dictionary, the median group 83--90\% covered by a union of at
-most three features. Structure reproduces even though indexing does not. The
-residual instability is feature splitting rather than noise, with
-one seed's feature reappearing as several in another. These
-statements are within-recipe (fixed width, sparsity, preprocessing), and
-cross-recipe variation is larger and disclosed in
-Appendix~\ref{app:basis-stability}.
+\subsection{The Decomposition Survives Retraining}\label{subsec:stability}
+We test whether a decomposition survives retraining, since a
+dictionary trained from a new seed can fit the readout equally well
+with different decoder directions. At each of two widths,
+\(32\times\) and \(16\times\), we train three dictionaries for
+Qwen3.5-2B that differ only in their seed. All six replace the
+readout equally well, at a held-out top-1 agreement of 0.805--0.848,
+so the comparisons below are between dictionaries of equal fidelity.
+What we compare is the tokens a dictionary groups with each token of
+a contrast. For a contrast between \(A\) and \(B\), pooling the top
+unembedding rows of the features whose coefficients most favor each
+side's row gives the tokens the dictionary groups with \(A\) and with
+\(B\).
+These lists depend on the two rows and the dictionary alone, and we
+compare them across dictionaries on all 63 distinct token pairs among
+the bank's two-token margins.
 
-\paragraph{Predicted Contributions Versus Measured Ablation}\label{subsec:causal-validation}
-The decomposition is consistent with direct ablation. On all six
-models, predicted feature contributions match the margin change measured
-when the feature's direction is deleted from the hidden state
-(readout-side ablation) at \(r^2=0.83\)--\(0.93\), while random
-directions explain at most 0.06
-(\Cref{tab:causal-validation-summary}). Sparse-code misattribution,
-decoder non-orthogonality, and the row residual would each degrade this
-agreement, and the slope inflation bounds their combined effect. Slopes
-are near 1 on the 7--8B readouts and overstate magnitudes on the three
-Qwen readouts, with sign and rank preserved
-(Appendix~\ref{app:causal-validation}). These are
-local, readout-side predictions on realized forward passes, not
-circuit-level necessity or generation-level effects.
+At the \(32\times\) width, a feature that any of these lists draws on
+has a median cosine of \(\sim\)0.33 between its direction and the
+nearest direction in another seed's dictionary, so the directions
+themselves do not recur across seeds, as is documented for TopK
+dictionaries \citep{paulo2025stability}. Yet for the same token of
+the same contrast, the lists from two seeds share a mean Jaccard of
+0.21--0.24 across the two widths, while the lists for two unrelated
+contrasts share 0.014--0.018. The tokens a
+dictionary groups with \(A\) therefore reproduce across seeds at 13--15\(\times\) the overlap that
+unrelated contrasts show at the same width, and every one of the 63
+contrasts lies above the 90th percentile of that unrelated overlap.
 
-\paragraph{Context Decides Which Features Carry a Token}\label{subsec:label-audit}\label{subsec:same-token-analysis}\label{subsec:feature-competition}\label{subsec:lens-to-sparse-account}\label{subsec:context-reweighting}
-Holding a token fixed freezes its row coefficients \(z_{t,i}\) and
-leaves only the projections \(p_i(h)\) free
-(\S\ref{sec:method-local-score}), so context alone decides which
-readout features carry its score. Worked cases on Qwen3.5-2B are read
-under the operating-regime conditions of
-Appendix~\ref{subsec:interpretation-boundary}. The software-context
-\texttt{bug}-minus-\texttt{insect} margin of
-\Cref{fig:main-lens-prism-comparison} is carried by defect, crash, and
-debug rows (\(\tilde\rho=0.003\)). In an insect context, against the
-software-sense anchor \texttt{error}, the same token's support comes
-from mosquito-, bee-, and beetle-labeled rows (\(\tilde\rho=0.185\)),
-and \texttt{bark}, \texttt{bass}, \texttt{ring}, and \texttt{bridge}
-reassign signed terms across senses the same way. Labels are
-readability summaries of top unembedding rows, kept separate from the
-measured feature ids and signed terms and used only where audited. On
-the stricter of two audits, 66 of the 99 claim-bearing display labels
-name a coherent family that matches the sense their panel claims
-\citep{karvonen2025saebench,makelov2024principled}. These are worked
-analyses of individual scores, not a systematic sense-disambiguation
-evaluation. Appendices~\ref{app:additional-margin-case-studies}
-and~\ref{app:main-case-study-feature-audit} give displays, per-case
-terms, and the audit protocol.\label{sec:feature-resolved-component-decomposition}\label{subsec:constrained-readout-edits}
-The basis also splits each residual-stream component's direct logit
-attribution into per-feature terms
-(Appendix~\ref{app:feature-resolved-dla}), and its decoder directions
-support constrained readout-side edits
-(Appendix~\ref{app:lexical-control-stress-test}). With the basis
-validated on its own evidence, the next section applies it to a question
-token readings cannot settle.
+Across both widths and all seed pairs, 87--91\% of the features these
+lists draw on find a counterpart in the other seed's dictionary whose
+top rows overlap theirs beyond what the same search yields for random
+rows of matched frequency, so the row groups behind the features recur
+as well.
+Appendix~\ref{app:basis-stability} gives the full tables for both
+widths and shows that the variation grows when the preprocessing
+recipe changes along with the seed.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/proto_token_lens/qwen2b_32x_section43_polysemy_margin_curated_examples/qwen2b_32x_margin_examples_main2_onecol_with_tokens.pdf}
+    \caption{\textbf{One token, carried by different features in
+    different contexts.} Signed readout feature terms in logit units for
+    \texttt{bug} on Qwen3.5-2B, scored in \textbf{(A)} an insect context
+    against the anchor \texttt{error}, chosen for the software sense, and \textbf{(B)} a
+    software context against \texttt{insect}.
+    Green terms support \texttt{bug} and orange terms oppose it. Bars
+    carry each feature's id and the rows of the LM head that score highest on it.}
+    \label{fig:same-token-context-features}
+\end{figure}
+
+\subsection{Context Decides Which Features Carry a Token}\label{subsec:same-token-analysis}\label{subsec:label-audit}\label{subsec:context-reweighting}
+So far we have shown that the decomposition stands in for the readout,
+predicts what removing a feature does to a margin, and survives
+retraining. We now ask what it adds to the score a lens already
+reports. Every sense of \texttt{bug} shares one row of the LM head, so
+a lens score for the token cannot tell a software defect from an
+insect. SRP writes that row \(v\) as fixed coefficients \(z_{v,i}\)
+over the readout features, so from one context to the next only the
+projections \(p_i(\rstate)\) change (\S\ref{sec:method-comparing-accounts}).
+The context therefore decides which readout features carry the score,
+and those features tell the two senses apart.
+
+\paragraph{Worked cases.}
+In \Cref{fig:same-token-context-features} we score \texttt{bug} on
+Qwen3.5-2B in an insect context and in a software context, each time
+against a token from the other sense so that the leading terms belong
+to the sense in play. In the insect context, against \texttt{error},
+the margin is carried by features whose top rows are mosquito, bee,
+and beetle, with relative reconstruction error \(\rho_0=0.185\). In
+the software context of \Cref{fig:main-lens-prism-comparison}, against
+\texttt{insect}, it is carried by defect, crash, and debug features
+(\(\rho_0=0.003\)), and no feature for the insect sense appears among
+the leading terms. Appendix~\ref{app:additional-margin-case-studies}
+gives the displays and the terms for each case.
+
+\paragraph{Held-out senses.}
+The worked cases show the two senses of one word carried by different
+features, and we test whether the same holds for 20 ambiguous words on
+CoarseWSD-20 \citep{loureiro2021coarsewsd}, a benchmark with labelled
+senses and a fixed split of contexts into training and test. For each
+sense of a word we pick the eight features whose mean contribution on
+the training contexts differs most between that sense and the others.
+We then assign each test context to the sense whose eight features add
+up to the largest contribution. Both steps use feature ids and signed
+contributions only, so the labels on the bars play no part. Balanced
+accuracy is 0.90, 0.92, and 0.80 on Qwen3.5-2B, Qwen3.5-9B, and
+R1-Llama-8B, where shuffling the sense labels gives a null near 0.41.
+Every word beats its majority baseline, and the result holds whether
+we keep one, two, four, or eight features per sense. A nearest
+centroid probe on the full decoded state reaches 0.96, 0.97, and 0.92,
+so the full state is the stronger predictor of the sense and eight
+features give a readable summary of it
+(Appendix~\ref{app:sense-labelled-evaluation}).
+
+\paragraph{Attribution and edits.}
+Because the readout factorizes independently of the hidden state, the
+same terms compose with direct logit attribution
+\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}, so that
+each layer's contribution to a margin resolves into one term per
+feature (Appendix~\ref{app:feature-resolved-dla}). The terms also
+supply candidate directions for constrained edits on the readout side.
+At matched next-token KL those directions beat the mean and leading
+principal components of the rows they were discovered from on
+Qwen3.5-2B, while the mean wins on Qwen3.5-0.8B and Qwen3.5-9B
+(Appendices~\ref{app:lexical-control-stress-test}
+and~\ref{app:lexical-matched-kl}).
+
+With the basis read on its own evidence, the next section applies it to
+a question token readings leave open.
 
 \FloatBarrier

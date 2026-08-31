@@ -15,7 +15,9 @@ selects a no-PCA recipe. A 5k screening sweep identified the recipe family, a
 matryoshka run \citep{bussmann2025matryoshka} anchored the comparison against
 the previous long-trained baseline. The selected TopK recipe's own convergence ladder provides the
 step-count evidence, while the previous recipe is an architectural
-reference point.
+reference point. Table~\ref{tab:app-k-qwen-recipe-ledger} maps each run to
+the evidence it supplies, and Table~\ref{tab:app-k-qwen-recipe-effects}
+gives the main effects the sweep isolates.
 
 \begin{table*}[!tbp]
 \caption{Evidence map for the Qwen3.5-9B fixed-$k=128$ recipe-selection
@@ -32,24 +34,24 @@ Evidence role & Run or run family & What it establishes \\
 \midrule
 Previous baseline
 & Matryoshka TopK, $D=16384$, $k=128$, 50k steps
-& Long-trained previous recipe used as an architectural reference: rowEV
-$0.511$, top1 $0.807$, KL $0.416$, dead $0.119$, rare $0.236$. \\
+& Long-trained previous recipe used as an architectural reference, at rowEV
+$0.511$, top-1 $0.807$, KL $0.416$, dead $0.119$, rare $0.236$. \\
 \addlinespace
 5k selected recipe
 & TopK, $D=32768$, $k=128$, row-seeded, hybrid row sampling, delayed prism ramp
-& Best recipe-region representative in the screening sweep: rowEV $0.567$,
-top1 $0.775$, KL $0.572$, reconstruction error $0.038$, rare $0.060$. \\
+& Best recipe-region representative in the screening sweep, at rowEV $0.567$,
+top-1 $0.775$, KL $0.572$, reconstruction error $0.038$, rare $0.060$. \\
 \addlinespace
 5k screening sweep
 & 18 recipe variants varying initialization, architecture, row sampling, prism
 schedule, and width
-& Supports the selected recipe by matched comparisons: row-seeded
-initialization, TopK, delayed ramp, and $D=32768$ are each selected from the
+& Supports the selected recipe by matched comparisons, with row-seeded
+initialization, TopK, delayed ramp, and $D=32768$ each selected from the
 screening grid. \\
 \addlinespace
 20k selected recipe
 & TopK, $D=32768$, $k=128$, row-seeded, hybrid row sampling, delayed prism ramp
-& Final reported Qwen3.5-9B fixed-$k=128$ recipe: rowEV $0.621$, top1 $0.846$,
+& Final reported Qwen3.5-9B fixed-$k=128$ recipe, at rowEV $0.621$, top-1 $0.846$,
 KL $0.296$, reconstruction error $0.027$, dead $0.000$, rare $0.021$. \\
 \bottomrule
 \end{tabular}
@@ -68,7 +70,7 @@ Factor & Evidence & Consequence \\
 \midrule
 Initialization
 & \texttt{row\_seeded} was $2.0\times$ \texttt{random} at 5k
-(rowEV $0.563$ vs $0.278$ at $D=32768$).
+(rowEV $0.563$ vs.\ $0.278$ at $D=32768$).
 & Use row-seeded initialization. \\
 \addlinespace
 Prism-loss schedule
@@ -79,7 +81,7 @@ reconstruction error from $0.064$ to $0.038$ in the matched TopK hybrid cell.
 Architecture
 & At $D=32768$/5k, plain TopK exceeded matryoshka variants
 \citep{bussmann2025matryoshka} in rowEV
-($0.567$ vs $0.559/0.554$) at about $3.6\times$ lower cost.
+($0.567$ vs.\ $0.559/0.554$) at about $3.6\times$ lower cost.
 & Use plain TopK for Qwen/Gemma. \\
 \addlinespace
 Width
@@ -94,8 +96,8 @@ recipe sweep.
     \centering
     \ReadoutSAEGraphic[height=0.30\textheight]{appendix_k_qwen_recipe_selection_frontier.pdf}
     \caption{
-        Qwen3.5-9B fixed-$k=128$ recipe-selection frontier. Points: 5k recipe
-        variants; black curve: 5k non-dominated frontier. The final 20k TopK
+        Qwen3.5-9B fixed-$k=128$ recipe-selection frontier. Points are 5k recipe
+        variants and the black curve is the 5k non-dominated frontier. The final 20k TopK
         recipe improves both reconstruction and KL at the fixed
         interpretability budget.
     }
@@ -108,10 +110,10 @@ The 9B fixed-$k=128$ recipe is \texttt{topk},
 \(D=32768\) (8$\times$), $k=128$, row-seeded
 initialization, \texttt{hybrid\_50freq\_50uniform} row sampling, warmup-cosine
 learning rate $10^{-3}\rightarrow 10^{-4}$, delayed prism ramp to $10^{-3}$,
-20k steps. It reaches rowEV $0.6206$, top1 $0.8457$, KL $0.2955$,
+20k steps. It reaches rowEV $0.6206$, top-1 $0.8457$, KL $0.2955$,
 selected logit reconstruction error $0.027$, dead $0.000$, rare $0.021$, and Gini
 $0.256$. The 15k$\rightarrow$20k rowEV gain was $+0.0025$, consistent with the
-stop rule.
+stop rule (Figure~\ref{fig:app-k-qwen-convergence-ladder}).
 
 \begin{figure}[!tbp]
     \centering
@@ -138,14 +140,13 @@ $D=32768$ width choice.
 
 After recipe selection, we vary capacity along dictionary width and active
 sparsity budget. This targeted sweep separates two questions that rowEV alone
-can blur: which native $k=128$ readout SAE should be used for fixed-budget
+can blur, namely which native $k=128$ readout SAE should be used for fixed-budget
 comparisons, and which native $k=256$ readout SAE should be the
-high-fidelity operating point. Short screening runs selected the larger-budget cells that received
-20k training.
+high fidelity operating point.
 
 A 5k screen selected which larger-capacity cells received 20k training. At
 16$\times$, the $k=256$ cell had better rowEV and rare feature
-rate than $k=192$ ($0.695/0.100$ vs.\ $0.675/0.164$), despite lower 5k top1,
+rate than $k=192$ ($0.695/0.100$ vs.\ $0.675/0.164$), despite lower 5k top-1,
 so it was continued. The 32$\times$, $k=256$ cell had enough rowEV headroom
 ($0.799$) to justify a width continuation. The native 20k rows below provide
 the evidence for the operating-point claims.
@@ -161,11 +162,11 @@ regimes.}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabularx}{\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.24\textwidth}ccrrrrY@{}}
 \toprule
-Run & Width & Eval $k$ & rowEV & top1 & KL & rare & Interpretation \\
+Run & Width & Eval $k$ & rowEV & top-1 & KL & rare & Interpretation \\
 \midrule
 $D=32768$, train $k=128$
 & 8$\times$ & 128 & $0.621$ & $0.846$ & $0.296$ & $0.021$
-& strict-budget recipe \\
+& strict budget recipe \\
 \addlinespace
 $D=65536$, train $k=256$
 & 16$\times$ & 256 & $0.761$ & $0.874$ & $0.167$ & $0.061$
@@ -173,7 +174,7 @@ $D=65536$, train $k=256$
 \addlinespace
 $D=131072$, train $k=256$
 & 32$\times$ & 256 & $0.857$ & $0.900$ & $0.105$ & $0.292$
-& high rowEV/top1/KL; high rare feature rate \\
+& best rowEV/top-1/KL, high rare feature rate \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -183,8 +184,8 @@ $D=131072$, train $k=256$
 \ReadoutSAEGraphic[height=0.28\textheight]{appendix_k_qwen_capacity_usage.pdf}
     \caption{
         Qwen3.5-9B capacity sweep. Increasing width and active sparsity improves
-        rowEV and top-1 agreement; rare feature usage is an additional usage
-        statistic.
+        rowEV and top-1 agreement, while rare feature usage is an additional
+        usage statistic.
     }
     \label{fig:app-k-qwen-capacity-usage}
 \end{figure}
@@ -192,63 +193,75 @@ $D=131072$, train $k=256$
 \ReadoutSAEFloatBarrier
 
 Table~\ref{tab:app-k-qwen-capacity} and
-Fig.~\ref{fig:app-k-qwen-capacity-usage} show the tradeoff. The
-$D=131072$, $k=256$ run has the highest rowEV, top1, and KL metrics in this
+Figure~\ref{fig:app-k-qwen-capacity-usage} show the tradeoff. The
+$D=131072$, $k=256$ run has the best rowEV, top-1, and KL in this
 Qwen3.5-9B capacity sweep. Its rare feature ladder
 $0.300\rightarrow 0.294\rightarrow 0.292$ shows a persistent rare-feature tail,
 which is reported as a usage property alongside fidelity metrics.
 
-The 16$\times$, $k=256$ comparison provides the compact high-fidelity point. It
-also improves during convergence: from 5k to 20k steps, its rowEV ladder is
+The 16$\times$, $k=256$ comparison provides the compact high fidelity point. It
+also improves during convergence, since from 5k to 20k steps its rowEV ladder is
 $0.719\rightarrow0.749\rightarrow0.758\rightarrow0.761$, and its
 rare feature rate falls from $0.100$ to $0.061$.
 
 \ReadoutSAEFloatBarrier
-\subsection{Lower Sparsity Budgets on the Display Model}
+\subsection{Lower Sparsity Budgets}
 \label{app:readout-factorizer-low-k}
 
 Activation SAEs are often trained at smaller absolute budgets than ours,
 which raises the question of whether a readout SAE would also work at
-$k=64$. We retrained Qwen3.5-2B under an otherwise identical recipe
+$k=64$ or below. We retrained Qwen3.5-2B and Qwen3.5-0.8B under an
+otherwise identical recipe
 (20{,}000 steps, batch $4{,}096$, same data, schedule, and
-initialization family; only width, $k$, and seed differ) and measured
+initialization family, with only width, $k$, and seed differing) and measured
 how much of each dictionary is ever used
 (Table~\ref{tab:app-low-k-dead-features}).
 
 \begin{table*}[!tbp]
-\caption{Sparsity budget versus dictionary usage on Qwen3.5-2B. Ranges
+\caption{Sparsity budget versus dictionary usage. Ranges
 are over independently seeded runs at otherwise identical settings
-(20{,}000 steps each). Dead: features never active on the evaluation
-rows; rare: evaluation firing rate below $10^{-3}$
+(20{,}000 steps each), and single-seed rows give the one measured value.
+Dead counts features never active on the evaluation
+rows, and rare an evaluation firing rate below $10^{-3}$
 (Appendix~\ref{app:readout-factorizer-sweeps}). Width multipliers are
-relative to $d_{\mathrm{model}}=2048$.}
+relative to $\dmodel$, $2048$ for Qwen3.5-2B and $1024$ for
+Qwen3.5-0.8B. The dead and rare rates are the quantities at issue in
+these rows, and rowEV, which is not what disqualifies a budget here, is
+entered as~--- where the run artifact does not carry it.}
 \label{tab:app-low-k-dead-features}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.08}
-\begin{tabular}{@{}lcccccc@{}}
+\begin{tabular}{@{}llcccccc@{}}
 \toprule
-Setting & Seeds & Dead & Rare & rowEV & top1 & KL \\
+Model & Setting & Seeds & Dead & Rare & rowEV & top-1 & KL \\
 \midrule
-16$\times$ ($D=32768$), $k=64$ & 2 & $0.491$--$0.512$ & $0.632$--$0.645$ & $0.683$--$0.684$ & $0.783$--$0.816$ & $0.367$--$0.370$ \\
-16$\times$ ($D=32768$), $k=256$ & 2 & $0.036$--$0.037$ & $0.213$--$0.218$ & $0.801$ & $0.807$--$0.848$ & $0.226$--$0.243$ \\
-32$\times$ ($D=65536$), $k=128$ & 3 & $0.336$--$0.352$ & $0.628$--$0.637$ & $0.769$--$0.771$ & $0.816$--$0.826$ & $0.241$--$0.253$ \\
+Q-2B & 16$\times$ ($D=32768$), $k=32$ & 1 & $0.694$ & $0.776$ & --- & $0.766$ & $0.476$ \\
+Q-2B & 16$\times$ ($D=32768$), $k=64$ & 2 & $0.491$--$0.512$ & $0.632$--$0.645$ & $0.683$--$0.684$ & $0.783$--$0.816$ & $0.367$--$0.370$ \\
+Q-2B & 16$\times$ ($D=32768$), $k=256$ & 2 & $0.036$--$0.037$ & $0.213$--$0.218$ & $0.801$ & $0.807$--$0.848$ & $0.226$--$0.243$ \\
+Q-2B & 32$\times$ ($D=65536$), $k=128$ & 3 & $0.336$--$0.352$ & $0.628$--$0.637$ & $0.769$--$0.771$ & $0.816$--$0.826$ & $0.241$--$0.253$ \\
+\midrule
+Q-0.8B & 16$\times$ ($D=16384$), $k=32$ & 1 & $0.641$ & $0.687$ & --- & $0.771$ & $0.434$ \\
+Q-0.8B & 16$\times$ ($D=16384$), $k=64$ & 1 & $0.317$ & $0.412$ & --- & $0.801$ & $0.296$ \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-At matched width, lowering the budget does not buy a sparser usable
-dictionary; it strands capacity. Going from $k=256$ to $k=64$ at
+At matched width, lowering the budget strands capacity. Going from $k=256$ to $k=64$ at
 16$\times$ raises the dead-feature rate from under $4\%$ to about half
 the dictionary ($0.491$--$0.512$), while reconstruction and replacement
 both degrade (rowEV $0.80\rightarrow0.68$, KL
-$0.23\rightarrow0.37$). The comparison is between budgets at a fixed
-width: the $k=128$ rows sit at twice the width, where the same budget
+$0.23\rightarrow0.37$). Halving the budget again strands two thirds of
+the dictionary ($0.694$ at $k=32$), and Qwen3.5-0.8B repeats the
+progression at its own 16$\times$ width ($0.317$ at $k=64$, $0.641$ at
+$k=32$), so the pattern is not specific to one model.
+The comparison is between budgets at a fixed
+width, since the $k=128$ rows sit at twice the width, where the same budget
 leaves about a third of the dictionary dead. What governs usage is the
-budget relative to width rather than $k$ alone, which is why we report
+budget relative to width, which is why we report
 sparsity as $k/D$ and as the number of features a score actually
-recruits (\Cref{app:readout-factorizer-operating-point-claims}). Seed
+recruits (Appendix~\ref{app:readout-factorizer-operating-point-claims}). Seed
 spread at each setting is small compared with the differences between
 settings, so the ordering does not depend on the seed.
 
@@ -257,30 +270,34 @@ settings, so the ordering does not depend on the seed.
 \label{app:readout-factorizer-operating-point-claims}
 
 The final presentation uses two native operating regimes. The
-strict-budget readout uses native $k=128$ readout SAEs for fixed-budget
-comparability; after recipe transfer, the selected strict-budget reconstruction
+strict budget readout uses native $k=128$ readout SAEs for fixed-budget
+comparability, and after recipe transfer the selected strict budget reconstruction
 point is Qwen3.5-0.8B 16$\times$
 (Appendix~\ref{app:readout-factorizer-small-model-transfer}). The
-high-fidelity readout uses native $k=256$ readout SAEs when readout
-accuracy is the limiting concern. On Qwen3.5-9B, the 16$\times$, $k=256$ run is
-a compact fidelity comparison point with rowEV
-$0.761$, top1 $0.874$, KL $0.167$, and rare $0.061$; the 32$\times$, $k=256$
-run is the high-capacity Qwen3.5-9B fidelity point with rowEV $0.857$, top1
-$0.900$, KL $0.105$, and rare $0.292$.
+high fidelity readout uses native $k=256$ readout SAEs when readout
+accuracy is the limiting concern. On Qwen3.5-9B the reported point is the
+32$\times$, $k=256$ run, with rowEV $0.857$, top-1 $0.900$, KL $0.105$, and
+rare $0.292$, and every 9B number in the main text comes from it. The
+16$\times$, $k=256$ run is retained as a compact comparison, with rowEV
+$0.761$, top-1 $0.874$, KL $0.167$, and rare $0.061$.
 
-\paragraph{How sparse are these operating points?}
+\paragraph{Sparsity of the operating points.}
 Activation SAEs are often reported at smaller absolute $k$, but $k$ is
 comparable across dictionaries only relative to width. At $D=65{,}536$,
 $k=128$ and $k=256$ activate $0.20\%$ and $0.39\%$ of the dictionary per
 row. What a reader inspects is sparser still, because a selected score
-concentrates its mass on a few features: across the six gated models, a
+concentrates its mass on a few features. Across the six softcap-free
+readouts, a
 median of $65$--$107$ features carries $80\%$ of a score's absolute
 contribution mass ($76$ on the display model), against dictionaries of
-tens of thousands. The two operating points therefore differ in budget,
-not in regime: $k=128$ is the stricter interpretability budget and
-$k=256$ prioritizes reconstruction fidelity. Budgets below this range
-are not simply sparser: they leave much of the dictionary unused
-(Appendix~\ref{app:readout-factorizer-low-k}).
+tens of thousands. The two operating points therefore differ only in
+budget, with $k=128$ the stricter interpretability budget and
+$k=256$ prioritizing reconstruction fidelity. Budgets below this range
+are not simply sparser, since they leave much of the dictionary unused
+(Appendix~\ref{app:readout-factorizer-low-k}). Truncating a $k=256$
+dictionary back to $k=128$ after training does not substitute for the
+native recipe, since it can raise rowEV while sharply reducing top-1
+agreement (Figure~\ref{fig:app-k-truncation-inversion}).
 
 \begin{figure}[!tbp]
     \centering

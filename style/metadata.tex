@@ -1,7 +1,43 @@
-\title{Sparse Readout Prism: Readout Features as an Alternative Unit for Interpreting Vocabulary Lenses}
+% The prism icon (figures/schematic_tikz/prism_icon.tex, the Figure 2 prism)
+% sits left of the two-line block; tabular[c] + \raisebox{-0.5\height} center
+% the pair vertically. The break moved up one word from the pre-icon version
+% ("... Logit-Lens Scores \\ in Features ...") because the icon leaves only
+% ~370pt for the first line in the preprint panel. PDF metadata is unaffected:
+% pdftitle is set as a plain string in style/preamble.tex.
+% Icon metrics are tuned to the rendered title: 1.95em tall places the prism
+% apex at the cap height of line 1 and its base on the baseline of line 2;
+% the -0.6em raise compensates for tabular[c] centering the text block on
+% the math axis rather than the baseline. Re-tune if the title text changes.
+\title{\raisebox{-0.6em}{\includegraphics[height=1.95em]{figures/schematic_tikz/prism_icon.pdf}}%
+       \hspace{0.55em}%
+       \begin{tabular}[c]{@{}l@{}}
+         Sparse Readout Prism: Explaining Logit-Lens \\
+         Scores in Features Instead of Tokens
+       \end{tabular}}
+
+% Preprint front-panel metadata, used only by the \ifpreprintmode abstract
+% panel in style/preamble.tex. The correspondence line replaces the \dag
+% corresponding-author marker there.
+\newcommand{\preprintauthorline}{Matteo He, William F.\ Shen,
+  Xinchi Qiu, Nicholas D.\ Lane}
+\newcommand{\preprintaffiliation}{Department of Computer Science and Technology,
+  University of Cambridge}
+\newcommand{\preprintemail}{mh2274@cam.ac.uk}
+% Artifact links for the front-panel metadata strip (preprint only). The same
+% URLs appear in the Limitations section and the reproducibility appendix.
+\newcommand{\preprintcodelink}{\href{https://github.com/hematteo/sparse-readout-prism}{\texttt{github.com/hematteo/sparse-readout-prism}}}
+\newcommand{\preprintdictlink}{\href{https://huggingface.co/hematteo/sparse-readout-prism}{\texttt{huggingface.co/hematteo/sparse-readout-prism}}}
+% Logos shown at the right of the correspondence line.
+\newcommand{\preprintlogos}{\includegraphics[height=30pt]{logos/cambridge_crest}}
+
+% One centred block rather than acl.sty's \And columns: \And spreads the four
+% names across \linewidth and leaves nowhere to hang a shared affiliation.
+% Rows after the first drop back to the regular weight (the \bfseries in
+% \outauthor is scoped to the first cell). The [review] build replaces this
+% whole block with "Anonymous ACL submission".
 \author{
-  Matteo He\textsuperscript{\dag} \And
-  William F. Shen \And
-  Xinchi Qiu\textsuperscript{*} \And
-  Nicholas D. Lane
+  Matteo He\textsuperscript{\dag} \qquad William F. Shen \qquad
+  Xinchi Qiu\textsuperscript{\ddag} \qquad Nicholas D. Lane \\[10pt]
+  \normalsize Department of Computer Science and Technology \\[1pt]
+  \normalsize University of Cambridge
 }

@@ -2,7 +2,7 @@
 \label{app:extended-discussion-limitations}
 
 This appendix expands the discussion and future-work map. It covers
-selected-score scope, relation to activation SAEs, cross-family interpretation,
+the scope of selected scores, relation to activation SAEs, cross-family interpretation,
 DLA composition, and possible extensions.
 
 \subsection{What Sparse Readout Prism Decomposes}
@@ -10,17 +10,17 @@ DLA composition, and possible extensions.
 
 \paragraph{Selected readout score.}
 Each local score decomposition selects one scalar
-\(s_q(h)=h^\top q\). This may be a selected vocabulary logit, a specified
-pairwise logit difference, a group contrast, a vocabulary-mean contrast, or a
-top-competitor margin. The hidden state's readout feature projection vector
-\(\{h^\top d_i\}_i\) is available before selecting such a score; support for a
-particular token or contrast becomes defined only after that vector is combined
-with the direction coefficients \(\beta_i(q)\). Distribution-wide decompositions
+\(s_\alpha(\rstate)=\rstate^\top q_\alpha\). This may be a selected vocabulary logit, a specified
+pairwise logit difference, a group contrast, a vocabulary mean contrast, or a
+top competitor margin. The readout feature projections
+\(p_i(\rstate)=\rstate^\top d_i\) are available before selecting such a score, and support for a
+particular token or contrast becomes defined only after they are combined
+with the direction coefficients \(\beta_i(\alpha)\). Distribution-wide decompositions
 therefore require measuring reconstruction over the relevant vocabulary slice or
 token group. This distinction matters because a token can be supported above a
 reference while still losing to a named alternative or a group contrast, and a
 top-1 token can have only a small margin over top-ranked competitors. Reference
-contrasts, pairwise logit differences, group contrasts, and top-competitor
+contrasts, pairwise logit differences, group contrasts, and top competitor
 margins therefore define distinct selected readout scores.
 
 \paragraph{Local score decomposition.}
@@ -41,30 +41,24 @@ distribution of hidden states
 \citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling}. Sparse
 Readout Prism learns sparse codes for rows of the unembedding matrix \(\WU\).
 The learned dictionary features are therefore readout directions used by token
-rows, not hidden-state features discovered from model activations.
+rows.
 
 \paragraph{Context dependence.}
-The hidden state enters after the readout SAE has been learned. A feature
-contributes to a selected readout score when two quantities align: the selected
-readout direction uses that SAE
-feature through its sparse row coefficients, and the current hidden state has a
+The decoded state enters after the readout SAE has been learned. A feature
+contributes to a selected readout score when two conditions hold together. The selected
+readout direction must use that SAE
+feature through its sparse row coefficients, and the current decoded state must have a
 large dot product with the corresponding decoder direction. Hence the same
-token row can have different dominant feature contributions across contexts:
-the row coefficients are fixed, while the projection terms
-\(h^\top d_i\) change with the hidden state.
-
-\paragraph{Label status.}
-SAE feature labels summarize tokens whose unembedding rows use a dictionary
-feature strongly. They are row-level descriptors for the local score decomposition;
-feature ids, signed contributions, and reconstruction errors remain the measured
-objects of analysis.
+token row can have different dominant feature contributions across contexts,
+since the row coefficients are fixed while the projection terms
+\(\rstate^\top d_i\) change with the state being decoded.
 
 \subsection{Model-Family Results}
 \label{app:extended-discussion-cross-family}
 
 \paragraph{Qwen evidence.}
 Across Qwen sizes, the selected dictionary settings preserve held-out signed
-readout scores and readout-distribution behavior on hidden states with reconstruction errors
+readout scores and readout-distribution behavior on decoded states with reconstruction errors
 small enough to support the reported local score decompositions. These rows provide
 the fixed display setting and Qwen-family companion analyses used for most
 qualitative figures.
@@ -72,23 +66,23 @@ qualitative figures.
 \paragraph{Additional families.}
 The additional model-family rows report the same metric suite under
 different tokenizer, readout, and post-training conditions. They separate row
-reconstruction, LM-head replacement, and selected-score reconstruction; the
-paper reports all three before interpreting feature contributions.
+reconstruction, LM head replacement, and reconstruction of selected scores, and the
+paper reports all three beside its feature contributions.
 
 \subsection{Feature-Resolved DLA}
 \label{app:extended-discussion-prism-dla}
 
 \paragraph{Readout versus components.}
-Readout-side and component-side analyses answer different questions. The SRP
-decomposition asks which unembedding-side SAE terms score a selected logit or contrast;
-component-level attribution asks which residual-stream components project onto
+Analyses on the readout side and the component side answer different questions. The SRP
+decomposition asks which SAE terms on the unembedding side score a selected logit or contrast,
+while component-level attribution asks which residual-stream components project onto
 the selected readout direction in the realized forward pass.
 
 \paragraph{Residual terms.}
 Combining the two views yields additive component-by-feature terms. The
 analysis reports both the DLA additivity error for the selected readout score
 and the readout SAE reconstruction error left outside the displayed feature
-terms. Interventions are the natural next step for circuit-level claims.
+terms.
 
 \subsection{Future Work}
 \label{app:extended-discussion-future-work}
@@ -99,22 +93,22 @@ cross-model feature-alignment analyses, distributional decompositions of local
 top-\(k\) frontiers, and broader model-family sweeps. The basis also
 extends to the effective linear readouts used by tuned lenses,
 logit-prism variants, and future-token lenses, so lens methods can be
-compared by sparse signed feature terms as well as decoded tokens;
-SRP-nominated terms give targets for causal patching, ablation, and
+compared by sparse signed feature terms as well as decoded tokens, and
+terms nominated by SRP give targets for causal patching, ablation, and
 generation-level evaluation. A further extension factorizes both sides
 of a selected margin at once, pairing an activation dictionary for
-\(h\) with the readout SAE for \(q\), so that each term records
-the alignment between an activation-side and a readout-side feature. All
-depend on the reliability condition used in the main text: feature terms
-are read when the selected readout score has a small reported residual.
+\(h_\ell\) with the readout SAE for \(q\), so that each term records
+the alignment between a feature on the activation side and one on the readout side. All
+depend on the fidelity diagnostics used in the main text, with feature
+terms read against the reported residual of the selected readout score.
 
 \paragraph{Residual-stream census.}
-SRP also measures what is readout-readable before a hidden state is reduced
-to a single score. The projection vector \(p_i=h^\top d_i\) can be broad,
-while the selected readout direction \(q\) selects the terms \(\beta_i(q)p_i\).
+SRP also exposes what the readout can express before a decoded state is reduced
+to a single score. The readout feature projections \(p_i(\rstate)\) can be spread widely,
+while the selected coefficients \(\alpha\) select the terms \(\beta_i(\alpha)\,p_i(\rstate)\).
 Future work could quantify projection mass used by the selected readout score, assigned to
 competitors, or active but unused. The unused category is local to the
-selected readout score; it may support alternative tokens, later positions, or other
+selected readout score, and it may support alternative tokens, later positions, or other
 computations. Comparing the split across layers, ambiguous prompts, and
 incorrect generations could test whether models carry broad task state beyond
 the immediate readout decision.

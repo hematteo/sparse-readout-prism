@@ -1,64 +1,70 @@
-\section{Feature-Resolved DLA}
+\section{Feature-Resolved Direct Logit Attribution}
 \label{app:feature-resolved-dla}
 
-\Cref{sec:feature-resolved-component-decomposition} uses Sparse Readout Prism
-terms inside ordinary direct-logit-attribution decomposition as an additive
-decomposition identity
-\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}. This appendix
-states the identity. For a selected readout direction
-\(q=\sum_t \alpha_t w_t\), let \(m_\alpha=\sum_t\alpha_t\) and
-\(r_q=\sum_t\alpha_t r_t\). Sparse Readout Prism gives
+Sparse Readout Prism terms sit inside ordinary direct logit attribution as
+an additive identity
+\citep{elhage2021framework,wang2022ioi,nguyen2024logitprisms}, the
+composition \S\ref{sec:results} points to. This appendix states that
+identity and gives the worked case. Direct logit attribution splits a
+margin across layers and SRP splits it across features, so composing the
+two resolves each layer's contribution into one term per feature, and the
+basis that says which structure a margin recruits also says which layer
+supplies it. For a selected readout direction
+\(q_\alpha=\sum_v \alpha_v w_v\), let
+\(r_\alpha=\sum_v\alpha_v r_v\). Sparse Readout Prism gives
 \[
-    q = m_\alpha\mu+\sum_i \beta_i(q)d_i + r_q ,
+    q_\alpha = \Big(\sum_v\alpha_v\Big)\mu+\sum_i \beta_i(\alpha)d_i + r_\alpha ,
 \]
-where \(d_i\) is an SAE decoder direction and \(r_q\) is the readout
+where \(d_i\) is an SAE decoder direction and \(r_\alpha\) is the readout
 reconstruction residual for the selected readout score. The displayed scores
-below are zero-sum vocabulary-mean or token-token contrasts, so \(m_\alpha=0\)
-and the offset term cancels; raw token logits would retain it. At a hidden state \(h\),
+below are zero-sum vocabulary mean or token-token contrasts, so \(\sum_v\alpha_v=0\)
+and the offset term cancels, where raw token logits would retain it. At the
+final decoded state \(\rstateL\),
 \[
-    h^\top q
+    \rstateL^\top q_\alpha
     =
-    m_\alpha h^\top\mu
+    \Big(\sum_v\alpha_v\Big) \rstateL^\top\mu
     +
-    \sum_i \beta_i(q)h^\top d_i
+    \sum_i \beta_i(\alpha)\rstateL^\top d_i
     +
-    h^\top r_q .
+    \rstateL^\top r_\alpha .
 \]
 Under the fixed final-normalization convention used for DLA, decompose
-\(h\approx\sum_c h_c\). The component offset, SAE feature, and residual terms
+\(\rstateL\approx\sum_j \tilde h_{L,j}\), indexing residual-stream
+components by \(j\). The component offset, SAE
+feature, and residual terms
 are
 \[
     \begin{aligned}
-    O_c(q)&=m_\alpha\,h_c^\top\mu,\\
-    M_{c,i}(q)&=\beta_i(q)\,h_c^\top d_i,\\
-    R_c(q)&=h_c^\top r_q .
+    O_j(\alpha)&=\Big(\textstyle\sum_v\alpha_v\Big)\tilde h_{L,j}^\top\mu,\\
+    M_{j,i}(\alpha)&=\beta_i(\alpha)\,\tilde h_{L,j}^\top d_i,\\
+    R_j(\alpha)&=\tilde h_{L,j}^\top r_\alpha .
     \end{aligned}
 \]
-For the zero-sum contrasts used in the figures, \(O_c(q)=0\). We therefore report
-two separate gaps: the DLA additivity error between \(h^\top q\) and
-\(\sum_c h_c^\top q\), and the readout SAE residual \(h^\top r_q\) (or its
-componentized version \(\sum_c R_c(q)\) under the same DLA approximation).
-Because these identity checks sit on well-separated margins, the relative
-residuals quoted in this appendix and in the corresponding main-text
-paragraph are the unfloored ratio \(\tilde\rho\)
+For the zero-sum contrasts used in the figures, \(O_j(\alpha)=0\). We therefore report
+two separate gaps, the DLA additivity error between \(\rstateL^\top q_\alpha\) and
+\(\sum_j \tilde h_{L,j}^\top q_\alpha\), and the readout SAE residual
+\(\rstateL^\top r_\alpha\) (or its
+componentized version \(\sum_j R_j(\alpha)\) under the same DLA approximation).
+Because these identity checks sit on well-separated margins, every relative
+residual quoted below is the unfloored ratio \(\rho_0\)
 (\S\ref{sec:method-reading-local-accounts}), computed on full-precision
 margins before display rounding.
-The difference between \(h^\top q\) and a componentized feature-only sum
-\(\sum_{c,i}M_{c,i}(q)\) contains both sources unless the residual and DLA
+The difference between \(\rstateL^\top q_\alpha\) and a componentized feature-only sum
+\(\sum_{j,i}M_{j,i}(\alpha)\) contains both sources unless the residual and DLA
 additivity terms are included separately.
 
 The main display uses the pairwise logit difference
-\(q=w_{\mathrm{verify}}-w_{\mathrm{assume}}\), for which
-\(\beta_i(q)=z_{\mathrm{verify},i}-z_{\mathrm{assume},i}\). The same identity
-also covers the vocabulary-mean contrast \(q=w_{\mathrm{verify}}-\bar{w}\),
-which decomposes one resolved token's readout above the vocabulary-mean row
+\(q_\alpha=w_{\mathrm{verify}}-w_{\mathrm{assume}}\), for which
+\(\beta_i(\alpha)=z_{\mathrm{verify},i}-z_{\mathrm{assume},i}\). The same identity
+also covers the vocabulary mean contrast \(q_\alpha=w_{\mathrm{verify}}-\bar{w}_{\mathcal{V}}\),
+which decomposes one resolved token's readout above the vocabulary mean row
 across residual-stream components. The component view is an additive
-decomposition over a realized forward pass; separate interventions complement
-it for circuit analysis \citep{geiger2023causalabstraction}.
+decomposition over a realized forward pass.
 
-\Cref{fig:qwen-prism-dla-verify-assume-main} shows the grouped-semantics
-view of the \texttt{verify}-minus-\texttt{assume} margin discussed in the
-main text.
+\Cref{fig:qwen-prism-dla-verify-assume-main} shows the
+\texttt{verify}-minus-\texttt{assume} margin discussed in the main text,
+grouped by semantics.
 
 \begin{figure}[!tbp]
     \centering
@@ -67,21 +73,40 @@ main text.
     Qwen3.5-2B \texttt{verify}-\texttt{assume} margin on the
     source-verification prompt (``The source has not been checked yet. The
     appropriate next action is to''). Rows are embedding and
-    per-layer post-norm contributions; columns group verify/check, assume,
-    other sparse, LM-head residual, and ordinary DLA terms. Red supports
-    \texttt{verify}; blue supports \texttt{assume}.}
+    per-layer post-norm contributions, and columns group verify/check, assume,
+    other sparse, LM head residual, and ordinary DLA terms. Red supports
+    \texttt{verify} and blue supports \texttt{assume}.}
     \label{fig:qwen-prism-dla-verify-assume-main}
 \end{figure}
 
+\Cref{fig:prism-dla-component-bars} gives the per-component view of the
+same margin, with each component's readout feature terms stacked against
+ordinary direct logit attribution for that component.
+
+\begin{figure*}[!tbp]
+    \centering
+    \AppendixWideGraphic[height=0.26\textheight]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_component_bars.pdf}
+    \caption{\textbf{Component attribution resolved by readout feature.}
+    The \texttt{verify}-minus-\texttt{assume} margin on the
+    source-verification prompt for Qwen3.5-2B, decomposed across
+    residual-stream components (embedding and layers 0--23). Each bar
+    stacks that component's readout feature terms with its LM head
+    reconstruction residual, and black points mark ordinary direct logit
+    attribution for the same component, which the stacked terms track.
+    Verification mass concentrates in the later layers.}
+    \label{fig:prism-dla-component-bars}
+\end{figure*}
+
 \Cref{fig:qwen-prism-dla-feature-heatmap} resolves the
 \texttt{verify}-minus-\texttt{assume} margin to individual readout features
-across residual-stream stages, rather than to the grouped semantics of
-\Cref{fig:qwen-prism-dla-verify-assume-main}. The margin is carried by several distinct same-family
-directions rather than a single one: verification and checking features supply
+across residual-stream stages, where
+\Cref{fig:qwen-prism-dla-verify-assume-main} groups them by semantics.
+The margin is carried by several distinct same-family
+directions, where verification and checking features supply
 the positive mass, concentrated in the later layers, against a smaller
 assumption-family group. The exact margin is \(+4.31\), the component
 attribution sum is \(+4.36\), and the sparse feature sum is \(+4.28\), with
-relative residual \(\rho=0.009\).
+relative residual \(\rho_0=0.009\).
 
 \begin{figure*}[!tbp]
     \centering
@@ -89,18 +114,18 @@ relative residual \(\rho=0.009\).
     \caption{\textbf{Feature-resolved component accounting.}
     The \texttt{verify}-minus-\texttt{assume} margin decomposed by
     residual-stream stage (rows) against individual sparse readout features
-    (columns) for Qwen3.5-2B. Red cells support \texttt{verify}; blue cells
+    (columns) for Qwen3.5-2B. Red cells support \texttt{verify} and blue cells
     support \texttt{assume}. The contrast is distributed over several
     same-family feature directions, with the leading verification feature
-    (f25948) dominant in the later layers (L18--23). Exact margin \(+4.31\);
-    component attribution sum \(+4.36\); sparse feature sum \(+4.28\); relative
-    residual \(\rho=0.009\).}
+    (f25948) dominant in the later layers (L18--23). Exact margin \(+4.31\),
+    component attribution sum \(+4.36\), sparse feature sum \(+4.28\), relative
+    residual \(\rho_0=0.009\).}
     \label{fig:qwen-prism-dla-feature-heatmap}
 \end{figure*}
 
-\Cref{fig:qwen-prism-dla-verify-token-app} shows the vocabulary-mean contrast
-version. The prompt is the same source-verification prompt; the selected
-score is \(h^\top(w_{\mathrm{verify}}-\bar{w})\), whereas the main figure
+\Cref{fig:qwen-prism-dla-verify-token-app} shows the vocabulary mean contrast
+version. The prompt is the same source-verification prompt, and the selected
+score is \(\rstateL^\top(w_{\mathrm{verify}}-\bar{w}_{\mathcal{V}})\), whereas the main figure
 uses the token-token logit difference.
 
 \begin{figure*}[!tbp]
@@ -108,34 +133,33 @@ uses the token-token logit difference.
     \AppendixWideGraphic[height=0.34\textheight]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_token/qwen2b_32x_prism_dla_verify_token_layer_readout.pdf}
     \caption{\textbf{Vocabulary-mean contrast component attribution.}
     Vocabulary-mean \texttt{verify} contrast
-    \(h^\top(w_{\mathrm{verify}}-\bar{w})\) for the source-verification prompt,
+    \(\rstateL^\top(w_{\mathrm{verify}}-\bar{w}_{\mathcal{V}})\) for the source-verification prompt,
     decomposed by residual-stream component. Each row stacks readout terms grouped into
     verification/checking features, remaining sparse features, and the
-    unembedding reconstruction error term; black points mark ordinary direct logit
-    attribution for that residual-stream component. The vocabulary-mean contrast is
+    unembedding reconstruction error term, and black points mark ordinary direct logit
+    attribution for that residual-stream component. The vocabulary mean contrast is
     \(+17.34\), the component DLA sum is \(+17.34\), and the sparse
     SAE feature sum is \(+17.43\), with relative reconstruction error \(0.005\).}
     \label{fig:qwen-prism-dla-verify-token-app}
 \end{figure*}
 
 \Cref{fig:qwen-prism-dla-verify-assume-app} is the pairwise companion to the
-vocabulary-mean view above, adding the \texttt{assume} side of the contrast
+vocabulary mean view above, adding the \texttt{assume} side of the contrast
 so that verification/checking and assumption-family terms appear on the same
 component axis.
 
 \begin{figure*}[!tbp]
     \centering
     \AppendixWideGraphic[height=0.34\textheight]{figures/proto_token_lens/qwen2b_32x_prism_dla_verify_assume/qwen2b_32x_prism_dla_layer_semantics.pdf}
-    \caption{\textbf{Pairwise logit-difference DLA by SAE feature.}
+    \caption{\textbf{Pairwise logit difference DLA by SAE feature.}
     \texttt{verify}-minus-\texttt{assume} logit difference for the
     source-verification prompt, decomposed by residual-stream component. Each row stacks sparse
     readout terms grouped into verification/checking features, assumption
-    features, remaining sparse features, and the unembedding reconstruction error term;
-    black points mark ordinary direct logit attribution for that residual-stream
-    component. Positive terms support \texttt{verify} over \texttt{assume};
+    features, remaining sparse features, and the unembedding reconstruction error term,
+    and black points mark ordinary direct logit attribution for that residual-stream
+    component. Positive terms support \texttt{verify} over \texttt{assume}, and
     negative terms support \texttt{assume}. The exact logit difference is \(+4.31\), the
     component DLA sum is \(+4.36\), and the sparse SAE feature sum is
     \(+4.28\), with relative reconstruction error \(0.009\).}
     \label{fig:qwen-prism-dla-verify-assume-app}
 \end{figure*}
-

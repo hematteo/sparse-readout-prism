@@ -24,10 +24,12 @@ re-verified against the underlying result artifacts.
 | Define contrast/readout early | *Readout*, *readout score*, and *contrast* are defined in the first paragraph of the Introduction and used consistently throughout. |
 
 One clarification: the metareview summarized the headline metric as "90% of
-the variance of the observations." The paper's headline metrics are sign
-agreement (≥0.91 across the suite) and sign-preserved low-error coverage
-(0.72–0.81 on the six gated models); we have made both unmissable in the
-abstract and Table 1/2 captions.
+the variance of the observations." The abstract's 0.83–0.89 is explained
+variance on the *unembedding rows*, a row-reconstruction quantity, not
+variance explained on the observations. The score-level metrics are sign
+agreement (≥0.91 across the suite), reported in §3, and sign-preserved
+low-error coverage (0.72–0.81 on the six gated models), reported in §3 and
+the Table 1 caption.
 
 ## Structural changes
 
@@ -60,7 +62,7 @@ abstract and Table 1/2 captions.
 | Direct W_U clustering/kNN might match (e1hF W1) | Table 2 + grouping recovery above; capacity-matched k-means (same D, k) included. |
 | Seed stability of explanations (e1hF W2) | §3 stability paragraph + Appendix I: 100% of contrasts reproduce above the null's p90 at both widths; 87–91% of used feature groups have counterparts; instability is feature splitting; claims scoped within-recipe with cross-recipe variation disclosed. |
 | Edit controls at matched KL (e1hF W3) | §3: SRP beats mean-row and PCA controls at every matched KL on Qwen3.5-2B (12/12 paired, significant); 0.8B/9B losses printed; both candidate explanations reported as tested and rejected (Appendix N). |
-| k=128/256 not sparse enough (e1hF) | Appendix E.3 (new): retraining Qwen3.5-2B at k=64 under an identical recipe leaves 49–51% of the dictionary dead against 3.6–3.7% at k=256 and matched width, with rowEV and KL both worse; E.4 adds the fraction-active framing (k=128/256 = 0.20%/0.39% of a D=65,536 dictionary; a median of 65–107 features carries 80% of a score's contribution mass). |
+| k=128/256 not sparse enough (e1hF) | Appendix D.3 (new): retraining Qwen3.5-2B at k=64 under an identical recipe leaves 49–51% of the dictionary dead against 3.6–3.7% at k=256 and matched width, with rowEV and KL both worse, and k=32 strands 69%; Qwen3.5-0.8B repeats the progression at its own 16× width (32% at k=64, 64% at k=32); D.4 adds the fraction-active framing (k=128/256 = 0.20%/0.39% of a D=65,536 dictionary; a median of 65–107 features carries 80% of a score's contribution mass). |
 | Label subjectivity / ambiguous labels (pZ3j W2) | Blinded three-run audit, κ=0.87, 93.4% unanimity; 76/99 coherent, 19 token-form, 4 mixed; 81.8% agreement with the author audit; protocol in Appendix L. |
 | Hyperparameter sensitivity (pZ3j W3) | Two widths × three seeds throughout the stability analyses + Appendix E. |
 | Median hides tails (j4yY Q7) | Appendix H.4: mean, p95, and maximum absolute error for SRP and all six direct-geometry alternatives, plus a margin-stratified table; one-sentence pointer in §3. |
@@ -72,6 +74,22 @@ abstract and Table 1/2 captions.
 
 - The cross-lens study was completed to its pre-registered scope (80 prompts,
   7 families, controls) and written up in full (§4, Appendix K).
+- The study was extended along two further axes after the discussion phase.
+  A second language pair (English–German, same-script, cognates excluded at
+  normalized edit distance ≤ 2) and a second fitted-lens family (per-layer
+  ridge translators in the tuned-lens style) each reproduce both halves of
+  the result; holding the corpus fixed and varying only the construction
+  leaves the dominant feature in place on 76/80 with no language flip in any
+  family.
+- Fitting-corpus size was added as a third axis. Refitting the English,
+  Chinese, and German Jacobian lenses at 300 prompts (from 100, identical
+  recipe and seeded pools) reproduces the English–Chinese agreement prompt
+  for prompt at 77/80 and gives 85/90 on English–German, with unchanged null
+  floors. Surface divergence does shift with fitting scale, and in opposite
+  directions for the two pairs (English–Chinese 39/80 → 33/80, including the
+  factual-recall figure 9/10 → 8/10; English–German 73/90 → 76/90). The
+  manuscript reports the 100-prompt study as primary and the 300-prompt
+  refit as a corpus-size control, with both divergence figures stated.
 - Compute/hardware and pinned package versions added (Appendix G),
   addressing the two unchecked reproducibility-checklist items.
 - Code, trained dictionaries, contrast banks, and the audit protocol
@@ -84,10 +102,23 @@ and we flag them rather than leave the difference for a reader of the
 thread to find.
 
 - **Low-sparsity retraining.** The response reported dead-feature rates
-  at `k ∈ {32, 64}` on Qwen3.5-0.8B and Qwen3.5-2B. Only the `k=64` /
-  Qwen3.5-2B cells were run under the stated recipe. Appendix E.3
-  reports those measured cells and nothing else; the `k=32` and 0.8B
-  figures should be disregarded.
+  at `k ∈ {32, 64}` on Qwen3.5-0.8B and Qwen3.5-2B. All four cells were
+  run (job 52341, 2026-07-12) and every posted figure reproduces exactly,
+  but the manuscript's low-k table currently reports only the three
+  Qwen3.5-2B grid cells, so the 0.8B rows and both `k=32` rows have no
+  counterpart in the paper as it stands. **Decision pending:** either add
+  the four cells to the low-k table (they are one seed each and carry no
+  rowEV) or note in this section that they are omitted. See
+  `REBUTTAL_RESULTS.md` §4c-bis.
+- **Cross-seed stability metric.** The response reported that a contrast's
+  explanation reproduces across seeds at "cosine 0.74--0.79, vs ≈0.02
+  between unrelated contrasts." The stability harness measures same-side
+  token-set Jaccard, not a cosine, and the measured values are 0.214
+  (32×) and 0.240 (16×) against cross-contrast nulls of 0.014 and 0.018 —
+  every contrast above the null's p90 at both widths. This revision
+  reports the Jaccard framing throughout (§3, Appendix I). The
+  0.74--0.79 figure has no artifact behind it and should be disregarded.
+
 - **Grouping recovery** is reported here under the leave-one-out
   construction (Appendix I.3), which supersedes the held-out-dictionary
   numbers quoted in the response. Appendix I.4 additionally discloses
@@ -109,12 +140,16 @@ agreement are distinct quantities, both correct per the artifact.
 rebuttal's 0.54 / 1.78 / 5.0 table is the Qwen3.5-2B row of that same
 artifact and reproduces exactly.
 
-The sparsity grid behind Appendix E.3 was recovered from the cluster on
-2026-08-02 (`pz3j_hparam_grid_20260712`, run 12 Jul, never synced);
-metrics logged in `REBUTTAL_RESULTS.md` §4c. Note the mismatch recorded
-there: the posted replies claimed k ∈ {32,64} on Qwen3.5-0.8B **and**
-2B, but only the k=64 / 2B cells were ever run. The manuscript reports
-only the measured cells, so nothing unsupported is in the paper — but a
-reviewer rereading the thread may notice the k=32 claim has no
-counterpart. Either run k=32 (2 seeds ≈ 3 A40-hours under the same
-recipe) or leave it; do not restate the 64–69% figure.
+The sparsity grid behind the low-k table was recovered from the cluster
+on 2026-08-02 (`pz3j_hparam_grid_20260712`, run 12 Jul, never synced);
+metrics logged in `REBUTTAL_RESULTS.md` §4c.
+
+2026-08-04: the mismatch previously recorded here — that the posted
+k ∈ {32,64} claims on Qwen3.5-0.8B and 2B were never run — **was a search
+error and is withdrawn.** Job 52341 ran all four cells on 2026-07-12 and
+wrote its results to `logs/`, not `results/`, which is why a
+results-directory sweep missed them. Dead-feature rates are 0.6411 (0.8B,
+k=32), 0.6940 (2B, k=32), 0.3170 (0.8B, k=64) and 0.5052 (2B, k=64),
+reproducing the posted "64–69%" and "50.5%" to the digit. The 64–69%
+figure is quotable. Full cells, caveats (one seed, no rowEV) and artifact
+paths: `REBUTTAL_RESULTS.md` §4c-bis.

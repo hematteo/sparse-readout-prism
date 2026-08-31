@@ -1,14 +1,27 @@
 \section{Conclusion}
 
 Sparse Readout Prism offers an alternative unit for interpreting
-vocabulary readouts. Token identity can be too coarse where one token
-draws on several structures and too fine where several tokens share one.
-SRP reconstructs selected scores where direct row geometry does not, and
-it reproduces across independent runs. It also shows what token rankings
-cannot, that differently fitted lenses report different surface
-languages while one readout feature stays dominant. That dependence,
-which we call \emph{corpus conditionality}, is a property of the
-instrument rather than the state. A lens reading should therefore be
-reported with the corpus it was fitted on and the residual it leaves.
-Without that, a working-language claim cannot be told apart from a
-property of the lens.
+lens readings. Token identity is too coarse where one token carries
+several readout features and too fine where several tokens share one.
+SRP covers 8.9 to 17.3 percentage points more of the tested logit
+differences than the strongest of six baselines built on row geometry, and the tokens it
+groups with a contrast reproduce across seeds at 13 to 15 times the
+overlap of unrelated contrasts. It shows what token rankings cannot,
+since lenses fitted on different corpora report different surface
+languages for the same hidden state while the same readout feature
+stays dominant under both. Lens studies therefore gain a reference
+fixed in the weights, one that tells a change in the state apart from
+a change in the instrument.
+
+These features describe the readout itself, complementing sparse
+dictionary methods that decompose hidden states. One row carries
+several senses and one feature spans surface forms and
+scripts, so the organization of a model's output space becomes
+measurable from its weights alone. Projecting a decoded state onto the
+features then shows how the state aligns with that organization layer
+by layer, before any token is read off it. One dictionary per model
+serves every lens and layer, so a reading from any of them decomposes
+into the same terms with no further fitting, and those terms give
+auditing work a control for what the fitting corpus contributed to a
+reading, along with terms for layer-by-layer attribution and candidate
+directions for constrained edits on the readout side.

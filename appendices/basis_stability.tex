@@ -2,29 +2,30 @@
 \label{app:basis-stability}
 
 This appendix documents the reproducibility evidence summarized in
-\S\ref{subsec:stability} and the held-out grouping-recovery comparison
-quoted in \S\ref{subsec:baseline-comparisons}. All experiments use
+\S\ref{subsec:stability}, together with a held-out comparison of the
+grouping structure against row geometry that the main text does not
+report. All experiments use
 Qwen3.5-2B with three dictionaries per width configuration
 (\(32\times\)/\(k{=}256\) and \(16\times\)/\(k{=}128\)), trained from
-scratch with independent initialization, data-order, and sampling seeds;
-held-out reconstruction is verified as equal across seeds (validation
-top-1 agreement 0.805--0.848) before any stability comparison, so
+scratch with independent initialization, data-order, and sampling seeds.
+Held-out reconstruction is equal across seeds (validation
+top-1 agreement 0.805--0.848), so
 differences below are not fidelity artifacts. All statements in this
-appendix are \emph{within-recipe}: seeds vary, while width, sparsity,
-and preprocessing are fixed. Cross-recipe variation is larger and is
+appendix hold within a recipe, meaning seeds vary while width, sparsity,
+and preprocessing are fixed. Variation across recipes is larger and is
 disclosed at the end.
 
 \subsection{Explanation-Level Stability}
 \label{app:basis-stability-explanations}
 
-The unit under test is the decomposition of a selected score: for each
+The unit under test is the decomposition of a selected score. For each
 of 63 curated contrasts (126 signed side-sets), we compare the token
 sets that each seed's decomposition places on each side of the contrast.
 
 \begin{table}[!tbp]
 \caption{\textbf{Cross-seed stability of contrast explanations.}
-Qwen3.5-2B, three seeds per width; means over seed pairs. Same-side
-Jaccard compares side token-sets for the same contrast across seeds; the
+Qwen3.5-2B, three seeds per width, with means over seed pairs. Same-side
+Jaccard compares side token-sets for the same contrast across seeds, and the
 cross-contrast null pairs decompositions of unrelated contrasts through
 the identical pipeline.}
 \label{tab:app-cross-seed-stability}
@@ -52,29 +53,28 @@ seed-dependence of TopK dictionaries at scale
 \citep{paulo2025stability}. Yet every tested contrast reproduces its
 explanation above the null's 90th percentile, at
 \(\sim\)15\(\times\) the null level and with negligible cross-side
-leakage (\Cref{tab:app-cross-seed-stability}). Atom identity is not the
-trustworthy unit of interpretation; the decomposition of a selected
-score is.
+leakage (\Cref{tab:app-cross-seed-stability}). The decomposition of a selected
+score is therefore the trustworthy unit of interpretation.
 
 \subsection{Feature-Group Matching}
 \label{app:basis-stability-groups}
 
 A complementary question is whether the feature-level token groups
 themselves have an equivalent in another seed's dictionary, with indices
-re-shuffled. The protocol was fixed before results: 100 features sampled
-per seed pair from the bank-used set; each feature's group is its top-12
-centered-row token set; the counterpart is the best-Jaccard match over
-the full candidate dictionary; the null passes 500 frequency-matched
+re-shuffled. We sample 100 features
+per seed pair from the bank-used set. Each feature's group is its top-12
+centered-row token set, and the counterpart is the best-Jaccard match over
+the full candidate dictionary. The null passes 500 frequency-matched
 pseudo-groups through the identical best-of-\(D\) search, pricing in the
-inflation of searching 65{,}536 candidates; recall@3 admits a greedy
+inflation of searching 65{,}536 candidates, and recall@3 admits a greedy
 union of at most three candidate features, testing whether instability
 is feature splitting.
 
 \begin{table}[!tbp]
 \caption{\textbf{Cross-seed feature-group matching.} Qwen3.5-2B, ranges
-over the three seed pairs per width. Null: frequency-matched
+over the three seed pairs per width. The null passes frequency-matched
 pseudo-groups through the identical search (best-single Jaccard median
-0.059, p99 \(\approx\) 0.11; recall@3 0.25).}
+0.059, p99 \(\approx\) 0.11, recall@3 0.25).}
 \label{tab:app-feature-group-matching}
 \centering
 \footnotesize
@@ -97,19 +97,19 @@ Matched decoder cosine, \mbox{med / p90} & 0.20--0.26 / 0.80--0.89 & 0.40--0.42 
 About 90\% of used feature groups have an above-chance counterpart in an
 independently trained dictionary, roughly 40\% a near-exact single
 match, and the median group is 83--90\% covered by a union of at most
-three features (\Cref{tab:app-feature-group-matching}): token-group
+three features (\Cref{tab:app-feature-group-matching}), so token-group
 structure survives retraining even though feature indices are reassigned,
-and the residual instability is
-feature \emph{splitting} rather than noise. The decoder-cosine
+and the residual instability takes the form of feature
+splitting. The decoder-cosine
 distribution is bimodal, with a stable core recurring almost exactly
 while the rest recombine, and the narrower \(16\times\) directions are more stable,
 consistent with \citet{paulo2025stability}. For the below-null tail
 (32/300 and 33/300 groups at the two widths), a direction-level check
-finds decoder counterparts at cosine \(\ge 0.5\) for 5/32 and 10/33; a
+finds decoder counterparts at cosine \(\ge 0.5\) for 5/32 and 10/33. A
 qualitative pass suggests most of the remainder resemble the audit's
 mixed/ambiguous class, but we have not rubric-scored that tail and do
 not quote it as an audited rate. The strong-equivalence and recall@3
-thresholds were fixed for this analysis rather than swept; we therefore
+thresholds were fixed for this analysis, with no sweep, so we
 report them descriptively alongside the threshold-free medians.
 
 \subsection{Held-Out Recovery of the Stable Grouping Core}
@@ -117,16 +117,16 @@ report them descriptively alongside the threshold-free medians.
 
 The grouping comparison quoted in the main text asks which methods
 recover reproducible grouping structure, on identical targets. For each
-held-out seed, the \emph{core} is the set of grouped tokens stable in
-both remaining seeds (leave-one-out construction; all methods evaluated
-on identical cores; 95\% contrast-clustered bootstrap CIs).
+held-out seed, the core is the set of grouped tokens stable in
+both remaining seeds (leave-one-out construction, all methods evaluated
+on identical cores, 95\% contrast-clustered bootstrap CIs).
 
 \begin{table}[!tbp]
-\caption{\textbf{Held-out recovery of the seed-stable grouping core.}
-Qwen3.5-2B; recovery of the leave-one-out core by the held-out
-same-recipe SRP dictionary, weighted row-kNN, and hard clustering, on
+\caption{\textbf{Held-out recovery of the stable core.}
+Qwen3.5-2B, showing recovery of the leave-one-out core by the held-out
+SRP dictionary from the same recipe, weighted kNN on the rows, and hard clustering, on
 identical cores. The held-out SRP value (\(\approx\)0.75) is the
-operative anchor: recall should be read against it, not against 1.0.}
+operative anchor, and recall should be read against it.}
 \label{tab:app-loo-core-recovery}
 \centering
 \footnotesize
@@ -146,22 +146,22 @@ Cross-contrast null & 0.014 & 0.018 \\
 \end{tabularx}
 \end{table}
 
-Held-out SRP recovers 72--75\% of the stable core; row-kNN recovers
+Held-out SRP recovers 72--75\% of the stable core, while kNN on the rows recovers
 43--49\% and clustering 21--25\%, with SRP/kNN ratio CIs excluding
 parity (\Cref{tab:app-loo-core-recovery}). Direct row geometry overlaps
 the grouping structure well above the null but misses most of the
-reproducible core that an independently trained same-recipe dictionary
+reproducible core that an independently trained dictionary from the same recipe
 recovers.
 
 \subsection{Cross-Recipe Disclosure}
 \label{app:basis-stability-cross-recipe}
 
-The stability results above hold the training recipe fixed. Across
-recipes the agreement is weaker: the released paper dictionary, trained
+The stability results above hold the training recipe fixed, while across
+recipes the agreement is weaker. The released paper dictionary, trained
 under an earlier preprocessing recipe than the seed-variation
-family, shares only 36\% of the seed-stable core and recovers 0.444 of
-the leave-one-out cores, below row-kNN on that comparison. Cross-recipe
-variation therefore exceeds within-recipe seed variation, and every
-stability claim in this paper is scoped within-recipe. Comparisons in
-this appendix use the seed-variation family end-to-end; no table mixes
+family, shares only 36\% of the stable core and recovers 0.444 of
+the leave-one-out cores, below kNN on the rows in that comparison. Variation
+across recipes therefore exceeds seed variation within a recipe, and every
+stability claim in this paper is scoped to a fixed recipe. Comparisons in
+this appendix use the seed-variation family end-to-end, and no table mixes
 dictionary families.

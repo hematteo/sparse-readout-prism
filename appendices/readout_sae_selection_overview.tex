@@ -43,25 +43,26 @@
 \renewcommand{\textfraction}{0.03}
 \renewcommand{\floatpagefraction}{0.80}
 
-\section{How Were the Readout SAEs Selected?}
+\section{How the Readout SAEs Were Selected}
 \label{app:readout-factorizer-sweeps}
 
 This appendix documents how the readout SAEs used in the main text are chosen. The
 selection criterion combines row reconstruction with readout-distribution
-preservation after substituting $\widehat{\WU}$ for $\WU$: rowEV,
+preservation after substituting $\widehat{\WU}$ for $\WU$, namely rowEV,
 top-1 agreement, KL in bits, selected-logit reconstruction errors when available, and
 dead/rare feature usage. A feature is counted as rare when its evaluation
 firing rate is below $10^{-3}$. All trained runs use seed $0$ unless stated
-otherwise; the Qwen3.5-0.8B 32$\times$, $k=256$ dictionary setting has the
+otherwise, and the Qwen3.5-0.8B 32$\times$, $k=256$ dictionary setting has the
 three-seed stability window reported below.
 
 \paragraph{Metric glossary.}
 rowEV is row-centered explained variance for reconstructed unembedding
-rows. top1 is agreement between the original and reconstructed vocabulary argmaxes
-over held-out hidden states. top5 is mean top-five set overlap,
-$|\mathrm{top5}(\WU h)\cap\mathrm{top5}(\widehat{\WU}h)|/5$; as a set-overlap
-metric, it can be lower or higher than top1. KL is
-$D_{\mathrm{KL}}(p_{\WU}(\cdot\mid h)\|p_{\widehat{\WU}}(\cdot\mid h))$ in
+rows. top-1 is agreement between the original and reconstructed vocabulary argmaxes
+over held-out decoded states. top5 is mean top-five set overlap,
+$|\mathrm{top5}(\WU \rstateL)\cap\mathrm{top5}(\widehat{\WU}\rstateL)|/5$, and as a set-overlap
+metric it can be lower or higher than top-1. KL is the median over
+held-out decoded states of
+$D_{\mathrm{KL}}(p_{\WU}(\cdot\mid \rstateL)\|p_{\widehat{\WU}}(\cdot\mid \rstateL))$ in
 bits. Selected-logit reconstruction error is the absolute fractional error on the
 original top logit.
 
@@ -69,35 +70,35 @@ original top logit.
 The Qwen3.5-9B experiments factorize the final unembedding matrix
 $\WU\in\R^{248320\times4096}$. The prism loss is the auxiliary training
 term, weighted $\lambda_{\mathrm{prism}}$, that scores reconstruction in
-logit space on hidden states rather than on rows alone. Hidden states used
+logit space on decoded states, on top of the row-space objective. The states used
 for it and for evaluation are the final RMSNorm outputs immediately before
-the language-model head. An \texttt{lm\_head} pre-hook confirms this: the captured input
+the language-model head. An \texttt{lm\_head} pre-hook confirms this, since the captured input
 reproduces the model readout with no additional post-readout transform. The
-remaining reconstruction-vs-readout discrepancy is consistent with the model's
-bf16 LM-head precision floor as the relevant limit.
+remaining discrepancy between reconstruction and readout is consistent with the model's
+bf16 precision floor of the LM head as the relevant limit.
 
 \paragraph{Selection rule.}
 The active budget $k$ is part of the trained SAE. We therefore report
-native $k=128$ strict-budget rows and native $k=256$ high-fidelity rows as
-separate operating regimes; truncated $k=256$ dictionaries are over-budget
+native $k=128$ strict budget rows and native $k=256$ high fidelity rows as
+separate operating regimes, and truncated $k=256$ dictionaries are over-budget
 comparisons.
-Within each regime, rowEV is paired with top1, KL, reconstruction error, achieved eval-$L_0$
+Within each regime, rowEV is paired with top-1, KL, reconstruction error, achieved eval-$L_0$
 where applicable, and usage statistics. Orthogonal matching pursuit (OMP) rows
 \citep{pati1993orthogonal} are sparse-inference comparisons over fixed
-dictionaries; deployed metrics use the learned TopK encoders.
+dictionaries, while deployed metrics use the learned TopK encoders.
 
 \paragraph{Per-model settings.}
-The sweep supports two operating regimes. The strict-budget rows
+The sweep supports two operating regimes. The strict budget rows
 preserve a native $k=128$ interpretability budget, while the
-high-fidelity rows use native $k=256$ encoders when readout fidelity is
+high fidelity rows use native $k=256$ encoders when readout fidelity is
 the primary constraint. Table~\ref{tab:app-k-model-finalists} summarizes these
-settings; the model-by-model comparisons supporting them appear in
+settings, and the model-by-model comparisons supporting them appear in
 Appendix~\ref{app:readout-factorizer-small-model-transfer}.
 
 \begin{table*}[!tbp]
 \caption{Representative dictionary settings from the Qwen/Gemma sweep. Native
-$k=128$ rows support the strict-budget regime; native $k=256$ rows support the
-high-fidelity regime. Gemma top1/KL are softcap-correct.}
+$k=128$ rows support the strict budget regime and native $k=256$ rows support the
+high fidelity regime. Gemma top-1/KL are softcap-correct.}
 \label{tab:app-k-model-finalists}
 \centering
 \footnotesize
@@ -105,24 +106,24 @@ high-fidelity regime. Gemma top1/KL are softcap-correct.}
 \renewcommand{\arraystretch}{1.08}
 \begin{tabularx}{\textwidth}{@{}>{\RaggedRight\arraybackslash}p{0.14\textwidth}>{\RaggedRight\arraybackslash}p{0.13\textwidth}rrrrY@{}}
 \toprule
-Model & Setting & rowEV & top1 & KL & rare & Role \\
+Model & Setting & rowEV & top-1 & KL & rare & Role \\
 \midrule
-\multicolumn{7}{@{}l}{\emph{Strict-budget regime: native $k=128$}} \\
+\multicolumn{7}{@{}l}{\textbf{Strict-budget regime, native $k=128$}} \\
 \addlinespace[1pt]
-Qwen3.5-0.8B & 16$\times$, $k=128$ & $0.760$ & $0.844$ & $0.277$ & $0.001$ & strict-budget result \\
-Qwen3.5-2B   & 16$\times$, $k=128$ & $0.712$ & $0.858$ & $0.261$ & $0.004$ & strict-budget runner-up \\
-Gemma-4-E2B  & 16$\times$, $k=128$ & $0.714$ & $0.623$ & $1.94$ & $0.031$ & strict-budget; softcap-correct \\
-Gemma-4-E4B  & 16$\times$, $k=128$ & $0.693$ & $0.669$ & $1.82$ & $0.040$ & strict-budget; softcap-correct \\
+Qwen3.5-0.8B & 16$\times$, $k=128$ & $0.760$ & $0.844$ & $0.277$ & $0.001$ & strict budget result \\
+Qwen3.5-2B   & 16$\times$, $k=128$ & $0.712$ & $0.858$ & $0.261$ & $0.004$ & strict budget runner-up \\
+Gemma-4-E2B  & 16$\times$, $k=128$ & $0.714$ & $0.623$ & $1.94$ & $0.031$ & strict budget, softcap-correct \\
+Gemma-4-E4B  & 16$\times$, $k=128$ & $0.693$ & $0.669$ & $1.82$ & $0.040$ & strict budget, softcap-correct \\
 \addlinespace[3pt]
 \midrule
-\multicolumn{7}{@{}l}{\emph{High-fidelity regime: native $k=256$}} \\
+\multicolumn{7}{@{}l}{\textbf{High-fidelity regime, native $k=256$}} \\
 \addlinespace[1pt]
-Qwen3.5-0.8B & 32$\times$, $k=256$ & $0.877$ & $0.891$ & $0.135$ & $0.001$ & high-fidelity result \\
-Qwen3.5-2B   & 32$\times$, $k=256$ & $0.847$ & $0.887$ & $0.136$ & $0.010$ & high-fidelity runner-up \\
-Qwen3.5-9B   & 16$\times$, $k=256$ & $0.761$ & $0.874$ & $0.167$ & $0.061$ & compact 9B fidelity comparison \\
-Qwen3.5-9B   & 32$\times$, $k=256$ & $0.857$ & $0.900$ & $0.105$ & $0.292$ & high-capacity 9B fidelity point \\
-Gemma-4-E2B  & 32$\times$, $k=256$ & $0.834$ & $0.333$ & $6.37$ & $0.038$ & fidelity row; softcap-correct \\
-Gemma-4-E4B  & 32$\times$, $k=256$ & $0.827$ & $0.736$ & $1.22$ & $0.078$ & fidelity row; softcap-correct \\
+Qwen3.5-0.8B & 32$\times$, $k=256$ & $0.877$ & $0.891$ & $0.135$ & $0.001$ & high fidelity result \\
+Qwen3.5-2B   & 32$\times$, $k=256$ & $0.847$ & $0.887$ & $0.136$ & $0.010$ & high fidelity runner-up \\
+Qwen3.5-9B   & 16$\times$, $k=256$ & $0.761$ & $0.874$ & $0.167$ & $0.061$ & compact 9B comparison \\
+Qwen3.5-9B   & 32$\times$, $k=256$ & $0.857$ & $0.900$ & $0.105$ & $0.292$ & reported 9B point \\
+Gemma-4-E2B  & 32$\times$, $k=256$ & $0.834$ & $0.333$ & $6.37$ & $0.038$ & fidelity row, softcap-correct \\
+Gemma-4-E4B  & 32$\times$, $k=256$ & $0.827$ & $0.736$ & $1.22$ & $0.078$ & fidelity row, softcap-correct \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -130,7 +131,7 @@ Gemma-4-E4B  & 32$\times$, $k=256$ & $0.827$ & $0.736$ & $1.22$ & $0.078$ & fide
 \subsection{Sweep Coverage and Evidence Map}
 \label{app:readout-factorizer-selected-points}
 
-The selection evidence has three distinct roles: choosing a Qwen3.5-9B recipe,
+The selection evidence has three distinct roles, choosing a Qwen3.5-9B recipe,
 testing how that recipe scales with capacity, and evaluating whether the same
 recipe transfers to smaller Qwen and Gemma models. These roles are separated
 because the runs differ in model scale, active sparsity, convergence stage, and
@@ -150,9 +151,9 @@ families and the decision each supports, without listing every cell.}
 Sweep family & Coverage & Axes varied & Selection use \\
 \midrule
 Original Qwen3.5-9B baseline
-& unembedding measurements; short-run comparisons; 50k run
+& unembedding measurements, short-run comparisons, and a 50k run
 & matryoshka width, $k$, $\lambda$
-& anchors the old 50k baseline: rowEV $0.511$, top1 $0.807$ \\
+& anchors the old 50k baseline at rowEV $0.511$, top-1 $0.807$ \\
 \addlinespace
 Qwen fixed-$k=128$ recipe search
 & unembedding measurements, short-run recipe comparison, and 20k run
@@ -161,11 +162,11 @@ Qwen fixed-$k=128$ recipe search
 \addlinespace
 Qwen BatchTopK control \citep{bussmann2024batchtopk}
 & target-$L_0$ measurements and evaluation-$L_0$ controls
-& eval-$L_0$ targeting, random vs row-seeded init
+& eval-$L_0$ targeting, random vs.\ row-seeded init
 & rejects BatchTopK for this setting \\
 \addlinespace
 Qwen capacity sweep
-& higher-$k$ screening runs, 16$\times$ and 32$\times$ 20k runs, OMP comparison
+& higher-$k$ screening runs, 16$\times$ and 32$\times$ 20k runs, and OMP comparison
 & width and active budget $k$
 & compares the 32$\times$, $k=256$ high-capacity point with the 16$\times$,
 $k=256$ compact point \\
@@ -184,7 +185,7 @@ shared metric suite \\
 \end{tabularx}
 \end{table*}
 
-The following readout SAE appendices follow this evidence map: first the
+The following readout SAE appendices follow this evidence map, taking first the
 Qwen3.5-9B recipe, then the capacity and operating-point comparisons, then
 smaller-model transfer and additional metric analyses.
 

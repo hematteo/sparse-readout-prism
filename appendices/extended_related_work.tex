@@ -6,12 +6,12 @@ for the main argument.
 
 \paragraph{Modern lens variants.}
 Beyond the lens work cited in the main text, LogitLens4LLMs updates logit-lens
-tooling for modern Hugging Face model families \citep{wang2025logitlens4llms};
+tooling for modern Hugging Face model families \citep{wang2025logitlens4llms},
 ContextualLens and LatentLens use richer contextual representations for
-vision-language models \citep{phukan2025contextuallens,krojer2026latentlens};
-and Indic-TunedLens adapts tuned-lens-style decoding to Indian languages
+vision-language models \citep{phukan2025contextuallens,krojer2026latentlens},
+and Indic-TunedLens adapts decoding in the tuned-lens style to Indian languages
 \citep{panchal2026indictunedlens}. These variants are complementary front ends
-to hidden-state inspection, orthogonal to SRP's readout-row factorization.
+to hidden-state inspection, orthogonal to SRP's factorization of readout rows.
 
 \paragraph{Recent sparse-feature infrastructure.}
 Model-family-specific activation-SAE releases include Gemma Scope and
@@ -19,7 +19,7 @@ Qwen-Scope \citep{lieberum2024gemmascope,deng2026qwenscope}, and recent
 weight-based SAE interpretation studies how activation-SAE features interact
 with model weights and output-token effects \citep{liu2026weightbasedsae}.
 A separate line trains SAEs on the outputs of dense text-embedding models
-\citep{oneill2024disentangling}; those dictionaries decompose embedding
+\citep{oneill2024disentangling}, and those dictionaries decompose embedding
 vectors computed for inputs, whereas SRP decomposes the weight rows of the
 LM head itself.
 Crosscoders extend dictionary learning across layers, models, or training
@@ -27,22 +27,58 @@ time within a shared feature space \citep{lindsey2024crosscoders}, with
 crosscoder-specific sparsity artifacts documented in chat-model diffing
 \citep{minder2025sparsity}. SRP
 shares the model-family-specific emphasis but fits its sparse dictionary
-directly to unembedding rows rather than hidden-state activations, and does
+directly to unembedding rows, and does
 not evaluate or replace activation-feature infrastructure.
 Activation-SAE evaluation has standardized diagnostics
 \citep{karvonen2025saebench,makelov2024principled} and known caveats about
 unit canonicity \citep{leask2025canonical}.
 
+\paragraph{Latent-language readings.}
+The inference re-tested in \S\ref{subsec:cross-lens} also appears in the
+latent-language literature \citep{wendler2024llamas,schut2025english},
+which reads through the unembedding directly. Those lenses have no
+fitting corpus and are not exposed to corpus conditionality. A weaker
+and separate confound applies to them instead, since which of several
+realizations surfaces in a ranking is fixed by the row codes of \(\WU\)
+alone, and one readout feature carries both realizations on 61/80 and
+62/80 of our own within-lens comparisons.
+\citet{dumas2025tongue} establish language-agnostic concept
+representations causally, by activation patching, without relying on a
+ranking at all.
+
 \paragraph{Output-space geometry and confounds.}
 The linear-representation view treats token distinctions as directions or
 contrasts in vocabulary space \citep{park2024linear}, and
-vocabulary-embedding directions can steer generation \citep{han2024word};
-SRP's readout-side edits act in the same space at per-feature granularity.
+vocabulary-embedding directions can steer generation \citep{han2024word}, and
+SRP's edits on the readout side act in the same space at the granularity of individual features.
+The same view also motivates edits on the activation side, where redirecting
+the representations of a target set into a region the model already uses to
+decline an answer suppresses knowledge through a single down-projection matrix
+\citep{shen2025lunar}. Those edits are stated in hidden states, whereas SRP's
+are stated in readout rows.
+Which rows are available to either kind of edit is itself a training
+outcome, since embeddings can be decoupled from the
+transformer body and trained with a separate vocabulary per data source
+\citep{iacob2025dept}, one reason the paper reports its metric suite per model
+family (Appendix~\ref{app:extended-discussion-cross-family}).
 Degeneration and frequency analyses show that mean directions, row norms,
 and token frequencies can move token scores independently of the property
-under test \citep{gao2019representation,zhang2020revisiting,chung2025exploiting};
-anisotropy varies with training and data \citep{machina2024anisotropy}, and
+under test \citep{gao2019representation,zhang2020revisiting,chung2025exploiting}.
+Anisotropy varies with training and data \citep{machina2024anisotropy}, and
 output-embedding centering targets the shared mean direction during
 pretraining \citep{stollenwerk2026output}. These effects motivate the
 row-norm and frequency controls of
 Appendix~\ref{app:robustness-controls}.
+
+\paragraph{Additive attribution and mechanisms.}
+Direct logit attribution splits a token logit or logit difference into
+per-component terms \citep{elhage2021framework,wang2022ioi}. Despite the
+similar names, logit prisms \citep{nguyen2024logitprisms} split who wrote
+the hidden state across residual-stream components, while SRP splits what
+reads that state across the row structure of the LM head, and the two decompositions
+compose (Appendix~\ref{app:feature-resolved-dla}). Interventions
+\citep{conmy2023acdc}, causal abstraction
+\citep{geiger2023causalabstraction}, and transcoder or attribution-graph
+work \citep{dunefsky2024transcoders,ameisen2025circuittracing} address
+complementary mechanism-level questions about which components and paths
+produce a behavior.

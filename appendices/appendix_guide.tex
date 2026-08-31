@@ -8,7 +8,7 @@
 \newcommand{\AppRoadmapEntry}[4]{%
   \textbf{#1} &
   \hyperref[#2]{#3} \textnormal{(p.~\pageref{#2}).}
-  \newline\textit{#4} \\
+  \newline #4 \\
 }
 \noindent\begin{tabularx}{\linewidth}{@{}p{1.2em}Y@{}}
 \toprule
@@ -16,12 +16,12 @@
 \midrule
 \AppRoadmapEntry{A}{app:score-decomposition}
   {SRP Score Decomposition Identities}
-  {Readout SAE reconstruction identities, selected readout directions, reconstruction error, sign agreement, and reading rules.}
+  {Readout SAE reconstruction identities, selected readout directions, reconstruction error, sign agreement, and fidelity diagnostics.}
 \AppRoadmapEntry{B}{app:model-suite-selection}
-  {Which Models Were Evaluated?}
+  {Model Suite and Selection Rationale}
   {Model-suite rationale, evaluated model families, targeted comparison rows, model roles, and interpretation details.}
 \AppRoadmapEntry{C}{app:readout-factorizer-sweeps}
-  {How Were the Readout SAEs Selected?}
+  {How the Readout SAEs Were Selected}
   {Selection criteria, metric glossary, operating regimes, final dictionary settings, and sweep evidence map.}
 \AppRoadmapEntry{D}{app:readout-factorizer-qwen-sweeps}
   {Qwen Readout SAE Recipe and Capacity Sweeps}
@@ -34,29 +34,32 @@
   {Support-selection diagnostics, rejected alternatives, denominator controls, and training/evaluation recipe details.}
 \AppRoadmapEntry{G}{app:robustness-controls}
   {Fidelity Checks and Controls}
-  {Fidelity results with bootstrap intervals, C4 replacement, baselines and nulls, nearest-row reading, token-level audits, and operating regimes.}
-\AppRoadmapEntry{H}{app:basis-stability}
+  {Fidelity results with bootstrap intervals, C4 replacement, baselines and nulls, nearest row reading, token-level audits, and operating regimes.}
+\AppRoadmapEntry{H}{app:sense-labelled-evaluation}
+  {Sense-Labelled Evaluation}
+  {Alignment against a permutation null that repeats the selection, sparsity references, and scope.}
+\AppRoadmapEntry{I}{app:basis-stability}
   {Stability Across Independent Training Runs}
-  {Cross-seed explanation stability, feature-group matching, held-out recovery of the stable grouping core, and the cross-recipe disclosure.}
-\AppRoadmapEntry{I}{app:causal-validation}
-  {Predicted vs.\ Realized Local Changes}
+  {Cross-seed explanation stability, feature-group matching, held-out recovery of the stable core, and the disclosure across recipes.}
+\AppRoadmapEntry{J}{app:causal-validation}
+  {Predicted Versus Realized Local Readout-Side Changes}
   {Intervention-validation protocol, falsifiers, six-model results, and slope diagnosis.}
-\AppRoadmapEntry{J}{app:cross-lens}
-  {Cross-Lens Study}
-  {Corpus-conditionality protocol, per-family agreement, null floors, worked example, and scope.}
-\AppRoadmapEntry{K}{app:additional-qwen-display-examples}
+\AppRoadmapEntry{K}{app:cross-lens}
+  {Cross-Lens Study Protocol, Controls, and Per-Family Results}
+  {Corpus conditionality protocol, agreement per family, null floors, worked example, and scope.}
+\AppRoadmapEntry{L}{app:additional-qwen-display-examples}
   {Additional Qwen Displays and Feature Audits}
-  {Margin examples, selected-score examples, fixed-token contexts, profiles, lens/prism comparisons, and token-row audits.}
-\AppRoadmapEntry{L}{app:feature-resolved-dla}
-  {Feature-Resolved DLA}
+  {Margin examples, examples of selected scores, fixed-token contexts, profiles, lens/prism comparisons, and token row audits.}
+\AppRoadmapEntry{M}{app:feature-resolved-dla}
+  {Feature-Resolved Direct Logit Attribution}
   {Connection to direct logit attribution, DLA terms split by SAE feature, and additivity error.}
-\AppRoadmapEntry{M}{app:lexical-control-stress-test}
+\AppRoadmapEntry{N}{app:lexical-control-stress-test}
   {Constrained Readout-Side Edit Test}
-  {Constrained readout-side edit for SAE decoder directions, held-out terms, cross-model repeats, and the matched-KL frontier with cross-model losses.}
-\AppRoadmapEntry{N}{app:extended-discussion-limitations}
+  {Constrained edit for SAE decoder directions on the readout side, held-out terms, cross-model repeats, and the matched-KL frontier with cross-model losses.}
+\AppRoadmapEntry{O}{app:extended-discussion-limitations}
   {Discussion and Future Work}
   {Interpretation details, model-family results, feature-resolved DLA terms, and extensions.}
-\AppRoadmapEntry{O}{app:extended-related-work}
+\AppRoadmapEntry{P}{app:extended-related-work}
   {Extended Related Work}
   {Additional lens-method context and output-embedding related work.}
 \bottomrule

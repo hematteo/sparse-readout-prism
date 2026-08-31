@@ -9,7 +9,10 @@
 \usepackage{ragged2e}
 \usepackage{siunitx}
 \usepackage{tabularx}
-\usepackage[capitalize,nameinlink]{cleveref}
+% No nameinlink: \Cref then hyperlinks the number only, matching the
+% hand-written "Table~\ref{...}" form the paper also uses. Add it back only
+% if every cross-reference is converted to cleveref.
+\usepackage[capitalize]{cleveref}
 \usepackage{CJKutf8}
 \usepackage{placeins}
 \usepackage{url}
@@ -20,7 +23,7 @@
 % [review] acl option in main.tex). TRUE = arXiv preprint build (pairs with
 % [preprint]): shows the banner, author footnote, and public artifact links.
 \newif\ifpreprintmode
-\preprintmodefalse
+\preprintmodetrue
 
 % Preprint banner + footnote-style affiliations (arXiv preprint mode).
 \usepackage{fancyhdr}
@@ -30,6 +33,59 @@
   \fancyfoot[L]{\small Preprint. Under review.}%
   \fancyfoot[C]{\small\thepage}%
 }
+% Preprint front panel: a full-width rounded grey box spanning both columns
+% that holds title, authors, affiliation, abstract and correspondence line.
+% It replaces \maketitle and the ACL abstract in preprint mode only; the
+% review and final builds keep the standard ACL front matter. Author strings
+% come from style/metadata.tex (\preprintauthorline etc.).
+\ifpreprintmode
+\usepackage{environ}
+\usepackage{tcolorbox}
+\definecolor{frontpanelgrey}{gray}{0.955}
+\makeatletter
+\RenewEnviron{abstract}{%
+  \twocolumn[{%
+    % Title, authors and affiliation are set in TeX Gyre Pagella (Palatino);
+    % the abstract and correspondence line use the body font at body size so
+    % they match the main text exactly.
+    \begin{tcolorbox}[colback=frontpanelgrey,colframe=frontpanelgrey,
+        boxrule=0pt,arc=12pt,left=16pt,right=16pt,top=14pt,bottom=14pt]
+      {\raggedright\fontfamily{qpl}\selectfont\LARGE\bfseries \@title\par}
+      \vspace{12pt}
+      {\raggedright\fontfamily{qpl}\selectfont\bfseries \preprintauthorline\par}
+      \vspace{3pt}
+      {\raggedright\fontfamily{qpl}\selectfont \preprintaffiliation\par}
+      \vspace{8pt}
+      \noindent\BODY\par
+      \vspace{8pt}
+      % Metadata strip: three labeled lines against the crest. The code and
+      % dictionary links live here rather than as a closing sentence of the
+      % abstract, so the abstract ends on its claim and the panel bottom
+      % carries the artifact pointers.
+      \noindent
+      \begin{minipage}[c]{0.82\linewidth}
+        \raggedright
+        \textbf{Correspondence:} \href{mailto:\preprintemail}{\texttt{\preprintemail}}\\[2pt]
+        \textbf{Code:} \preprintcodelink\\[2pt]
+        \textbf{Dictionaries:} \preprintdictlink
+      \end{minipage}%
+      \hfill
+      \begin{minipage}[c]{0.14\linewidth}\raggedleft\preprintlogos\end{minipage}
+    \end{tcolorbox}
+    \vskip 0.8\baselineskip
+  }]%
+  \thispagestyle{preprintfirst}%
+}
+\makeatother
+\fi
+
+% PDF metadata. Preprint only — pdfauthor would deanonymize the review build.
+\ifpreprintmode
+  \AtBeginDocument{\hypersetup{
+    pdftitle={Sparse Readout Prism: Explaining Logit-Lens Scores in Features Instead of Tokens},
+    pdfauthor={Matteo He, William F. Shen, Xinchi Qiu, Nicholas D. Lane}}}
+\fi
+
 % Footnote with no marker, for the author/affiliation key line.
 \newcommand{\blfootnote}[1]{%
   \begingroup

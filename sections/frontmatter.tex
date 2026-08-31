@@ -1,32 +1,25 @@
 \begin{abstract}
-Vocabulary lenses read hidden states through the LM head and report
-tokens. One token can be supported by different structure in different
-contexts, and different tokens by the same structure, so a lens reading
-can change while the computation behind it does not. The token is
-therefore an ambiguous unit for that report. We present Sparse Readout Prism (SRP), a
-sparse factorization of the LM head that reads any selected token logit
-or logit difference as signed contributions over shared \emph{readout
-features}, plus an explicit residual, in logit units. The basis is fit
-from the weights alone, so, unlike activation dictionaries, it exists
-before any prompt, and one dictionary covers every layer and lens. Six of
-eight models pass a head-replacement check. On those six, SRP
-reconstructs selected scores faithfully on \textbf{0.72--0.81} of
-contrasts, better than any baseline built on LM-head row geometry, and
-its per-feature contributions track the measured effect of removing
-those features from the hidden state (\(r^2=0.83\)--\(0.93\)). The
-reading also holds up under surface change: English- and
-Chinese-fitted Jacobian lenses report different languages on identical
-hidden states, yet the same SRP feature stays dominant on \textbf{77 of
-80} prompts, and the pattern holds for a same-script language pair and for a
-second lens construction. What a fitted lens reports thus follows the corpus
-it was fitted on, a dependence we call \emph{corpus conditionality}. On
-its own, a lens reading does not establish a matching intermediate
-computation.
-\ifpreprintmode
-Code and trained SRP dictionaries for all eight models are available at
-\href{https://github.com/hematteo/sparse-readout-prism}{github.com/hematteo/sparse-readout-prism}.
-\else
-Code and trained SRP dictionaries for all eight models are publicly
-released; links are withheld for anonymous review.
-\fi
+A language model's prediction of its next token develops across layers,
+and lens methods track this process by decoding intermediate hidden states
+into tokens. But a lens reading reflects both the hidden state and the
+readout (the unembedding matrix) used to decode it. Many lenses are fit on
+a corpus, and we show that two lenses differing only in their fitting
+corpus can report different tokens for the same hidden states. We call
+this dependence corpus conditionality. To examine readout structure
+independently of the fitting corpus, we introduce Sparse Readout Prism
+(SRP), which decomposes the readout using only its weights and expresses
+any token logit or logit difference as a sum of contributions from sparse
+readout features. This reveals readout features as a new unit of analysis
+for lens readings, exposing structure that token identities can obscure
+and enabling comparisons across tokens, contexts, layers, and lenses.
+Replacing the original readout with SRP's sparse approximation
+reconstructs 8.9--17.3 percentage points more of the tested logit
+differences than the strongest of six baselines built on geometric
+relations among readout rows. Ablating features shifts logit differences in proportion to their SRP
+contributions. Although token readings vary with the fitting
+corpus, the dominant readout feature remains stable. Because SRP uses no
+corpus in its construction, it provides a control independent of the
+fitting corpus for lens analyses.
+% The preprint's code and dictionary links moved to the front panel's
+% metadata strip (style/preamble.tex); the review build never showed them.
 \end{abstract}

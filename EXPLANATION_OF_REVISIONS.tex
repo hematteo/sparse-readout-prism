@@ -1,0 +1,584 @@
+\documentclass[11pt]{article}
+
+% ============================================================
+% Explanation of Revisions (ARR resubmission, compulsory upload)
+%
+% Build:  latexmk -pdf EXPLANATION_OF_REVISIONS.tex
+%
+% TWO SWITCHES. Both must be off for the posted PDF.
+%
+%   \draftnotestrue   shows internal decisions and the pre-submission
+%                     checklist in red. For our eyes only.
+%   \draftnotesfalse  hides them. THIS IS THE POSTING BUILD.
+%
+% Locations are given as section and appendix numbers only. No line
+% references, so this document does not depend on a frozen main.pdf and
+% survives recompilation of main.tex. The \ph{} macro is retained but
+% unused. Do not reintroduce line numbers.
+%
+% ANONYMITY: no authors, no affiliations, no repository URLs, and no
+% author-list change information. Keep it that way.
+% ============================================================
+
+\newif\ifdraftnotes
+\draftnotesfalse       % <<<< POSTING BUILD. Set \draftnotestrue to see internal notes.
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{times}
+\usepackage{microtype}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[hidelinks]{hyperref}
+
+\setlist[itemize]{leftmargin=1.2em,itemsep=0.35em,topsep=0.35em}
+\setlength{\parskip}{0.4em}
+\setlength{\parindent}{0pt}
+
+% Internal note. Hidden in the posting build.
+\newcommand{\note}[1]{%
+  \ifdraftnotes\par\smallskip{\color{red}\small\textbf{[}#1\textbf{]}}\par\smallskip\fi}
+% Unresolved placeholder. Highlighted in the draft build.
+\newcommand{\ph}[1]{\ifdraftnotes{\color{red}#1}\else#1\fi}
+
+\title{\vspace{-2.5em}\textbf{Explanation of Revisions}\vspace{-0.8em}}
+\date{}
+
+\begin{document}
+\maketitle
+
+Resubmission of an ARR 2026 May submission.
+
+This is a substantial revision. The entire discussion-phase campaign is now
+in the manuscript, nine experiment families across the model suite, covering
+direct-geometry baselines, intervention validation, cross-seed stability,
+grouping recovery, a blinded label audit, matched-KL editing controls, error
+tails, a lower sparsity budget, and the cross-lens study. \S3 of the paper
+was rebuilt as a single argument and \S4 is new.
+
+\S4 carries the finding. Two Jacobian lenses differing only in fitting
+corpus, one English and one Chinese, read the same frozen Qwen3.5-9B states
+and report different scripts on 9/10 factual-recall prompts, while one SRP
+feature stays dominant under both readings on \textbf{77/80 prompts (96\%,
+95\% CI [0.90, 0.99])}. What a fitted lens reports follows the corpus it
+was fitted on, so a token reading alone leaves the working language of a
+computation underdetermined. The decomposition is what makes two competing
+readings comparable in the first place, and it supplies the control that
+settles them. This is the systematic new interpretation the meta-review
+asked for, and \S4 applies it to a reading published in contemporaneous work.
+
+Alongside it, the revision adds the downstream-reliability evidence the
+reviews asked for.
+Predicted against realised margin change reaches $r^2=0.83$--$0.93$ on six
+models, with random-direction controls at most 0.06 (\S3.1, Table~2).
+
+Reviewers returning to the paper will find the argument in \S1, \S3 and \S4.
+\S2 is extended but unchanged in substance.
+
+This document describes what changed and where. Every number below appears in
+the revised manuscript at the section or appendix given.
+
+\note{DRAFT BUILD. Set \texttt{\textbackslash draftnotesfalse} and strip
+every red note before converting the posting PDF.}
+
+\section{Overview}
+
+\begin{itemize}
+\item The previous round asked for three things. Evidence of what the method
+enables \emph{systematically} beyond token rankings, the discussion-phase
+experiments moved into the manuscript so they can be reviewed, and the core
+objects defined early. The paper is restructured around all three.
+\item Every experiment reported during the discussion phase now has a named
+manuscript location in \S3, \S4, or Appendices D--N, listed in the map
+below.
+\item Responsible NLP Checklist items C1, on compute budget and hardware, and
+C4, on package versions, are now answered in the paper, and the code and
+trained dictionaries are released.
+\item All quantitative claims were re-verified against the underlying result
+artifacts.
+\end{itemize}
+
+\section{Response to the meta-review}
+
+The meta-review asks what the method brings to the interpretability field.
+The revision answers by argument as well as by experiment. The paper is now
+built on one claim, that token identity is too coarse a unit for interpreting
+vocabulary readouts, and \S1 closes by stating two contributions, the
+interface and the cross-lens finding. Sections~3 and~4 are organised to test that claim
+rather than to demonstrate a tool.
+
+\subsection*{Request 1. ``What new interpretations can be done in a
+systematic way?'', for instance features aligning with different senses}
+
+\begin{itemize}
+\item \textbf{The sense-alignment test the meta-review proposed is run
+directly, and it passes.} On CoarseWSD-20, feature groups selected on
+training contexts predict held-out senses at balanced accuracy \textbf{0.90 /
+0.92 / 0.80} across three models, against a label-permutation null of 0.41
+(\S3.4, Appendix~H). Scoped as an alignment check rather than a
+disambiguation-benchmark claim, it shows that the discovered features carry
+sense structure and not only token form. Appendix~H reports the
+comparison probes.
+\item New top-level \S4, \emph{Corpus Conditionality}. Two Jacobian lenses
+differing only in fitting corpus, 100
+English prompts against 100 Chinese, read the same frozen Qwen3.5-9B states.
+They report different scripts on 9/10 factual-recall prompts, while one SRP
+feature stays dominant under both readings on \textbf{77/80 prompts (96\%,
+95\% CI [0.90, 0.99])}. The null floors are 0/159 for within-lens unrelated
+tokens and 0/240 for shuffled pairings. Appendix~K has the protocol and the
+per-family tables.
+\item Three extensions establish that the effect is not specific to one
+construction or corpus size (\S4.3). A same-script
+English--German pair with cognates excluded, a second lens family of
+per-layer ridge translators in the tuned-lens style, and a tripled fitting
+corpus.
+\item \S4 applies this control to a multilingual reading reported in
+contemporaneous work from July 2026, under the same lens construction and the
+same prompt, and finds the reported language moves with the fitting corpus
+(\S4.4). The related-work section and Appendix~P position the
+paper against that work. The section and the citation are new in this
+revision.
+\item The worked case the discussion thread centred on is written up in full.
+Appendix~K gives the published antonym prompt layer by
+layer. The shared feature contributes $+12.5$ and $+13.4$ logits at layer 24
+under the English-fitted and Chinese-fitted lenses, and $+14.5$ and $+17.6$
+at layer 29.
+\end{itemize}
+
+\subsection*{Request 2. Discussion-phase experiments ``should be included in
+a new revision''}
+
+Every experiment reported during the discussion phase is now in the
+manuscript, in the main text or in a numbered appendix, with its protocol,
+its controls and its per-model tables. None is carried by summary alone and
+none was dropped. The map below names the location of each, so every
+one of them can be checked against the paper rather than against the response
+thread.
+
+\subsection*{Request 3. Define contrast and readout early}
+
+\emph{Readout}, \emph{selected readout score}, \emph{contrast}, and
+\emph{margin} are all defined in \S1, ahead of the method and every result, and
+used consistently thereafter.
+
+\section{Reproducibility and released artifacts}
+
+\begin{itemize}
+\item \textbf{Compute and hardware (checklist C1).} Appendix~F gives the
+hardware, a single NVIDIA A40 per job on an academic Slurm cluster with a
+24\,GB-class GPU sufficient for evaluation. It also gives per-model training
+cost of 6--12 A40 GPU-hours per readout SAE, run once per model, the
+evaluation cost, and the local-inference configuration.
+\item \textbf{Package settings (checklist C4).} Appendix~F pins the Python
+version at 3.11--3.12, pins the package versions, and points at the lockfile
+in the released code, which also carries per-model training and evaluation
+recipes.
+\item \textbf{Artifacts.} The revision releases, under an MIT license, the
+code with per-model training and evaluation recipes, the selected readout SAE
+checkpoints for all eight models at both the $k{=}128$ and $k{=}256$
+operating points, the contrast banks, both the diagnostic bank and the
+benchmark-derived bank, and the blinded label-audit protocol (Appendix~F).
+\end{itemize}
+
+\section{Where each discussion-phase experiment now lives}
+\label{sec:map}
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}p{0.24\textwidth}p{0.475\textwidth}p{0.215\textwidth}@{}}
+\toprule
+\textbf{Experiment} & \textbf{Result} & \textbf{Location} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Experiment} & \textbf{Result} & \textbf{Location} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Cross-lens study
+& Two lenses differing only in fitting corpus report different scripts on
+9/10 prompts, while one feature stays dominant under both readings on 77/80
+(96\%, 95\% CI [0.90, 0.99]). Null floors 0/159 and 0/240
+& \S4. App.~K \\
+
+Intervention validation, six models
+& Predicted against realised margin change at $r^2=0.83$--$0.93$,
+random-direction controls at most 0.06, slopes reported as measured
+& \S3.1, Table~2. App.~J \\
+
+Direct-geometry baselines (k-means at two widths, hard clustering, row-kNN,
+nearest-row ridge, PCA-256), six models
+& SRP coverage 0.72--0.81 against at most 0.67, leading the strongest
+per-model alternative by 8.9--17.3 points, intervals non-overlapping
+& \S3.2, Table~1. Full method grid in App.~G \\
+
+Held-out grouping recovery
+& Same-recipe held-out dictionary recovers 72--75\% of the seed-stable
+grouping core, against 43--49\% for row-kNN and 21--25\% for clustering
+& \S3.3. App.~I.3 \\
+
+Cross-seed stability
+& Every tested contrast reproduces above the null's p90 at both widths, at
+roughly 15 times the null. 87--91\% of used feature groups have an
+above-chance counterpart
+& \S3.3. App.~I \\
+
+Matched-KL editing comparison
+& SRP beats mean-row, rank-4 PCA and PCA group-direction controls at all four
+matched-KL targets on the display model, 12 of 12 paired with all CIs
+excluding zero. Per-model results reported
+& \S3.4. App.~N \\
+
+Blinded label audit
+& Three runs, frozen prompt, top-20 rows only. 93.4\% unanimity, Fleiss'
+$\kappa=0.87$, and 81.8\% agreement with the author audit
+& \S3.4. App.~L \\
+
+Error tails and margin stratification
+& Mean, p95 and maximum absolute error for SRP and all six alternatives, plus
+a margin-stratified table
+& App.~G.4 \\
+
+Lower sparsity budget, two models at $k=64$ and $k=32$
+& A smaller budget strands capacity rather than buying sparsity. At matched
+width, $k=64$ leaves 32--51\% of features dead against under 4\% at $k=256$
+and $k=32$ leaves 64--69\%, with rowEV and KL degrading on both models
+& App.~D.3 \\
+\end{longtable}
+\endgroup
+
+The restructuring moved the appendix letters, so the pointers given in the
+discussion responses no longer resolve. Among others, the benchmark-derived
+and prompt-injection decompositions cited as App.~I.4 and I.7 are now in
+Appendix~L, the constrained edit test cited as App.~K is now Appendix~N, the
+diagnostics cited as App.~G.1 are now Appendix~F, and the decomposition
+identities cited as App.~B.2 are now Appendix~A. The appendix roadmap on the
+first appendix page maps all sixteen.
+
+\section{Point-by-point}
+
+Old line numbers refer to the previous submission, as cited in the reviews.
+
+\subsection*{Reviewer j4yY}
+
+\begin{itemize}
+\item \textbf{Abstract, old L24. Why do logit differences matter, and what is
+the end goal?} The Introduction now states the objective in its first two
+paragraphs. A logit difference is the model's exact signed
+preference between two candidate outputs, and the paper's target is what
+carries that preference on the readout side. The abstract was rewritten and
+now opens on the ambiguity of the token as a unit, so the motivation for
+reading logit differences arrives before the method does. The fidelity the
+paper rests on is sign agreement of at least 0.91 suite-wide and
+sign-preserved low-error coverage of 0.72--0.81 on the six gated models
+(\S3).
+
+\item \textbf{Intro, old L84. Does the basis work across models, questions,
+and domains?} One basis per model serves all prompts, contrasts and lenses
+with no refitting, and the same recipe applies unchanged to all eight LM
+heads. The 300 benchmark-derived contrasts across QA, contract-entailment and
+security formats reach sign agreement 0.94 and coverage 0.84 on Qwen3.5-2B,
+and 0.98 and 0.93 on Qwen3.5-0.8B (\S3 Setup, App.~L). Table~1 now
+makes the 8-model reconstruction suite and the 6-model interpretation gate
+explicit.
+
+\item \textbf{Intro. Define ``contrast'' and ``readout'' early.} Both are
+defined in \S1, along with \emph{selected readout score} and
+\emph{margin}.
+
+\item \textbf{Method. Why not absorb the shared offset $\mu$?} \S2 defines $\mu$ and shows its exact cancellation whenever the
+coefficients sum to zero, which covers every contrast used, and Appendix~A
+derives the identity. A new paragraph in Appendix~A.1, \emph{Why the offset
+stays outside the dictionary}, answers the question directly.
+Folding $\mu$ into the dictionary would give an atom carrying coefficient one
+on every row, so it would occupy a TopK slot for every token and spend sparse
+capacity on a quantity that is identical everywhere, and its decoder
+direction would be drawn toward the row mean. Keeping the offset explicit
+follows standard sparse autoencoder practice and the documented stabilising
+effect of centering output embeddings.
+
+\item \textbf{Method. Is the residual orthogonal to the dictionary
+directions?} It is not, and with an overcomplete dictionary spanning the
+space it cannot be. \S2 now describes the separation as additive
+and exact, alongside the reading rule that gates interpretation on residual
+size. Appendix~A gives the identity. Appendix~F quantifies what orthogonality
+would buy, since least-squares refitting on the encoder's fixed support
+raises rowEV by only 0.004--0.006, so the non-orthogonal residual is not
+absorbing recoverable structure.
+
+\item \textbf{Method, old L196. How are contrasts justified, and how do we
+know A is better than B?} \S3 Setup states plainly that a
+positive margin says the readout favours A over B and that correctness is a
+separate question, and that only the separate benchmark-derived bank takes A
+from a gold label. The banks are fixed once, before any decomposition is
+read. Appendix~G covers bank families, provenance and filters.
+
+\item \textbf{Experiment, old L302. Is sign agreement of 0.91 sufficient, and
+what about decision boundaries and generation?} The reading rule (\S2) gates interpretation on sign agreement and relative error, and
+only accepted scores are read qualitatively. Sign errors concentrate at
+near-tie margins (App.~G.4). New in this revision,
+the intervention study of Table~2 supplies the downstream-reliability
+evidence the question asked for.
+
+\item \textbf{Table 3. Why median rather than mean, and what about tail
+failures?} Appendix~G.4 is new and reports mean, p95 and maximum absolute
+error for SRP and all six alternatives, plus a margin-stratified table. SRP
+has the lowest value on every statistic on every model, and the remaining
+tail sits at near-indifference margins. \S3.2 carries a
+one-sentence pointer.
+
+\item \textbf{Question 3 and summary. Novelty relative to an SAE.} The
+contribution split is stated in \S1. TopK is the fitting
+primitive, and the contribution is the factorised readout object and the
+interface it induces. The Introduction separates SRP from activation SAEs,
+residual-stream attribution and direct LM-head geometry by what each
+decomposes. Table~1 and \S3.3 give the
+empirical case.
+
+\item \textbf{Summary. No downstream-task analysis.} Three responses. The 300
+benchmark-derived contrasts above, the intervention study of Table~2, and
+\S4, which changes how a published lens reading should be used.
+\end{itemize}
+
+\subsection*{Reviewer e1hF}
+
+\begin{itemize}
+\item \textbf{W1. Does the learned basis beat direct analysis of LM-head
+rows?} We ran the exact comparison requested, including both constructions
+the review named, clustering the rows of $W_U$ and treating top-k nearest
+neighbours as a basis. Table~1 gives six direct-geometry
+alternatives on all six gated models, among them a capacity-matched k-means
+dictionary at SRP's own $D$ and $k$. \S3.3 tests the review's
+stated criterion directly, whether the resulting groupings look similar to
+SRP's. Scored on identical cores, row-kNN recovers 43--49\% and clustering
+21--25\%, against 72--75\% for a held-out same-recipe SRP dictionary. The
+antecedent does not hold.
+
+\item \textbf{W2. Are the explanations stable across SAE runs?} Three seeds
+at each of two widths, with equal held-out reconstruction verified first, so
+the review's premise of a different seed with equally good reconstruction is
+controlled and not merely assumed (App.~I). What reproduces is the object the
+review cares about, the decomposition of a selected score, with 100\% of
+contrasts above the null's p90 at roughly 15 times the null and negligible
+cross-side leakage, together with the token-group structure, where 87--91\%
+sit above the null's p99. Individual decoder directions do not recur, at a
+matched cosine of roughly 0.33, which is the expected signature of feature
+splitting and is stated in the revision. Claims are scoped within-recipe, and
+Appendix~I.4 reports the cross-recipe comparison.
+
+\item \textbf{W3. Simpler controls, and matched KL rather than fixed scale.}
+We added mean-row, rank-4 PCA and PCA group-direction controls, all built
+from the same five discovery rows without touching held-out tokens, then
+swept and interpolated them to four common KL targets (App.~N). SRP wins all
+12 paired comparisons on the display model, with every 95\% bootstrap
+interval excluding zero. Against the strongest control, the mean-row
+direction, the paired advantage runs from $+0.032$ to $+0.087$ across the
+four KL targets. On the review's specific objection, the KL gap of 0.679
+against 0.004 for the oracle, Appendix~N now explains why that gap does not
+measure efficiency. The oracle bias penalises the logits of the evaluation
+lexicon itself, so it moves exactly the tokens being scored and leaves the
+rest of the distribution untouched, while a readout direction selected from
+five discovery tokens acts through the whole vocabulary and pays for whatever
+else it moves. The oracle is an upper bound that reads the evaluation labels,
+and the comparisons carrying the claim are the label-free mean-row and PCA
+directions, which are matched on distributional cost. We state the boundary
+in the main text, and \S3.4 scopes the advantage to the display
+model, with the per-model results in Appendix~N.
+
+\item \textbf{Comment. Is $k=128/256$ sparse enough, given that activation
+SAEs use 32 or 64?} Appendix~D.3 is new and retrains Qwen3.5-2B and
+Qwen3.5-0.8B at both values the comment names, $k=64$ and $k=32$, under an
+otherwise identical recipe. Going from $k=256$ to $k=64$ raises the
+dead-feature rate from under 4\% to 32--51\%, and $k=32$ strands 64--69\% of
+the dictionary, with rowEV falling from 0.80 to 0.68 and KL rising from 0.23
+to 0.37 on the display model. A smaller budget strands capacity instead of
+buying sparsity, and the progression repeats on both models. Appendix~D adds the
+fraction-active framing, since absolute $k$ is not comparable across
+dictionaries of different width. At $D=65{,}536$, $k=128$ and $k=256$
+activate 0.20\% and 0.39\% of the dictionary, and a median of 65--107
+features carries 80\% of a score's contribution mass.
+\end{itemize}
+
+\subsection*{Reviewer pZ3j}
+
+\begin{itemize}
+\item \textbf{W1. The novelty of the method seems limited.} Same treatment as
+j4yY's Question 3. The contribution split is in \S1, the boundary against
+activation SAEs and dense decompositions is in the Introduction,
+and the distinctness evidence is in Table~1 and \S3.3.
+
+\item \textbf{W2. Labelling is human, many labels are ambiguous, and the
+success rate is unknown.} Labelling is not done by hand. Appendix~L now
+describes the pipeline, where a language model drafts each description from
+the feature's highest-scoring unembedding rows and the authors verify every
+label used to support a claim against those same rows. The success rate is
+the rate at which that verification succeeds, and it is now measured on two
+axes. On intrinsic labelability, 85 of 99
+claim-bearing display labels name a coherent lexical family at top-20 row
+depth. On panel relevance, 66 of those 85 are on-target for the sense their
+panel claims, all side-consistent, with no case where an on-target label
+opposed the prose. Both appear in Appendix~L. A blinded
+three-run audit with a frozen prompt, fresh contexts, and no panel claims or
+author labels in view reaches 93.4\% unanimity, $\kappa=0.87$, and 81.8\%
+agreement with the author audit, with disagreements skewing toward
+\emph{more} coherent. We report it as a same-model reproducibility audit,
+since three runs of one model do not constitute three annotators. \S3.4 states that labels are readability summaries kept separate from
+the measured objects, which are feature ids, signed terms and residuals, so a
+decomposition does not depend on accepting a label.
+
+\item \textbf{W3. Many hyperparameters, and the sensitivity is not analysed.}
+Two widths and three seeds run throughout the stability analyses, with sweeps
+over width, sparsity, architecture, initialisation and schedule in
+Appendices~C--E and Appendix~D.3 new. The main text surfaces this at \S2
+(operating-point rule), which describes the reported basis as an
+audited operating point and disclaims canonical status.
+
+\item \textbf{W4. No genuinely new analysis that required the tool.} \S4 is
+that analysis. It re-tests a reading published in contemporaneous work, finds
+the reported language moves with the lens fitting corpus, and identifies the
+one feature that survives both readings on 77/80 prompts. The comparison
+requires a basis shared across the two lenses, which is what the
+decomposition supplies. See the response to the meta-review above.
+\end{itemize}
+
+\section{Additional changes}
+
+\begin{itemize}
+\item \textbf{Section 3 rebuilt as one argument.} It now runs from fidelity
+to distinctness against direct-geometry alternatives, then to reproducibility
+and intervention relevance, with the evaluation design folded into its
+opening.
+\item \textbf{Supporting material moved to the appendices.} Feature-resolved
+DLA, the lexical-edit protocol, the score-family grid and additional
+qualitative displays are now in Appendices~M, N, G and L, making room in the
+main text for \S4 and the new evaluations. The main text keeps a
+one-paragraph summary of each with scoped claims.
+\item \textbf{Scope statements made explicit.} Edit claims report per-model
+results, intervention claims are worded as local readout-side predictions,
+and the label audit is described as a blinded same-model reproducibility
+audit rather than human annotation.
+\item \textbf{Notation.} Floored and unfloored relative error now carry
+distinct symbols.
+\end{itemize}
+
+The revision moves the paper from a decomposition with diagnostics to a claim
+with evidence. The interface is now tested against direct-geometry
+alternatives, against seeds, and against intervention, and \S4 uses it to
+show that what a published lens reports follows the corpus the lens was
+fitted on. That last point is a fact about fitted lenses rather than
+about this method, and reaching it took a basis the two lenses could be read
+in.
+
+% ============================================================
+% Everything below is internal and never appears in the posting build.
+% ============================================================
+\ifdraftnotes
+\clearpage
+{\color{red}
+\section*{Pre-submission checklist (internal, not for posting)}
+
+\textbf{Manuscript}
+\begin{itemize}[label=$\square$]
+\item[$\boxtimes$] Abstract. \textbf{Decided 2026-08-04, leave as is.} The
+abstract keeps row explained variance of 0.83--0.89 and does not restate sign
+agreement or coverage. Recorded so this is not reopened. Consequence to keep
+in view, that is the number the meta-review turned into ``explain 90\% of the
+variance of the observations'', and the previous submission did carry ``at
+least 91\% of logit differences'' at old L23--24. The two headline metrics
+are stated in this document instead, in the j4yY abstract bullet, so a
+resubmission reader meets them early even though the abstract does not carry
+them. Do not raise the meta-review's phrasing anywhere.
+\item[$\boxtimes$] Label-generation pipeline. Done 2026-08-04. Appendix~L,
+\emph{How labels are produced}, states that a language model drafts each
+description from the feature's highest-scoring unembedding rows and the
+authors verify every claim-bearing label against those same rows, and it
+frames the audit as the measurement of that verification's success rate.
+pZ3j's W2 premise that labelling is ``all done by humans'' no longer stands
+unanswered, and checklist item E1 is discharged. The W2 bullet in the
+point-by-point opens with the correction.
+\item[$\boxtimes$] Contrast banks and blinded-audit protocol in Appendix~F.
+Verified 2026-08-04: the artifact-availability paragraph names both, in both
+the preprint and the anonymous branch, and the URLs are correctly guarded by
+\texttt{\textbackslash ifpreprintmode}. The Section~3 artifacts bullet now
+names them.
+\item[$\boxtimes$] $k=32$. Verified 2026-08-04: Appendix~D.3
+(\emph{Lower Sparsity Budgets}) already reports $k=32$ \emph{and} $k=64$ on
+both Qwen3.5-2B and Qwen3.5-0.8B. Nothing to run. The earlier belief that
+only the $k=64$ Qwen3.5-2B cells existed was wrong, and this document had
+been understating the experiment; both it and the map table now say two
+models at two budgets. Note $k=32$ carries 1 seed and rowEV is withheld where
+the dead rate exceeds the selection threshold.
+\item[$\boxtimes$] Appendix~I.4 and Appendix~L retain what this document no
+longer restates. Verified 2026-08-04: I.4 carries the cross-recipe value
+(0.444, below row-kNN) and L records the earlier three-way label scheme.
+\item[$\boxtimes$] Add the $\mu$ justification. Done in Appendix~A.1,
+paragraph \emph{Why the offset stays outside the dictionary}.
+\item[$\boxtimes$] Explain why the oracle's KL of 0.004 is not an
+information-matched comparison. Done in Appendix~N.
+\item[$\boxtimes$] Reading-rule pass rate. Resolved 2026-08-04:
+\texttt{results\_and\_analysis.tex} defines coverage as the fraction of
+scores the reading rule accepts, so the thread's 69--89\% and the paper's
+0.72--0.81 are the same quantity on different banks. This document quotes
+only the paper's, so no action.
+\item \textbf{Consider.} Appendix~I.4 is titled \emph{Cross-Recipe
+Disclosure}. ``Disclosure'' frames a scoping result as a confession in the
+table of contents. \emph{Cross-Recipe Comparison} says the same thing.
+\end{itemize}
+
+\textbf{This document}
+\begin{itemize}[label=$\square$]
+\item[$\boxtimes$] Placeholders. Resolved 2026-08-04 by dropping line
+references entirely. Locations are now section and appendix numbers, which
+are stable, so this document no longer depends on a frozen \texttt{main.pdf}
+and \texttt{main.tex} can be recompiled freely. Zero
+\texttt{\textbackslash ph\{\}} remain. Do not reintroduce line numbers.
+\item[$\boxtimes$] Old line numbers. Verified 2026-08-04 against
+\texttt{../10103\_Sparse\_Readout\_Prism\_A\_S.pdf}, the previous submission.
+L24 ``on at least 91\% of logit differences'', L84 ``on hidden-state
+activations. Once a readout score'', L196 ``is positive when the readout
+favors token A over'', L302 ``scores survive the factorization. Sign
+agree-''. All four match the reviews' citations.
+\item Set \texttt{\textbackslash draftnotesfalse}. This removes every red
+note and this checklist.
+\item Then verify the posting PDF's text layer is clean. Extract it and grep
+for \texttt{TODO}, \texttt{NOT IN PAPER}, \texttt{DECISION} and
+\texttt{meta-reviewer}. Upload the compiled PDF only, never this source.
+\item[$\boxtimes$] Anonymity pass on this document. Verified 2026-08-04: no
+author names, affiliations, repository URLs or author-list change
+information.
+\item \textbf{OPEN.} Mark \texttt{RESUBMISSION\_CHANGE\_SUMMARY.md} as
+superseded or delete it. Confirmed still present 2026-08-04. It covers the
+same ground with stale appendix letters and table numbers.
+\item \textbf{OPEN, page limit has no slack.} Verified 2026-08-04 from a
+fresh build: Conclusion starts on p.~8 and Limitations on p.~9, so the body
+is compliant with nothing to spare. Any addition to \S1--\S6, including the
+abstract fix above, must be paid for by a cut of similar length.
+\item Upload to the Explanation of Revisions field. Optionally prepend to the
+main submission PDF.
+\end{itemize}
+
+\textbf{Submission metadata, not part of this PDF}
+\begin{itemize}[label=$\square$]
+\item Set the two Reassignment Request fields. Both currently read ``This is
+not a resubmission.''
+\item Update \emph{Languages Studied}, currently English only, since \S4 now
+covers English, Chinese and German.
+\item Re-answer checklist C1 and C4 as Yes, pointing at Appendix~F.
+\item Confirm the preprint decision. The previous submission declared an
+intent to post a non-anonymous preprint during review, so check this against
+the resubmission's anonymity requirements before posting.
+\end{itemize}
+}
+\fi
+
+\end{document}

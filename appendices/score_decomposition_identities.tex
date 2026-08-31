@@ -5,26 +5,10 @@
 \label{app:interpreting-sparse-readout-prism-figures}
 \label{app:additional-diagnostics}
 
-\begin{figure}[!tbp]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/schematic_tikz/readout_query_one_column.pdf}
-    \vspace{-0.8\baselineskip}
-    \caption{\textbf{Sparse Readout Prism, schematically.}
-    \emph{Left:} a selected readout direction \(q\) built from LM-head
-    rows (e.g.\ \(q=w_A-w_B\)) factorizes into signed feature
-    directions \(\beta_i(q)\,d_i\) plus a residual \(r_q\).
-    \emph{Right:} at hidden state \(h\), the score \(h^\top q\) splits
-    into per-feature contributions \(\beta_i(q)\,h^\top d_i\) plus
-    \(h^\top r_q\), in logit units; blue supports side \(A\), orange
-    side \(B\), hatching the residual
-    (\S\ref{sec:method-local-score}).}
-    \label{fig:method-schematic}
-\end{figure}
-
 This appendix states the decomposition identities used by the figures and control
 tables and fixes the bookkeeping conventions for displaying a trained readout
 SAE. The identities are the same local score decomposition introduced in
-\Cref{sec:method-local-score}. All reported scores are evaluated in the
+\S\ref{sec:method-local-score}. All reported scores are evaluated in the
 model's raw readout space. If training used centering or row normalization, the
 SAE coefficients, reconstructed rows, and residual terms are first mapped back
 to that space.
@@ -33,11 +17,13 @@ to that space.
 \caption{\textbf{Selected scores and their sparse-feature coefficients.}
 Rows instantiate the selected readout direction \(q_\alpha\) and corresponding
 direction coefficient \(\beta_i(\alpha)\). Barred \(w\) and \(z\) denote
-uniform token-set averages; for top-competitor margins,
+uniform token-set averages, and for top competitor margins,
 \(\bar{w}_{\pi,\mathcal{R}}=\sum_r\pi_r w_r\) and
 \(\bar{z}_{\pi,\mathcal{R},i}=\sum_r\pi_r z_{r,i}\), where \(\pi_r\) are the
 nonnegative competitor weights summing to one over the competitor set
-\(\mathcal{R}\).}
+\(\mathcal{R}\). Here \(A,B\in\mathcal{V}\) are single tokens,
+\(\mathcal{A},\mathcal{B}\subset\mathcal{V}\) are token groups, and \(u\) is
+the top-ranked token under the original LM head.}
 \label{tab:method-special-cases}
 \centering
 \footnotesize
@@ -58,7 +44,7 @@ Selected score family & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
 \(\bar{w}_{\mathcal{A}}-\bar{w}_{\mathcal{B}}\) &
 \(\bar{z}_{\mathcal{A},i}-\bar{z}_{\mathcal{B},i}\) \\
 \addlinespace[1pt]
-\textbf{Top-competitor margin} &
+\textbf{Top competitor margin} &
 \(w_u-\bar{w}_{\pi,\mathcal{R}}\) &
 \(z_{u,i}-\bar{z}_{\pi,\mathcal{R},i}\) \\
 \bottomrule
@@ -68,66 +54,93 @@ Selected score family & \(q_\alpha\) & \(\beta_i(\alpha)\) \\
 \subsection{Raw-Space Row Decomposition}
 \label{app:score-decomposition-row-factorization}
 
-Let \(w_t\in\R^d\) be the unembedding row for token \(t\). Under the row
+Let \(w_v\in\R^{\dmodel}\) be the column-vector form of
+unembedding row \(v\), following \S\ref{sec:method}. Under the row
 preprocessing convention used by the reported analyses,
 \[
     \begin{aligned}
-    x_t&=\frac{w_t-\mu}{a_t}, \qquad a_t>0,\\
-    x_t&=\sum_i \widetilde z_{t,i}\widetilde d_i+\widetilde r_t,
+    x_v&=\frac{w_v-\mu}{a_v}, \qquad a_v>0,\\
+    x_v&=\sum_i z^{\mathrm{pre}}_{v,i}d^{\mathrm{pre}}_i+r^{\mathrm{pre}}_v,
     \end{aligned}
 \]
-with \(a_t=1\) for unnormalized rows. The raw-space decomposition then uses
+with \(a_v=1\) for unnormalized rows. The raw-space decomposition then uses
 \[
-    z_{t,i}=a_t\widetilde z_{t,i},
-    \qquad
-    d_i=\widetilde d_i,
-    \qquad
-    r_t=a_t\widetilde r_t,
+\begin{aligned}
+    z_{v,i}&=a_v z^{\mathrm{pre}}_{v,i},
+    & d_i&=d^{\mathrm{pre}}_i,\\
+    r_v&=a_v r^{\mathrm{pre}}_v.
+\end{aligned}
 \]
 so that
 \[
-    w_t=\mu+\sum_i z_{t,i}d_i+r_t .
+    w_v=\mu+\sum_i z_{v,i}d_i+r_v .
 \]
 The displayed local score decomposition contains only this shared offset, SAE feature
-terms, and the explicit residual term; no hidden dense base term is added.
+terms, and the explicit residual term, with no hidden dense base term added.
+
+\paragraph{Why the offset stays outside the dictionary.}
+Nothing forbids folding the shared offset into the dictionary, since
+\(\mu\) is a direction in \(\R^{\dmodel}\) like any other and the row
+reconstruction could be written with one additional atom. We keep it
+explicit because that atom would carry coefficient one on every row by
+construction, so it would occupy one of the \(k\) active slots for every
+token and spend sparse capacity on a quantity that is identical
+everywhere. Its decoder direction would also be drawn toward the row mean,
+away from structure that distinguishes rows. An explicit
+centering term is the standard arrangement in sparse autoencoder practice
+\citep{bricken2023monosemanticity,gao2024scaling}, and centering output
+embeddings in particular is a documented stabilizer
+\citep{stollenwerk2026output}. Holding \(\mu\) outside the sparse code
+lets the features model deviations from the shared row mean, and it keeps
+the offset a separately visible term in the identity for a selected score below,
+where its cancellation becomes a property of the selected direction,
+independent of which atoms happened to be learned.
 
 \subsection{Selected-Score Identity}
 \label{app:score-decomposition-selected-score}
 
-A selected readout direction is a linear function of vocabulary rows,
+For a hidden state \(h_\ell\), let
+\(\rstate=T_\ell(h_\ell)\) be the corresponding state presented to
+the LM head, following \S\ref{sec:method}. A selected readout direction is
+a linear function of vocabulary rows,
 \[
-    q_\alpha = \sum_{t\in\mathcal{V}} \alpha_t w_t,
+    q_\alpha = \sum_{v\in\mathcal{V}} \alpha_v w_v,
     \qquad
-    s_\alpha(h)=h^\top q_\alpha .
+    s_\alpha(\rstate)=\rstate^\top q_\alpha .
 \]
-Define the direction coefficient and SAE feature contribution as
+Define the direction coefficient, selected-direction residual, and SAE
+feature contribution as
 \[
-    \beta_i(\alpha)=\sum_t \alpha_t z_{t,i},
-    \qquad
-    c_i(h,\alpha)=\beta_i(\alpha)\,h^\top d_i .
+\begin{aligned}
+    \beta_i(\alpha)&=\sum_v \alpha_v z_{v,i},
+    & r_\alpha&=\sum_v\alpha_v r_v,\\
+    c_i(\rstate,\alpha)&=\beta_i(\alpha)\,p_i(\rstate),
+\end{aligned}
 \]
+where \(p_i(\rstate)=\rstate^\top d_i\) is the readout feature
+projection of \S\ref{sec:method-factorization}.
 Substituting the raw-space row decomposition gives the exact grouped identity
 \[
 \begin{aligned}
-    s_\alpha(h)
+    s_\alpha(\rstate)
     &=
-    s_{\mu}(h,\alpha)
-    +s_{\mathrm{feat}}(h,\alpha)\\
+    \smu(\rstate,\alpha)
+    +\sfeat(\rstate,\alpha)\\
     &\quad
-    +s_{\mathrm{resid}}(h,\alpha),\\
-    s_{\mu}(h,\alpha)
+    +\sresid(\rstate,\alpha),\\
+    \smu(\rstate,\alpha)
     &=
-    \left(\sum_t \alpha_t\right)h^\top\mu,\\
-    s_{\mathrm{feat}}(h,\alpha)
+    \left(\sum_v \alpha_v\right)\rstate^\top\mu,\\
+    \sfeat(\rstate,\alpha)
     &=
-    \sum_i c_i(h,\alpha),\\
-    s_{\mathrm{resid}}(h,\alpha)
+    \sum_i c_i(\rstate,\alpha),\\
+    \sresid(\rstate,\alpha)
     &=
-    h^\top\sum_t \alpha_t r_t .
+    \rstate^\top r_\alpha .
 \end{aligned}
 \]
 For zero-sum contrasts, including pairwise logit differences, group contrasts,
-vocabulary-mean contrasts, and top-competitor margins, the offset term
+vocabulary mean contrasts, and top competitor margins, the offset term
 cancels. \Cref{fig:method-schematic} depicts the decomposition.
 
 \subsection{Error, Sign, and Display Rules}
@@ -139,47 +152,51 @@ For a selected readout direction \(q_\alpha\), the exact and reconstructed
 scores are
 \[
 \begin{aligned}
-    s_{\mathrm{exact}}
+    \sexact
     &=
-    h^\top q_\alpha,\\
-    s_{\mathrm{recon}}
+    \rstate^\top q_\alpha,\\
+    \srecon
     &=
-    s_{\mu}(h,\alpha)
+    \smu(\rstate,\alpha)
     +
-    s_{\mathrm{feat}}(h,\alpha).
+    \sfeat(\rstate,\alpha).
 \end{aligned}
 \]
 The residual score is the reconstruction error,
 \[
-    \epsilon(h,\alpha)
+    \epsilon(\rstate,\alpha)
     =
-    s_{\mathrm{exact}}-s_{\mathrm{recon}}
+    \sexact-\srecon
     =
-    s_{\mathrm{resid}}(h,\alpha),
+    \sresid(\rstate,\alpha),
 \]
-and aggregate summaries use
+and aggregate summaries use the parameterized relative error
 \[
-    \rho(h,\alpha)
+    \rho_\delta(\rstate,\alpha)
     =
-    \frac{|\epsilon(h,\alpha)|}{|s_{\mathrm{exact}}|+\delta},
+    \frac{|\epsilon(\rstate,\alpha)|}{|\sexact|+\delta},
 \]
-with \(\delta=0.5\) logit. The floor prevents arbitrarily small margins from
-dominating median error summaries; near the decision boundary, sign agreement and
+with \(\delta=0.5\) logits, denoted \(\rho_{0.5}\), in aggregate summaries.
+We drop the arguments of \(\epsilon\) and \(\rho_\delta\) where the state and
+coefficient vector are clear from context.
+The floor prevents arbitrarily small margins from
+dominating median error summaries, and near the decision boundary sign agreement and
 margin-binned flip rates are the primary reliability checks. The unfloored
-variant \(\tilde\rho(h,\alpha)=|\epsilon(h,\alpha)|/|s_{\mathrm{exact}}|\)
-(\(\delta=0\)) is used for identity checks, case-study displays, and all
-baseline comparisons; it upper-bounds \(\rho\), and the two symbols are
+variant
+\(\rho_0(\rstate,\alpha)=|\epsilon(\rstate,\alpha)|/|\sexact|\)
+is used for identity checks, case-study displays, and all
+baseline comparisons. It upper-bounds \(\rho_{0.5}\), and the two subscripts are
 never mixed within one table. For signed
 contrasts, side-specific feature support is evidence-bearing when
 \[
-    \operatorname{sign}(s_{\mathrm{exact}})
+    \operatorname{sign}(\sexact)
     =
-    \operatorname{sign}(s_{\mathrm{recon}}).
+    \operatorname{sign}(\srecon).
 \]
 Each interpreted figure states the selected readout score, exact score,
 reconstructed score, reconstruction error, relative reconstruction error, and
 sign status for contrasts. If a plot displays only the largest bars, the
 reported feature sum and residual are still computed from the full active
-feature sum. Token-level figures report tokenization or row-level audit
-information where it affects interpretation; brittle single-token contrasts are
+feature sum. Token-level figures report tokenization or row audit
+information where it affects interpretation, and brittle single-token contrasts are
 handled as explicit group contrasts when needed.

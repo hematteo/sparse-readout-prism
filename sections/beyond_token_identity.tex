@@ -1,179 +1,161 @@
-\section{Corpus Conditionality: A Fitted Lens Reports the Language of Its Corpus}
+\section{A Fitted Lens Reports the Language of Its Fitting Corpus}
 \label{sec:beyond-token}
 \label{sec:readout-analyses}
 \label{subsec:cross-lens}
 
-Fitted vocabulary lenses transport an intermediate hidden state into the
-space the LM head reads and report the resulting tokens. Those tokens
-are read both as predictions of what a model will say and as
-evidence about the state itself: which distinction it carries, and which
-language the model is operating in. The second reading has a dependency
-the token report does not expose. The transport is fitted on a corpus,
-so the reported surface form is a property of the instrument as much as
-of the state, and a token ranking cannot separate the two. We call that
-possibility \emph{corpus conditionality}, and this section tests it.
+A fitted lens maps an intermediate hidden state into the space consumed
+by the LM head. The resulting tokens are often interpreted as evidence
+about the information represented at that layer, including the language
+in which the model is operating. For example,
+\citet{gurnee2026workspace} obtain English tokens from intermediate
+states for a Chinese prompt and interpret them as evidence that the
+intermediate computation occurs in English.
 
-Two dependencies are worth separating. A fitted lens inherits its
-fitting corpus through \(T_\ell\)
-(\S\ref{sec:method-comparing-accounts}), and this section measures that
-dependence directly. The logit lens has no fitting corpus and is not
-exposed to it. The results below are claims about fitted transports
-only.
+Because this map is learned from a corpus, its token readings can reflect
+both the hidden state and the fitting corpus, and a token ranking alone
+cannot distinguish these sources. We call this dependence corpus
+conditionality. The fitting corpus affects the lens through the learned
+map \(\rstate=T_\ell(h_\ell)\) (\S\ref{sec:method}), so our results apply
+only to fitted lenses. Studies of latent language that decode states
+directly through the unembedding use no fitting corpus
+\citep{wendler2024llamas,schut2025english} and are therefore not subject
+to this dependence. Appendix~\ref{app:extended-related-work} discusses a
+separate confound in token readings that affects those studies.
 
-The test takes up the second of the two ambiguities token identity
-cannot express, that of different surface tokens supported by the same
-readout structure. (The converse case, one token drawing on different structure
-in different contexts, is treated in
-\S\ref{subsec:same-token-analysis}.) A lens output is a selected readout
-score on the transported state, so SRP decomposes it in the shared
-weight-only basis (\S\ref{sec:method-comparing-accounts}) and can
-therefore ask whether two lenses that report \emph{different} tokens on
-the \emph{same} state are reading different structure or the same
-structure.
+\subsection{Design}
+\label{subsec:cross-lens-design}
+We test corpus conditionality by holding an intermediate hidden state
+\(h_\ell\) fixed and varying only the corpus used to fit the lens. The
+two fitted maps can produce different decoded states from the same
+state, and hence different token readings, so any difference between
+the readings is attributable to the fitting corpus. To
+test whether different tokens reflect different readout structure, SRP
+decomposes both selected token scores in a single basis learned only
+from the model weights. Translation pairs, language labels, and fitting
+corpora do not enter this basis, which provides a reference independent
+of the fitting corpus.
 
-\paragraph{Design.}
-The Jacobian lens is a recent, contemporaneous
-construction that transports states through an averaged Jacobian before
-decoding through the unembedding \citep{gurnee2026workspace}. On
-Qwen3.5-9B we fit two, which differ
-only in fitting corpus, 100 English against 100 Chinese C4 prompts, with
-the same seeds, layers, and procedure. Both lenses then read the same frozen
-hidden states from 80 evaluation prompts spanning seven families
-(antonym, cloze, exemplar, factual recall, and translation in both
-directions), plus 12 control prompts (digits and proper nouns) whose
-surface form should not depend on language. The antonym family includes
-the prompt \citet{gurnee2026workspace} use to illustrate an
-English-language intermediate reading on a Chinese-language prompt, and
-that inference is the one this section places under a corpus control. Their
-reading is reported on a different model, whose fitting corpus we cannot
-inspect, so what we test is the form of the inference rather than their
-measurement. For each prompt we compare the dominant SRP feature of the
-score each lens reports, across the mid-band layers (the middle layers
-of the decoded set, where the two lenses' token readings can diverge).
-The design separates two hypotheses: if the reported surface form were a
-property of the state, the two lenses would report the same tokens, and
-if the feature account tracked the instrument rather than the state, the
-dominant feature would flip with the fitting corpus. Two further
-manipulations vary the same design along its other axis, the lens
-construction, and are reported below. The SRP basis is
-fitted to LM-head rows only. No translation pairs, language labels, or
-lens-fitting corpora enter it. Appendix~\ref{app:cross-lens} gives the
-protocol, per-family tables, and per-case results.
+Using the reference implementation, we fit two Jacobian lenses
+\citep{gurnee2026workspace} on Qwen3.5-9B. The first uses 100 English C4
+prompts, and the second uses 100 Chinese C4 prompts. We hold seeds,
+layers, and all other procedures fixed. We apply both lenses to the same
+frozen states from 80 evaluation prompts spanning seven task families.
+We also evaluate 12 controls---six digit prompts and six proper noun
+prompts---whose expected outputs are language invariant.
+
+We evaluate layers 21, 24, 26, and 29, where the two lenses can
+produce different token readings. At each layer, we decompose the score
+assigned to the token reported by each lens and record the feature with
+the largest contribution in absolute value
+(\S\ref{sec:method-comparing-accounts}). We count a prompt as agreement
+when the same feature dominates under both lenses in at least two of the
+four layers. Requiring two of the four layers keeps a match at one
+layer alone from counting as agreement. We use two null comparisons to
+estimate chance agreement under this rule. One evaluates an unrelated token under the same lens,
+and the other shuffles prompts before pairing the two lenses.
+Appendix~\ref{app:cross-lens} provides the full protocol, token and
+feature agreement rates for each family, and results for each prompt.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\columnwidth]{figures/cross_lens/fig1_cross_lens_butterfly.pdf}
+    \includegraphics[width=\columnwidth]{figures/cross_lens/cross_lens_shared_feature.pdf}
     \caption{\textbf{Two lenses, two surface languages, one readout
-    feature.} Factual-recall prompt (``The capital of China is Beijing;
-    the capital of the UK is \ldots''), one frozen Qwen3.5-9B hidden
-    state at layer 26. The English-fitted Jacobian lens reads
-    \texttt{London} (38.5 logits); the Chinese-fitted lens reads
-    \begin{CJK*}{UTF8}{gbsn}伦敦\end{CJK*}~(39.2). Wings show each
-    reading's full feature sum. The shaded overlay is the shared readout
-    feature f23180, carrying \(+30.1\) (75\%) and \(+24.0\) (63\%) of
-    the two sums, while the largest other feature contributes \(+1.7\)
-    and \(+1.6\).}
+    feature.} The figure shows a Chinese factual recall prompt, which
+    translates as ``The capital of China is Beijing. The capital of the
+    UK is \ldots''. For the same frozen Qwen3.5-9B state at layer 26, the
+    Jacobian lens fitted on English reports \texttt{London}, whereas the
+    lens fitted on Chinese reports
+    \begin{CJK*}{UTF8}{gbsn}伦敦\end{CJK*} (``London''). Below each token
+    is its logit under the corresponding lens. The bar shows the share
+    of the lens's feature sum attributable to the shared readout feature
+    f23180, which dominates both scores. The feature sum is the signed
+    sum of the feature contributions and excludes the offset and the
+    residual.}
     \label{fig:cross-lens-butterfly}
 \end{figure}
 
-\paragraph{The token readings contradict each other.}
-The two lenses differ only in fitting corpus, yet on the same frozen
-states their mid-band readings disagree. In
-\Cref{fig:cross-lens-butterfly} the English-fitted lens reads
-\texttt{London} where the Chinese-fitted lens reads
-\begin{CJK*}{UTF8}{gbsn}伦敦\end{CJK*}, and on factual-recall prompts
-the two report different scripts on 9 of 10 (39/80 across all families
-on the strict mid-band vote, with the lenses converging to the same
-tokens only at the final band). Read alone, either lens licenses a confident
-conclusion about the model's intermediate working language, and the
-two conclusions contradict. Token rankings can show \emph{that} the
-lenses disagree, but not whether the same computation underlies both
-readings.
-On the published antonym prompt, the unfitted logit lens settles which
-of the two readings the fitting corpus produced. It reads a Chinese
-form at every mid-band layer
-(\begin{CJK*}{UTF8}{gbsn}大的\end{CJK*} at layer 24,
-\begin{CJK*}{UTF8}{gbsn}大\end{CJK*} at 26 and 29, reaching 97\% at
-29), and the English form never leads. The logit lens is not a neutral
-arbiter, since applying the readout unchanged biases it toward the model's
-own final token, but it is the one reading here that no choice of
-fitting corpus could have shaped.
+\subsection{Different Tokens Share a Dominant Feature}
+\label{subsec:cross-lens-token-conflict}
+\label{subsec:cross-lens-feature-invariance}
+Across layers 21, 24, 26, and 29, the two lenses report tokens in
+different scripts on 39 of 80 prompts, while their outputs converge at the
+final layer. On factual recall prompts, the lenses report different
+scripts on 9 of 10 (\Cref{fig:cross-lens-butterfly}). On the antonym
+prompt from \citet{gurnee2026workspace}, the lens fitted on English reports
+\texttt{large} at layers 24 and 26 and \texttt{big} at layer 29. The
+lens fitted on Chinese instead reports
+\begin{CJK*}{UTF8}{gbsn}大的\end{CJK*} (``large'' or ``the large one'')
+at layers 24 and 26 and
+\begin{CJK*}{UTF8}{gbsn}大\end{CJK*} (``large'' or ``big'') at layer
+29. Interpreting either lens alone would therefore yield opposing
+conclusions about the model's intermediate language.
 
-\paragraph{The feature account does not move.}
-The same SRP feature is dominant under both lenses' readings on 77 of
-80 prompts (96\%, 95\% CI [0.90, 0.99]). In
-\Cref{fig:cross-lens-butterfly}, one shared feature carries 75\% and
-63\% of the two readings' feature sums while every other feature
-contributes at most \(+1.7\). Within a single lens, one
-feature carries both surface forms on 61/80 (English lens) and 62/80
-(Chinese lens) prompts. Two controls rule out loose matching. The
-dominant feature matches an unrelated token's decomposition
-in 0/159 within-lens comparisons (the \emph{unrelated-token} control),
-and re-pairing lenses across shuffled prompts matches in 0/240 (the
-\emph{shuffled-pairing} control). Digit and proper-noun controls, where
-no language flip is expected, agree at 5/6 and 5/6. The claim this
-supports is invariance rather than discovery. The factorization is not
-required to reveal that translation-equivalent rows share structure,
-only to name the carrier they share and measure its dominance, and that
-coordinate stays fixed while the lens's surface report changes.
+The same SRP feature dominates under both lenses on 77 of 80 prompts
+(96\%, 95\% CI [0.90, 0.99]). In
+\Cref{fig:cross-lens-butterfly}, f23180 accounts for 75\% of the feature
+sum for the lens fitted on English and 63\% for the lens fitted on
+Chinese. Every other feature contributes at most \(+1.7\) logits.
+Neither null comparison produces a match, with 0/159 for unrelated
+tokens and 0/240 after shuffling prompts.
+The dominant feature agrees under both lenses on 5/6 digit controls and
+5/6 proper noun controls.
 
-\paragraph{Corpus conditionality is not specific to one lens construction.}
-Replacing the lens construction while holding the corpora fixed
-reproduces both halves of the result. Per-layer ridge translators in the
-tuned-lens style \citep{belrose2023tuned}, fitted on the same English
-and Chinese prompt sets, again report the language of their fitting
-corpus (on 9/10 EN\(\to\)ZH translation prompts) and again share a
-dominant feature across the pair, on 67/80
-(\Cref{fig:cross-lens-extension}; construction rules and tables in
-Appendix~\ref{app:cross-lens}). Removing the script cue leaves the
-result intact, since on 90 English--German prompts with cognates
-excluded by construction the two Jacobian lenses report different top-1
-tokens on 73/90 with no orthographic signal connecting the readings, and
-the dominant feature nonetheless agrees on 84/90. Holding the corpus fixed
-and varying only the construction leaves the dominant feature in place
-on 76/80. The two axes of the design therefore separate. The surface
-reading moves with the fitting corpus, while the feature account moves
-with neither corpus nor construction, and every cell sits far above its
-matched floors.
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/cross_lens/cross_lens_extension_matrix.pdf}
+    \caption{\textbf{Feature agreement across language pairs and lens
+    constructions.} A prompt counts as agreement when the same
+    feature dominates under both lenses in at least two of layers 21,
+    24, 26, and 29. Points show agreement rates, intervals show 95\%
+    binomial CIs, and counts appear at the right. Two baseline markers per
+    setting show the matched null rates. All eight are at most 3/159
+    (1.9\%). Appendix~\ref{app:cross-lens} provides tables for each
+    family and construction details.}
+    \label{fig:cross-lens-extension}
+\end{figure}
 
-\paragraph{What this asks of lens practice.}
-In this controlled setting the reported surface language follows the
-lens's fitting corpus even when both readings are carried by the same
-dominant LM-head feature, so an English surface reading is not, by itself,
-evidence of an English intermediate computation. That distinction
-matters wherever lens token readings feed working-language audits or
-monitoring.
+\subsection{The Pattern Persists Across Languages, Lens Constructions, and Corpus Sizes}
+\label{subsec:cross-lens-extensions}
+We extend the corpus conditionality analysis across a second lens
+construction, a language pair that shares a script, and larger fitting
+corpora. In each extension we test whether the token readings change while
+the same readout feature remains dominant.
+\Cref{fig:cross-lens-extension} reports the agreement rates and matched
+null comparisons.
 
-The reading under test is a published
-one. \citet{gurnee2026workspace} read an English
-intermediate representation off a Chinese-language prompt and take it as
-evidence about where the computation happens. On that prompt, under
-their own lens implementation, the reported language moves with the
-fitting corpus, and the unfitted lens never leads with the English form.
-Their reading was obtained on a different model whose fitting corpus we
-cannot inspect, so this does not show it to be an artifact. It shows
-that the token evidence does not settle the question on its own, and
-that the control which would settle it, one refit and one re-read, was
-not run.
+\paragraph{Lens construction.}
+We fit ridge translators related to the tuned lens
+\citep{belrose2023tuned} on the same English and Chinese corpora of 100
+prompts. On 9 of 10 EN\(\to\)ZH translation
+prompts, the translator fitted on English reads Latin tokens and the
+translator fitted on Chinese reads CJK tokens. The same feature remains
+dominant under both translators on 67/80 prompts (CI [0.74, 0.90]),
+compared with 3/159 and 1/240 matches under the two null comparisons.
+We then hold the English fitting corpus fixed to isolate the effect of
+lens construction. The Jacobian lens and ridge translator agree on the
+dominant feature for 76/80 prompts, and both null comparisons yield zero
+matches.
 
-The same inference appears in the latent-language literature
-\citep{wendler2024llamas,schut2025english}, which reads through the
-unembedding directly. Those lenses have no fitting corpus and are not
-exposed to corpus conditionality. A weaker and separate confound applies
-to them instead, since which of several realizations surfaces in a
-ranking is fixed by the row codes of \(\WU\) alone, and one readout
-feature carries both realizations on 61/80 and 62/80 of the within-lens
-comparisons here. \citet{dumas2025tongue} establish language-agnostic
-concept representations causally, by activation patching, without
-relying on a ranking at all. We do not claim that models never privilege
-one language, nor that the shared feature is a language-neutral causal
-representation, and the lens-only baseline is reported beside the
-decomposition throughout (Appendix~\ref{app:cross-lens}). Three changes
-to practice follow, each testable. Vary the fitting corpus and report
-the per-corpus spread beside the reading, since a claim about a model
-should survive reasonable corpus choices. Score a reading against the
-structure that carries it rather than its spelling alone, because a
-criterion anchored to one surface form counts a sibling form carried by
-the same feature as a miss. Attach a residual to every reading, since a
-decomposition that closes exactly gives each reading a reliability
-signal of its own.
+\paragraph{Shared script.}
+We next test English and German, which share the Latin script, and
+exclude cognates from the evaluation set. The Jacobian lenses fitted on
+English and German report different top-1 tokens on 73/90 prompts. The
+same feature remains dominant on 84/90 prompts, compared with 1/204 and
+0/270 matches under the two null comparisons. The dissociation therefore
+does not depend on the distinct scripts used in the English--Chinese
+comparison.
+
+\paragraph{Corpus size.}
+Finally, we triple each fitting corpus from 100 to 300 prompts to test
+whether the original corpus size accounts for the disagreement. Feature
+agreement remains 77/80 for English--Chinese and increases from 84/90
+to 85/90 for English--German. Token disagreement moves in opposite
+directions, falling from 39/80 to 33/80 for English--Chinese and rising
+from 73/90 to 76/90 for English--German. Estimation noise that decreases
+with additional fitting data would predict a decrease for both language
+pairs. Across the two fitting scales, eleven English--Chinese prompts
+change their reported language, and none changes its dominant feature.
+
+On Qwen3.5-9B, the token readings vary with the language and size of
+the fitting corpus, while the dominant readout feature remains stable
+across these changes and across two lens constructions.

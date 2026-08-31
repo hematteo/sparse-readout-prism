@@ -1,0 +1,110 @@
+
+\section{Sense-Labelled Evaluation}\label{app:sense-labelled-evaluation}
+
+\S\ref{subsec:same-token-analysis} reads individual scores for a fixed
+token under two contexts. This appendix tests the same feature groups
+against labelled sense data and measures what the sparse account gives
+up against the full decoded state.
+
+\paragraph{Data and coverage.}
+CoarseWSD-20 \citep{loureiro2021coarsewsd} supplies 20 ambiguous words
+with coarse sense labels and a fixed train and test split, 33{,}566
+contexts in total. We keep the
+shipped splits and score the final position of a cloze prompt that asks
+for the ambiguous word. All 20 words resolve to a single token under
+the Qwen3.5 vocabularies. Seven do not under the R1-Llama-8B
+vocabulary, so that model is evaluated on 13 words and 16{,}785
+contexts and its column is not comparable item for item with the other
+two. Row-gate coverage is 1.00 on the Qwen models and 0.976 on
+R1-Llama-8B. Sense distributions are skewed, so we report balanced
+accuracy throughout. Unbalanced accuracy gives the same ordering and is
+released with the run artifacts.
+
+\paragraph{Protocol.}
+For each word we select one group of eight features per sense on the
+training split by largest mean contribution difference between that
+sense and the others, then assign each held-out context to the sense
+whose group carries the larger summed contribution. Feature scales are
+standardized by training statistics alone, and no test label enters the
+selection. The null permutes sense labels within the training split and
+repeats the whole selection, so it inherits the selection procedure.
+
+\paragraph{Sense alignment.}
+\Cref{tab:app-sense-alignment} gives the result. Selected groups recover
+held-out senses at 0.90, 0.92, and 0.80 balanced accuracy against a
+permutation null near 0.41. Every word on Qwen3.5-2B, 19 of 20 on
+Qwen3.5-9B, and 12 of 13 on R1-Llama-8B exceed that null's 95th
+percentile, and every word on all three models exceeds its majority
+baseline. The finding does not depend on the account size. Across
+sizes one, two, four, and eight the majority baseline is exceeded for
+every word on every model, and the count above the null's 95th
+percentile moves by at most one word.
+
+The last two rows of the same table bound the result from above. A
+nearest centroid probe on the full decoded state reaches 0.96, 0.97, and
+0.92, and the full 256-dimensional account without any selection
+reaches 0.95, 0.97, and 0.89. The three rows form a sparsity
+ladder in which factorizing the row costs little. Compressing to eight features
+costs a further 5 to 9 points against the full account, and 5 to 12
+points against the full state. That is what the account costs, and it
+buys a set of features a reader can name.
+
+This is an alignment result for the selected groups. The comparison
+against direct \(\WU\) geometry is made on reconstruction and coverage
+in \Cref{tab:readout-score-fidelity-summary} and on grouping recovery in
+\S\ref{subsec:stability}, where the alternatives are matched by
+construction.
+
+\paragraph{A classifier framing.}
+A different framing trains a per-word classifier on the ten features
+that carry the largest absolute contribution, skipping the group
+selection. Under that framing the unweighted projections
+\(p_i(\rstate)\) beat the signed contributions on all three models, at
+0.87 against 0.84, 0.90 against 0.76, and 0.73 against 0.67. Row-coefficient shuffles and randomly drawn features sit close to
+the signed contributions.
+
+That ordering follows from the factorization. Holding a vocabulary row \(v\) fixed
+freezes its coefficients \(z_{v,i}\) and leaves only \(p_i(\rstate)\) free
+(\S\ref{sec:method-local-score}), so for a fixed word every weighted
+variant is a constant per-coordinate rescaling of the same projections.
+A per-word supervised classifier gains nothing from that rescaling, and
+a shuffle of the coefficients preserves the projections it is meant to
+remove. The signed contributions name which readout directions support
+a selected score. They are not a sense representation, and this second
+framing measures the second quantity. Sense structure in embedding
+geometry has been studied directly \citep{arora2018polysemy}.
+
+\paragraph{Scope.}
+The evaluation covers one dataset, one sparsity setting per model, and
+one prompt template. No behavioral filter is applied, and the model
+ranks the ambiguous word at median rank 174, 10, and 1131 on the three
+models, so a share of the scored contexts sits outside the operating
+regime of Appendix~\ref{subsec:interpretation-boundary}. Filtering on
+target rank would change the reported values in an untested direction.
+
+\begin{table}[!tbp]
+\caption{\textbf{Sense alignment on CoarseWSD-20.} Balanced accuracy on
+held-out contexts for groups of eight features selected on the training
+split, against a label-permutation null that repeats the selection, a
+majority baseline, and two references that use no selection.}
+\label{tab:app-sense-alignment}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4.0pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight\arraybackslash}Xccc@{}}
+\toprule
+ & Qwen3.5-2B & Qwen3.5-9B & R1-Llama-8B \\
+Words & 20 & 20 & 13 \\
+\midrule
+Selected groups & 0.899 & 0.923 & 0.798 \\
+Permutation null & 0.408 & 0.407 & 0.422 \\
+Majority & 0.410 & 0.410 & 0.429 \\
+Words above null p95 & 20/20 & 19/20 & 12/13 \\
+Words above majority & 20/20 & 20/20 & 13/13 \\
+\midrule
+Full account, no selection & 0.947 & 0.970 & 0.892 \\
+Hidden state & 0.958 & 0.971 & 0.920 \\
+\bottomrule
+\end{tabularx}
+\end{table}

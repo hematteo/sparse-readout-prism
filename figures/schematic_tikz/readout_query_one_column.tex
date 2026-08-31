@@ -6,5 +6,27 @@
   \node[anchor=south west,inner sep=0] at (0,0) {%
     \includegraphics[width=327.047pt]{readout_query_one_column_background.png}%
   };
+  % Replace the notation baked into the background with the paper's canonical
+  % coefficient-indexed notation. Keeping these labels as TeX preserves exact
+  % mathematical typography without redrawing the schematic artwork.
+  % panelbg must equal the PNG's card fill exactly or the patches show as
+  % lighter boxes; sampled value is RGB(244,245,247), not (243,244,246).
+  % Panel interiors: x in [11.5,150.5] / [169,307], y in [6.5,128]; every
+  % patch must stay inside those bounds and clear of the artwork it borders
+  % (arrow shaft starts at x=29.6, dashed arrowhead spans y=21..35, light
+  % blue bar tip ends at x=247).
+  \definecolor{panelbg}{RGB}{244,245,247}
+  \fill[white] (24,135) rectangle (168,152);
+  \node[font=\small] at (96,144) {$q_\alpha=\sum_i\beta_i(\alpha)d_i+r_\alpha$};
+  \fill[white] (175,135) rectangle (327,152);
+  \node[font=\small] at (251,144) {$s_\alpha=\sum_i c_i+\tilde h_\ell^\top r_\alpha$};
+  \fill[panelbg] (15,60) rectangle (27,74);
+  \node[font=\small] at (21.5,67) {$q_\alpha$};
+  \fill[panelbg] (112,108) rectangle (146,122);
+  \node[font=\small] at (131,116) {$\beta_i(\alpha)d_i$};
+  \fill[panelbg] (123,12) rectangle (137,23);
+  \node[font=\small] at (130,18) {$r_\alpha$};
+  \fill[panelbg] (248.5,29) rectangle (270,43.5);
+  \node[font=\small] at (267,38) {$\tilde h_\ell^\top r_\alpha$};
 \end{tikzpicture}
 \end{document}

@@ -1,101 +1,51 @@
 \section*{Limitations}
 
-\paragraph{Scope of claims.}
-SRP's claims are local to a selected readout score (a token logit,
-logit difference, group contrast, or other fixed linear combination of
-LM-head rows).
-Feature-resolved DLA and readout-side edits use this score to nominate
-directions and measure the induced score shifts and distributional
-side effects.
-Causal necessity, sufficiency, and downstream generation effects are separate
-evaluation targets. The readout-side edit is constrained by how it is
-built, not by its downstream effect, and circuit-level necessity and
-sufficiency require interventional evaluation
-\citep{conmy2023acdc,geiger2023causalabstraction,ameisen2025circuittracing}.
+\paragraph{Fitting and basis choice.}
+SRP adds a one-time sparse autoencoder fit for each model, taking roughly
+6--12 GPU-hours on one NVIDIA A40 in our experiments. As in other sparse
+dictionary methods, individual decoder directions depend on dictionary size,
+sparsity \(k\), training recipe, and seed
+\citep{elhage2022superposition,karvonen2025saebench,makelov2024principled,paulo2025stability}.
+We therefore select operating points from fidelity sweeps and report stability
+across seeds and recipes
+(\S\ref{subsec:stability}, Appendix~\ref{app:basis-stability}).
 
-\paragraph{Training cost.}
-Logit lens and standard direct logit attribution require no fitting,
-whereas SRP requires training a sparse autoencoder over the rows of \(\WU\). The fit runs
-once per model and amortizes across downstream readout analyses, and
-because the target is a fixed \(|V|\)-row matrix rather than a hidden-state
-distribution, the cost is roughly 6--12 GPU-hours per model on a single
-NVIDIA A40
-(Appendix~\ref{app:readout-factorizer-diagnostics-reproducibility}).
-Selected-score decompositions on new hidden states are forward-pass only.
+\paragraph{Empirical scope.}
+The cross-lens study evaluates Qwen3.5-9B across English--Chinese and
+English--German, two constructions of fitted lenses, and multiple fitting
+budgets. It establishes in these controlled settings that the surface language
+a lens reports can depend on the corpus it was fit on. The study of edits to
+the readout is run on Qwen3.5-2B, with cross-model losses reported in
+Appendix~\ref{app:lexical-control-stress-test}.
 
-\paragraph{Hyperparameter dependence and non-uniqueness.}
-As in other sparse dictionary settings, the learned basis depends on
-dictionary size, sparsity \(k\), and recipe choices
-\citep{elhage2022superposition,karvonen2025saebench,makelov2024principled},
-and individual decoder directions are not unique across training seeds
-\citep{paulo2025stability}. The stability analysis of
-\S\ref{subsec:stability} and Appendix~\ref{app:basis-stability} shows
-that the interpretive unit (the decomposition of a selected score and
-its feature-group structure) reproduces within a fixed recipe, but
-cross-recipe variation is larger than within-recipe seed variation and is
-disclosed there. Operating points are selected from sweeps in
-Appendices~\ref{app:readout-factorizer-sweeps}
-and~\ref{app:readout-factorizer-qwen-sweeps}, and the reported basis should
-be read as an audited operating point rather than a unique factorization.
-
-\paragraph{Scope of the cross-lens study.}
-The corpus-conditionality result of \S\ref{subsec:cross-lens} is
-established for one model (Qwen3.5-9B) across two language pairs
-(English--Chinese and same-script English--German) and two fitted-lens
-constructions (the Jacobian lens and a tuned-lens-style ridge
-translator), with cross-construction agreement measured on identical
-states. It remains a single-model result at a single fitting scale,
-with the feature comparison defined operationally
-(\S\ref{sec:method-comparing-accounts}). The published reading it
-re-tests was obtained on a different model whose fitting corpus is not
-inspectable, so the study shows the inference to be underdetermined in a
-controlled setting. It does not establish that that reading is itself a
-corpus artifact. It licenses a negative
-conclusion, that a surface-language reading is not by itself evidence of a
-matching intermediate computation, rather than a claim that models never
-privilege a language. The retrospective reading of
-\S\ref{subsec:cross-lens} inherits that bound. Prior English-dominance
-claims are underdetermined by the token-ranking evidence offered for
-them, which is a statement about that evidence and not a demonstration
-that the claims are wrong. The readout-side edit advantage of
-Appendix~\ref{app:lexical-control-stress-test} likewise holds only on
-the display model, with the other models' losses reported.
-
-\paragraph{Fidelity and labels.}
-SRP keeps the measured quantities (feature ids, signed terms, and
-residual errors) separate from label summaries of high-scoring unembedding
-rows. Reconstruction error, sign agreement, replacement fidelity, and stability
-checks accompany contribution terms, so interpretation follows the measured
-objects.
-
-\paragraph{Vocabulary-geometry artifacts.}
-The selected-score interface inherits vocabulary geometry: labels and groupings
-can reflect tokenizer geometry, token frequency, row norms, or surface-form
-artifacts
+\paragraph{Interpretation boundary.}
+SRP is designed to explain selected readout scores and the organization of a
+model's readout. Questions at the level of circuits or of generation require
+interventions beyond the analyses on the readout side here. Feature labels summarize
+top unembedding rows and may inherit tokenizer and vocabulary geometry
 \citep{press2017outputembedding,inan2017tying,yang2018softmaxbottleneck,bostrom2020bpe}.
-Group contrasts reduce single-row dependence. Benchmark-derived contrasts
-are used for linear readout reconstruction rather than task solving, and
-labels summarize row geometry. Additional scope and future-work discussion appears in
+Quantitative conclusions therefore rest on feature ids, signed contributions,
+and residual errors, with further discussion in
 Appendix~\ref{app:extended-discussion-limitations}.
 
 \section*{Ethical Considerations}
 
-This work studies pretrained language-model readouts. It collects no new
-human-subject data and evaluates no deployed systems. Experiments use public
-checkpoints and held-out hidden states, including C4 continuations,
+This work studies the readouts of pretrained language models, collects no
+new data from human subjects, and evaluates no deployed systems. Experiments use public
+checkpoints and held-out decoded states, including C4 continuations,
 which may contain offensive, private, copyrighted, or sensitive text
 \citep{raffel2020exploring,dodge2021documenting}. We use C4 only to measure
-readout reconstruction and make no social-validity claims about individual
-tokens, labels, or generated outputs. Checkpoints and
-C4-derived hidden states are used under the licenses or terms published with their
+readout reconstruction and make no claims about the social validity of
+individual tokens, labels, or generated outputs. Checkpoints and
+decoded states derived from C4 are used under the licenses or terms published with their
 release pages and model cards. We do not redistribute the
 checkpoints or raw C4 text. The released SRP dictionaries%
 \ifpreprintmode\ (\href{https://huggingface.co/hematteo/sparse-readout-prism}{\texttt{hematteo/sparse-readout-prism}})\fi\
-carry artifact-specific license and usage notes.
+carry license and usage notes specific to each artifact.
 
 SRP makes lexical readout directions and row labels easier to inspect,
-and its readout-edit stress test moves specified lexical scores, which
+and its stress test of edits to the readout moves specified lexical scores, which
 is a dual-use property of auditing tools. We report the edit with
-distribution-shift and off-target probes and keep claims tied to
-measured quantities. Safety-filter, moderation, and deployment-control
-evaluation are system-level questions beyond this work.
+probes for distribution shift and for effects off target, and keep claims tied to
+measured quantities. Evaluation of safety filters, moderation, and deployment
+controls raises questions at the system level that lie beyond this work.

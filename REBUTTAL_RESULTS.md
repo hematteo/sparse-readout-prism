@@ -14,6 +14,16 @@ interpretation gate): Qwen3.5-0.8B / 2B / 9B, Ministral-3-8B-Base,
 R1-Distill-Qwen-7B, R1-Distill-Llama-8B. Dictionaries: the paper's 32x/k256
 operating points throughout.
 
+> **Update 2026-08-30.** The paper no longer frames this six-model scope as an
+> interpretation gate. All gating/threshold language (replacement check with
+> top1 >= 0.75, the §3.4 "reading rule") was reframed as descriptive fidelity
+> diagnostics with no prescribed acceptance range; the six models above are now
+> called "the six softcap-free readouts" (their scores are a plain linear map of
+> the decoded state; the two Gemma-4 readouts sit behind a nonlinear logit
+> softcap, and the split was fixed before any contrast was seen). The numbers
+> in this file are unchanged and remain the source of truth. Do not
+> reintroduce gate/threshold framing when importing them.
+
 ---
 
 ## 1. Causal validation of feature contributions  ✅ headline result
@@ -36,8 +46,13 @@ random controls each; gated (paper reading rule) and ungated.
 
 Ungated ≈ gated everywhere (Δr² < 0.02). **Reading:** the decomposition is
 causally predictive on all six models; magnitudes are calibrated (slope≈1) on
-the 7–8B models and overstated up to ~1.7x on the small Qwens (sign/rank
+the 7–8B models and **understated** up to ~1.7x on the small Qwens (sign/rank
 preserved) — consistent with more feature interference; report as measured.
+**Direction corrected 2026-08-31:** the slope is realized change regressed on
+predicted contribution through the origin (`fit_r2_slope(x=c_pred, y=delta_real)`
+in `scripts/run/run_causal_contribution_validation.py`), so slope > 1 means the
+realized change exceeds the prediction. Earlier text here and in the paper said
+"overstated"; the paper (§4.3, Table 2 caption, Appendix J) was corrected the same day.
 Scope: readout-side ablation (linear in h; no re-forward), stated explicitly.
 
 Artifacts: `CLUSTER/causal_<tag>/{summary.json,causal_rows.csv}`;
@@ -184,6 +199,34 @@ selected score, not the feature identity (matches the paper's reading-rule
 stance). Artifacts: `LOCAL/cross_seed_stability_{32x,16x}.json`;
 dictionaries `SSD/results/exp5_seedvar/` (six, with metrics.json).
 
+**DO NOT QUOTE — posted "cosine 0.74–0.79" is unsupported (checked
+2026-08-04).** `general_response_3.md` states the explanation of a contrast
+"reproduces across seeds (cosine 0.74–0.79, vs ≈0.02 between unrelated
+contrasts)." No artifact produces those numbers. `cross_seed_stability.py`
+computes exactly five quantities — same-side Jaccard, cross-side leakage,
+cross-contrast null, basis NN-cosine, matched-projection correlation — and
+none of them lands in 0.74–0.79 at either width:
+
+| Candidate | 32x | 16x |
+|---|---|---|
+| same-side Jaccard (mean) | 0.214 | 0.240 |
+| basis NN-cosine, used features (median) | 0.33 | 0.53 |
+| matched-projection corr | 0.529–0.543 | 0.63–0.66 |
+| cross-contrast null (mean) | 0.0144 | 0.0177 |
+
+The "≈0.02 between unrelated contrasts" half does match the cross-contrast
+null, which is a **Jaccard** null — so the posted sentence appears to pair the
+correct null with a same-side figure that is not in the artifact, under a
+metric label ("cosine") the harness never computes. A cluster sweep found no
+other stability job: the only cross-seed script is
+`CLUSTER/scripts/rebuttal/run_paper_label_groupings.py`, which is
+Jaccard-only, and its output
+(`CLUSTER/results/e1hf_corrective_20260711/paper_label_grouping_and_stability.json`)
+reproduces the same table. Unlike the k=32 case in §4c, this is a genuine
+gap, not a search error. The manuscript reports the Jaccard framing
+(App. I, `tab:app-cross-seed-stability`) and is correct; the exposure is that
+e1hF was given a stronger-looking number with nothing behind it.
+
 ---
 
 ## 4b. Cross-seed FEATURE-GROUP matching (e1hF W2 follow-up)  ✅ favorable
@@ -259,13 +302,43 @@ dictionary (dead 0.04 → 0.50) and costs fidelity (rowEV 0.80 → 0.68, KL 0.23
 0.37). Dead rate tracks budget-relative-to-width, not k alone. Seed spread
 within a setting is far smaller than between settings.
 
-**Correction to the posted rebuttal.** The e1hF and pZ3j replies state
-"k ∈ {32,64} on Qwen3.5-0.8B and Qwen3.5-2B" and "at k=32, 64–69% of features
-are never used." Only the k=64 half exists, and only on Qwen3.5-2B: the
-`k=64`/2B figure is confirmed (0.491/0.512, i.e. the posted "50.5%"), but
-**no k=32 run and no 0.8B low-k run exists on the cluster or locally**
-(searched 2026-08-02). Do not quote the k=32 numbers. The manuscript
-(App. E.3) reports only the measured cells.
+**Retracted correction (was wrong; resolved 2026-08-04).** An earlier note
+here claimed the posted k=32 and 0.8B low-k figures had no runs behind them
+and told the reader not to quote them. **That was a search error, not a data
+gap.** The 2026-08-02 sweep looked only under `results/`, where this job
+never wrote: job **52341** (`srp_lowk`, mauao, 4× A40, COMPLETED 0:0,
+2026-07-12 01:09–02:44) emitted one `[result]` line per cell into `logs/` and
+materialised no `metrics.json`, because three of its four cells trip the
+harness's `max_dead_feature_rate: 0.5` gate and return the
+`selection_score = -999999.x` rejection sentinel. All four posted cells exist
+and every posted figure reproduces exactly.
+
+### 4c-bis. Activation-budget cells (job 52341, seed 0, `row_preprocessing: center_normalize`, 20k steps, batch 4,096)
+
+| Model | D | width | k | dead | rare | val top1 | KL (bits) | sel. score |
+|---|---|---|---|---|---|---|---|---|
+| Qwen3.5-0.8B | 16,384 | 16x | 32 | 0.6411 | 0.6871 | 0.7715 | 0.4337 | rejected |
+| Qwen3.5-0.8B | 16,384 | 16x | 64 | 0.3170 | 0.4122 | 0.8008 | 0.2960 | 3.006 |
+| Qwen3.5-2B | 32,768 | 16x | 32 | 0.6940 | 0.7764 | 0.7656 | 0.4755 | rejected |
+| Qwen3.5-2B | 32,768 | 16x | 64 | 0.5052 | 0.6404 | 0.7910 | 0.3806 | rejected |
+
+Both models are at 16x (d_model 1024 and 2048), matching the width convention
+of the 4c table above. **The posted claims check out to the digit:** "at k=32,
+64–69% of features are never used" is 0.6411–0.6940, and "k=64 still leaves
+50.5% unused on Qwen3.5-2B" is 0.50519 — the latter from this job, not from
+the 4c grid's 0.491–0.512 pair, which is an independent second and third
+observation of the same cell. **The k=32 numbers are quotable.**
+
+Two limits on putting these rows in the paper. They are **one seed per cell**
+(the 4c grid rows are 2–3), and **rowEV was not logged** and cannot be
+backfilled — no checkpoint survives from 52341 under `results/` or in the
+01:00–03:00 window on 2026-07-12. Refitting all four cells to recover rowEV
+and a second seed is ~1.5 h on 4 A40s under the same recipe.
+
+Artifacts: `CLUSTER/logs/rebuttal_lowk_qwen35_{0p8b_d16384,2b_d32768}_k{32,64}_52341.log`,
+`CLUSTER/logs/slurm-52341.out`; configs
+`CLUSTER/configs/sweeps/rebuttal_lowk_qwen35_{0p8b,2b}_base.yaml`
+(the Slurm wrapper varies only `factorizer.k`, `evaluation.k`, and run metadata).
 
 Artifacts: `CLUSTER/pz3j_hparam_grid_20260712/qwen2b_{d32768_k64_s{1,2},
 d32768_k256_s{0,2}, d65536_k128_s{0,1,2}}/metrics.json`; metrics + configs
@@ -279,8 +352,10 @@ cluster). `qwen2b_d32768_k256_s1` never finished (no `DONE`).
 - **Tokenizer gate on the edit task:** the single-token profanity lexicon does
   not exist in Llama BPE (1 pair) and barely in Tekken (4 pairs) — the edit
   experiment is defined on the 4 Qwen-tokenizer models; stated per-tokenizer.
-- **Causal slopes >1 on small Qwens:** magnitude overstatement (1.3–1.7x) with
-  preserved sign/rank; candidate explanation = feature interference; left open.
+- **Causal slopes >1 on small Qwens:** magnitude understatement (realized change
+  1.3–1.7x the predicted term; direction corrected 2026-08-31, see the causal
+  section above) with preserved sign/rank; candidate explanation = feature
+  interference; left open.
 - **9B/0.8B edit losses:** fidelity and width explanations both tested and
   rejected; mean-row is a strong baseline; claim scoped to display model.
 

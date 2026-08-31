@@ -1,43 +1,52 @@
 \section{Related Work}
 
-\paragraph{Lens-style readout interfaces.}
-The logit lens decodes hidden states through the model's unembedding
-\citep{nostalgebraist2020}. Tuned, Future-Lens, Patchscopes, and
-Jacobian-lens variants learn or transport the map before decoding
+\paragraph{Methods in the lens style.}
+The logit lens applies the unembedding unchanged
+\citep{nostalgebraist2020}, while the tuned lens, Future Lens,
+Patchscopes, and the Jacobian lens learn or transport the map first
 \citep{belrose2023tuned,pal2023future,ghandeharioun2024patchscopes,gurnee2026workspace}.
-All report tokens, and the fitted variants inherit a fitting corpus. SRP
-keeps the readout interface but decomposes the selected LM-head
-direction into sparse readout features, so differently fitted lenses can
-be compared on the same state (\Cref{subsec:cross-lens}).
+All of them report in token identity, and SRP changes that unit
+without changing the lens, so differently fitted lenses can be
+compared on the same state (\S\ref{subsec:cross-lens}).
 
 \paragraph{Output geometry and sparse row dictionaries.}
 Weight tying
 \citep{press2017outputembedding,inan2017tying,lopardo2026weighttying},
 softmax and target geometry
 \citep{yang2018softmaxbottleneck,zhao2024implicit}, and tokenizer
-segmentation \citep{bostrom2020bpe} shape the vocabulary rows, and
-sparse coding of static word embeddings recovers interpretable codes
-from type-level rows
+segmentation \citep{bostrom2020bpe} give the unembedding rows shared
+structure. Sparse
+coding of static word embeddings recovers interpretable codes
+from rows at the type level
 \citep{murphy2012nnse,faruqui2015sparse,subramanian2018spine,arora2018polysemy}.
-SRP carries this row-side approach to the LM head of a trained
-transformer, judged by replacement and selected-score reconstruction.
-Activation SAEs learn overcomplete bases for the hidden-state factor
-\(h\) of a lens score \(h^\top q\)
-\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,templeton2024scaling},
-while SRP applies the same machinery to the complementary factor \(q\).
-Parameter-space decompositions likewise factorize weights
-\citep{braun2025parameter,gao2025weightsparse}, with SRP keeping the
-model fixed and tying the factorization to the lens-score interface.
+SRP carries this approach to the rows of a trained transformer's LM
+head, judged by replacement and by reconstruction of selected scores.
+Row neighborhoods, clusterings, and principal directions summarize the
+same rows, but none of them is constrained to sum to the logit or
+margin under analysis. SRP satisfies that constraint by construction, and
+\S\ref{subsec:baseline-comparisons} measures how much of a selected
+score each method recovers.
 
-\paragraph{Additive attribution and mechanisms.}
-Direct logit attribution splits a token logit or logit-difference
-direction into contributions from residual-stream components
-\citep{elhage2021framework,wang2022ioi}, extended across components by
-logit prisms \citep{nguyen2024logitprisms}; composing the row-side
-basis with DLA refines each component's scalar into signed per-feature
-terms. Interventions \citep{conmy2023acdc}, causal abstraction
-\citep{geiger2023causalabstraction}, and transcoder or
-attribution-graph approaches
-\citep{dunefsky2024transcoders,ameisen2025circuittracing} address
-complementary mechanism-level questions.
-Appendix~\ref{app:extended-related-work} gives broader positioning.
+\paragraph{Activation SAEs and decompositions in parameter space.}
+To our knowledge, sparse autoencoders (SAEs) have not previously been
+fit to a trained transformer's static weights, only to its activations.
+The two fits decompose opposite factors of the same score, since a lens
+score takes the form \(\rstate^\top q\), a decoded state against a
+readout direction \(q\). Activation SAEs learn one overcomplete basis
+per layer for the hidden states \(h_\ell\) behind the decoded state
+\citep{bricken2023monosemanticity,cunningham2023sparse,gao2024scaling,templeton2024scaling},
+while SRP applies the same machinery to \(q\) itself, fitting one
+basis that serves every lens and layer.
+An activation SAE also depends
+on the corpus that produced its hidden states, so judging one lens
+reading against another through its basis would introduce a third
+instrument conditioned on a corpus. The cross-lens analysis of
+\S\ref{subsec:cross-lens} instead needs a reference that does not move
+with the lens, the prompt, or the corpus.
+Decompositions in parameter space also factorize weights
+\citep{braun2025parameter,gao2025weightsparse}, whereas SRP ties its
+factorization to the scores a lens reads.
+
+Appendix~\ref{app:extended-related-work} extends this section with lens
+variants, sparse feature infrastructure, readings of latent language, the
+geometry of the output space, and attribution to mechanisms.

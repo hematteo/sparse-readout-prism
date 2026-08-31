@@ -1,16 +1,16 @@
-\section{Which Models Were Evaluated?}
+\section{Model Suite and Selection Rationale}
 \label{app:model-suite-selection}
 \label{sec:app-model-suite-selection}
 
-This appendix explains the model suite used to evaluate Sparse Readout Prism:
-the Qwen model suite \citep{qwen3technical,qwen35collection}, the Gemma model
+This appendix explains the model suite used to evaluate Sparse Readout Prism,
+which spans the Qwen model suite \citep{qwen3technical,qwen35collection}, the Gemma model
 suite \citep{gemma4official,gemma4collection}, Ministral
 \citep{liu2026ministral3}, and targeted DeepSeek-R1 distilled comparison rows
 \citep{deepseekai2025deepseekr1}.
 Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility} give the metric
-summary: they report the trained widths, native $k$ settings (the TopK budget
-fixed at training), rowEV, top1, KL,
+summary, reporting the trained widths, native $k$ settings (the TopK budget
+fixed at training), rowEV, top-1, KL,
 and usage statistics for each readout SAE setting. This appendix motivates the
 model choices.
 
@@ -23,28 +23,31 @@ tokenizer, row-norm, special-token, and matched-control analyses.
 \label{sec:app-model-suite-criteria}
 
 The Qwen3.5 rows provide a fixed qualitative display setting and Qwen-family
-companion analyses. Qwen3.5-9B is the capacity anchor: it is large enough to be a
-meaningful readout-factorization test while still supporting recipe and width sweeps.
+companion analyses. Qwen3.5-9B is the capacity anchor, large enough to be a
+meaningful test of readout factorization while still supporting recipe and width sweeps.
 Qwen3.5-0.8B and Qwen3.5-2B test the same recipe at smaller unembedding
 dimensions and cheaper rerun settings.
 
 The Gemma rows provide a second tied-readout family with a different tokenizer
 and final-logit softcap. These rows exercise the readout SAE recipe under
-a distinct readout geometry; the softcap-correct readout evaluation is reported
+a distinct readout geometry, and the softcap-correct readout evaluation is reported
 in Appendix~\ref{app:readout-factorizer-transfer-comparisons}.
 
-Additional targeted rows broaden the readout-geometry coverage.
+Additional targeted rows broaden the coverage of readout geometries.
 Ministral-3-8B-Base tests transfer to an untied, softcap-free 8B-scale readout
 outside Qwen. R1-Distill-Qwen-7B and R1-Distill-Llama-8B evaluate the same
 recipe-selection measurements on reasoning-distilled comparison rows, where row
-reconstruction and LM-head replacement fidelity are visible as separate result axes.
+reconstruction and LM head replacement fidelity are visible as separate result axes.
 
 \subsection{Final Suite}
 \label{sec:app-model-suite-chosen}
 
+Table~\ref{tab:app-model-suite-current} lists the evaluated models and the
+role each one plays in the results.
+
 \begin{table*}[!tbp]
 \caption{
-Evaluated model suite and role. Exact dictionary settings and metrics:
+Evaluated model suite and role. Exact dictionary settings and metrics are in
 Appendices~\ref{app:readout-factorizer-sweeps}--%
 \ref{app:readout-factorizer-diagnostics-reproducibility}.
 }
@@ -59,11 +62,11 @@ Model(s) & Why included & Role in study \\
 \midrule
 \shortstack[l]{\texttt{Qwen3.5-0.8B}\\\texttt{Qwen3.5-2B}} &
 Small-model transfer and lower-cost repeats under the native $k=128$
-strict-budget and $k=256$ high-fidelity regimes. &
+strict budget and $k=256$ high fidelity regimes. &
 Qwen transfer evidence. \\
 \addlinespace
 \texttt{Qwen3.5-9B} &
-Scale anchor for recipe selection, capacity sweeps, and high-fidelity
+Scale anchor for recipe selection, capacity sweeps, and high fidelity
 readout replacement. &
 Qwen fidelity evidence. \\
 \addlinespace
@@ -91,13 +94,13 @@ Cross-family fidelity comparison. \\
 
 Qualitative feature analyses use a single low-error display setting so that
 examples share the same readout SAE and reporting convention. The choice is
-evidence-driven: the additional rows show how the same metrics vary with
+evidence-driven, since the additional rows show how the same metrics vary with
 readout geometry and post-training regime.
 
 \subsection{Interpretation Details}
 \label{sec:app-model-suite-boundaries}
 
-The suite is designed for readout-factorization evaluation.
+We built the suite to evaluate readout factorization.
 We report token frequency, length, special-token behavior, row norm, tied
 embedding status, softcap handling, and matched-score identity bias so
 single-token logit decompositions can be compared on the same footing.
