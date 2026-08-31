@@ -18,10 +18,10 @@ Every record has these keys (`lang_a` / `lang_b` only in the EN-DE bank):
 | `concept` | str | The concept the prompt elicits; used to exclude same-concept pairs from the shuffled-pairing null. |
 | `prompt` | str | The full prompt fed to the model; the final position is scored. |
 | `form_a` | str | The in-context answer form (the language or script the prompt asks for). |
-| `form_b` | str | The same concept's canonical form in the other language. |
-| `targets` | list[str] | Every surface the runner decomposes: `form_a`, `form_b`, any extra forms, then the nulls. |
-| `null_targets` | list[str] | Unrelated tokens (script- or language-matched) for the unrelated-token null floor. |
-| `answer` | str | The expected answer (`form_a` without its leading space). |
+| `form_b` | str | The same concept's canonical form in the other language. Controls in the EN-DE bank repeat `form_a` here (`7`, ` Paris`), since their surface does not depend on language. |
+| `targets` | list[str] | Every surface the runner decomposes, `null_targets` last. Opens with `form_a`; `form_b` follows, but extra forms may sit between them (`cle_03`: ` large`, ` big`, `大`; the three-lens bank lists the answer's own variants before the other-language forms) or after `form_b` (EN-ZH controls: ` 7`, `7`). EN-DE controls therefore list `form_a` twice (`['7', '7', ' Schuh', ' shoe']`). |
+| `null_targets` | list[str] | Unrelated tokens (script- or language-matched) for the unrelated-token null floor. Empty for the EN-ZH controls. |
+| `answer` | str | The expected continuation. Usually `form_a` without its leading space; for three EN-ZH items the answer is a multi-character word whose single-token first character is `form_a` (`clz_09` 睡觉 / 睡, `clz_16` 月亮 / 月, `exm_03` 红色 / 红), so the probed token is the answer's prefix. |
 | `lang_a`, `lang_b` | str | EN-DE bank only: the language of `form_a` / `form_b` (`de` or `en`). |
 
 Each target string is probed by the id of its first token, and the aggregators

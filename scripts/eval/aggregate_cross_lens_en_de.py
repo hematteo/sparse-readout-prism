@@ -15,10 +15,23 @@ Both languages share the Latin script, so the surface-language call for a top-1
 token is lexical rather than by script. In order: (1) membership in the bank
 item's own gold forms (the form in the item's language); (2) an umlaut / eszett
 cue means German; (3) membership in small embedded EN / DE common-word lists
-(casefolded, diacritic-normalised); else OTHER. The per-prompt call is the
-mid-band plurality vote (a 2-2 tie resolves to the alphabetically first label,
-DE < EN < OTHER). The headline agreement metric never uses the language call;
-it is a descriptive diagnostic.
+(casefolded, diacritic-normalised through ``research.cross_lens.fold_text``);
+else OTHER. The per-prompt call is the mid-band plurality vote (a 2-2 tie
+resolves to the alphabetically first label, DE < EN < OTHER). The headline
+agreement metric never uses the language call; it is a descriptive diagnostic.
+
+Options that change the population, not the arithmetic:
+  - ``--agreement-rule half`` (default, the paper) passes a vote on at least
+    ``ceil(n/2)`` scored mid-band layers (2 of 4); ``strict`` needs more than
+    half (3 of 4). Applies to every vote, divergence included.
+  - ``--null-population all`` (default, the paper) pools the unrelated-token
+    null over every bank item, controls included (204 comparisons on the
+    shipped bank); ``cross`` drops the 12 controls (180 comparisons), which
+    matches the EN-ZH population, whose controls carry no nulls.
+
+The metric bodies live in ``research.cross_lens`` (``aggregate_pair``); this
+entry point supplies the EN-DE families, the lexical call and the divergence
+column. The summary JSON carries a ``provenance`` block.
 
 Paper runs (``--prompts data/cross_lens/cross_lens_prompts_en_de.json --seed 0``)::
 
@@ -33,16 +46,21 @@ Paper runs (``--prompts data/cross_lens/cross_lens_prompts_en_de.json --seed 0``
 from __future__ import annotations
 
 import argparse
-import json
-import math
-import random
-import unicodedata
-from pathlib import Path
 
+from sparse_readout_prism.research.cross_lens import (
+    AGREEMENT_RULES,
+    NULL_POPULATIONS,
+    PairSpec,
+    aggregate_pair,
+    fold_text,
+    load_bank_items,
+    load_dump_records,
+    print_summary,
+    write_summary,
+)
+from sparse_readout_prism.research.run_io import run_provenance
 from sparse_readout_prism.utils import write_csv
 
-MIDBAND = ["21", "24", "26", "29"]
-POS = "-1"
 CROSS_GROUPS = (
     "antonym_de",
     "trans_de2en",
@@ -78,34 +96,18 @@ DE_WORDS = set(
 )
 
 
-def wilson(k, n, z=1.96):
-    if n == 0:
-        return (0.0, 0.0, 1.0)
-    p = k / n
-    d = 1 + z * z / n
-    c = (p + z * z / (2 * n)) / d
-    h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
-    return (p, max(0.0, c - h), min(1.0, c + h))
-
-
-def norm(s):
-    s = s.strip().casefold().replace("ß", "ss")
-    s = unicodedata.normalize("NFKD", s)
-    return "".join(c for c in s if not unicodedata.combining(c))
-
-
-def lang_of(tok, item):
+def lang_of(tok: str, item: dict) -> str:
     t = tok.strip()
     if not t:
         return "OTHER"
-    n = norm(t)
+    n = fold_text(t)
     forms = {
         "de": item["form_a"] if item["lang_a"] == "de" else item["form_b"],
         "en": item["form_a"] if item["lang_a"] == "en" else item["form_b"],
     }
-    if n == norm(forms["de"]):
+    if n == fold_text(forms["de"]):
         return "DE"
-    if n == norm(forms["en"]):
+    if n == fold_text(forms["en"]):
         return "EN"
     if any(c in t for c in "äöüÄÖÜß"):
         return "DE"
@@ -117,24 +119,16 @@ def lang_of(tok, item):
     return "OTHER"
 
 
-def dom_feat(rec, layer, target):
-    t = rec["layers"].get(layer, {}).get(POS, {}).get("targets", {}).get(target)
-    if not t or not t.get("top_features"):
-        return None
-    return t["top_features"][0]["id"]
-
-
-def majority_same(rec_a, rec_b, target_a, target_b):
-    same = total = 0
-    for L in MIDBAND:
-        fa, fb = dom_feat(rec_a, L, target_a), dom_feat(rec_b, L, target_b)
-        if fa is None or fb is None:
-            continue
-        total += 1
-        same += int(fa == fb)
-    if total == 0:
-        return None
-    return same >= (total + 1) // 2
+SPEC = PairSpec(
+    tag_b="de",
+    cross_groups=CROSS_GROUPS,
+    surface_column="lang",
+    surface_call=lang_of,
+    split_labels=("EN", "DE"),
+    split_caption="EN-lens=EN & DE-lens=DE",
+    surface_caption="top-1 lexical call",
+    divergence=True,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -143,120 +137,39 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--lens-b", required=True, help="dump under the German-fitted lens (output keys *_de)")
     p.add_argument("--prompts", required=True, help="EN-DE prompt bank JSON")
     p.add_argument("--seed", type=int, default=0, help="seed for the shuffled-pairing null")
+    p.add_argument(
+        "--agreement-rule",
+        choices=AGREEMENT_RULES,
+        default="half",
+        help="mid-band majority: half = at least ceil(n/2) layers (paper), strict = more than half",
+    )
+    p.add_argument(
+        "--null-population",
+        choices=NULL_POPULATIONS,
+        default="all",
+        help="rows pooled into the unrelated-token floor: all = every bank item incl. controls (paper, /204), "
+        "cross = cross families only (/180, the EN-ZH population)",
+    )
     p.add_argument("--out", required=True, help="summary JSON (per-group rates, floors, per-prompt rows)")
     p.add_argument("--rows-csv", default=None, help="optional per-prompt rows as CSV")
     args = p.parse_args(argv)
 
-    ar = {r["id"]: r for r in json.loads(Path(args.lens_a).read_text())["records"]}
-    br = {r["id"]: r for r in json.loads(Path(args.lens_b).read_text())["records"]}
-    bank_list = json.loads(Path(args.prompts).read_text())["prompts"]
-    assert len({v["id"] for v in bank_list}) == len(bank_list), "duplicate prompt ids in bank"
-    bank = {v["id"]: v for v in bank_list}
-    ids = sorted(set(ar) & set(br) & set(bank))
-    print(f"[agg] {len(ids)} prompts present in both dumps")
-
-    rows = []
-    for rid in ids:
-        v, a, b = bank[rid], ar[rid], br[rid]
-        fa, fb = v["form_a"], v["form_b"]
-        row = {"id": rid, "group": v["group"], "concept": v.get("concept", "")}
-        row["cross_lens_pass"] = majority_same(a, b, fa, fa)
-        row["cross_form_en"] = majority_same(a, a, fa, fb)
-        row["cross_form_de"] = majority_same(b, b, fa, fb)
-        nulls = [majority_same(a, a, fa, nt) for nt in v.get("null_targets", [])]
-        nulls = [x for x in nulls if x is not None]
-        row["null_hits"] = sum(nulls)
-        row["null_total"] = len(nulls)
-        # top-1 language under each lens (mid-band vote), lexical call
-        for tag, rec in (("en", a), ("de", b)):
-            langs = []
-            for L in MIDBAND:
-                top5 = rec["layers"].get(L, {}).get(POS, {}).get("top5")
-                if top5:
-                    langs.append(lang_of(top5[0][0], v))
-            # Plurality vote; a 2-2 tie resolves to the alphabetically first label
-            # (DE < EN < OTHER), fixed so the vote is deterministic.
-            row[f"top1_lang_{tag}"] = max(sorted(set(langs)), key=langs.count) if langs else "NA"
-        # divergence: do the two lenses' top-1 token strings differ (mid-band vote)?
-        diff = tot = 0
-        for L in MIDBAND:
-            ta = a["layers"].get(L, {}).get(POS, {}).get("top5")
-            tb = b["layers"].get(L, {}).get(POS, {}).get("top5")
-            if ta and tb:
-                tot += 1
-                diff += int(ta[0][0] != tb[0][0])
-        row["token_diverges"] = (diff >= (tot + 1) // 2) if tot else None
-        rows.append(row)
-
-    rng = random.Random(args.seed)
-    cross_ids = [r["id"] for r in rows if r["group"] in CROSS_GROUPS]
-    shuffle_hits = shuffle_total = 0
-    for rid in cross_ids:
-        others = [x for x in cross_ids if bank[x]["concept"] != bank[rid]["concept"]]
-        for oid in rng.sample(others, min(3, len(others))):
-            res = majority_same(ar[rid], br[oid], bank[rid]["form_a"], bank[oid]["form_a"])
-            if res is not None:
-                shuffle_total += 1
-                shuffle_hits += int(res)
-
-    def rate(sel):
-        vals = [r for r in rows if sel(r) and r["cross_lens_pass"] is not None]
-        k = sum(r["cross_lens_pass"] for r in vals)
-        return k, len(vals), wilson(k, len(vals))
-
-    summary: dict = {"per_group": {}, "rows": rows}
-    print("\n=== CROSS-LENS DOMINANT-FEATURE AGREEMENT (majority of mid-band) ===")
-    for grp in sorted({r["group"] for r in rows}):
-        k, n, (pt, lo, hi) = rate(lambda r, g=grp: r["group"] == g)
-        summary["per_group"][grp] = {"pass": k, "n": n, "rate": pt, "ci": [lo, hi]}
-        print(f"  {grp:14s} {k:3d}/{n:<3d}  {pt:.2f}  [{lo:.2f}, {hi:.2f}]")
-    k, n, (pt, lo, hi) = rate(lambda r: r["group"] in CROSS_GROUPS)
-    summary["headline"] = {"pass": k, "n": n, "rate": pt, "ci": [lo, hi]}
-    print(f"  {'ALL CROSS':14s} {k:3d}/{n:<3d}  {pt:.2f}  [{lo:.2f}, {hi:.2f}]")
-
-    cf_en = [r["cross_form_en"] for r in rows if r["group"] in CROSS_GROUPS and r["cross_form_en"] is not None]
-    cf_de = [r["cross_form_de"] for r in rows if r["group"] in CROSS_GROUPS and r["cross_form_de"] is not None]
-    nk = sum(r["null_hits"] for r in rows)
-    nn = sum(r["null_total"] for r in rows)
-    summary["cross_form_en"] = {"pass": sum(cf_en), "n": len(cf_en)}
-    summary["cross_form_de"] = {"pass": sum(cf_de), "n": len(cf_de)}
-    summary["null_within_lens"] = {"pass": nk, "n": nn, "rate": wilson(nk, nn)[0]}
-    summary["null_shuffle_cross_lens"] = {
-        "pass": shuffle_hits,
-        "n": shuffle_total,
-        "rate": wilson(shuffle_hits, shuffle_total)[0],
-    }
-    div = [r["token_diverges"] for r in rows if r["group"] in CROSS_GROUPS and r["token_diverges"] is not None]
-    summary["divergence_rate"] = {"diverging": sum(div), "n": len(div)}
-    print("\n=== ONE FEATURE CARRIES BOTH FORMS (within-lens) ===")
-    print(f"  EN lens: {sum(cf_en)}/{len(cf_en)}   DE lens: {sum(cf_de)}/{len(cf_de)}")
-    print("\n=== NULL FLOORS ===")
-    print(f"  (a) form vs unrelated token, within-lens: {nk}/{nn} ({wilson(nk, nn)[0]:.2f})")
-    print(
-        f"  (b) cross-lens shuffled prompts:          {shuffle_hits}/{shuffle_total} "
-        f"({wilson(shuffle_hits, shuffle_total)[0]:.2f})"
+    summary = aggregate_pair(
+        load_dump_records(args.lens_a),
+        load_dump_records(args.lens_b),
+        load_bank_items(args.prompts),
+        SPEC,
+        seed=args.seed,
+        rule=args.agreement_rule,
+        null_population=args.null_population,
     )
-    print("\n=== TOKEN DIVERGENCE (descriptive) ===")
-    print(f"  top-1 differs between lenses on {sum(div)}/{len(div)} cross prompts")
-    print("\n=== LANGUAGE-FOLLOWS-LENS (top-1 lexical call, mid-band vote) ===")
-    summary["lens_only_split"] = {}
-    for grp in sorted({r["group"] for r in rows}):
-        sel = [r for r in rows if r["group"] == grp]
-        flip = sum(1 for r in sel if r["top1_lang_en"] == "EN" and r["top1_lang_de"] == "DE")
-        summary["lens_only_split"][grp] = {"pass": flip, "n": len(sel)}
-        print(f"  {grp:14s} EN-lens=EN & DE-lens=DE on {flip}/{len(sel)}")
-    cross_sel = [r for r in rows if r["group"] in CROSS_GROUPS]
-    flip = sum(1 for r in cross_sel if r["top1_lang_en"] == "EN" and r["top1_lang_de"] == "DE")
-    summary["lens_only_split"]["all_cross"] = {"pass": flip, "n": len(cross_sel)}
-    print(f"  {'ALL CROSS':14s} EN-lens=EN & DE-lens=DE on {flip}/{len(cross_sel)}")
-
-    out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with out.open("w", encoding="utf-8") as f:
-        json.dump(summary, f, ensure_ascii=False, indent=1)
-    print(f"\n[agg] wrote {out}")
+    print(f"[agg] {len(summary['rows'])} prompts present in both dumps")
+    print_summary(summary, SPEC)
+    summary["provenance"] = run_provenance(args)
+    write_summary(summary, args.out)
+    print(f"\n[agg] wrote {args.out}")
     if args.rows_csv:
-        write_csv(args.rows_csv, rows)
+        write_csv(args.rows_csv, summary["rows"])
         print(f"[agg] wrote {args.rows_csv}")
     return 0
 

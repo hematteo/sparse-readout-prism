@@ -23,6 +23,8 @@ from pathlib import Path
 
 import torch
 
+from sparse_readout_prism.data import token_mask_from_tokenizer
+
 
 def log(msg: str) -> None:
     print(f"[extract {time.strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -290,11 +292,8 @@ def main() -> None:
     # tokenizer vocab (padded/unused rows on models whose embedding matrix is
     # larger than the tokenizer) and (b) special tokens — including the
     # additional specials multimodal tokenizers register for vision/image ids.
-    token_mask = torch.zeros(vocab, dtype=torch.bool)
-    token_mask[: min(vocab, len(tok))] = True
-    special_ids = [i for i in (getattr(tok, "all_special_ids", None) or []) if 0 <= i < vocab]
-    token_mask[special_ids] = False
-    log(f"token_mask: {int(token_mask.sum())}/{vocab} rows kept ({len(special_ids)} specials dropped)")
+    token_mask = token_mask_from_tokenizer(tok, vocab)
+    log(f"token_mask: {int(token_mask.sum())}/{vocab} rows kept")
 
     payload = {
         "W_U_orig": W_U.float().cpu().contiguous(),  # (vocab, d_model) fp32

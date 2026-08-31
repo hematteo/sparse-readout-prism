@@ -15,11 +15,15 @@ Construction rules, fixed before any lens was fitted:
     first (no leading space inside a quoted frame, a leading space otherwise),
     then the alternative, and drops the item if neither is a single token.
   - Cognate exclusion: after NFKD diacritic stripping, ss/eszett folding and
-    casefolding, items with Levenshtein(form_a, form_b) <= 2 or identical forms
-    are excluded. Exclusions are reported, not hidden (30 of 132 candidates in
-    the shipped bank).
+    casefolding (``research.cross_lens.fold_text``, shared with the EN-DE
+    aggregator's lexical call), items with Levenshtein(form_a, form_b) <= 2 or
+    identical forms are excluded. Exclusions are reported, not hidden (30 of
+    132 candidates in the shipped bank).
   - null_targets are language-matched unrelated nouns [de_null, en_null],
     assigned round-robin, skipping any null equal to either form.
+
+The exclusion report carries a ``provenance`` block (args, git commit, versions);
+the bank JSON itself is unchanged by it.
 
 Paper run::
 
@@ -32,8 +36,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import unicodedata
 from pathlib import Path
+
+from sparse_readout_prism.research.cross_lens import fold_text
+from sparse_readout_prism.research.run_io import run_provenance
 
 # (group, concept, prompt, de_surface, en_surface, answer_lang)
 # answer_lang: which side is the in-context gold continuation (form_a).
@@ -582,12 +588,6 @@ NOTE = (
 )
 
 
-def norm(s: str) -> str:
-    s = s.strip().casefold().replace("ß", "ss")
-    s = unicodedata.normalize("NFKD", s)
-    return "".join(c for c in s if not unicodedata.combining(c))
-
-
 def levenshtein(a: str, b: str) -> int:
     if len(a) < len(b):
         a, b = b, a
@@ -619,16 +619,10 @@ def build_bank(tok) -> tuple[list[dict], list[dict]]:
         pid = f"{group}_{counters[group]:02d}"
         is_ctrl = group.startswith("ctrl_")
 
-        if not is_ctrl and (norm(de) == norm(en) or levenshtein(norm(de), norm(en)) <= 2):
-            excluded.append(
-                {
-                    "id": pid,
-                    "concept": concept,
-                    "de": de,
-                    "en": en,
-                    "reason": f"cognate (lev={levenshtein(norm(de), norm(en))})",
-                }
-            )
+        de_f, en_f = fold_text(de), fold_text(en)
+        lev = levenshtein(de_f, en_f)
+        if not is_ctrl and (de_f == en_f or lev <= 2):
+            excluded.append({"id": pid, "concept": concept, "de": de, "en": en, "reason": f"cognate (lev={lev})"})
             continue
 
         # In-context continuation: quoted frames take no leading space, plain
@@ -652,14 +646,15 @@ def build_bank(tok) -> tuple[list[dict], list[dict]]:
 
         form_a, form_b = (de_tok, en_tok) if answer_lang == "de" else (en_tok, de_tok)
 
-        # Language-matched nulls, skipping collisions with either form.
+        # Language-matched nulls (space-prefixed when single-token), skipping
+        # collisions with either form.
         nulls = []
-        for pool, prefer in ((DE_NULLS, True), (EN_NULLS, True)):
+        for pool in (DE_NULLS, EN_NULLS):
             for step in range(len(pool)):
                 cand = pool[(null_i + step) % len(pool)]
-                if norm(cand) in (norm(de), norm(en)):
+                if fold_text(cand) in (de_f, en_f):
                     continue
-                cand_tok = single_token(tok, cand, prefer_space=prefer)
+                cand_tok = single_token(tok, cand, prefer_space=True)
                 if cand_tok is not None:
                     nulls.append(cand_tok)
                     break
@@ -710,6 +705,7 @@ def main(argv: list[str] | None = None) -> int:
         "n_ctrl": len(prompts) - n_cross,
         "per_group": {g: sum(1 for p in prompts if p["group"] == g) for g in sorted({p["group"] for p in prompts})},
         "excluded": excluded,
+        "provenance": run_provenance(args),
     }
     report_path = Path(args.report)
     report_path.parent.mkdir(parents=True, exist_ok=True)

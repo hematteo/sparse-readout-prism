@@ -21,9 +21,15 @@ primary/conservative) and prompt (20; secondary). Outcomes:
 ``bad_prob_reduction`` (primary) and ``flip`` (secondary). Comparisons with fewer
 than 20 aligned candidates are skipped.
 
-Output: a JSON list with one record per (model, target KL, baseline, outcome):
-the matched scales and their median KLs, ``mean_diff``, ``ci_term`` and
-``ci_prompt`` (95% percentile intervals).
+Output: a JSON object with ``comparisons``, a list with one record per (model,
+target KL, baseline, outcome) holding the matched scales and their median KLs,
+``mean_diff``, ``ci_term`` and ``ci_prompt`` (95% percentile intervals), and
+``provenance`` (command line, args, git hash, versions, timestamp).
+
+Changed in 0.2.1: the output gained the ``provenance`` key, so the top level is
+an object rather than the bare list the paper file used; the ``comparisons``
+records are unchanged (the paper's 96 records reproduce exactly from the paper
+CSVs).
 
 Paper run (10,000 resamples, seed 0, target KL 0.02 / 0.05 / 0.10 / 0.20)::
 
@@ -43,6 +49,8 @@ import json
 from pathlib import Path
 
 import numpy as np
+
+from sparse_readout_prism.research.run_io import run_provenance
 
 BASELINES = ["mean_row_direction", "pca_group_rank4", "pca_group_direction"]
 SRP = "feature_suppression"
@@ -188,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
             paired_comparisons(model, rows, target_kls=list(args.target_kl), n_boot=args.n_boot, seed=args.seed)
         )
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(out_rows, indent=2))
+    args.out.write_text(json.dumps({"comparisons": out_rows, "provenance": run_provenance(args)}, indent=2))
     print(f"\nwrote {args.out} ({len(out_rows)} comparisons)")
     return 0
 

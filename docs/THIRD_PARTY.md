@@ -7,9 +7,11 @@ relevant upstream licenses and citation requirements.
 
 ## Code
 
-No third-party source code is vendored in this repository. All Python
-dependencies are standard packages installed from PyPI. The main runtime
-dependencies (see `pyproject.toml`) are:
+No third-party source code is vendored in this repository. The Python
+dependencies are installed from PyPI, with one exception: the Jacobian-lens
+reference implementation (`jlens`, below) is installed from its git repository
+through an optional extra. The main runtime dependencies (see `pyproject.toml`)
+are:
 
 - `torch`
 - `transformers`
@@ -18,11 +20,24 @@ dependencies (see `pyproject.toml`) are:
 - `scipy`
 - `datasets`
 - `pyyaml`
+- `pandas` (BSD-3-Clause; `scripts/eval/analyze_error_tails.py`)
+- `scikit-learn` (BSD-3-Clause; `scripts/run/run_wsd_feature_alignment.py`,
+  `scripts/analyze/analyze_wsd_classifier_framing.py`)
 
 `torch` installs from the default PyPI index on every platform (CPU/MPS wheels
 on macOS, CUDA wheels on Linux). No alternative wheel index is configured; if
 your GPU needs a specific CUDA build, add a local `[tool.uv.sources]` pin and
 re-lock (see the comment in `pyproject.toml`).
+
+### Jacobian lens (`jlens`)
+
+The cross-lens study (`scripts/run/fit_jlens.py` and the cross-lens scripts
+that load its fitted lenses; they import it lazily) uses the reference
+Jacobian-lens implementation from <https://github.com/anthropics/jacobian-lens>,
+licensed under Apache-2.0. It is not published on PyPI: the optional `lens`
+extra (`uv sync --extra lens`) installs it from git, and `uv.lock` pins it to
+commit `581d398613e5602a5af361e1c34d3a92ea82ba8e`. The rest of the repository
+installs and tests without it, and none of its code is vendored here.
 
 ## Data
 
@@ -65,6 +80,13 @@ uv run python scripts/data/build_query_banks.py \
 
 so no raw C4 text is redistributed in this repository.
 
+The cross-lens study fits its lenses on seeded prompt dumps streamed from the
+C4 `en`, `zh` and `de` configs (`scripts/run/fit_jlens.py prompts --c4-config
+{en,zh,de}`; `train` split, streaming, `shuffle(seed=0)`, 1,000 prompts per
+language). The dumps are raw C4 text and are not shipped; they carry the same
+license and citation as above (ODC-BY 1.0, subject to the Common Crawl terms of
+use).
+
 ### WikiText-2 (`wikitext`, config `wikitext-2-raw-v1`)
 
 WikiText-2 is the hidden-state extraction corpus referenced by the model
@@ -77,6 +99,27 @@ redistributed here.
 License: CC-BY-SA 3.0.
 
 Citation: Merity et al. (2016), "Pointer Sentinel Mixture Models" (WikiText).
+
+### CoarseWSD-20
+
+The sense-labelled evaluation (`scripts/run/run_wsd_feature_alignment.py
+--dataset coarsewsd20 --data-root <checkout>`, followed by
+`scripts/analyze/analyze_wsd_sense_groups.py` and
+`scripts/analyze/analyze_wsd_classifier_framing.py`) reads CoarseWSD-20 from a
+local clone of <https://github.com/danlou/bert-disambiguation>
+(`data/CoarseWSD-20`). The dataset is not redistributed here; the shipped
+outputs are per-model feature bundles and aggregate metrics, not its text.
+
+License: the upstream repository declares no license (no `LICENSE` file, no
+license statement in its README, and an empty license field on the GitHub
+repository record at the time of this release), so no license can be quoted for
+the dataset as given upstream. CoarseWSD-20 is built from English Wikipedia
+sentences, whose text is under CC BY-SA. Check the upstream repository before
+redistributing the data.
+
+Citation: Loureiro, Rezaee, Pilehvar and Camacho-Collados (2021), "Analysis and
+Evaluation of Language Models for Word Sense Disambiguation", *Computational
+Linguistics* 47(2), 387-443.
 
 ### Benchmark-derived query suites
 

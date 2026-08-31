@@ -31,7 +31,8 @@ scales (0.5 .. 64) x 8 methods: none, the readout SAE direction edit
 (``feature_suppression``), discovery / oracle token bias, norm-matched random
 features, and three label-free category-direction controls built from the five
 discovery rows of W_U (``mean_row_direction``, ``pca_group_direction`` = PCA
-rank-1, ``pca_group_rank4`` = the full rank of the discovery rows). The
+rank-1, ``pca_group_rank4`` = the top-4 principal components of the five
+discovery rows about the global row mean, i.e. rank 4 of at most 5). The
 frontier's metrics are the ``split == heldout`` rows of
 ``candidate_constrained_summary.csv`` (``median_kl_bits`` against
 ``mean_bad_prob_reduction`` / ``candidate_flip_rate`` per method and scale);

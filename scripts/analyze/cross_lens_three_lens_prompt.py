@@ -8,7 +8,8 @@ and layers the script tabulates, per lens: the top-1 token and its transported
 logit (the table), the full top-5 reading, the lens logit, rank and decomposed
 (fp32) logit of every probed target (e.g. ' groß', ' large', ' big', '大'), and
 the dominant readout feature of each target's decomposition and of the lens's
-own top-1 token.
+own top-1 token. When any CSV is written, ``<out-csv stem>.manifest.json`` records
+the provenance next to it.
 
 Paper run (the German antonym prompt ``antonym_de_01``, answer ``groß``, read by the
 English-, Chinese- and German-fitted 100-prompt Jacobian lenses; dumps produced
@@ -28,22 +29,9 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 
+from sparse_readout_prism.research.cross_lens import POS, parse_dump_args, write_manifest
 from sparse_readout_prism.utils import write_csv
-
-POS = "-1"
-
-
-def parse_dump_args(specs: list[str]) -> list[tuple[str, Path]]:
-    """Parse repeated ``LABEL=path`` arguments, preserving order."""
-    out = []
-    for spec in specs:
-        label, sep, path = spec.partition("=")
-        if not sep or not label or not path:
-            raise ValueError(f"--dump expects LABEL=path, got {spec!r}")
-        out.append((label, Path(path)))
-    return out
 
 
 def select_record(dump: dict, prompt_id: str | None) -> dict:
@@ -168,15 +156,15 @@ def main(argv: list[str] | None = None) -> int:
                     f"{r['dominant_contribution']:+.2f} (sum {r['feature_sum']:.1f}, resid {r['residual']:.2f})"
                 )
 
-    if args.out_csv:
-        write_csv(args.out_csv, top1_rows)
-        print(f"wrote {args.out_csv}")
-    if args.out_targets_csv:
-        write_csv(args.out_targets_csv, target_rows)
-        print(f"wrote {args.out_targets_csv}")
-    if args.out_features_csv:
-        write_csv(args.out_features_csv, feature_rows)
-        print(f"wrote {args.out_features_csv}")
+    written = []
+    outputs = ((args.out_csv, top1_rows), (args.out_targets_csv, target_rows), (args.out_features_csv, feature_rows))
+    for path, rows in outputs:
+        if path:
+            write_csv(path, rows)
+            written.append(path)
+            print(f"wrote {path}")
+    if written:
+        write_manifest(written[0], args, prompt_id=first["id"], layers=layers, lenses=labels)
     return 0
 
 

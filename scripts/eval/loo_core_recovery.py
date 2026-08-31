@@ -20,6 +20,25 @@ the ``--side-n`` members closest to the centroid. 95% CIs are a
 contrast-clustered bootstrap (resample contrasts, keep all their cells,
 ``--n-boot`` replicates) for each method's mean recall and for the SRP/kNN ratio.
 
+Two conventions of the paper's run are kept and made explicit:
+
+* The kNN side set excludes the target row itself (``--knn-exclude-self``,
+  the default). The SRP side sets (top-R rows of the contrast's features) and
+  the cluster side set (the target's cluster members) do not exclude it, so
+  the target token can sit in a core and be recoverable by SRP and by the
+  cluster control but never by kNN. ``--no-knn-exclude-self`` admits the
+  target's own row (cosine 1, so it always takes one of the ``--side-n``
+  slots).
+* Cluster membership is the assignment that produced the last k-means update
+  (``spherical_kmeans_unit(..., final_assignment=False)``), one Lloyd step
+  behind the centroids the members are ranked against. The ``row_cluster_*``
+  baselines of the direct-geometry grid assign against the final centroids.
+
+``--centering {live,trained}`` selects the centering mean: ``live`` (default)
+is the full-vocabulary mean of the payload's ``W_U``, how the paper's runs were
+computed; ``trained`` is the dictionaries' stored training mean. The output
+JSON carries a ``provenance`` block (command line, args, git hash, versions).
+
 Dictionary-family discipline: ``--dictionaries`` must come from ONE recipe (the
 seed-variation family trained from ``configs/sweeps/qwen35_2b_seedvar_base.yaml``);
 the script refuses dictionaries that differ in width or ``k``. A dictionary
@@ -55,6 +74,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from sparse_readout_prism.research.row_geometry import spherical_kmeans_unit
+from sparse_readout_prism.research.run_io import run_provenance
 from sparse_readout_prism.research.seed_stability import (
     center_rows,
     contrast_features,
@@ -62,33 +83,26 @@ from sparse_readout_prism.research.seed_stability import (
     load_contrast_pairs,
     load_dictionary,
     load_readout,
+    resolve_centering,
     token_strings,
 )
 from sparse_readout_prism.utils import resolve_device, to_jsonable
 
 
-def kmeans_unit(X: torch.Tensor, n: int, iters: int, seed: int, device) -> tuple[torch.Tensor, torch.Tensor]:
-    """Spherical k-means on unit rows: ``(centroids (n, d), assignment (N,))`` on CPU."""
-    g = torch.Generator().manual_seed(seed)
-    Xd = X.to(device)
-    C = Xd[torch.randperm(X.shape[0], generator=g)[:n].to(device)].clone()
-    ones = torch.ones(X.shape[0], device=device)
-    assign = torch.empty(X.shape[0], dtype=torch.long, device=device)
-    for it in range(iters):
-        for s in range(0, X.shape[0], 4096):
-            assign[s : s + 4096] = (Xd[s : s + 4096] @ C.T).argmax(dim=1)
-        C_new = torch.zeros_like(C)
-        cnt = torch.zeros(n, device=device)
-        C_new.index_add_(0, assign, Xd)
-        cnt.index_add_(0, assign, ones)
-        dead = cnt == 0
-        C = C_new / cnt.clamp_min(1.0)[:, None]
-        nd = int(dead.sum())
-        if nd:
-            C[dead] = Xd[torch.randperm(X.shape[0], generator=g)[:nd].to(device)]
-        C = C / C.norm(dim=1, keepdim=True).clamp_min(1e-8)
-        print(f"  kmeans iter {it + 1}/{iters} (dead={nd})", flush=True)
-    return C.cpu(), assign.cpu()
+def knn_side_sets(
+    W_n: torch.Tensor, pairs: list[tuple], side_n: int, tok, cache: dict[int, str], *, exclude_self: bool
+) -> list[tuple[set[str], set[str]]]:
+    """Per contrast, the ``(A, B)`` token sets of each target's top ``side_n`` cosine neighbours."""
+    out = []
+    for _a, _b, ia, ib in pairs:
+        sides = []
+        for i in (ia, ib):
+            sims = W_n @ W_n[i]
+            if exclude_self:
+                sims[i] = -1
+            sides.append(token_strings(tok, torch.topk(sims, side_n).indices.tolist(), cache))
+        out.append(tuple(sides))
+    return out
 
 
 def run(
@@ -98,6 +112,7 @@ def run(
     pairs: list[tuple],
     device,
     *,
+    row_mean: torch.Tensor,
     top_m: int,
     top_r: int,
     side_n: int,
@@ -108,8 +123,9 @@ def run(
     bootstrap_seed: int,
     reference_dict=None,
     width_tag: str | None,
+    knn_exclude_self: bool = True,
 ) -> dict:
-    W_c, rn, W_n = center_rows(W)
+    W_c, rn, W_n = center_rows(W, row_mean)
     cache: dict[int, str] = {}
     n_seeds = len(dicts)
 
@@ -119,8 +135,8 @@ def run(
             top_pos, top_neg = contrast_features(W_n, rn, d, ia, ib, top_m)
             out.append(
                 (
-                    feature_token_set(top_pos, d[0], W_c, tok, top_r, cache),
-                    feature_token_set(top_neg, d[0], W_c, tok, top_r, cache),
+                    feature_token_set(top_pos, d.decoder, W_c, tok, top_r, cache),
+                    feature_token_set(top_neg, d.decoder, W_c, tok, top_r, cache),
                 )
             )
         return out
@@ -130,14 +146,7 @@ def run(
         side_sets.append(dict_side_sets(d))
         print(f"seed {si} side sets done", flush=True)
 
-    knn_sets = []
-    for _a, _b, ia, ib in pairs:
-        sides = []
-        for i in (ia, ib):
-            sims = W_n @ W_n[i]
-            sims[i] = -1
-            sides.append(token_strings(tok, torch.topk(sims, side_n).indices.tolist(), cache))
-        knn_sets.append(tuple(sides))
+    knn_sets = knn_side_sets(W_n, pairs, side_n, tok, cache, exclude_self=knn_exclude_self)
 
     ref_sets = None
     if reference_dict is not None:
@@ -145,7 +154,10 @@ def run(
         print("reference dictionary side sets done", flush=True)
 
     print(f"fitting k-means n_clusters={n_clusters} on {device} ...", flush=True)
-    C, assign = kmeans_unit(W_n, n_clusters, kmeans_iters, kmeans_seed, device)
+    C, assign = spherical_kmeans_unit(
+        W_n.to(device), n_clusters, kmeans_seed, iters=kmeans_iters, return_assignments=True, final_assignment=False
+    )
+    C, assign = C.cpu(), assign.cpu()
 
     def cluster_side(i: int) -> set[str]:
         members = (assign == assign[i]).nonzero().flatten()
@@ -226,9 +238,16 @@ def main() -> int:
         required=True,
         help="checkpoint.pt of each seed, one recipe, at least three (paper: seeds 0, 1, 2 of one width)",
     )
-    ap.add_argument("--w-u", type=Path, required=True, help="extraction payload {W_U_orig, ...}")
+    ap.add_argument("--w-u", type=Path, required=True, help="extraction payload {W_U_orig, token_mask, ...}")
     ap.add_argument("--bank", type=Path, required=True, help="curated A/B JSONL bank (target_a / target_b)")
     ap.add_argument("--tokenizer", default="Qwen/Qwen3.5-2B", help="HF tokenizer id or local path")
+    ap.add_argument(
+        "--centering",
+        choices=("live", "trained"),
+        default="live",
+        help="centering mean: full-vocabulary mean of W_U (live, the paper's runs) or the dictionaries' stored "
+        "training mean (trained)",
+    )
     ap.add_argument("--width-tag", default=None, help='label stored in the output, e.g. "32x"')
     ap.add_argument(
         "--reference-dict",
@@ -241,6 +260,12 @@ def main() -> int:
     ap.add_argument("--top-m", type=int, default=8, help="features per side")
     ap.add_argument("--top-r", type=int, default=12, help="rows per feature for the token summary")
     ap.add_argument("--side-n", type=int, default=96, help="tokens per kNN / cluster side set")
+    ap.add_argument(
+        "--knn-exclude-self",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="drop the target row from its own kNN side set (the paper's run); --no-knn-exclude-self admits it",
+    )
     ap.add_argument("--n-clusters", type=int, default=16384)
     ap.add_argument("--kmeans-iters", type=int, default=12)
     ap.add_argument("--kmeans-seed", type=int, default=0)
@@ -255,17 +280,18 @@ def main() -> int:
 
     rng = np.random.default_rng(args.seed)
     device = resolve_device(args.device)
-    W, _ = load_readout(args.w_u)
+    W, _, token_mask = load_readout(args.w_u)
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(args.tokenizer)
 
     dicts = [load_dictionary(p) for p in args.dictionaries]
     for si, d in enumerate(dicts):
-        print(f"seed {si}: D={d[0].shape[0]} k={d[3]}")
-    if len({(d[0].shape[0], d[3]) for d in dicts}) != 1:
+        print(f"seed {si}: D={d.decoder.shape[0]} k={d.k}")
+    if len({(d.decoder.shape[0], d.k) for d in dicts}) != 1:
         raise SystemExit("dictionaries differ in width or k; pass checkpoints from one dictionary family")
     reference = load_dictionary(args.reference_dict) if args.reference_dict is not None else None
+    row_mean = resolve_centering(W, dicts, args.centering, token_mask, tok=tok)
 
     pairs = load_contrast_pairs(args.bank, tok, rng, args.max_contrasts)
     print(f"contrasts: {len(pairs)} unique single-token pairs")
@@ -276,6 +302,7 @@ def main() -> int:
         tok,
         pairs,
         device,
+        row_mean=row_mean,
         top_m=args.top_m,
         top_r=args.top_r,
         side_n=args.side_n,
@@ -286,10 +313,12 @@ def main() -> int:
         bootstrap_seed=args.bootstrap_seed,
         reference_dict=reference,
         width_tag=args.width_tag,
+        knn_exclude_self=args.knn_exclude_self,
     )
+    print(json.dumps(to_jsonable(out), indent=2))
+    out["provenance"] = run_provenance(args)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(to_jsonable(out), indent=2) + "\n")
-    print(json.dumps(to_jsonable(out), indent=2))
     print(f"wrote {args.out}")
     return 0
 

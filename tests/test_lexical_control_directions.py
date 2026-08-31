@@ -12,26 +12,11 @@ stress test (scripts/run/run_qwen_profanity_suppression_eval.py, loaded by path)
 
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
-
 import pytest
 import torch
+from conftest import load_script
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
-
-
-def _load(relpath: str, name: str):
-    spec = importlib.util.spec_from_file_location(name, ROOT / relpath)
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[name] = mod  # dataclass resolution needs the module registered
-    spec.loader.exec_module(mod)
-    return mod
-
-
-prof = _load("scripts/run/run_qwen_profanity_suppression_eval.py", "qwen_profanity_suppression_eval")
+prof = load_script("scripts/run/run_qwen_profanity_suppression_eval.py")
 
 NEW_METHODS = ("mean_row_direction", "pca_group_direction", "pca_group_rank4")
 

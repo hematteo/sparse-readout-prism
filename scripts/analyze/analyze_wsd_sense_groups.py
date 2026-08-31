@@ -36,7 +36,11 @@ prediction protocol, rebuilt from the bundle's stored decoded states with no
 model forward pass. These need the unembedding matrix, read from ``--w-u`` (an
 extraction payload with ``W_U_orig``, as written by
 ``scripts/data/extract_model_readout.py``) or, failing that, from the local
-Hugging Face cache for ``--model-id``. The paper's table reports ``srp`` only.
+Hugging Face cache of ``--model-id`` at ``--revision`` (no download). Their
+rows are centred under ``--centering`` (``live``, the default: the
+full-vocabulary mean of that matrix; ``trained``: the ``--checkpoint``'s stored
+``row_mean``, else the mean over the payload's ``token_mask`` or the
+tokenizer's text-token rows). The paper's table reports ``srp`` only.
 
 Reads the ``representations.pt`` bundles written by
 ``scripts/run/run_wsd_feature_alignment.py``; CPU-only, deterministic under
@@ -50,57 +54,63 @@ DeepSeek-R1-Distill-Llama-8B), writing ``<out stem>_g{1,2,4,8}.json``:
 
 The table reads the ``_g8`` file; the group-size sweep in the appendix prose
 reads all four.
+
+Fixed in 0.2.1: the cached Hugging Face weights are resolved through
+``snapshot_download(local_files_only=True)`` at ``--revision`` (default: the
+cached ``main`` ref) instead of the lexicographically last snapshot directory;
+the direct-geometry centering mean goes through ``data.centering_mean`` under
+``--centering``; the bundle reader and split rule moved to
+``sparse_readout_prism.research.wsd``.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
-import os
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
 
+from sparse_readout_prism.data import centering_mean, token_mask_from_tokenizer
+from sparse_readout_prism.research.qwen_readout import load_sae
+from sparse_readout_prism.research.run_io import run_provenance
+from sparse_readout_prism.research.wsd import load_bundle, percentile_ci, word_splits
+from sparse_readout_prism.utils import write_json
 
-def load_wu_from_artifact(path: Path) -> torch.Tensor:
-    """Load the unembedding matrix (V, d_model) fp32 from an extraction payload (``W_U_orig`` / ``W_U``)."""
+
+def load_wu_from_artifact(path: Path) -> tuple[torch.Tensor, torch.Tensor | None]:
+    """Unembedding matrix (V, d_model) fp32 and the ``token_mask`` (if stored) from an extraction payload."""
     payload = torch.load(path, map_location="cpu", weights_only=True)
     w = payload.get("W_U_orig", payload.get("W_U"))
     if w is None:
         raise KeyError(f"{path}: no 'W_U_orig'/'W_U' key (keys: {list(payload)})")
-    return w.float()
+    token_mask = payload.get("token_mask")
+    return w.float(), (token_mask.bool() if token_mask is not None else None)
 
 
-def load_wu(model_id: str) -> torch.Tensor:
-    """Load the LM-head weight (V, d_model) fp32 from the local Hugging Face cache.
+def load_wu(model_id: str, revision: str | None = None) -> torch.Tensor:
+    """LM-head weight (V, d_model) fp32 from the local Hugging Face cache, no download.
 
-    Reads only the tensor from safetensors; falls back to the tied embedding
-    when no lm_head.weight exists (e.g. Qwen3.5-2B, tie_word_embeddings). The
-    cache root follows ``HF_HUB_CACHE``, then ``HF_HOME/hub``, then
-    ``~/.cache/huggingface/hub``.
+    ``huggingface_hub.snapshot_download(..., local_files_only=True)`` resolves
+    ``revision`` (default: the cached ``main`` ref) to the snapshot directory;
+    only the tensor is read from the safetensors shards, falling back to the
+    tied embedding when no ``lm_head.weight`` exists (e.g. Qwen3.5-2B,
+    ``tie_word_embeddings``).
     """
-    from glob import glob
-
+    from huggingface_hub import snapshot_download
     from safetensors import safe_open
 
-    hub = os.environ.get("HF_HUB_CACHE")
-    if not hub:
-        hub = str(Path(os.environ.get("HF_HOME") or (Path.home() / ".cache" / "huggingface")) / "hub")
-    cache = Path(hub) / f"models--{model_id.replace('/', '--')}"
-    snaps = sorted(cache.glob("snapshots/*"))
-    if not snaps:
-        raise FileNotFoundError(f"no local snapshot for {model_id}")
-    snap = snaps[-1]
-    shards = sorted(glob(str(snap / "*.safetensors")))
+    snap = Path(snapshot_download(model_id, revision=revision, local_files_only=True))
+    shards = sorted(snap.glob("*.safetensors"))
     for suffix in ("lm_head.weight", "embed_tokens.weight"):
         for shard in shards:
-            with safe_open(shard, framework="pt") as f:
+            with safe_open(str(shard), framework="pt") as f:
                 for key in f.keys():
                     if key.endswith(suffix):
                         w = f.get_tensor(key).float()
-                        print(f"[wu] {model_id}: {key} {tuple(w.shape)} from {Path(shard).name}")
+                        print(f"[wu] {model_id}: {key} {tuple(w.shape)} from {shard.name}")
                         return w
     raise KeyError(f"no lm_head/embed_tokens weight in {snap}")
 
@@ -108,6 +118,7 @@ def load_wu(model_id: str) -> torch.Tensor:
 def geometry_contributions(
     basis: str,
     W: torch.Tensor,  # (V, d_model) fp32
+    row_mean: torch.Tensor,  # (d_model,) centering mean, from data.centering_mean
     token_ids: list[int],
     hidden_by_word: dict[int, torch.Tensor],  # token_id -> (n_word, d_model) fp32
     pca_rank: int,
@@ -117,12 +128,18 @@ def geometry_contributions(
 ) -> dict[int, dict[str, np.ndarray]]:
     """Per-word contribution matrices for a direct-geometry basis.
 
-    Math is line-for-line the vectorized form of readout_baselines.py:
-    rows are mean-centered and unit-normalized, the target row is rebuilt in
-    the basis, and contribution_j(h) = row_norm * coeff_j * (h . basis_j).
-    Returns {token_id: {contribution (n, F), exact (n,), recon (n,)}}.
+    Vectorized form of the baseline runner's methods in
+    ``scripts/run/run_readout_baseline_comparisons.py`` (script classes, so
+    they cannot be imported here): ``pca256`` mirrors ``DensePCAMethod``
+    (``svd_lowrank`` on the centred, unit-normalised rows, q = rank + 16,
+    niter = 4), ``ridge128`` mirrors ``NearestRowRidgeMethod`` (signed ridge fit
+    on the top-k cosine neighbours, self excluded) and ``knn128`` mirrors
+    ``KNNBasisMethod`` (the cosine-weighted neighbourhood mean rescaled by the
+    target's projection onto it). Rows are centred on ``row_mean`` and
+    unit-normalised, the target row is rebuilt in the basis, and
+    contribution_j(h) = row_norm * coeff_j * (h . basis_j). Returns
+    {token_id: {contribution (n, F), exact (n,), recon (n,)}}.
     """
-    row_mean = W.mean(dim=0)  # (d_model,)
     centered = W - row_mean
     row_norm_all = centered.norm(dim=1).clamp_min(1e-8)
     row_normalized_all = centered / row_norm_all[:, None]
@@ -215,7 +232,7 @@ def select_anchors(
 
 
 def word_accuracy(
-    contribution: np.ndarray, anchors: dict[str, int], senses: list[str], gold: np.ndarray
+    contribution: np.ndarray, anchors: dict[str, list[int]], senses: list[str], gold: np.ndarray
 ) -> tuple[float, np.ndarray]:
     anchor_matrix = np.stack([contribution[:, anchors[s]].sum(axis=1) for s in senses], axis=1)  # (n, n_senses)
     predictions = np.array([senses[i] for i in anchor_matrix.argmax(axis=1)])
@@ -228,7 +245,51 @@ def balanced_accuracy(predictions: np.ndarray, gold: np.ndarray) -> float:
     return float(np.mean(recalls))
 
 
-def main() -> int:
+def ncm_balanced(train_x: np.ndarray, test_x: np.ndarray, train_y: np.ndarray, test_y: np.ndarray) -> float:
+    """Nearest class-centroid on train-standardized features: the
+    no-selection reference (how much sense information the representation
+    carries when the whole account is used)."""
+    mu = train_x.mean(axis=0)
+    sd = train_x.std(axis=0) + 1e-6
+    ztr = (train_x - mu) / sd
+    zte = (test_x - mu) / sd
+    senses = sorted(set(train_y))
+    cents = np.stack([ztr[train_y == s].mean(axis=0) for s in senses])
+    dist = ((zte[:, None, :] - cents[None]) ** 2).sum(axis=-1)  # (n_test, n_senses)
+    pred = np.array([senses[i] for i in dist.argmin(axis=1)])
+    return balanced_accuracy(pred, test_y)
+
+
+def geometry_row_mean(
+    W: torch.Tensor,
+    mode: str,
+    *,
+    token_mask: torch.Tensor | None,
+    checkpoint: Path | None,
+    model_id: str,
+    revision: str | None,
+) -> torch.Tensor:
+    """``--centering`` for the direct-geometry controls, via ``data.centering_mean``.
+
+    ``live``: the full-vocabulary mean of ``W``. ``trained``: the checkpoint's
+    stored ``row_mean`` when ``--checkpoint`` is given, else the mean over
+    ``token_mask`` (the ``--w-u`` payload's, else built from ``model_id``'s
+    tokenizer in the local cache).
+    """
+    ckpt = None
+    if mode == "trained":
+        if checkpoint is not None:
+            *_rest, ckpt_row_mean = load_sae(checkpoint)
+            ckpt = {"row_mean": ckpt_row_mean} if ckpt_row_mean is not None else None
+        if token_mask is None:
+            from transformers import AutoTokenizer
+
+            tok = AutoTokenizer.from_pretrained(model_id, revision=revision, local_files_only=True)
+            token_mask = token_mask_from_tokenizer(tok, W.shape[0])
+    return centering_mean(W, mode=mode, token_mask=token_mask, ckpt=ckpt)
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument(
         "--bundle", type=Path, required=True, help="representations.pt from run_wsd_feature_alignment.py"
@@ -254,11 +315,22 @@ def main() -> int:
         help="srp: bundle contributions; others: direct-W_U geometry controls",
     )
     parser.add_argument("--model-id", default=None, help="override bundle run.model_id for --basis controls")
+    parser.add_argument("--revision", default=None, help="HF revision of --model-id in the local cache (default: main)")
     parser.add_argument(
         "--w-u",
         type=Path,
         default=None,
         help="extraction payload (.pt with W_U_orig) for --basis controls; default: local HF cache of --model-id",
+    )
+    parser.add_argument(
+        "--centering",
+        choices=("live", "trained"),
+        default="live",
+        help="row centering for --basis controls: live = full-vocabulary mean of W_U (the paper's runs); "
+        "trained = --checkpoint's stored row_mean, else the token_mask mean",
+    )
+    parser.add_argument(
+        "--checkpoint", type=Path, default=None, help="dictionary checkpoint whose row_mean --centering trained uses"
     )
     parser.add_argument("--pca-rank", type=int, default=256)
     parser.add_argument("--neighbor-k", type=int, default=128)
@@ -268,19 +340,34 @@ def main() -> int:
         action="store_true",
         help="skip train-statistic standardization of contributions (default: standardize)",
     )
-    args = parser.parse_args()
+    return parser.parse_args(argv)
 
-    bundle = torch.load(args.bundle, map_location="cpu", weights_only=False)
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    provenance = run_provenance(args)
+
+    bundle = load_bundle(args.bundle)
     metadata = bundle["metadata"]
     contribution = bundle["contribution"].float().numpy()  # (n_items, k_support)
     exact = bundle["exact_logit"].numpy()
     recon = bundle["reconstructed_logit"].numpy()
 
     if args.basis != "srp":
+        model_id = args.model_id or bundle["run"]["model_id"]
+        token_mask = None
         if args.w_u is not None:
-            wu = load_wu_from_artifact(args.w_u)
+            wu, token_mask = load_wu_from_artifact(args.w_u)
         else:
-            wu = load_wu(args.model_id or bundle["run"]["model_id"])
+            wu = load_wu(model_id, args.revision)
+        row_mean = geometry_row_mean(
+            wu,
+            args.centering,
+            token_mask=token_mask,
+            checkpoint=args.checkpoint,
+            model_id=model_id,
+            revision=args.revision,
+        )
         hidden = bundle["hidden"].float()  # (n_items, d_model)
         word_tid: dict[str, int] = {}
         word_idx: dict[str, list[int]] = {}
@@ -291,6 +378,7 @@ def main() -> int:
         geo = geometry_contributions(
             args.basis,
             wu,
+            row_mean,
             [word_tid[w] for w in sorted(word_idx)],
             hidden_by_word,
             args.pca_rank,
@@ -317,34 +405,11 @@ def main() -> int:
 
     group_sizes = [int(x) for x in args.group_sizes.split(",")] if args.group_sizes else [args.group_size]
 
-    def ncm_balanced(train_x: np.ndarray, test_x: np.ndarray, train_y: np.ndarray, test_y: np.ndarray) -> float:
-        """Nearest class-centroid on train-standardized features: the
-        no-selection reference (how much sense information the representation
-        carries when the whole account is used)."""
-        mu = train_x.mean(axis=0)
-        sd = train_x.std(axis=0) + 1e-6
-        ztr = (train_x - mu) / sd
-        zte = (test_x - mu) / sd
-        senses = sorted(set(train_y))
-        cents = np.stack([ztr[train_y == s].mean(axis=0) for s in senses])
-        dist = ((zte[:, None, :] - cents[None]) ** 2).sum(axis=-1)  # (n_test, n_senses)
-        pred = np.array([senses[i] for i in dist.argmin(axis=1)])
-        return balanced_accuracy(pred, test_y)
-
     hidden_all = bundle["hidden"].float().numpy()  # (n_items, d_model)
-    words = sorted({row["target"] for row in metadata})
     word_cache: dict[str, dict] = {}
-    for word in words:
-        train_idx = np.array([i for i, r in enumerate(metadata) if r["target"] == word and r["split"] == "train"])
-        test_idx = np.array([i for i, r in enumerate(metadata) if r["target"] == word and r["split"] == "test"])
-        if len(train_idx) == 0 or len(test_idx) == 0:
-            continue
-        train_y = np.array([metadata[i]["sense"] for i in train_idx])
-        test_y = np.array([metadata[i]["sense"] for i in test_idx])
-        senses = sorted(set(train_y))
-        if len(senses) < 2 or not set(test_y).issubset(set(senses)):
-            continue
-
+    for split in word_splits(metadata):
+        train_idx, test_idx = split.train_idx, split.test_idx
+        train_y, test_y = split.train_y, split.test_y
         train_c = contribution[train_idx]
         test_c = contribution[test_idx]
         if not args.raw_scale:
@@ -355,12 +420,12 @@ def main() -> int:
             sd = train_c.std(axis=0) + 1e-6
             train_c = (train_c - mu) / sd
             test_c = (test_c - mu) / sd
-        word_cache[word] = {
+        word_cache[split.word] = {
             "train_idx": train_idx,
             "test_idx": test_idx,
             "train_y": train_y,
             "test_y": test_y,
-            "senses": senses,
+            "senses": split.senses,
             "train_c": train_c,
             "test_c": test_c,
             # basis-independent references, computed once per word
@@ -369,11 +434,11 @@ def main() -> int:
         }
 
     for group_size in group_sizes:
-        run_group(args, group_size, word_cache, gate)
+        run_group(args, group_size, word_cache, gate, provenance)
     return 0
 
 
-def run_group(args, group_size: int, word_cache: dict, gate: np.ndarray) -> None:
+def run_group(args, group_size: int, word_cache: dict, gate: np.ndarray, provenance: dict[str, Any]) -> None:
     rng = np.random.default_rng(args.seed)
     per_word: dict[str, dict] = {}
     pooled_correct: list[int] = []
@@ -402,8 +467,8 @@ def run_group(args, group_size: int, word_cache: dict, gate: np.ndarray) -> None
             boot[b] = correct[sample].mean()
             strat = np.concatenate([pool[rng.integers(0, len(pool), len(pool))] for pool in sense_pools.values()])
             boot_bal[b] = balanced_accuracy(predictions[strat], test_y[strat])
-        ci = [float(np.percentile(boot, 2.5)), float(np.percentile(boot, 97.5))]
-        bal_ci = [float(np.percentile(boot_bal, 2.5)), float(np.percentile(boot_bal, 97.5))]
+        ci = percentile_ci(boot)
+        bal_ci = percentile_ci(boot_bal)
 
         # label-shuffle null: re-select anchors under permuted train labels
         null_accs = np.empty(args.n_null)
@@ -468,16 +533,10 @@ def run_group(args, group_size: int, word_cache: dict, gate: np.ndarray) -> None
         "seed": args.seed,
         "n_words": len(names),
         "word_mean_accuracy": float(word_acc.mean()),
-        "word_mean_accuracy_ci": [
-            float(np.percentile(boot_mean, 2.5)),
-            float(np.percentile(boot_mean, 97.5)),
-        ],
+        "word_mean_accuracy_ci": percentile_ci(boot_mean),
         "standardized": not args.raw_scale,
         "word_mean_balanced": float(word_bal.mean()),
-        "word_mean_balanced_ci": [
-            float(np.percentile(boot_mean_bal, 2.5)),
-            float(np.percentile(boot_mean_bal, 97.5)),
-        ],
+        "word_mean_balanced_ci": percentile_ci(boot_mean_bal),
         "word_mean_majority": float(word_majority.mean()),
         "word_mean_majority_balanced": float(word_majority_bal.mean()),
         "word_mean_chance_balanced": float(word_chance_bal.mean()),
@@ -494,13 +553,11 @@ def run_group(args, group_size: int, word_cache: dict, gate: np.ndarray) -> None
         "pooled_gated_accuracy": float(np.mean(pooled_correct_gated)),
         "gate_fraction_overall": float(len(pooled_correct_gated) / max(len(pooled_correct), 1)),
         "per_word": per_word,
+        "provenance": provenance,
     }
 
     out = args.out if args.group_sizes is None else args.out.with_name(f"{args.out.stem}_g{group_size}.json")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out.with_suffix(".tmp")
-    tmp.write_text(json.dumps(summary, indent=2))
-    os.replace(tmp, out)
+    write_json(summary, out, atomic=True)
     print(
         f"{args.bundle.parent.name} [{args.basis} g={group_size}]: words={summary['n_words']} "
         f"bal acc={summary['word_mean_balanced']:.3f} "

@@ -53,6 +53,12 @@ r1llama8b; ``--input-prefix`` names any common directory prefix, e.g.
     uv run python scripts/eval/analyze_error_tails.py \\
         --input-root results/direct_geometry_runs \\
         --out-dir results/error_tails --n-boot 10000 --seed 20260711
+
+Changed in 0.2.1: the two cluster bootstraps gather each resample through flat
+per-cluster offsets (``_flat_clusters`` / ``_resample_index``) instead of a
+per-cluster ``np.concatenate`` list; the random draws, the element order of
+every resample and hence every output are unchanged (byte-identical on the six
+paper run dirs apart from ``summary.json`` provenance).
 """
 
 from __future__ import annotations
@@ -160,19 +166,43 @@ def point_metrics(df: pd.DataFrame) -> dict[str, float | int]:
     return out
 
 
+def _flat_clusters(clusters: dict[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Flatten ``{cluster: row positions}`` (visited in sorted-key order) into one
+    position array plus per-cluster ``(start, length)`` offsets, so a cluster
+    resample becomes a single repeat/arange gather (``_resample_index``)."""
+    parts = [np.asarray(clusters[k], dtype=np.intp) for k in sorted(clusters)]
+    lengths = np.array([p.size for p in parts], dtype=np.intp)
+    starts = np.cumsum(lengths) - lengths
+    order = np.concatenate(parts) if parts else np.empty(0, dtype=np.intp)
+    return order, starts, lengths
+
+
+def _resample_index(sampled: np.ndarray, starts: np.ndarray, lengths: np.ndarray) -> np.ndarray:
+    """Positions (into the flattened order) of the clusters in ``sampled``: each
+    cluster's rows contiguous and in order, clusters in sample order -- the
+    sequence ``np.concatenate([clusters[keys[i]] for i in sampled])`` yields,
+    without the per-cluster Python loop."""
+    lens = lengths[sampled]
+    total = int(lens.sum())
+    if total == 0:
+        return np.empty(0, dtype=np.intp)
+    return np.repeat(starts[sampled] - (np.cumsum(lens) - lens), lens) + np.arange(total, dtype=np.intp)
+
+
 def bootstrap_ci(df: pd.DataFrame, n_boot: int, seed: int) -> dict[str, float]:
     clusters = {str(k): idx.to_numpy() for k, idx in df.groupby("base_case_id", sort=True).groups.items()}
     keys = sorted(clusters)
     if len(keys) < 2 or n_boot <= 0:
         return {}
     rng = np.random.default_rng(seed)
-    rho = df["rho"].to_numpy(float)
-    sign = df["sign_match_strict"].to_numpy(float)
-    accepted = df["accepted"].to_numpy(float)
+    order, starts, lengths = _flat_clusters(clusters)
+    rho = df["rho"].to_numpy(float)[order]
+    sign = df["sign_match_strict"].to_numpy(float)[order]
+    accepted = df["accepted"].to_numpy(float)[order]
     stats = np.empty((n_boot, 5), dtype=float)
     for b in range(n_boot):
         sampled = rng.integers(0, len(keys), size=len(keys))
-        idx = np.concatenate([clusters[keys[i]] for i in sampled])
+        idx = _resample_index(sampled, starts, lengths)
         rb = rho[idx]
         stats[b] = (
             rb.mean(),
@@ -210,9 +240,25 @@ def summarize(
     return pd.DataFrame(records)
 
 
+PAIRED_COLS = ("rho", "sign_match_strict", "accepted")
+
+
+def _paired_stats(v: dict[str, np.ndarray], idx: np.ndarray) -> np.ndarray:
+    """SRP-minus-baseline mean rho, p95 rho, sign agreement and accepted rate over rows ``idx``."""
+    rho_srp, rho_base = v["rho_srp"][idx], v["rho_base"][idx]
+    return np.array(
+        [
+            rho_srp.mean() - rho_base.mean(),
+            np.percentile(rho_srp, 95) - np.percentile(rho_base, 95),
+            v["sign_match_strict_srp"][idx].mean() - v["sign_match_strict_base"][idx].mean(),
+            v["accepted_srp"][idx].mean() - v["accepted_base"][idx].mean(),
+        ]
+    )
+
+
 def paired_differences(qdf: pd.DataFrame, n_boot: int, seed: int) -> pd.DataFrame:
     keys = ["bank", "base_case_id", "case_id", "query"]
-    cols = keys + ["rho", "sign_match_strict", "accepted"]
+    cols = keys + list(PAIRED_COLS)
     a = qdf[qdf.method == ANCHOR][cols].copy()
     results: list[dict] = []
     for method in sorted(set(qdf.method) - {ANCHOR}):
@@ -223,23 +269,14 @@ def paired_differences(qdf: pd.DataFrame, n_boot: int, seed: int) -> pd.DataFram
         clusters = {str(k): idx.to_numpy() for k, idx in m.groupby("base_case_id", sort=True).groups.items()}
         ckeys = sorted(clusters)
         rng = np.random.default_rng(seed + int(hashlib.sha1(method.encode()).hexdigest()[:7], 16))
-
-        def diffs(frame: pd.DataFrame) -> np.ndarray:
-            return np.array(
-                [
-                    frame.rho_srp.mean() - frame.rho_base.mean(),
-                    np.percentile(frame.rho_srp, 95) - np.percentile(frame.rho_base, 95),
-                    frame.sign_match_strict_srp.mean() - frame.sign_match_strict_base.mean(),
-                    frame.accepted_srp.mean() - frame.accepted_base.mean(),
-                ]
-            )
-
-        point = diffs(m)
+        values = {f"{c}_{side}": m[f"{c}_{side}"].to_numpy(float) for c in PAIRED_COLS for side in ("srp", "base")}
+        point = _paired_stats(values, np.arange(len(m)))
+        order, starts, lengths = _flat_clusters(clusters)
+        flat = {name: arr[order] for name, arr in values.items()}
         boots = np.empty((n_boot, 4), float)
         for i in range(n_boot):
             sample = rng.integers(0, len(ckeys), size=len(ckeys))
-            idx = np.concatenate([clusters[ckeys[j]] for j in sample])
-            boots[i] = diffs(m.iloc[idx])
+            boots[i] = _paired_stats(flat, _resample_index(sample, starts, lengths))
         rec: dict[str, float | str | int] = {"baseline": method, "n_pairs": len(m)}
         for j, name in enumerate(("mean_rho", "p95_rho", "sign_agreement", "accepted_rate")):
             rec[f"delta_srp_minus_baseline_{name}"] = float(point[j])

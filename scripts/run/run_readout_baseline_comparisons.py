@@ -56,6 +56,18 @@ Output schema:
     baseline_feature_compactness.csv
     manifest.json
 
+Fixed in 0.2.1: ``margin_from_rows`` scatters per-row-support contributions
+(``nearest_row_ridge_top*``, ``knn_basis_top*``, ``row_cluster_*``: one entry
+per neighbour / centroid of THAT row) into a full-size vector over the method's
+feature space (``BaselineDecomposition.feature_space_size``: vocabulary rows or
+centroids) before forming ``fA - fB``. The margin scalars (exact / sparse /
+residual, hence rho, sign agreement, accepted rate and every fidelity column
+the paper reports) never depended on the alignment; only the coverage and
+compactness columns of those three method families change (``top5_*_cov``,
+``top10_*_cov``, ``n_feat_80pct_abs``, ``largest_*``, and their rows of
+``baseline_feature_compactness.csv``), which used to subtract unrelated
+neighbours position by position.
+
 Designed for one-shot resumable execution on a single A40: per-cell `done.json`
 sentinel means restart after preemption only re-runs the unfinished
 (bank, method) cells. Hidden states are recomputed per cell so each cell is
@@ -89,6 +101,7 @@ from sparse_readout_prism.research.run_io import (
     write_rows_csv as _write_csv,
 )
 from sparse_readout_prism.research.registry import resolve_registry
+from sparse_readout_prism.research.row_geometry import spherical_kmeans_unit
 from sparse_readout_prism.utils import (
     atomic_write_text as _atomic_write,
     find_lm_head,
@@ -97,11 +110,6 @@ from sparse_readout_prism.utils import (
     spearman as _spearman,
     write_jsonl as _write_jsonl,
 )
-
-# Repo root from this file's location: scripts/run/THIS_FILE.py
-#   parents[0]=run/ [1]=scripts/ [2]=repo root
-REPO = Path(__file__).resolve().parents[2]
-
 
 # =========================================================================== #
 # Baseline / reference methods (inlined from the former
@@ -127,7 +135,14 @@ class BaselineDecomposition:
     length depends on the method:
       * sparse_rp / shuffled_row_code / random_support: d_features (mostly zero)
       * pca_<n>:           n_components
-      * nearest_row_ridge_top<k>: k
+      * nearest_row_ridge_top<k> / knn_basis_top<k>: k, one per neighbour row of THIS row
+      * row_cluster_d<D>_k<k> / row_cluster_hard_d<D>: k (1 when hard), one per selected centroid
+
+    `feature_space_size` is the size of the space `active_feature_indices`
+    index into (d_features, n_components, the vocabulary size V, or the D
+    centroids). When `feature_contributions` is shorter than it, the vector is
+    a per-row support and must be scattered through `active_feature_indices`
+    before it is compared across rows (`margin_from_rows` does this).
     """
 
     original_logit: torch.Tensor
@@ -139,6 +154,7 @@ class BaselineDecomposition:
     identity_error: torch.Tensor
     active_feature_indices: torch.Tensor
     method: str
+    feature_space_size: int
 
 
 # --------------------------------------------------------------------------- #
@@ -187,6 +203,43 @@ class BaselineMethod:
     ) -> BaselineDecomposition:
         raise NotImplementedError
 
+    # ---- shared accounting tail ----------------------------------------------
+
+    def _finish(
+        self,
+        h: torch.Tensor,
+        row_idx: int,
+        decoded: torch.Tensor,  # (d_model,) reconstruction of the normalised row
+        contribs: torch.Tensor,  # (n_active,) per-atom contributions; their sum is feature_sum
+        feature_contributions: torch.Tensor,  # the vector reported to callers (full-size or per-row support)
+        active: torch.Tensor,  # (n_active,) indices into the method's feature space
+        feature_space_size: int,
+    ) -> BaselineDecomposition:
+        """Reconstructed row, residual and the exact identity
+        ``original == base + feature_sum + residual`` -- the same for every method."""
+        W_row = self.W[row_idx].to(self.device)
+        row_norm = self.row_norm_all[row_idx]
+        reconstructed_row = self.row_mean + row_norm * decoded
+        residual_row = W_row - reconstructed_row
+        base_term = h @ self.row_mean
+        feature_sum = contribs.sum()
+        residual_term = h @ residual_row
+        original_logit = h @ W_row
+        reconstructed_logit = base_term + feature_sum
+        identity_error = original_logit - (base_term + feature_sum + residual_term)
+        return BaselineDecomposition(
+            original_logit=original_logit,
+            base_term=base_term,
+            feature_contributions=feature_contributions,
+            feature_sum=feature_sum,
+            residual_term=residual_term,
+            reconstructed_logit=reconstructed_logit,
+            identity_error=identity_error,
+            active_feature_indices=active.detach().cpu(),
+            method=self.name,
+            feature_space_size=int(feature_space_size),
+        )
+
 
 # --------------------------------------------------------------------------- #
 # A. Sparse Readout Prism anchor
@@ -230,6 +283,7 @@ class SparseRPMethod(BaselineMethod):
             identity_error=d.identity_error,
             active_feature_indices=d.active_feature_indices,
             method=self.name,
+            feature_space_size=self.sae.d_features,
         )
 
 
@@ -294,34 +348,13 @@ class ShuffledRowCodeMethod(BaselineMethod):
         val = self.code_values_per_row[src]  # (k,)
         decoder_rows = self.sae.decoder[idx]  # (k, d_model)
         decoded = (val[:, None] * decoder_rows).sum(0)  # (d_model,)
-        W_row = self.W[row_idx].to(self.device)
         row_norm = self.row_norm_all[row_idx]
-        reconstructed_row = self.row_mean + row_norm * decoded
-        residual_row = W_row - reconstructed_row
-
         d_features = self.sae.d_features
         feature_contributions = torch.zeros(d_features, device=self.device)
         h_dec = h @ decoder_rows.T  # (k,)
         contribs_k = row_norm * val * h_dec  # (k,)
         feature_contributions.scatter_add_(0, idx, contribs_k)
-
-        base_term = h @ self.row_mean
-        feature_sum = contribs_k.sum()
-        residual_term = h @ residual_row
-        original_logit = h @ W_row
-        reconstructed_logit = base_term + feature_sum
-        identity_error = original_logit - (base_term + feature_sum + residual_term)
-        return BaselineDecomposition(
-            original_logit=original_logit,
-            base_term=base_term,
-            feature_contributions=feature_contributions,
-            feature_sum=feature_sum,
-            residual_term=residual_term,
-            reconstructed_logit=reconstructed_logit,
-            identity_error=identity_error,
-            active_feature_indices=idx.detach().cpu(),
-            method=self.name,
-        )
+        return self._finish(h, row_idx, decoded, contribs_k, feature_contributions, idx, d_features)
 
 
 # --------------------------------------------------------------------------- #
@@ -375,33 +408,12 @@ class RandomSupportSameMagnitudesMethod(BaselineMethod):
         val = self.code_vals_sorted[row_idx]  # (k,) signed magnitudes
         decoder_rows = self.sae.decoder[rand_ids]  # (k, d_model)
         decoded = (val[:, None] * decoder_rows).sum(0)  # (d_model,)
-        W_row = self.W[row_idx].to(self.device)
         row_norm = self.row_norm_all[row_idx]
-        reconstructed_row = self.row_mean + row_norm * decoded
-        residual_row = W_row - reconstructed_row
-
         feature_contributions = torch.zeros(self.d_features, device=self.device)
         h_dec = h @ decoder_rows.T
         contribs_k = row_norm * val * h_dec
         feature_contributions.scatter_add_(0, rand_ids, contribs_k)
-
-        base_term = h @ self.row_mean
-        feature_sum = contribs_k.sum()
-        residual_term = h @ residual_row
-        original_logit = h @ W_row
-        reconstructed_logit = base_term + feature_sum
-        identity_error = original_logit - (base_term + feature_sum + residual_term)
-        return BaselineDecomposition(
-            original_logit=original_logit,
-            base_term=base_term,
-            feature_contributions=feature_contributions,
-            feature_sum=feature_sum,
-            residual_term=residual_term,
-            reconstructed_logit=reconstructed_logit,
-            identity_error=identity_error,
-            active_feature_indices=rand_ids.detach().cpu(),
-            method=self.name,
-        )
+        return self._finish(h, row_idx, decoded, contribs_k, feature_contributions, rand_ids, self.d_features)
 
 
 # --------------------------------------------------------------------------- #
@@ -445,30 +457,12 @@ class DensePCAMethod(BaselineMethod):
         x = self.row_normalized_all[row_idx]  # (d_model,)
         coeffs = self.V_pca @ x  # (n_comp,)
         decoded = coeffs @ self.V_pca  # (d_model,)
-        W_row = self.W[row_idx].to(self.device)
         row_norm = self.row_norm_all[row_idx]
-        reconstructed_row = self.row_mean + row_norm * decoded
-        residual_row = W_row - reconstructed_row
-
         h_pca = self.V_pca @ h  # (n_comp,)
         feature_contributions = row_norm * coeffs * h_pca  # (n_comp,)
-        base_term = h @ self.row_mean
-        feature_sum = feature_contributions.sum()
-        residual_term = h @ residual_row
-        original_logit = h @ W_row
-        reconstructed_logit = base_term + feature_sum
-        identity_error = original_logit - (base_term + feature_sum + residual_term)
-        active = torch.arange(self.n_components)  # all components active
-        return BaselineDecomposition(
-            original_logit=original_logit,
-            base_term=base_term,
-            feature_contributions=feature_contributions,
-            feature_sum=feature_sum,
-            residual_term=residual_term,
-            reconstructed_logit=reconstructed_logit,
-            identity_error=identity_error,
-            active_feature_indices=active,
-            method=self.name,
+        active = torch.arange(self.n_components)  # all components active; the basis is shared by every row
+        return self._finish(
+            h, row_idx, decoded, feature_contributions, feature_contributions, active, self.n_components
         )
 
 
@@ -522,32 +516,13 @@ class NearestRowRidgeMethod(BaselineMethod):
         A = XXT + self.lam * torch.eye(self.top_k, device=self.device)
         beta = torch.linalg.solve(A, Xx)  # (top_k,)
         decoded = beta @ X  # (d_model,)
-        W_row = self.W[row_idx].to(self.device)
         row_norm = self.row_norm_all[row_idx]
-        reconstructed_row = self.row_mean + row_norm * decoded
-        residual_row = W_row - reconstructed_row
-
         # Per-neighbour contribution to h. The neighbour basis is normalized;
-        # contribution_j = beta_j * row_norm * (h . X_j).
+        # contribution_j = beta_j * row_norm * (h . X_j). Indexed by this row's
+        # neighbour list; the feature space is the vocabulary (V rows).
         h_nbr = X @ h  # (top_k,)
         feature_contributions = row_norm * beta * h_nbr  # (top_k,)
-        base_term = h @ self.row_mean
-        feature_sum = feature_contributions.sum()
-        residual_term = h @ residual_row
-        original_logit = h @ W_row
-        reconstructed_logit = base_term + feature_sum
-        identity_error = original_logit - (base_term + feature_sum + residual_term)
-        return BaselineDecomposition(
-            original_logit=original_logit,
-            base_term=base_term,
-            feature_contributions=feature_contributions,
-            feature_sum=feature_sum,
-            residual_term=residual_term,
-            reconstructed_logit=reconstructed_logit,
-            identity_error=identity_error,
-            active_feature_indices=nbr_ids.detach().cpu(),
-            method=self.name,
-        )
+        return self._finish(h, row_idx, decoded, feature_contributions, feature_contributions, nbr_ids, self.W.shape[0])
 
 
 # --------------------------------------------------------------------------- #
@@ -599,60 +574,15 @@ class KNNBasisMethod(BaselineMethod):
         gamma = (x @ mean_nbr) / (mean_nbr @ mean_nbr).clamp_min(1e-8)
         coeffs = gamma * w  # per-neighbour coefficients; decoded = coeffs @ X
         decoded = coeffs @ X  # (d_model,) rescaled neighbourhood estimate
-        W_row = self.W[row_idx].to(self.device)
         row_norm = self.row_norm_all[row_idx]
-        reconstructed_row = self.row_mean + row_norm * decoded
-        residual_row = W_row - reconstructed_row
         h_nbr = X @ h  # (top_k,)
-        feature_contributions = row_norm * coeffs * h_nbr  # (top_k,)
-        base_term = h @ self.row_mean
-        feature_sum = feature_contributions.sum()
-        residual_term = h @ residual_row
-        original_logit = h @ W_row
-        reconstructed_logit = base_term + feature_sum
-        identity_error = original_logit - (base_term + feature_sum + residual_term)
-        return BaselineDecomposition(
-            original_logit=original_logit,
-            base_term=base_term,
-            feature_contributions=feature_contributions,
-            feature_sum=feature_sum,
-            residual_term=residual_term,
-            reconstructed_logit=reconstructed_logit,
-            identity_error=identity_error,
-            active_feature_indices=nbr_ids.detach().cpu(),
-            method=self.name,
-        )
+        feature_contributions = row_norm * coeffs * h_nbr  # (top_k,) indexed by this row's neighbour list
+        return self._finish(h, row_idx, decoded, feature_contributions, feature_contributions, nbr_ids, self.W.shape[0])
 
 
 # --------------------------------------------------------------------------- #
 # G. K-means row-cluster basis
 # --------------------------------------------------------------------------- #
-
-
-def _torch_kmeans_unit(X: torch.Tensor, n_clusters: int, seed: int, iters: int = 12, chunk: int = 4096) -> torch.Tensor:
-    """Lloyd's k-means on unit-norm rows (cosine assignment), on-device.
-    Returns unit-normalized centroids (n_clusters, d). Dead centroids are
-    reseeded from random rows each iteration. Deterministic given `seed`."""
-    V = X.shape[0]
-    g = torch.Generator().manual_seed(seed)
-    C = X[torch.randperm(V, generator=g)[:n_clusters].to(X.device)].clone()
-    ones = torch.ones(V, device=X.device)
-    for _ in range(iters):
-        assign = torch.empty(V, dtype=torch.long, device=X.device)
-        for s in range(0, V, chunk):
-            assign[s : s + chunk] = (X[s : s + chunk] @ C.T).argmax(dim=1)
-        C_new = torch.zeros_like(C)
-        count = torch.zeros(n_clusters, device=X.device)
-        C_new.index_add_(0, assign, X)
-        count.index_add_(0, assign, ones)
-        dead = count == 0
-        C = C_new / count.clamp_min(1.0)[:, None]
-        n_dead = int(dead.sum())
-        if n_dead:
-            ridx = torch.randperm(V, generator=g)[:n_dead].to(X.device)
-            C[dead] = X[ridx]
-        C = C / C.norm(dim=1, keepdim=True).clamp_min(1e-8)
-    return C
 
 
 class RowClusterMethod(BaselineMethod):
@@ -664,6 +594,15 @@ class RowClusterMethod(BaselineMethod):
     literal clustering reading: the row's own single cluster centroid
     reconstructs it.
 
+    `exclude_ids` is not applied: the k-means fit and the row's own cluster
+    include the target row and its contrast partner. This is the paper's
+    behaviour (the centroid dictionary is fit once on all rows, like the SAE),
+    unlike the nearest-row methods, which drop the target and its partner from
+    the neighbour search. The fit (`research.row_geometry.spherical_kmeans_unit`)
+    is seeded and bit-exact across runs on CPU only; a run memoises it by
+    `(n_clusters, seed)` so the soft and hard variants of one width share one
+    set of centroids.
+
     Design note: an earlier version of this baseline solved a full
     least-squares projection over n_clusters = d_model centroids, a full-rank
     reprojection of the row space that reconstructs any row near-perfectly by
@@ -672,13 +611,28 @@ class RowClusterMethod(BaselineMethod):
 
     name = "row_cluster"
 
-    def __init__(self, *, n_clusters: int, code_k: int = 256, hard: bool = False, seed: int = 0, **kw) -> None:
+    def __init__(
+        self,
+        *,
+        n_clusters: int,
+        code_k: int = 256,
+        hard: bool = False,
+        seed: int = 0,
+        kmeans_cache: Optional[dict] = None,
+        **kw,
+    ) -> None:
         super().__init__(**kw)
         self.n_clusters = int(n_clusters)
         self.hard = bool(hard)
         self.code_k = 1 if hard else min(int(code_k), self.n_clusters)
         self.name = f"row_cluster_hard_d{self.n_clusters}" if hard else f"row_cluster_d{self.n_clusters}_k{self.code_k}"
-        self.C = _torch_kmeans_unit(self.row_normalized_all, self.n_clusters, seed)
+        key = (self.n_clusters, int(seed))
+        if kmeans_cache is not None and key in kmeans_cache:
+            self.C = kmeans_cache[key]
+        else:
+            self.C = spherical_kmeans_unit(self.row_normalized_all, self.n_clusters, int(seed))
+            if kmeans_cache is not None:
+                kmeans_cache[key] = self.C
         self._eye = torch.eye(self.code_k, device=self.device)
 
     @torch.no_grad()
@@ -700,29 +654,10 @@ class RowClusterMethod(BaselineMethod):
             A = Ck @ Ck.T + 1e-4 * self._eye
             coeffs = torch.linalg.solve(A, Ck @ x)  # (code_k,)
         decoded = coeffs @ Ck  # (d_model,)
-        W_row = self.W[row_idx].to(self.device)
         row_norm = self.row_norm_all[row_idx]
-        reconstructed_row = self.row_mean + row_norm * decoded
-        residual_row = W_row - reconstructed_row
         h_c = Ck @ h  # (code_k,)
-        feature_contributions = row_norm * coeffs * h_c  # (code_k,)
-        base_term = h @ self.row_mean
-        feature_sum = feature_contributions.sum()
-        residual_term = h @ residual_row
-        original_logit = h @ W_row
-        reconstructed_logit = base_term + feature_sum
-        identity_error = original_logit - (base_term + feature_sum + residual_term)
-        return BaselineDecomposition(
-            original_logit=original_logit,
-            base_term=base_term,
-            feature_contributions=feature_contributions,
-            feature_sum=feature_sum,
-            residual_term=residual_term,
-            reconstructed_logit=reconstructed_logit,
-            identity_error=identity_error,
-            active_feature_indices=sel.detach().cpu(),
-            method=self.name,
-        )
+        feature_contributions = row_norm * coeffs * h_c  # (code_k,) indexed by this row's selected centroids
+        return self._finish(h, row_idx, decoded, feature_contributions, feature_contributions, sel, self.n_clusters)
 
 
 # --------------------------------------------------------------------------- #
@@ -741,6 +676,7 @@ def build_method(
     seed: int = 0,
     row_norm_all: Optional[torch.Tensor] = None,
     row_normalized_all: Optional[torch.Tensor] = None,
+    kmeans_cache: Optional[dict] = None,
 ) -> BaselineMethod:
     """spec examples:
     'sparse_rp'
@@ -751,6 +687,9 @@ def build_method(
     'knn_basis_top128'
     'row_cluster_d65536_k256', 'row_cluster_d16384_k256'
     'row_cluster_hard_d65536'
+
+    `kmeans_cache` (a dict owned by the run) memoises fitted centroids by
+    (n_clusters, seed) across the row_cluster_* specs.
     """
     common = dict(
         W=W,
@@ -782,17 +721,33 @@ def build_method(
         return KNNBasisMethod(top_k=top, **common)
     if spec.startswith("row_cluster_hard_d"):
         n = int(spec.split("row_cluster_hard_d", 1)[1])
-        return RowClusterMethod(n_clusters=n, hard=True, seed=seed, **common)
+        return RowClusterMethod(n_clusters=n, hard=True, seed=seed, kmeans_cache=kmeans_cache, **common)
     if spec.startswith("row_cluster_d"):
         body = spec.split("row_cluster_d", 1)[1]  # "<D>_k<k>"
         d_str, k_str = body.split("_k", 1)
-        return RowClusterMethod(n_clusters=int(d_str), code_k=int(k_str), seed=seed, **common)
+        return RowClusterMethod(
+            n_clusters=int(d_str), code_k=int(k_str), seed=seed, kmeans_cache=kmeans_cache, **common
+        )
     raise ValueError(f"unknown method spec: {spec}")
 
 
 # --------------------------------------------------------------------------- #
 # Margin (mirror of `margin_from_rows` in run_query_fidelity_bank.py)
 # --------------------------------------------------------------------------- #
+
+
+def _full_contributions(d: BaselineDecomposition) -> torch.Tensor:
+    """`feature_contributions` over the method's whole feature space.
+
+    Per-row-support methods report one entry per neighbour / centroid of that
+    row; scatter them through `active_feature_indices` so two rows' vectors
+    line up feature by feature before they are subtracted or averaged."""
+    fc = d.feature_contributions
+    if fc.numel() == d.feature_space_size:
+        return fc
+    full = torch.zeros(d.feature_space_size, device=fc.device, dtype=fc.dtype)
+    full.scatter_add_(0, d.active_feature_indices.to(fc.device), fc)
+    return full
 
 
 def margin_from_rows(
@@ -809,6 +764,11 @@ def margin_from_rows(
     query (A=top1, B=row_mean). In that case `b_ids` is None and the B
     decompose is replaced by `(h @ row_mean, h @ row_mean, 0, zeros)` so
     the base cancels exactly (the prism-side `s_approx_B = base + sum_i 0`).
+
+    `feat_margin` is formed over the method's full feature space
+    (`_full_contributions`), so for the per-row-support methods it has one
+    entry per vocabulary row / centroid and the coverage statistics see the
+    union of A's and B's supports.
     """
 
     @torch.no_grad()
@@ -830,7 +790,7 @@ def margin_from_rows(
                 d.original_logit,
                 d.reconstructed_logit,
                 d.residual_term,
-                d.feature_contributions,
+                _full_contributions(d),
             )
             if accs is None:
                 accs = cur
@@ -1027,6 +987,7 @@ def run_cell(
             seed=args.seed,
             row_norm_all=cache["row_norm_all"],
             row_normalized_all=cache["row_normalized_all"],
+            kmeans_cache=cache.setdefault("kmeans_centroids", {}),
         )
         log(f"built method {method_spec} in {time.time() - t0:.1f}s")
     method = methods_cache[method_spec]
