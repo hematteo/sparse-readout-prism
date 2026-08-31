@@ -5,13 +5,19 @@
 * scripts/analyze/analyze_wsd_classifier_framing.py (classifier-framing paragraph)
 * sparse_readout_prism.research.wsd                 (their shared helpers)
 
-``PINS`` holds outputs of the pre-0.2.1 scripts (per-script helper copies,
-right truncation, glob-picked HF snapshot) on the fixtures below: hashes of
-canonical JSON or array bytes plus a few readable values. The tests assert the
-refactored code reproduces them exactly. The bundle mimics
-``representations.pt``: two words, two or three senses, 16 dictionary
-positions, a strong and a weaker planted discriminative position per sense.
-No model, no network, well under a second per test.
+``tests/fixtures/wsd_pins.json`` holds the outputs of these scripts on the
+fixtures below, captured after the 0.2.1 merge of the per-script helper copies
+was shown to reproduce the pre-merge outputs exactly on the capture machine.
+Floats are compared with ``rel=1e-5, atol=1e-6`` (BLAS/platform noise sits
+near 1e-7 relative; bundle tensors stored in float16 get two fp16 ulps);
+counts, ids, orderings, flags and strings are compared exactly. Where the
+refactor touched arithmetic (the target codes, the shuffle null) a verbatim
+copy of the pre-0.2.1 computation also runs in-process and must agree.
+Regenerate the fixture with ``uv run --no-sync python tests/test_wsd_sense_groups.py``.
+
+The synthetic bundle mimics ``representations.pt``: two words, two or three
+senses, 16 dictionary positions, a strong and a weaker planted discriminative
+position per sense. No model, no network, no Hugging Face cache.
 """
 
 from __future__ import annotations
@@ -19,306 +25,31 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
 import torch
+import torch.nn.functional as F
 from conftest import load_script
+
 from sparse_readout_prism.data import centering_mean
 from sparse_readout_prism.factorizers import build_factorizer
 from sparse_readout_prism.research import wsd
 from sparse_readout_prism.research.qwen_readout import load_sae
-from sparse_readout_prism.utils import spearman
+from sparse_readout_prism.utils import spearman, to_jsonable
 
 rw = load_script("scripts/run/run_wsd_feature_alignment.py")
 sg = load_script("scripts/analyze/analyze_wsd_sense_groups.py")
 cf = load_script("scripts/analyze/analyze_wsd_classifier_framing.py")
 
-PINS = {
-    "auc": {"big_0": 0.5645077524610911, "big_3": 0.5645737167712954, "one_class": None, "small_0": 0.4735317279695978},
-    "cb": {
-        "ci": [-0.14836898540991997, 0.3938881306083598],
-        "first3": [0.10616698864212924, 0.04648800212459197, 0.05718697644108653],
-        "n": 50,
-    },
-    "cf": {
-        "cmp_projection": {
-            "accuracy_difference": 0.0,
-            "accuracy_difference_ci": [0.0, 0.0],
-            "accuracy_positive_words": 0,
-            "balanced_accuracy_difference": 0.0,
-            "balanced_accuracy_difference_ci": [0.0, 0.0],
-            "balanced_accuracy_positive_words": 0,
-            "macro_f1_difference": 0.0,
-            "macro_f1_difference_ci": [0.0, 0.0],
-            "macro_f1_positive_words": 0,
-            "n_words": 2,
-        },
-        "gate": {
-            "median_rho_plus_0p5": 0.0,
-            "n_items": 120,
-            "n_pass": 120,
-            "pass_fraction": 1.0,
-            "sign_match_fraction": 1.0,
-        },
-        "hash": "7e49e4804b5837ce",
-        "null_shuffled": {
-            "macro_f1": {
-                "fraction_null_at_least_observed": 1.0,
-                "max": 1.0,
-                "mean": 1.0,
-                "min": 1.0,
-                "n_seeds": 2,
-                "observed_srp": 1.0,
-                "q05_q95": [1.0, 1.0],
-                "std": 0.0,
-            }
-        },
-        "primary_methods": {
-            "projection_only": {
-                "accuracy": 1.0,
-                "balanced_accuracy": 1.0,
-                "macro_f1": 1.0,
-                "macro_f1_ci": [1.0, 1.0],
-                "n_test": 40,
-                "n_train": 80,
-                "n_words": 2,
-            },
-            "random_srp_features": {
-                "accuracy": 0.5,
-                "balanced_accuracy": 0.5805555555555555,
-                "macro_f1": 0.48367027970608534,
-                "macro_f1_ci": [0.32539682539682535, 0.48367027970608534],
-                "n_test": 40,
-                "n_train": 80,
-                "n_words": 2,
-            },
-            "shuffled_srp": {
-                "accuracy": 1.0,
-                "balanced_accuracy": 1.0,
-                "macro_f1": 1.0,
-                "macro_f1_ci": [1.0, 1.0],
-                "n_test": 40,
-                "n_train": 80,
-                "n_words": 2,
-            },
-            "srp": {
-                "accuracy": 1.0,
-                "balanced_accuracy": 1.0,
-                "macro_f1": 1.0,
-                "macro_f1_ci": [1.0, 1.0],
-                "n_test": 40,
-                "n_train": 80,
-                "n_words": 2,
-            },
-        },
-        "results_signed_4_srp_agg": {
-            "accuracy": 1.0,
-            "balanced_accuracy": 1.0,
-            "macro_f1": 1.0,
-            "n_test": 40,
-            "n_train": 80,
-            "n_words": 2,
-        },
-    },
-    "cf_cli": {
-        "analysis": {
-            "encodings": ["signed", "weighted"],
-            "ks": [2, 4],
-            "methods": ["srp", "projection_only", "shuffled_srp", "random_srp_features"],
-            "n_boot": 7,
-            "n_null_seeds": 3,
-            "primary_encoding": "signed",
-            "primary_k": 4,
-            "seed": 5,
-        },
-        "hash": "7da70bb3210641aa",
-        "primary_srp": {
-            "accuracy": 1.0,
-            "balanced_accuracy": 1.0,
-            "macro_f1": 1.0,
-            "macro_f1_ci": [1.0, 1.0],
-            "n_test": 40,
-            "n_train": 80,
-            "n_words": 2,
-        },
-    },
-    "cf_random_enc_hash": "d8dfe216739112f6",
-    "cf_shuffled_hash": {"0": "aaff27a124e088d4", "3": "c164033316962177"},
-    "ptc": {
-        "audit": {
-            "n_targets_requested": 3,
-            "n_targets_single_token": 2,
-            "single_token_fraction": 0.6666666666666666,
-            "skipped_targets": {"multi": "multi_token"},
-            "targets": {
-                "bank": {
-                    "continuation": " bank",
-                    "n_positive_codes": 6,
-                    "row_cosine": 0.3883303105831146,
-                    "row_relative_error": 3.34517765045166,
-                    "token_id": 3,
-                },
-                "seal": {
-                    "continuation": " seal",
-                    "n_positive_codes": 6,
-                    "row_cosine": -0.21251048147678375,
-                    "row_relative_error": 2.8938305377960205,
-                    "token_id": 4,
-                },
-            },
-        },
-        "bank_beta": "3770c9b09cff729c",
-        "bank_fids": [21, 2, 24, 17, 8, 5],
-        "k": 6,
-        "seal_beta": "a378b719424cc9bb",
-        "seal_fids": [8, 25, 31, 26, 28, 21],
-    },
-    "rw_method_hashes": {
-        "hidden": "710352578f8a4b30",
-        "shuffled_srp": "ab38110ffb3cb5d8",
-        "srp": "f203f93dc79b5f48",
-        "support_projection": "9e00ed52bd0f0d38",
-        "token_only": "4f22f486a7f821af",
-    },
-    "rw_metrics": {
-        "bank_hidden_per_word": {
-            "accuracy": 1.0,
-            "ari": 1.0,
-            "balanced_accuracy": 1.0,
-            "macro_f1": 1.0,
-            "n_senses": 2,
-            "n_test": 20,
-            "n_train": 40,
-            "nmi": 1.0,
-            "pairwise_auc": 1.0,
-            "row_relative_error": 0.2,
-        },
-        "cmp_hidden": {
-            "accuracy_difference": 0.0,
-            "accuracy_difference_ci": [0.0, 0.0],
-            "ari_difference": 0.0,
-            "ari_difference_ci": [0.0, 0.0],
-            "balanced_accuracy_difference": 0.0,
-            "balanced_accuracy_difference_ci": [0.0, 0.0],
-            "macro_f1_difference": 0.0,
-            "macro_f1_difference_ci": [0.0, 0.0],
-            "n_words": 2,
-            "nmi_difference": 0.0,
-            "nmi_difference_ci": [0.0, 0.0],
-            "pairwise_auc_difference": 0.0,
-            "pairwise_auc_difference_ci": [0.0, 0.0],
-        },
-        "hash": "8a1eab9e0f070776",
-        "srp_aggregate": {
-            "accuracy": 1.0,
-            "accuracy_ci": [1.0, 1.0],
-            "ari": 1.0,
-            "ari_ci": [1.0, 1.0],
-            "balanced_accuracy": 1.0,
-            "balanced_accuracy_ci": [1.0, 1.0],
-            "macro_f1": 1.0,
-            "macro_f1_ci": [1.0, 1.0],
-            "n_words": 2,
-            "nmi": 1.0,
-            "nmi_ci": [1.0, 1.0],
-            "pairwise_auc": 1.0,
-            "pairwise_auc_ci": [1.0, 1.0],
-            "row_gate": {
-                "accuracy": 1.0,
-                "ari": 1.0,
-                "balanced_accuracy": 1.0,
-                "macro_f1": 1.0,
-                "nmi": 1.0,
-                "pairwise_auc": 1.0,
-            },
-            "row_gate_fraction": 1.0,
-            "row_gate_words": 2,
-        },
-    },
-    "rw_predictions_hash": "370a835c74b3674d",
-    "rw_scoring_summary": {
-        "mean_absolute_logit_residual": 0.0,
-        "median_absolute_logit_residual": 0.0,
-        "median_target_rank": 1.0,
-        "n_scored": 120,
-        "n_targets": 2,
-        "row_gate_fraction_items": 1.0,
-        "target_top10_fraction": 1.0,
-        "target_top1_fraction": 1.0,
-    },
-    "rw_shuffled_seed3": "fefe77440592b1af",
-    "score": {
-        "beta": "4aa2fd96e66a070b",
-        "contribution": "7b2444e5e923ea31",
-        "exact_logit": "7b694ac7b5c01f09",
-        "feature_ids": "e1fe1b77ec0dadd3",
-        "hidden": "ae1639028022b00a",
-        "metadata": "aad43d9a08a44c58",
-        "n": 4,
-        "projection": "6d0a986328961978",
-        "reconstructed_logit": "f3fe5890e11445ad",
-        "target_logprob": "b0ec08f04887fc35",
-        "target_rank": "b0f18af3aeb57306",
-    },
-    "score_summary": {
-        "mean_absolute_logit_residual": 1.5911362171173096,
-        "median_absolute_logit_residual": 1.7451845407485962,
-        "median_target_rank": 11.0,
-        "n_scored": 4,
-        "n_targets": 2,
-        "row_gate_fraction_items": 0.0,
-        "target_top10_fraction": 0.25,
-        "target_top1_fraction": 0.0,
-    },
-    "sg_g1": {
-        "bank_anchors": {"0": [3], "1": [7]},
-        "bank_balanced_ci": [1.0, 1.0],
-        "hash": "67da5f98b744d457",
-        "seal_anchors": {"0": [1], "1": [9], "2": [13]},
-        "seal_null_balanced_mean": 0.30666666666666664,
-        "seal_null_balanced_p95": 0.48305555555555546,
-        "word_mean_balanced": 1.0,
-        "word_mean_balanced_ci": [1.0, 1.0],
-        "word_mean_full_account_balanced": 1.0,
-        "word_mean_hidden_balanced": 1.0,
-        "word_mean_majority_balanced": 0.41666666666666663,
-        "word_mean_null_balanced": 0.3616666666666667,
-    },
-    "sg_g2": {
-        "bank_anchors": {"0": [3, 4], "1": [7, 8]},
-        "bank_balanced_ci": [1.0, 1.0],
-        "hash": "c3b3927e799785e3",
-        "seal_anchors": {"0": [1, 2], "1": [9, 10], "2": [13, 14]},
-        "seal_null_balanced_mean": 0.33999999999999997,
-        "seal_null_balanced_p95": 0.5816666666666666,
-        "word_mean_balanced": 1.0,
-        "word_mean_balanced_ci": [1.0, 1.0],
-        "word_mean_full_account_balanced": 1.0,
-        "word_mean_hidden_balanced": 1.0,
-        "word_mean_majority_balanced": 0.41666666666666663,
-        "word_mean_null_balanced": 0.3933333333333333,
-    },
-    "sg_g4": {
-        "bank_anchors": {"0": [3, 4, 13, 1], "1": [7, 8, 10, 15]},
-        "bank_balanced_ci": [1.0, 1.0],
-        "hash": "f98c9b8b349b06bf",
-        "seal_anchors": {"0": [1, 2, 12, 6], "1": [9, 10, 11, 0], "2": [13, 14, 7, 5]},
-        "seal_null_balanced_mean": 0.3827777777777778,
-        "seal_null_balanced_p95": 0.6624999999999998,
-        "word_mean_balanced": 0.95,
-        "word_mean_balanced_ci": [0.9, 1.0],
-        "word_mean_full_account_balanced": 1.0,
-        "word_mean_hidden_balanced": 1.0,
-        "word_mean_majority_balanced": 0.41666666666666663,
-        "word_mean_null_balanced": 0.3697222222222223,
-    },
-    "sg_raw_top1": {"bank_anchors": {"0": [4, 3], "1": [7]}, "hash": "4ac6081f915fc861", "word_mean_balanced": 1.0},
-    "spearman": {"const": None, "ok": 0.7999999999999999, "short": None, "tiny": None},
-    "stable_seed": {"bank_0": 3184672968, "random_bank_0": 3187410737, "seal_3": 252631022},
-}
+FIXTURE = Path(__file__).resolve().parent / "fixtures" / "wsd_pins.json"
+PINS: dict = json.loads(FIXTURE.read_text()) if FIXTURE.exists() else {}
+REL, ABS = 1e-5, 1e-6  # float tolerance against the fixture
+HALF_REL, HALF_ABS = 2e-3, 1e-5  # bundle tensors stored as float16: two fp16 ulps
+HALF_KEYS = ("hidden", "projection", "contribution", "beta")
 
 WIDTH = 16
 D_HIDDEN = 8
@@ -345,6 +76,7 @@ VOCAB = [
     "x",
     "y",
 ]
+TARGETS = ["bank", "bank", "seal", "seal", "multi"]
 PROMPTS = [
     "the river bank is a word :",
     "money of a bank is the word :",
@@ -352,6 +84,11 @@ PROMPTS = [
     "a seal is a word missing :",
     "the missing word is :",
 ]
+
+
+# --------------------------------------------------------------------------- #
+# synthetic fixtures
+# --------------------------------------------------------------------------- #
 
 
 def make_bundle(seed: int = 0) -> dict:
@@ -396,12 +133,7 @@ def make_bundle(seed: int = 0) -> dict:
         "reconstructed_logit": contribution.sum(dim=1) + 5.0,
         "target_logprob": torch.zeros(n),
         "target_rank": torch.ones(n, dtype=torch.int32),
-        "run": {
-            "dataset": "coarsewsd20",
-            "model_id": "synthetic",
-            "k": WIDTH,
-            "seed": seed,
-        },
+        "run": {"dataset": "coarsewsd20", "model_id": "synthetic", "k": WIDTH, "seed": seed},
     }
 
 
@@ -437,14 +169,7 @@ class FakeTokenizer:
     def _ids(self, text: str) -> list[int]:
         return [self.index.get(w, 2) for w in text.split()]
 
-    def __call__(
-        self,
-        texts,
-        return_tensors=None,
-        padding=True,
-        truncation=False,
-        max_length=None,
-    ):
+    def __call__(self, texts, return_tensors=None, padding=True, truncation=False, max_length=None):
         seqs = [self._ids(t) for t in texts]
         if not padding:
             return _Batch(input_ids=seqs, attention_mask=[[1] * len(s) for s in seqs])
@@ -461,8 +186,7 @@ class FakeTokenizer:
                 ids.append(s + pad)
                 mask.append([1] * len(s) + [0] * len(pad))
         return _Batch(
-            input_ids=torch.tensor(ids, dtype=torch.long),
-            attention_mask=torch.tensor(mask, dtype=torch.long),
+            input_ids=torch.tensor(ids, dtype=torch.long), attention_mask=torch.tensor(mask, dtype=torch.long)
         )
 
 
@@ -485,14 +209,7 @@ class FakeLM(torch.nn.Module):
         return SimpleNamespace(logits=self.lm_head(h))
 
 
-def make_checkpoint(
-    path: Path,
-    d_model: int = 8,
-    d_features: int = 32,
-    k: int = 6,
-    *,
-    runner_layout: bool = False,
-):
+def make_checkpoint(path: Path, d_model: int = 8, d_features: int = 32, k: int = 6, *, runner_layout: bool = False):
     torch.manual_seed(0)
     cfg = {"architecture": "topk", "d_features": d_features, "k": k}
     model = build_factorizer({"factorizer": cfg}, d_model=d_model)
@@ -509,57 +226,289 @@ def make_checkpoint(
     torch.save(ckpt, path)
 
 
-def _strip(obj, drop: set[str]):
+# --------------------------------------------------------------------------- #
+# fixture comparison
+# --------------------------------------------------------------------------- #
+
+
+def _assert_close(actual, expected, path: str = "$") -> None:
+    """Recursive comparison against a fixture value: floats within REL/ABS, everything else exact."""
+    if isinstance(expected, dict):
+        assert isinstance(actual, dict), f"{path}: {type(actual).__name__} is not a dict"
+        assert set(actual) == set(expected), f"{path}: key mismatch {sorted(set(actual) ^ set(expected))}"
+        for key in expected:
+            _assert_close(actual[key], expected[key], f"{path}.{key}")
+    elif isinstance(expected, list):
+        assert isinstance(actual, list), f"{path}: {type(actual).__name__} is not a list"
+        assert len(actual) == len(expected), f"{path}: length {len(actual)} != {len(expected)}"
+        for i, (a, e) in enumerate(zip(actual, expected)):
+            _assert_close(a, e, f"{path}[{i}]")
+    elif isinstance(expected, float):
+        assert isinstance(actual, float), f"{path}: {actual!r} is not a float"
+        assert math.isclose(actual, expected, rel_tol=REL, abs_tol=ABS), f"{path}: {actual!r} != {expected!r}"
+    else:  # bool, int, str, None: exact, same type
+        assert type(actual) is type(expected) and actual == expected, f"{path}: {actual!r} != {expected!r}"
+
+
+def _pinned(section: str):
+    assert section in PINS, f"{section!r} missing from {FIXTURE}; regenerate with `python tests/{Path(__file__).name}`"
+    return PINS[section]
+
+
+def _check(section: str, actual) -> dict:
+    """Normalize the actual (numpy -> python, NaN -> None), compare with the fixture section, return it."""
+    actual = to_jsonable(actual)
+    _assert_close(actual, _pinned(section), section)
+    return actual
+
+
+def _array_pin(array) -> dict:
+    """Platform-robust array pin: full values when small, shape + scale statistics + a sample when large."""
+    a = np.asarray(array, dtype=np.float64)
+    flat = a.ravel()
+    if a.size <= 256:
+        return {"shape": list(a.shape), "values": flat.tolist()}
+    return {
+        "shape": list(a.shape),
+        "abs_sum": float(np.abs(flat).sum()),
+        "sq_sum": float((flat * flat).sum()),
+        "head": flat[:32].tolist(),
+        "col_means": a.reshape(a.shape[0], -1).mean(axis=0).tolist(),
+    }
+
+
+def _strip(obj, drop: tuple[str, ...] = ("bundle", "provenance")):
     if isinstance(obj, dict):
         return {k: _strip(v, drop) for k, v in obj.items() if k not in drop}
     if isinstance(obj, list):
         return [_strip(v, drop) for v in obj]
-    if isinstance(obj, float) and math.isnan(obj):
-        return "NaN"
     return obj
 
 
-def _canon(obj, drop=()) -> str:
-    return hashlib.sha256(json.dumps(_strip(obj, set(drop)), sort_keys=True).encode()).hexdigest()[:16]
+# --------------------------------------------------------------------------- #
+# pinned computations (shared between the tests and the fixture regeneration)
+# --------------------------------------------------------------------------- #
 
 
-def _array_hash(array) -> str:
-    return hashlib.sha256(np.ascontiguousarray(np.asarray(array)).tobytes()).hexdigest()[:16]
+def _sense_groups_actual(tmp: Path) -> dict:
+    tmp.mkdir(parents=True, exist_ok=True)
+    bundle_path = tmp / "representations.pt"
+    torch.save(make_bundle(), bundle_path)
+    out = tmp / "out" / "synthetic__srp.json"
+    base = ["--bundle", str(bundle_path), "--out", str(out)]
+    assert sg.main(base + ["--group-sizes", "1,2,4", "--n-boot", "20", "--n-null", "10", "--seed", "0"]) == 0
+    actual = {f"g{g}": _strip(json.loads(out.with_name(f"synthetic__srp_g{g}.json").read_text())) for g in (1, 2, 4)}
+    raw = tmp / "raw_top1.json"
+    flags = ["--group-size", "2", "--selector", "top1_freq", "--raw-scale", "--n-boot", "20", "--n-null", "10"]
+    assert sg.main(base[:2] + ["--out", str(raw)] + flags + ["--seed", "3"]) == 0
+    actual["raw_top1"] = _strip(json.loads(raw.read_text()))
+    return actual
 
 
-def _nan_none(value):
-    return None if (isinstance(value, float) and math.isnan(value)) else value
+def _classifier_actual(tmp: Path) -> dict:
+    tmp.mkdir(parents=True, exist_ok=True)
+    bundle = make_bundle()
+    gate, gate_summary = cf.score_gate(bundle)
+    metrics = cf.analyze_coarse(
+        bundle, ks=[2, 4], primary_k=2, primary_encoding="weighted", n_boot=5, n_null_seeds=2, seed=0
+    )
+    bundle_path = tmp / "representations.pt"
+    torch.save(bundle, bundle_path)
+    out = tmp / "cf" / "out.json"
+    argv = ["--bundle", str(bundle_path), "--out", str(out), "--ks", "2,4", "--primary-k", "4"]
+    argv += ["--primary-encoding", "signed", "--n-boot", "7", "--n-null-seeds", "3", "--seed", "5"]
+    assert cf.main(argv) == 0
+    encoded = cf.encode_top_features(bundle, "random_srp_features", 3, "signed", 2)
+    positions = {}
+    for word in DESIGN:
+        rows = [i for i, r in enumerate(bundle["metadata"]) if r["target"] == word]
+        positions[word] = sorted(np.flatnonzero(np.abs(encoded[rows]).sum(axis=0) > 0).tolist())
+    return {
+        "gate_all": bool(gate.all()),
+        "gate": gate_summary,
+        "metrics": metrics,
+        "cli": _strip(json.loads(out.read_text())),
+        "random_positions": positions,
+        "random_encoded": _array_pin(encoded),
+    }
 
 
-def _scoring_setup(tmp_path: Path, *, runner_layout: bool = False):
-    path = tmp_path / "checkpoint.pt"
-    make_checkpoint(path, runner_layout=runner_layout)
+def _shuffle_actual() -> dict:
+    bundle = make_bundle()
+    projection = bundle["projection"].numpy()
+    beta = bundle["beta"].numpy()
+    actual: dict = {"permutations": {}, "shuffled": {}}
+    for seed in (0, 3):
+        for target in DESIGN:
+            perm = np.random.default_rng(wsd.stable_seed(target, seed)).permutation(WIDTH)
+            actual["permutations"][f"{target}:{seed}"] = perm.tolist()
+        actual["shuffled"][str(seed)] = _array_pin(wsd.shuffled_srp(projection, beta, bundle["metadata"], seed))
+    actual["method_matrices"] = {name: _array_pin(m) for name, m in rw.method_matrices(bundle, 0).items()}
+    actual["method_matrices_seed3_shuffled"] = _array_pin(rw.method_matrices(bundle, 3)["shuffled_srp"])
+    actual["stable_seed"] = {
+        "bank_0": wsd.stable_seed("bank", 0),
+        "seal_3": wsd.stable_seed("seal", 3),
+        "random_bank_0": wsd.stable_seed("random:bank", 0),
+    }
+    return actual
+
+
+def _run_analysis_actual(tmp: Path) -> dict:
+    tmp.mkdir(parents=True, exist_ok=True)
+    bundle = make_bundle()
+    metrics = rw.analyze_coarsewsd(bundle, tmp, 20, 0)
+    predictions = [json.loads(line) for line in (tmp / "predictions.jsonl").read_text().splitlines()]
+    return {"metrics": metrics, "predictions": predictions, "scoring_summary": rw.summarize_scoring(bundle)}
+
+
+def _statistics_actual() -> dict:
+    rng = np.random.default_rng(0)
+    big = rng.normal(size=(250, 8)).astype(np.float32)
+    labels = rng.integers(0, 3, 250)
+    big[labels == 1] += 0.5
+    big = wsd.l2_normalize(big)
+    rows = [{"g": i % 7, "x": float(i), "y": float((i * 37) % 11)} for i in range(40)]
+    values = wsd.cluster_bootstrap(
+        rows, "g", lambda s: wsd.safe_spearman([r["x"] for r in s], [r["y"] for r in s]), 50, 0
+    )
+    sample = np.random.default_rng(1).normal(size=9)
+    return {
+        "auc": {
+            "sampled_seed0": rw.sampled_pair_auc(big, labels, 0),  # sampled branch: 31125 > 20000 pairs
+            "sampled_seed3": rw.sampled_pair_auc(big, labels, 3),
+            "exhaustive": rw.sampled_pair_auc(big[:40], labels[:40], 0),
+            "one_class": rw.sampled_pair_auc(big[:10], np.zeros(10, int), 0),
+        },
+        "cluster_bootstrap": {"n": len(values), "values": values, "ci": wsd.percentile_ci(values)},
+        "spearman": {
+            "constant": wsd.safe_spearman([1, 1, 1], [1, 2, 3]),
+            "short": wsd.safe_spearman([1, 2], [1, 2]),
+            "tiny_range": wsd.safe_spearman([0.0, 1e-9, 2e-9], [1, 2, 3]),
+            "ok": wsd.safe_spearman([1, 2, 3, 4], [1, 3, 2, 4]),
+        },
+        "bootstrap_mean": wsd.bootstrap_mean(sample, np.random.default_rng(4), 3),
+    }
+
+
+def _scoring_setup(tmp_path: Path, *, runner_layout: bool = False) -> SimpleNamespace:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    checkpoint = tmp_path / "checkpoint.pt"
+    make_checkpoint(checkpoint, runner_layout=runner_layout)
     tok = FakeTokenizer(VOCAB)
     lm = FakeLM(len(VOCAB), D_HIDDEN, seed=0)
     w_u = lm.lm_head.weight.detach().float()
-    w_dec_unit, w_enc, b_enc, sae_config, ckpt_row_mean = load_sae(path)
-    k = rw.checkpoint_k(path, sae_config)
+    w_dec_unit, w_enc, b_enc, sae_config, ckpt_row_mean = load_sae(checkpoint)
+    k = rw.checkpoint_k(checkpoint, sae_config)
     row_mean = rw.scoring_row_mean(w_u, tok, "live", ckpt_row_mean)
     info, audit = rw.prepare_target_codes(["bank", "seal", "multi"], tok, w_u, row_mean, w_enc, b_enc, w_dec_unit, k)
-    return tok, lm, w_u, row_mean, w_dec_unit, info, audit, k
+    return SimpleNamespace(
+        checkpoint=checkpoint,
+        tok=tok,
+        lm=lm,
+        w_u=w_u,
+        row_mean=row_mean,
+        w_dec_unit=w_dec_unit,
+        w_enc=w_enc,
+        b_enc=b_enc,
+        info=info,
+        audit=audit,
+        k=k,
+    )
 
 
-def _items(prompts):
-    targets = ["bank", "bank", "seal", "seal", "multi"]
+def _target_codes_actual(setup: SimpleNamespace) -> dict:
+    return {
+        "k": setup.k,
+        "audit": setup.audit,
+        "feature_ids": {t: setup.info[t]["feature_ids"].tolist() for t in ("bank", "seal")},
+        "beta": {t: setup.info[t]["beta"].tolist() for t in ("bank", "seal")},
+    }
+
+
+def _items(prompts: list[str]) -> list[dict]:
     return [
         {
             "item_id": f"i{j}",
             "kind": "context",
             "dataset": "coarsewsd20",
             "split": "train" if j % 2 == 0 else "test",
-            "target": targets[j],
+            "target": target,
             "sense": str(j % 2),
             "sense_name": str(j % 2),
             "prefix_words": 1,
-            "prompt": p,
+            "prompt": prompt,
         }
-        for j, p in enumerate(prompts)
+        for j, (prompt, target) in enumerate(zip(prompts, TARGETS))
     ]
+
+
+def _score(setup: SimpleNamespace, prompts: list[str], max_length: int = 16, batch_size: int = 2) -> dict:
+    return rw.score_items(
+        _items(prompts),
+        setup.lm,
+        setup.tok,
+        setup.lm.lm_head,
+        setup.row_mean,
+        setup.w_dec_unit,
+        setup.info,
+        batch_size,
+        max_length,
+        "cpu",
+    )
+
+
+def _scoring_actual(bundle: dict) -> tuple[dict, dict]:
+    pinned = {
+        "metadata": bundle["metadata"],
+        "vectors": {
+            key: bundle[key].tolist()
+            for key in ("feature_ids", "exact_logit", "reconstructed_logit", "target_logprob", "target_rank")
+        },
+        "truncation": bundle["truncation"],
+        "summary": rw.summarize_scoring(bundle),
+    }
+    half = {key: bundle[key].float().tolist() for key in HALF_KEYS}
+    return pinned, half
+
+
+# --------------------------------------------------------------------------- #
+# verbatim pre-0.2.1 references, run in-process
+# --------------------------------------------------------------------------- #
+
+
+def _legacy_target_codes(token_ids, w_u, row_mean, encoder_w, encoder_b, w_dec_unit, k) -> dict:
+    """Verbatim pre-0.2.1 arithmetic of prepare_target_codes: 1-D centring and
+    normalisation, ReLU on the product against the contiguous encoder transpose,
+    a single torch.topk."""
+    w_enc = encoder_w.T.contiguous()
+    out = {}
+    for token_id in token_ids:
+        row = w_u[token_id] - row_mean
+        row_norm = row.norm().clamp_min(1e-8)
+        acts = torch.relu((row / row_norm) @ w_enc + encoder_b)
+        values, indices = torch.topk(acts, k=min(k, acts.numel()))
+        beta = row_norm * values
+        recon = beta @ w_dec_unit[indices]
+        out[token_id] = {
+            "feature_ids": indices,
+            "beta": beta,
+            "row_relative_error": float((row - recon).norm() / row_norm),
+            "row_cosine": float(F.cosine_similarity(row[None], recon[None]).item()),
+        }
+    return out
+
+
+def _legacy_shuffled_srp(projection, beta, metadata, seed, *, modular: bool) -> np.ndarray:
+    """Verbatim pre-0.2.1 null: the run script seeded ``seed + int(sha1[:8], 16)``,
+    the classifier framing ``(int(sha1[:8], 16) + seed) % 2**32``."""
+    shuffled = np.empty_like(projection)
+    for target in sorted({row["target"] for row in metadata}):
+        idx = [i for i, row in enumerate(metadata) if row["target"] == target]
+        digest = int(hashlib.sha1(target.encode("utf-8")).hexdigest()[:8], 16)
+        rng = np.random.default_rng((digest + seed) % (2**32) if modular else seed + digest)
+        permutation = rng.permutation(beta.shape[1])
+        shuffled[idx] = projection[idx] * beta[idx][:, permutation]
+    return shuffled
 
 
 # --------------------------------------------------------------------------- #
@@ -613,86 +562,31 @@ def test_group_prediction_and_balanced_accuracy():
 
 
 def test_sense_groups_cli_reproduces_pinned_outputs(tmp_path):
-    bundle_path = tmp_path / "representations.pt"
-    torch.save(make_bundle(), bundle_path)
-    out = tmp_path / "out" / "synthetic__srp.json"
-    base = ["--bundle", str(bundle_path), "--out", str(out)]
-    assert (
-        sg.main(
-            base
-            + [
-                "--group-sizes",
-                "1,2,4",
-                "--n-boot",
-                "20",
-                "--n-null",
-                "10",
-                "--seed",
-                "0",
-            ]
-        )
-        == 0
-    )
+    actual = _check("sense_groups", _sense_groups_actual(tmp_path))
     for g in (1, 2, 4):
-        path = out.with_name(f"synthetic__srp_g{g}.json")
-        summary = json.loads(path.read_text())
-        pin = PINS[f"sg_g{g}"]
-        assert _canon(summary, drop=("bundle", "provenance")) == pin["hash"], g
-        assert summary["word_mean_balanced"] == pin["word_mean_balanced"]
-        assert summary["word_mean_null_balanced"] == pin["word_mean_null_balanced"]
-        assert summary["word_mean_majority_balanced"] == pin["word_mean_majority_balanced"] == (1 / 2 + 1 / 3) / 2
-        assert summary["word_mean_full_account_balanced"] == pin["word_mean_full_account_balanced"]
-        assert summary["word_mean_hidden_balanced"] == pin["word_mean_hidden_balanced"]
-        assert summary["word_mean_balanced_ci"] == pin["word_mean_balanced_ci"]
-        assert summary["per_word"]["bank"]["anchors"] == pin["bank_anchors"]
-        assert summary["per_word"]["seal"]["anchors"] == pin["seal_anchors"]
-        assert summary["per_word"]["bank"]["balanced_accuracy_ci"] == pin["bank_balanced_ci"]
-        assert summary["per_word"]["seal"]["null_balanced_p95"] == pin["seal_null_balanced_p95"]
+        summary = actual[f"g{g}"]
         assert summary["group_size"] == g and summary["basis"] == "srp" and summary["standardized"] is True
+        assert summary["n_words"] == 2 and set(summary["per_word"]) == set(DESIGN)
+        assert summary["word_mean_balanced"] > 0.9 > 0.8 > summary["word_mean_null_balanced"]
+        assert summary["word_mean_majority_balanced"] == pytest.approx((1 / 2 + 1 / 3) / 2)
         assert summary["words_beating_majority_balanced"] == 2 and summary["words_beating_null_p95_balanced"] == 2
+        assert summary["word_mean_full_account_balanced"] > 0.95 and summary["word_mean_hidden_balanced"] > 0.95
         assert summary["gate_fraction_overall"] == 1.0
-        assert "command" in summary["provenance"] and summary["provenance"]["args"]["seed"] == 0
         for word, senses in DESIGN.items():
             pw = summary["per_word"][word]
             assert pw["n_senses"] == len(senses) and all(len(pw["anchors"][s]) == g for s in senses)
-    # The other selector, unscaled contributions and a non-zero seed.
-    raw = tmp_path / "raw_top1.json"
-    args = [
-        "--group-size",
-        "2",
-        "--selector",
-        "top1_freq",
-        "--raw-scale",
-        "--n-boot",
-        "20",
-        "--n-null",
-        "10",
-    ]
-    assert sg.main(base[:2] + ["--out", str(raw)] + args + ["--seed", "3"]) == 0
-    summary = json.loads(raw.read_text())
-    assert _canon(summary, drop=("bundle", "provenance")) == PINS["sg_raw_top1"]["hash"]
-    assert summary["per_word"]["bank"]["anchors"] == PINS["sg_raw_top1"]["bank_anchors"]
+            assert pw["chance_balanced_accuracy"] == pytest.approx(1 / len(senses))
+    # The planted positions are the g=1 anchors.
+    assert actual["g1"]["per_word"]["bank"]["anchors"] == {"0": [3], "1": [7]}
+    assert actual["g1"]["per_word"]["seal"]["anchors"] == {"0": [1], "1": [9], "2": [13]}
+    assert actual["raw_top1"]["selector"] == "top1_freq" and actual["raw_top1"]["standardized"] is False
+    written = json.loads((tmp_path / "out" / "synthetic__srp_g1.json").read_text())
+    assert "command" in written["provenance"] and written["provenance"]["args"]["seed"] == 0
     # Single-size runs write --out verbatim and match the sweep's file for that size.
     single = tmp_path / "single.json"
-    assert (
-        sg.main(
-            base[:2]
-            + [
-                "--out",
-                str(single),
-                "--group-size",
-                "1",
-                "--n-boot",
-                "20",
-                "--n-null",
-                "10",
-            ]
-        )
-        == 0
-    )
-    a = json.loads(single.read_text())
-    b = json.loads(out.with_name("synthetic__srp_g1.json").read_text())
-    assert a["per_word"] == b["per_word"]
+    argv = ["--bundle", str(tmp_path / "representations.pt"), "--out", str(single)]
+    assert sg.main(argv + ["--group-size", "1", "--n-boot", "20", "--n-null", "10"]) == 0
+    _assert_close(json.loads(single.read_text())["per_word"], written["per_word"], "single_vs_sweep")
 
 
 def test_geometry_controls_route_centering_through_centering_mean(tmp_path):
@@ -704,81 +598,45 @@ def test_geometry_controls_route_centering_through_centering_mean(tmp_path):
     mask_all = torch.ones(128, dtype=torch.bool)
     # The controls' row mean is data.centering_mean: live is the full-vocabulary mean ...
     live = sg.geometry_row_mean(W, "live", token_mask=None, checkpoint=None, model_id="x", revision=None)
-    assert torch.equal(live, centering_mean(W, mode="live")) and torch.equal(live, W.mean(dim=0))
+    assert torch.equal(live, centering_mean(W, mode="live"))
+    assert torch.allclose(live, W.mean(dim=0), rtol=1e-6, atol=1e-7)
     # ... and trained with an all-True token_mask (no checkpoint) is the same vector.
     trained = sg.geometry_row_mean(W, "trained", token_mask=mask_all, checkpoint=None, model_id="x", revision=None)
-    assert torch.equal(trained, live)
+    assert torch.allclose(trained, live, rtol=1e-6, atol=1e-7)
     partial = mask_all.clone()
     partial[:8] = False
-    assert not torch.equal(
-        sg.geometry_row_mean(
-            W,
-            "trained",
-            token_mask=partial,
-            checkpoint=None,
-            model_id="x",
-            revision=None,
-        ),
-        live,
-    )
+    masked = sg.geometry_row_mean(W, "trained", token_mask=partial, checkpoint=None, model_id="x", revision=None)
+    assert not torch.allclose(masked, live, rtol=1e-6, atol=1e-7)
     # geometry_contributions takes that mean rather than recomputing it.
     tids = [100, 101]
-    hidden = {
-        tid: bundle["hidden"][[i for i, r in enumerate(bundle["metadata"]) if r["token_id"] == tid]] for tid in tids
-    }
+    hidden = {t: bundle["hidden"][[i for i, r in enumerate(bundle["metadata"]) if r["token_id"] == t]] for t in tids}
     geo = sg.geometry_contributions("knn128", W, live, tids, hidden, 4, 4, 1e-3, 0)
-    assert set(geo) == set(tids) and geo[100]["contribution"].shape == (
-        len(hidden[100]),
-        4,
-    )
-    np.testing.assert_allclose(geo[100]["exact"], (hidden[100] @ W[100]).numpy(), rtol=1e-6)
+    assert set(geo) == set(tids) and geo[100]["contribution"].shape == (len(hidden[100]), 4)
+    np.testing.assert_allclose(geo[100]["exact"], (hidden[100] @ W[100]).numpy(), rtol=REL, atol=ABS)
     # End to end through --w-u: trained (payload token_mask all True) == live, provenance aside.
     outputs = {}
     for mode in ("live", "trained"):
         torch.save({"W_U_orig": W, "token_mask": mask_all}, tmp_path / f"wu_{mode}.pt")
         out = tmp_path / f"knn_{mode}.json"
-        argv = [
-            "--bundle",
-            str(bundle_path),
-            "--out",
-            str(out),
-            "--basis",
-            "knn128",
-            "--neighbor-k",
-            "4",
-        ]
-        argv += [
-            "--w-u",
-            str(tmp_path / f"wu_{mode}.pt"),
-            "--centering",
-            mode,
-            "--n-boot",
-            "5",
-            "--n-null",
-            "3",
-        ]
+        argv = ["--bundle", str(bundle_path), "--out", str(out), "--basis", "knn128", "--neighbor-k", "4"]
+        argv += ["--w-u", str(tmp_path / f"wu_{mode}.pt"), "--centering", mode, "--n-boot", "5", "--n-null", "3"]
         assert sg.main(argv) == 0
         outputs[mode] = json.loads(out.read_text())
         assert outputs[mode]["basis"] == "knn128" and outputs[mode]["n_words"] == 2
-    assert _canon(outputs["live"], drop=("provenance",)) == _canon(outputs["trained"], drop=("provenance",))
+    _assert_close(_strip(outputs["trained"]), _strip(outputs["live"]), "trained_vs_live")
     assert outputs["trained"]["provenance"]["args"]["centering"] == "trained"
 
 
 def test_load_wu_reads_the_resolved_local_snapshot(tmp_path, monkeypatch):
-    import huggingface_hub
     from safetensors.torch import save_file
+
+    import huggingface_hub
 
     snap = tmp_path / "snapshots" / "abc123"
     snap.mkdir(parents=True)
     head = torch.arange(12, dtype=torch.float32).reshape(4, 3)
-    save_file(
-        {"model.embed_tokens.weight": torch.zeros(4, 3)},
-        str(snap / "model-00001-of-00002.safetensors"),
-    )
-    save_file(
-        {"lm_head.weight": head.to(torch.bfloat16)},
-        str(snap / "model-00002-of-00002.safetensors"),
-    )
+    save_file({"model.embed_tokens.weight": torch.zeros(4, 3)}, str(snap / "model-00001-of-00002.safetensors"))
+    save_file({"lm_head.weight": head.to(torch.bfloat16)}, str(snap / "model-00002-of-00002.safetensors"))
     seen = {}
 
     def fake_snapshot_download(model_id, **kwargs):
@@ -788,11 +646,7 @@ def test_load_wu_reads_the_resolved_local_snapshot(tmp_path, monkeypatch):
     monkeypatch.setattr(huggingface_hub, "snapshot_download", fake_snapshot_download)
     W = sg.load_wu("org/model", revision="abc123")
     assert torch.equal(W, head) and W.dtype == torch.float32
-    assert seen == {
-        "model_id": "org/model",
-        "revision": "abc123",
-        "local_files_only": True,
-    }
+    assert seen == {"model_id": "org/model", "revision": "abc123", "local_files_only": True}
     # Tied-embedding fallback when no lm_head.weight is stored.
     (snap / "model-00002-of-00002.safetensors").unlink()
     assert torch.equal(sg.load_wu("org/model"), torch.zeros(4, 3)) and seen["revision"] is None
@@ -805,83 +659,48 @@ def test_load_wu_reads_the_resolved_local_snapshot(tmp_path, monkeypatch):
 
 def test_classifier_framing_reproduces_pinned_outputs(tmp_path):
     assert cf.self_test() == 0
-    bundle = make_bundle()
-    gate, gate_summary = cf.score_gate(bundle)
-    assert gate.all() and gate_summary == PINS["cf"]["gate"]
-    metrics = cf.analyze_coarse(
-        bundle,
-        ks=[2, 4],
-        primary_k=2,
-        primary_encoding="weighted",
-        n_boot=5,
-        n_null_seeds=2,
-        seed=0,
-    )
-    assert _canon(metrics) == PINS["cf"]["hash"]
-    assert metrics["primary"]["methods"] == PINS["cf"]["primary_methods"]
-    assert metrics["primary"]["comparisons"]["srp_minus_projection_only"] == PINS["cf"]["cmp_projection"]
-    assert metrics["primary"]["null_seed_sensitivity"]["shuffled_srp"] == PINS["cf"]["null_shuffled"]
-    assert metrics["results"]["signed"]["4"]["srp"]["aggregate"] == PINS["cf"]["results_signed_4_srp_agg"]
+    actual = _check("classifier_framing", _classifier_actual(tmp_path))
+    assert actual["gate_all"] is True and actual["gate"]["pass_fraction"] == 1.0
+    metrics = actual["metrics"]
     assert set(metrics["primary"]["methods"]) == set(cf.METHODS)
     assert set(metrics["primary"]["comparisons"]) == {f"srp_minus_{m}" for m in cf.METHODS[1:]}
-    assert (
-        _array_hash(cf.encode_top_features(bundle, "random_srp_features", 3, "signed", 2)) == PINS["cf_random_enc_hash"]
-    )
-    # CLI: the file carries the analysis block and provenance, on top of the pinned metrics.
-    bundle_path = tmp_path / "representations.pt"
-    torch.save(bundle, bundle_path)
-    out = tmp_path / "cf" / "out.json"
-    argv = [
-        "--bundle",
-        str(bundle_path),
-        "--out",
-        str(out),
-        "--ks",
-        "2,4",
-        "--primary-k",
-        "4",
-    ]
-    argv += [
-        "--primary-encoding",
-        "signed",
-        "--n-boot",
-        "7",
-        "--n-null-seeds",
-        "3",
-        "--seed",
-        "5",
-    ]
-    assert cf.main(argv) == 0
-    written = json.loads(out.read_text())
-    assert _canon(written, drop=("bundle", "provenance")) == PINS["cf_cli"]["hash"]
-    assert _strip(written["analysis"], {"bundle"}) == PINS["cf_cli"]["analysis"]
-    assert written["primary"]["methods"]["srp"] == PINS["cf_cli"]["primary_srp"]
+    assert set(metrics["primary"]["null_seed_sensitivity"]) == {"shuffled_srp", "random_srp_features"}
+    srp = metrics["primary"]["methods"]["srp"]
+    assert srp["n_words"] == 2 and srp["accuracy"] > 0.95 and srp["balanced_accuracy"] > 0.95
+    # Projections and contributions differ only by a per-word rescaling of the coordinates,
+    # which top-|value| selection is not invariant to, so both are reported separately.
+    assert "projection_only" in metrics["results"]["weighted"]["4"]
+    # The random source draws k positions per word.
+    assert all(len(positions) == 3 for positions in actual["random_positions"].values())
+    assert actual["cli"]["analysis"]["primary_k"] == 4 and actual["cli"]["analysis"]["primary_encoding"] == "signed"
+    written = json.loads((tmp_path / "cf" / "out.json").read_text())
     assert written["provenance"]["args"]["primary_k"] == 4 and "command" in written["provenance"]
 
 
 def test_shuffled_srp_null_is_the_pre_merge_construction():
+    actual = _check("shuffle_null", _shuffle_actual())
     bundle = make_bundle()
     projection = bundle["projection"].numpy()
     beta = bundle["beta"].numpy()
     for seed in (0, 3):
-        shuffled = wsd.shuffled_srp(projection, beta, bundle["metadata"], seed)
-        assert _array_hash(shuffled) == PINS["cf_shuffled_hash"][str(seed)]
-        assert _array_hash(cf.source_matrix(bundle, "shuffled_srp", seed)) == PINS["cf_shuffled_hash"][str(seed)]
-        assert not np.array_equal(shuffled, bundle["contribution"].numpy())
-    matrices = rw.method_matrices(bundle, 0)
-    assert {name: _array_hash(m) for name, m in matrices.items()} == PINS["rw_method_hashes"]
-    assert _array_hash(rw.method_matrices(bundle, 3)["shuffled_srp"]) == PINS["rw_shuffled_seed3"]
-    # One seed form for both scripts: the classifier framing's modular sha1 prefix ...
-    assert {
-        "bank_0": wsd.stable_seed("bank", 0),
-        "seal_3": wsd.stable_seed("seal", 3),
-        "random_bank_0": wsd.stable_seed("random:bank", 0),
-    } == PINS["stable_seed"]
-    # ... which coincides with the run script's former ``seed + int(sha1[:8], 16)`` at seed 0.
+        new = wsd.shuffled_srp(projection, beta, bundle["metadata"], seed)
+        # Both pre-merge constructions (run-script and classifier-framing seed forms), in-process.
+        for modular in (True, False):
+            legacy = _legacy_shuffled_srp(projection, beta, bundle["metadata"], seed, modular=modular)
+            np.testing.assert_allclose(new, legacy, rtol=REL, atol=ABS)
+        np.testing.assert_allclose(cf.source_matrix(bundle, "shuffled_srp", seed), new, rtol=REL, atol=ABS)
+        assert not np.allclose(new, bundle["contribution"].numpy())
+    shuffled0 = wsd.shuffled_srp(projection, beta, bundle["metadata"], 0)
+    np.testing.assert_allclose(
+        rw.method_matrices(bundle, 0)["shuffled_srp"], wsd.l2_normalize(shuffled0), rtol=REL, atol=ABS
+    )
+    # One seed form for both scripts: the modular sha1 prefix, which coincides with
+    # the run script's former ``seed + int(sha1[:8], 16)`` at seed 0.
     for target in ("bank", "seal", "apple"):
         prefix = int(hashlib.sha1(target.encode()).hexdigest()[:8], 16)
         assert wsd.stable_seed(target, 0) == prefix
         assert wsd.stable_seed(target, 3) == (prefix + 3) % 2**32
+    assert actual["stable_seed"]["bank_0"] == wsd.stable_seed("bank", 0)
 
 
 # --------------------------------------------------------------------------- #
@@ -890,91 +709,74 @@ def test_shuffled_srp_null_is_the_pre_merge_construction():
 
 
 def test_run_analysis_reproduces_pinned_outputs(tmp_path):
-    bundle = make_bundle()
-    metrics = rw.analyze_coarsewsd(bundle, tmp_path, 20, 0)
-    assert _canon(metrics) == PINS["rw_metrics"]["hash"]
-    assert metrics["methods"]["srp"]["aggregate"] == PINS["rw_metrics"]["srp_aggregate"]
-    assert metrics["comparisons"]["srp_minus_hidden"] == PINS["rw_metrics"]["cmp_hidden"]
-    assert metrics["methods"]["hidden"]["per_word"]["bank"] == PINS["rw_metrics"]["bank_hidden_per_word"]
-    digest = hashlib.sha256((tmp_path / "predictions.jsonl").read_bytes()).hexdigest()[:16]
-    assert digest == PINS["rw_predictions_hash"]
-    assert rw.summarize_scoring(bundle) == PINS["rw_scoring_summary"]
-    assert list(rw.METRIC_NAMES) == [
-        "accuracy",
-        "balanced_accuracy",
-        "macro_f1",
-        "pairwise_auc",
-        "ari",
-        "nmi",
-    ]
+    actual = _check("run_analysis", _run_analysis_actual(tmp_path))
+    assert set(actual["metrics"]["methods"]) == {"srp", "support_projection", "hidden", "shuffled_srp", "token_only"}
+    assert set(actual["metrics"]["comparisons"]) == {f"srp_minus_{b}" for b in rw.COMPARISON_BASELINES}
+    assert actual["metrics"]["methods"]["srp"]["aggregate"]["accuracy"] == 1.0
+    assert len(actual["predictions"]) == 40 and all(row["correct"] == 1 for row in actual["predictions"])
+    assert list(rw.METRIC_NAMES) == ["accuracy", "balanced_accuracy", "macro_f1", "pairwise_auc", "ari", "nmi"]
 
 
 def test_statistics_helpers_reproduce_pinned_values():
-    rng = np.random.default_rng(0)
-    big = rng.normal(size=(250, 8)).astype(np.float32)
-    labels = rng.integers(0, 3, 250)
-    big[labels == 1] += 0.5
-    big = wsd.l2_normalize(big)
-    assert rw.sampled_pair_auc(big, labels, 0) == PINS["auc"]["big_0"]  # sampled branch (31125 > 20000 pairs)
-    assert rw.sampled_pair_auc(big, labels, 3) == PINS["auc"]["big_3"]
-    assert rw.sampled_pair_auc(big[:40], labels[:40], 0) == PINS["auc"]["small_0"]  # exhaustive branch
-    assert _nan_none(rw.sampled_pair_auc(big[:10], np.zeros(10, int), 0)) == PINS["auc"]["one_class"]
-    rows = [{"g": i % 7, "x": float(i), "y": float((i * 37) % 11)} for i in range(40)]
-    values = wsd.cluster_bootstrap(
-        rows,
-        "g",
-        lambda s: wsd.safe_spearman([r["x"] for r in s], [r["y"] for r in s]),
-        50,
-        0,
-    )
-    assert len(values) == PINS["cb"]["n"] and values[:3] == PINS["cb"]["first3"]
-    assert wsd.percentile_ci(values) == PINS["cb"]["ci"]
-    assert all(math.isnan(v) for v in wsd.percentile_ci([])) and all(
-        math.isnan(v) for v in wsd.percentile_ci(np.array([]))
-    )
-    assert wsd.percentile_ci(np.asarray(values)) == wsd.percentile_ci(values)
-    assert _nan_none(wsd.safe_spearman([1, 1, 1], [1, 2, 3])) == PINS["spearman"]["const"]
-    assert _nan_none(wsd.safe_spearman([1, 2], [1, 2])) == PINS["spearman"]["short"]
-    assert wsd.safe_spearman([1, 2, 3, 4], [1, 3, 2, 4]) == PINS["spearman"]["ok"]
+    actual = _check("statistics", _statistics_actual())
+    assert actual["auc"]["one_class"] is None  # single-class labels: no AUC
+    assert actual["cluster_bootstrap"]["n"] == 50
+    assert actual["spearman"]["constant"] is None and actual["spearman"]["short"] is None
+    assert actual["spearman"]["ok"] == pytest.approx(0.8)
     # The documented difference from utils.spearman: a range under 1e-8 is degenerate here, correlated there.
     tiny = [0.0, 1e-9, 2e-9]
-    assert _nan_none(wsd.safe_spearman(tiny, [1, 2, 3])) == PINS["spearman"]["tiny"] is None
+    assert actual["spearman"]["tiny_range"] is None and math.isnan(wsd.safe_spearman(tiny, [1, 2, 3]))
     assert spearman(tiny, [1, 2, 3]) == pytest.approx(1.0)
-    gen = np.random.default_rng(1)
-    vals = gen.normal(size=9)
-    assert (
-        wsd.bootstrap_mean(vals, np.random.default_rng(4), 3)
-        == [float(np.random.default_rng(4).choice(vals, size=9, replace=True).mean()) for _ in range(1)]
-        + wsd.bootstrap_mean(vals, np.random.default_rng(4), 3)[1:]
-    )
+    assert all(math.isnan(v) for v in wsd.percentile_ci([]))
+    assert all(math.isnan(v) for v in wsd.percentile_ci(np.array([])))
+    # bootstrap_mean is the shared form of the inline per-word bootstrap it replaced.
+    sample = np.random.default_rng(1).normal(size=9)
+    rng = np.random.default_rng(4)
+    expected = [float(rng.choice(sample, size=len(sample), replace=True).mean()) for _ in range(3)]
+    np.testing.assert_allclose(wsd.bootstrap_mean(sample, np.random.default_rng(4), 3), expected, rtol=REL, atol=ABS)
 
 
 def test_prepare_target_codes_matches_the_pre_refactor_path(tmp_path):
-    tok, lm, w_u, row_mean, w_dec_unit, info, audit, k = _scoring_setup(tmp_path)
-    assert k == PINS["ptc"]["k"] == 6
-    assert audit == PINS["ptc"]["audit"]
-    for target in ("bank", "seal"):
-        assert info[target]["feature_ids"].tolist() == PINS["ptc"][f"{target}_fids"]
-        assert _array_hash(info[target]["beta"].numpy()) == PINS["ptc"][f"{target}_beta"]
-    # Runner-layout checkpoints (top-level ``factorizer``, no ``config``) yield the same k via the mmap read.
-    (tmp_path / "runner").mkdir()
-    _tok, _lm, _w, _rm, _wd, info_runner, audit_runner, k_runner = _scoring_setup(
-        tmp_path / "runner", runner_layout=True
+    setup = _scoring_setup(tmp_path)
+    actual = _check("target_codes", _target_codes_actual(setup))
+    assert actual["k"] == 6 and actual["audit"]["n_targets_single_token"] == 2
+    assert actual["audit"]["skipped_targets"] == {"multi": "multi_token"}
+    # The verbatim pre-0.2.1 computation, in-process: same feature order, same codes.
+    legacy = _legacy_target_codes(
+        [setup.info[t]["token_id"] for t in ("bank", "seal")],
+        setup.w_u,
+        setup.row_mean,
+        setup.w_enc,
+        setup.b_enc,
+        setup.w_dec_unit,
+        setup.k,
     )
-    assert k_runner == 6 and audit_runner == audit
-    assert torch.equal(info_runner["bank"]["beta"], info["bank"]["beta"])
-    assert rw.checkpoint_k(tmp_path / "checkpoint.pt", {}) == 6
+    for target in ("bank", "seal"):
+        info = setup.info[target]
+        ref = legacy[info["token_id"]]
+        assert info["feature_ids"].tolist() == ref["feature_ids"].tolist()
+        np.testing.assert_allclose(info["beta"].numpy(), ref["beta"].numpy(), rtol=REL, atol=ABS)
+        assert math.isclose(info["row_relative_error"], ref["row_relative_error"], rel_tol=REL, abs_tol=ABS)
+        assert math.isclose(info["row_cosine"], ref["row_cosine"], rel_tol=REL, abs_tol=ABS)
+        assert info["n_positive_codes"] == 6
+    # Runner-layout checkpoints (top-level ``factorizer``, no ``config``) yield the same k and codes.
+    runner = _scoring_setup(tmp_path / "runner", runner_layout=True)
+    assert runner.k == 6
+    _assert_close(to_jsonable(runner.audit), to_jsonable(setup.audit), "runner_vs_config_audit")
+    torch.testing.assert_close(runner.info["bank"]["beta"], setup.info["bank"]["beta"])
+    assert rw.checkpoint_k(setup.checkpoint, {}) == 6
 
 
 def test_score_items_matches_the_pre_refactor_path(tmp_path):
-    tok, lm, w_u, row_mean, w_dec_unit, info, _audit, _k = _scoring_setup(tmp_path)
-    rw.configure_tokenizer(tok)
-    assert (tok.padding_side, tok.truncation_side) == ("left", "left")
-    bundle = rw.score_items(_items(PROMPTS), lm, tok, lm.lm_head, row_mean, w_dec_unit, info, 2, 16, "cpu")
-    assert len(bundle["metadata"]) == PINS["score"]["n"] == 4  # the multi-token target is dropped
-    assert _canon(bundle["metadata"]) == PINS["score"]["metadata"]
-    for key in wsd.BUNDLE_TENSOR_KEYS:
-        assert _array_hash(bundle[key].numpy()) == PINS["score"][key], key
+    setup = _scoring_setup(tmp_path)
+    rw.configure_tokenizer(setup.tok)
+    assert (setup.tok.padding_side, setup.tok.truncation_side) == ("left", "left")
+    bundle = _score(setup, PROMPTS)
+    assert len(bundle["metadata"]) == 4  # the multi-token target is dropped
+    pinned, half = _scoring_actual(bundle)
+    _check("scoring", pinned)
+    for key, expected in _pinned("scoring_half").items():
+        np.testing.assert_allclose(half[key], np.asarray(expected), rtol=HALF_REL, atol=HALF_ABS, err_msg=key)
     assert bundle["truncation"] == {
         "max_length": 16,
         "truncation_side": "left",
@@ -983,56 +785,42 @@ def test_score_items_matches_the_pre_refactor_path(tmp_path):
     }
     summary = rw.summarize_scoring(bundle)
     assert summary.pop("truncation") == bundle["truncation"]
-    assert summary == PINS["score_summary"]
     bundle["run"] = {"dataset": "coarsewsd20"}
     wsd.validate_bundle(bundle)
 
 
 def test_left_truncation_keeps_the_cloze_cue(tmp_path):
-    tok, lm, w_u, row_mean, w_dec_unit, info, _audit, _k = _scoring_setup(tmp_path)
-    rw.configure_tokenizer(tok)
+    setup = _scoring_setup(tmp_path)
+    rw.configure_tokenizer(setup.tok)
     long_prompt = "x y x y x y x y the river bank is the missing word :"
     tail = " ".join(long_prompt.split()[-6:])
     head = " ".join(long_prompt.split()[:6])
 
-    def hidden_of(prompt, max_length):
-        return rw.score_items(
-            _items([prompt] * 5)[:1],
-            lm,
-            tok,
-            lm.lm_head,
-            row_mean,
-            w_dec_unit,
-            info,
-            1,
-            max_length,
-            "cpu",
-        )
+    def scored(prompt, max_length):
+        return _score(setup, [prompt], max_length=max_length, batch_size=1)
 
-    truncated = hidden_of(long_prompt, 6)
-    assert truncated["truncation"]["n_truncated_prompts"] == 1 and truncated["truncation"]["max_prompt_tokens"] == len(
-        long_prompt.split()
-    )
-    assert torch.equal(truncated["hidden"], hidden_of(tail, 64)["hidden"])  # the cue survives ...
-    assert not torch.equal(truncated["hidden"], hidden_of(head, 64)["hidden"])  # ... unlike the old right truncation
-    tok.truncation_side = "right"
-    assert torch.equal(hidden_of(long_prompt, 6)["hidden"], hidden_of(head, 64)["hidden"])
+    truncated = scored(long_prompt, 6)
+    assert truncated["truncation"]["n_truncated_prompts"] == 1
+    assert truncated["truncation"]["max_prompt_tokens"] == len(long_prompt.split())
+    assert torch.equal(truncated["hidden"], scored(tail, 64)["hidden"])  # the cue survives ...
+    assert not torch.equal(truncated["hidden"], scored(head, 64)["hidden"])  # ... unlike under right truncation
+    setup.tok.truncation_side = "right"
+    assert torch.equal(scored(long_prompt, 6)["hidden"], scored(head, 64)["hidden"])
 
 
 def test_centering_trained_equals_live_when_the_mask_keeps_all_rows():
     lm = FakeLM(len(VOCAB), D_HIDDEN, seed=0)
     w_u = lm.lm_head.weight.detach().float()
     live = rw.scoring_row_mean(w_u, FakeTokenizer(VOCAB), "live", None)
-    assert torch.equal(live, w_u.mean(dim=0))
-    assert torch.equal(
-        rw.scoring_row_mean(w_u, FakeTokenizer(VOCAB, special_ids=()), "trained", None),
-        live,
-    )
+    assert torch.allclose(live, w_u.mean(dim=0), rtol=1e-6, atol=1e-7)
+    trained_all = rw.scoring_row_mean(w_u, FakeTokenizer(VOCAB, special_ids=()), "trained", None)
+    assert torch.allclose(trained_all, live, rtol=1e-6, atol=1e-7)
     masked = rw.scoring_row_mean(w_u, FakeTokenizer(VOCAB), "trained", None)  # rows 0 and 1 are special ids
-    assert torch.equal(masked, w_u[2:].mean(dim=0)) and not torch.equal(masked, live)
+    assert torch.allclose(masked, w_u[2:].mean(dim=0), rtol=1e-6, atol=1e-7)
+    assert not torch.allclose(masked, live, rtol=1e-6, atol=1e-7)
     stored = torch.full((D_HIDDEN,), 0.25)
     assert torch.equal(rw.scoring_row_mean(w_u, FakeTokenizer(VOCAB), "trained", stored), stored)
-    assert torch.equal(rw.scoring_row_mean(w_u, FakeTokenizer(VOCAB), "live", stored), live)
+    assert torch.allclose(rw.scoring_row_mean(w_u, FakeTokenizer(VOCAB), "live", stored), live)
 
 
 def test_analyze_only_writes_analysis_config_and_keeps_run_config(tmp_path):
@@ -1041,20 +829,7 @@ def test_analyze_only_writes_analysis_config_and_keeps_run_config(tmp_path):
     torch.save(make_bundle(), out_dir / "representations.pt")
     sentinel = '{"scoring_run": true}\n'
     (out_dir / "run_config.json").write_text(sentinel)
-    assert (
-        rw.main(
-            [
-                "--analyze-only",
-                "--out-dir",
-                str(out_dir),
-                "--n-boot",
-                "5",
-                "--seed",
-                "0",
-            ]
-        )
-        == 0
-    )
+    assert rw.main(["--analyze-only", "--out-dir", str(out_dir), "--n-boot", "5", "--seed", "0"]) == 0
     assert (out_dir / "run_config.json").read_text() == sentinel
     analysis = json.loads((out_dir / "analysis_config.json").read_text())
     assert analysis["provenance"]["args"]["analyze_only"] is True and "command" in analysis["provenance"]
@@ -1121,13 +896,39 @@ def test_removed_paths_are_gone():
     args = rw.parse_args([])
     assert args.dataset == "coarsewsd20" and args.centering == "live" and args.splits == "train,test"
     assert not hasattr(args, "anchors") and not hasattr(args, "position_mode")
-    for name in (
-        "load_ambistory",
-        "analyze_ambistory",
-        "make_story",
-        "mask_exact_target",
-    ):
+    for name in ("load_ambistory", "analyze_ambistory", "make_story", "mask_exact_target"):
         assert not hasattr(rw, name), name
     for name in ("ambistory_rows", "analyze_ambistory", "summarize_ambistory_rows"):
         assert not hasattr(cf, name), name
     assert rw.self_test() == 0
+
+
+# --------------------------------------------------------------------------- #
+# fixture regeneration: uv run --no-sync python tests/test_wsd_sense_groups.py
+# --------------------------------------------------------------------------- #
+
+
+def regenerate_pins() -> int:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        setup = _scoring_setup(root / "scoring")
+        rw.configure_tokenizer(setup.tok)
+        scoring, scoring_half = _scoring_actual(_score(setup, PROMPTS))
+        pins = {
+            "sense_groups": _sense_groups_actual(root / "sense_groups"),
+            "classifier_framing": _classifier_actual(root / "classifier_framing"),
+            "shuffle_null": _shuffle_actual(),
+            "run_analysis": _run_analysis_actual(root / "run_analysis"),
+            "statistics": _statistics_actual(),
+            "target_codes": _target_codes_actual(setup),
+            "scoring": scoring,
+            "scoring_half": scoring_half,
+        }
+    FIXTURE.parent.mkdir(parents=True, exist_ok=True)
+    FIXTURE.write_text(json.dumps(to_jsonable(pins), indent=1, sort_keys=True) + "\n")
+    print(f"wrote {FIXTURE}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(regenerate_pins())
