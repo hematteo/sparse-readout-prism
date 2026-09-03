@@ -20,7 +20,7 @@ against contributions, with the shuffled and random sources alongside) at
 paired per-word differences against the ``srp`` source and a null-seed
 sensitivity for the two randomized sources. Secondary curves cover every
 ``--ks`` value under both encodings. Feature-level readings are restricted to
-the local score gate: sign preservation and
+the local score criterion: sign preservation and
 |residual| / (|centered exact score| + 0.5) < 0.5.
 
 Reads the ``representations.pt`` bundles written by

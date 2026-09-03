@@ -20,7 +20,7 @@ the two sense analyses consume:
 Its own outputs back that appendix's data and coverage statements:
 ``audit.json`` (contexts kept and single-token coverage per vocabulary: 20/20
 words on the Qwen3.5 vocabularies, 13/20 on DeepSeek-R1-Distill-Llama-8B),
-``scoring_summary.json`` (contexts scored, median target rank, row-gate
+``scoring_summary.json`` (contexts scored, median target rank, row
 coverage, prompts truncated) and ``metrics.json`` (full-vector centroid
 references computed on the same bundle, with paired per-word bootstrap
 differences).

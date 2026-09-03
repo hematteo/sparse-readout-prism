@@ -241,7 +241,7 @@ def selection_score(metrics: dict[str, Any], config: dict[str, Any] | None = Non
     """Model-selection score used by the sweep configs to rank cells within a grid.
 
     Sweep plumbing, not a paper metric: the weights are ad hoc (chosen once
-    during the Appendix-K frontier sweeps and frozen), and the sentinel tiers
+    during the Appendix C–E frontier sweeps and frozen), and the sentinel tiers
     order failure modes — -1e9 non-finite metrics, -1e6 dead dictionary,
     -1e5 KL/identity gate failures — so broken runs sort below every finite
     score. Gate thresholds come from ``autoresearch.score_thresholds`` in the

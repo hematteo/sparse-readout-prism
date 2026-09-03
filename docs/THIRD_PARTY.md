@@ -162,21 +162,15 @@ Qwen2.5 pilot configs were removed and are not used.
 | DeepSeek-R1-Distill-Qwen 7B | `deepseek-ai/DeepSeek-R1-Distill-Qwen-7B` | upstream / base license |
 | DeepSeek-R1-Distill-Llama 8B | `deepseek-ai/DeepSeek-R1-Distill-Llama-8B` | upstream / base license |
 
-A Llama-3.1-8B base control (the base-vs-distill control for the
-DeepSeek-R1-Distill-Llama-8B run) was trained from an off-repo recipe whose
-sweep config is not included in this release. It referred to the model only by
-slug (`llama31`) without a pinned `hf_id`; the intended base is Meta's Llama 3.1
-8B, governed by the Llama 3.1 Community License.
-
 Notes:
 
 - The released readout-feature dictionaries are derivatives of these base
   models' unembedding (output projection) matrices and are therefore subject to
   the corresponding upstream model licenses.
-- This applies in particular to the Llama (Llama 3.1, and the Llama-based
-  DeepSeek-R1 distill) and Gemma artifacts, whose licenses include specific
-  redistribution and naming requirements (for example, the Llama 3.1 Community
-  License and the Gemma Terms of Use). Downstream users must comply with those
+- This applies in particular to the Llama-based DeepSeek-R1 distill and the
+  Gemma artifacts, whose base licenses include specific redistribution and
+  naming requirements (the Llama 3.1 Community License and the Gemma Terms of
+  Use). Downstream users must comply with those
   upstream terms when redistributing or building on the released dictionaries.
 - For Gemma, the prism decomposes the pre-softcap readout; the model's
   post-readout `tanh` logit softcap is recorded in the extraction manifest (see

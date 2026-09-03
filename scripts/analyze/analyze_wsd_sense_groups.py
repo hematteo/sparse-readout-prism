@@ -20,7 +20,7 @@ words, and the table row each one backs:
                                    train-standardized decoded state)
 
 Per-word entries carry the same quantities plus stratified bootstrap intervals,
-unbalanced accuracy, the selected feature positions and the local score gate
+unbalanced accuracy, the selected feature positions and the local score criterion
 (|exact - reconstructed| / (|exact| + 0.5) < 0.5) coverage.
 
 ``--selector mean_diff`` (default) ranks features by the train-mean contribution

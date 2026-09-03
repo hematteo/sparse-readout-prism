@@ -16,7 +16,7 @@ Two kinds of file live here:
    missing `factorizer` / `training` blocks), rather than the old failure mode
    where it silently trained an all-defaults cell on synthetic-fallback data.
    They are meant to be expanded into per-cell run configs by a sweep-expander,
-   which is **not shipped in this repo**; reproduce the Appendix-K grids by
+   which is **not shipped in this repo**; reproduce the Appendix B–E grids by
    writing one complete run config per cell from the `fixed` + `grid` values.
 
    **Expansion mapping** (the parts a naive copy misses):
@@ -41,7 +41,7 @@ Two kinds of file live here:
 | `qwen35_0p8b_paper_topk_32x_k256_s1.yaml`, `…_s2.yaml` | run config | Qwen3.5-0.8B 32×/k256 seed-window cells (seeds 1 and 2; seed 0 is the archived finalist, `qwen0p8b_k256` in the exp2 registry / `qwen0p8b_k256_32x` in the fidelity registry). Recipe matched on the keys this trainer reads (see the file headers). |
 | `lowk_qwen35_2b_16x_base.yaml`, `lowk_qwen35_0p8b_16x_base.yaml` | run config | Low activation-budget cells at 16× width (`k` in {32, 64} via `--set factorizer.k=… --set evaluation.k=…`), behind the sparsity-budget table. |
 
-The provisional Gemma operating points in the registries were trained with the
+The Gemma operating points in the registries were trained with the
 same converge recipe as the Qwen models (`paper_phase2_base.yaml` protocol);
 no dedicated Gemma run config is shipped — reproduce a Gemma cell by overriding
 `factorizer.d_features` (width × d_model from the extraction manifest),
@@ -72,5 +72,6 @@ Ministral) are launched with the generic trainer —
 `train_readout_sae_from_config.py --config <file>` — and have no dedicated
 launch wrapper. Their trained checkpoints are the ones enumerated in
 [`../registries/result1_query_fidelity_cluster.yaml`](../registries/result1_query_fidelity_cluster.yaml)
-(the Appendix-K finalists for the Qwen / Gemma / Pythia models live in
+(the Appendix C finalists, with metrics and Hub paths for every published
+dictionary, live in
 [`../registries/exp2_selected_sae_checkpoints.yaml`](../registries/exp2_selected_sae_checkpoints.yaml)).

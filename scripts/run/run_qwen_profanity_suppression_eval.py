@@ -13,8 +13,8 @@ The claim is intentionally narrow: sparse readout features can implement
 targeted lexical control over audited profanity continuations. This script does
 not evaluate toxicity or alignment.
 
-Produces the data behind the Appendix-J lexical-edit / readout-side control
-stress test (paper Section 5 edit-stress, ``sec:srp-edit-stress``;
+Produces the data behind the Appendix N constrained readout-side edit test
+(``app:lexical-control-stress-test``;
 ``tab:lexical-control-stress-test`` lists the checks):
 ``baseline_comparison.csv`` / ``candidate_constrained_summary.csv`` ->
 ``tab:lexical-control-primary-methods`` (single model, primary methods at the
