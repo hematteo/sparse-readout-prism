@@ -4,10 +4,12 @@
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](pyproject.toml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![ruff](https://img.shields.io/badge/lint-ruff-261230)](https://docs.astral.sh/ruff/)
+[![arXiv](https://img.shields.io/badge/arXiv-2609.01936-b31b1b)](https://arxiv.org/abs/2609.01936)
 
 Code and configs for the paper
 **"Sparse Readout Prism: Explaining Logit-Lens Scores in Features Instead of Tokens"**
-(preprint forthcoming).
+([arXiv:2609.01936](https://arxiv.org/abs/2609.01936)). Pretrained dictionaries are on the
+[Hugging Face Hub](https://huggingface.co/hematteo/sparse-readout-prism).
 
 Sparse Readout Prism (SRP) decomposes a language model's readout (the
 unembedding matrix) using only its weights. It factorizes the unembedding
@@ -329,11 +331,14 @@ for logit-lens analysis.
 ## Citation
 
 ```bibtex
-@misc{he2026sparsereadoutprism,
-  title  = {Sparse Readout Prism: Explaining Logit-Lens Scores in Features Instead of Tokens},
-  author = {He, Matteo and Shen, William F. and Qiu, Xinchi and Lane, Nicholas D.},
-  year   = {2026},
-  note   = {Preprint forthcoming; see the repository for the up-to-date reference},
+@misc{he2026sparsereadoutprismexplaining,
+  title         = {Sparse Readout Prism: Explaining Logit-Lens Scores in Features Instead of Tokens},
+  author        = {Matteo He and William F. Shen and Xinchi Qiu and Nicholas D. Lane},
+  year          = {2026},
+  eprint        = {2609.01936},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2609.01936},
 }
 ```
 

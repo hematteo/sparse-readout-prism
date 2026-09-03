@@ -27,7 +27,7 @@ version: "0.2.1"
 date-released: "2026-08-31"
 repository-code: "https://github.com/hematteo/sparse-readout-prism"
 preferred-citation:
-  type: unpublished
+  type: generic
   title: "Sparse Readout Prism: Explaining Logit-Lens Scores in Features Instead of Tokens"
   authors:
     - given-names: Matteo
@@ -43,5 +43,11 @@ preferred-citation:
     - given-names: Nicholas D.
       family-names: Lane
       affiliation: University of Cambridge
-  notes: "Preprint forthcoming; see the repository for the up-to-date reference."
   year: 2026
+  doi: "10.48550/arXiv.2609.01936"
+  url: "https://arxiv.org/abs/2609.01936"
+  identifiers:
+    - type: other
+      value: "arXiv:2609.01936"
+      description: "arXiv identifier"
+  notes: "arXiv preprint, under review."
