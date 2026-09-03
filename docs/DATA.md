@@ -84,7 +84,7 @@ factorizer.d_features=<width×d_model>` for another model. See
 `docs/REPRODUCE.md` §1.)
 
 To reproduce a **strict-budget (16×/k128)** cell for a model without a
-dedicated `*_16x_k128.yaml` config (e.g. the provisional Gemma points), the
+dedicated `*_16x_k128.yaml` config (e.g. the Gemma points), the
 full override set is:
 
 ```bash

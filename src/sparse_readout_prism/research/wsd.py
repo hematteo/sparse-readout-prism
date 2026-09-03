@@ -100,7 +100,7 @@ def word_splits(metadata: list[dict[str, Any]], keep: np.ndarray | None = None) 
     A word is skipped when either split is empty, when fewer than two senses
     occur in train, or when a test sense is absent from train. ``keep`` (one
     bool per bundle row) restricts the rows first; the classifier framing
-    passes its score gate.
+    meets its local score criterion.
     """
     words = sorted({str(row["target"]) for row in metadata})
     splits: list[WordSplit] = []

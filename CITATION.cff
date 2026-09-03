@@ -23,8 +23,8 @@ authors:
     family-names: Lane
     affiliation: University of Cambridge
 license: MIT
-version: "0.2.1"
-date-released: "2026-08-31"
+version: "0.2.2"
+date-released: "2026-09-03"
 repository-code: "https://github.com/hematteo/sparse-readout-prism"
 preferred-citation:
   type: generic

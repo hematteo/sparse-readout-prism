@@ -46,14 +46,15 @@ reconstruction, and `KL` is the readout KL in bits.
 | Qwen3.5-2B | 65536 | 0.847 | 0.887 | 0.136 |
 | Qwen3.5-9B | 131072 | 0.857 | 0.900 | 0.105 |
 
-Full numbers per model, width and `k` (including the k = 128 budget points
-and the Gemma points) are in
-[`configs/registries/exp2_selected_sae_checkpoints.yaml`](configs/registries/exp2_selected_sae_checkpoints.yaml),
-and Appendices C and D of the paper report the audited tables.
+The same numbers for all 17 published dictionaries (the k = 128 budget
+points and the Gemma, Ministral and R1-Distill points) are in
+[`configs/registries/exp2_selected_sae_checkpoints.yaml`](configs/registries/exp2_selected_sae_checkpoints.yaml)
+with each checkpoint's Hub path, and Appendices C to E of the paper report
+the audited tables.
 
 ---
 
-## What 0.2.0 adds
+## Releases
 
 0.2.0 ships the code behind the experiments added in the paper's revision,
 ported from the research workspace with behaviour preserved. Every artifact
@@ -82,6 +83,11 @@ defaults reproduce the paper. `--centering {live,trained}` selects the
 full-vocabulary or the training row mean, `--agreement-rule {half,strict}`
 and `--null-population {all,cross}` steer the cross-lens aggregators, and
 `--knn-exclude-self` applies to the leave-one-out core recovery.
+
+0.2.2 is a documentation release. It adds the arXiv identifier and the
+official citation, extends the registry manifest to all 17 published
+dictionaries, and brings the docs in line with the paper's final appendix
+letters and wording.
 
 ## Install
 
@@ -158,8 +164,10 @@ print(f"{d.original_logit:.3f} = {d.base_term:.3f} + {d.feature_sum:.3f} + {d.re
 print(f"active features: {d.active_feature_indices.tolist()}")
 ```
 
-This repo ships no code that renders figures, since the paper renders its
-figures from the committed metrics in its own LaTeX source.
+This repo ships no code that renders figures. The scripts under
+`scripts/figures/` compute and persist the metrics behind each figure, and
+the plotting scripts that turn those metrics into the paper's figures are
+not part of this release.
 
 ## Decomposing a real model's logits
 
@@ -299,9 +307,11 @@ run used (see [`configs/models/`](configs/models/) and the registry).
 `proto_token_lens` / `proto_lens` is another historical codename that
 predates the "Sparse Readout Prism" name and survives only in some archive
 paths and defaults for output directories. The paper additionally reports
-further Qwen, Gemma and Ministral models, whose checkpoints are published
-on the Hub alongside the others and whose training configs and metrics are
-listed in the registry manifest.
+further Qwen, Gemma, Ministral and R1-Distill models. Their checkpoints are
+published on the Hub alongside the others, their metrics and Hub paths are
+in the registry manifest, and
+[`configs/sweeps/README.md`](configs/sweeps/README.md) lists their training
+configs and how to reproduce a Gemma cell.
 
 ## Tests
 

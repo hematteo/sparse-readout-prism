@@ -1,7 +1,7 @@
 [project]
 name = "sparse-readout-prism"
-version = "0.2.1"
-description = "Sparse Readout Prism: a sparse LM-head basis that factorizes language-model unembedding rows into reusable readout features and decomposes selected logits into signed feature contributions plus an explicit residual."
+version = "0.2.2"
+description = "Sparse Readout Prism: decomposes a language model's readout (the unembedding matrix) into sparse readout features and expresses any token logit or logit difference as signed feature contributions plus an explicit residual, with fidelity diagnostics."
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [
