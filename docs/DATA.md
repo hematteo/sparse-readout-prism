@@ -49,15 +49,26 @@ laid out as `<model>/<operating_point>/checkpoint.pt` (download with
 [`configs/registries/exp2_selected_sae_checkpoints.yaml`](../configs/registries/exp2_selected_sae_checkpoints.yaml)
 records each checkpoint's model / width / `k` / metrics and its Hub path.
 
-A checkpoint is a `.pt` file with:
+A checkpoint is a `.pt` file that `torch.load(..., weights_only=True)` reads
+as a dict. Two layouts ship on the Hub, and `load_factorizer` handles both:
 
-- `model_state_dict` — the factorizer weights (encoder, decoder, biases).
-- `factorizer` — the factorizer config sub-block (`architecture`, `k`,
-  `d_features`, ...). `build_factorizer({"factorizer": ckpt["factorizer"]}, d_model)`
-  rebuilds the model from this block (or use `load_factorizer(ckpt)`, which
-  rebuilds + loads in one call, inferring `d_model` from the checkpoint).
-- `row_mean`, `row_norms` — the preprocessing pinned at training time.
-  Decomposing against a different preprocessing breaks the identity.
+- Qwen and Gemma (11 files): `model_state_dict` plus `config`, the full
+  training config, whose `config.factorizer` block (`architecture`, `k`,
+  `d_features`) rebuilds the model. No row statistics are embedded, so
+  recompute them from the model's `W_U` with `preprocess_rows`.
+- Ministral and R1-Distill (6 files): `model_state_dict`, a top-level
+  `factorizer` block, `evaluation`, the held-out `metrics`, and the
+  preprocessing pinned at training time as `row_mean`, `row_norms` and
+  `row_token_ids`.
+
+`build_factorizer({"factorizer": <block>}, d_model)` rebuilds the model from
+either block; `load_factorizer(path)` does the rebuild and the load in one
+call and infers `d_model` from the checkpoint. Decomposing against a
+different preprocessing breaks the identity. The paper's analysis runs
+centre on the live full-vocabulary mean of `W_U` (`--centering live`, the
+default; see `REPRODUCE.md`), which is what `preprocess_rows(W_U)` computes.
+A machine-readable listing of all 17 files with sizes, metrics and layout is
+`manifest.json` at the root of the Hub repo; it mirrors the registry above.
 
 Downloading the released checkpoints skips ~12 h of GPU time per model.
 
